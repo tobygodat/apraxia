@@ -1,5 +1,4 @@
-import { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 
 const SECTIONS = [
   { to: "/todos", label: "Todos" },
@@ -10,16 +9,16 @@ const SECTIONS = [
 ];
 
 export default function Layout({
-  children,
   onLogout,
 }: {
-  children: ReactNode;
   onLogout: () => void;
 }) {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">tobiOS</div>
+        <Link to="/" className="brand" style={{ textDecoration: "none", color: "inherit" }}>
+          orbitOS
+        </Link>
         <nav>
           {SECTIONS.map((s) => (
             <NavLink key={s.to} to={s.to} className="navlink">
@@ -31,7 +30,9 @@ export default function Layout({
           Sign out
         </button>
       </aside>
-      <main className="content">{children}</main>
+      <main className="content">
+        <Outlet />
+      </main>
     </div>
   );
 }

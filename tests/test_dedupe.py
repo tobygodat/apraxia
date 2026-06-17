@@ -1,6 +1,6 @@
 """Dedupe hashing — stability + normalization (spec §5)."""
 
-from tobios.extractor.dedupe import compute_dedupe_hash, normalize_line
+from orbitos.extractor.dedupe import compute_dedupe_hash, normalize_line
 
 
 def test_normalization_strips_checkbox_bullet_and_case():

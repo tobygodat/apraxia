@@ -1,14 +1,14 @@
-# Deploying tobiOS
+# Deploying orbitOS
 
 The full rationale lives in [SPEC.md](../SPEC.md) §7 (setup) and §9 (security).
 This is the operational checklist.
 
 ## 1. VPS + user
 - Rent a small VPS (~$6/mo, e.g. Hetzner CX22). 1 vCPU / 2 GB is plenty.
-- Create a non-root user and `/opt/tobios` owned by it:
+- Create a non-root user and `/opt/orbitos` owned by it:
   ```bash
-  sudo adduser --system --group tobios
-  sudo mkdir -p /opt/tobios && sudo chown tobios:tobios /opt/tobios
+  sudo adduser --system --group orbitos
+  sudo mkdir -p /opt/orbitos && sudo chown orbitos:orbitos /opt/orbitos
   ```
 - Install `git`, and `uv` (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
 - Install Node (for the one-time SPA build) — e.g. via `nvm` or distro packages.
@@ -17,11 +17,11 @@ This is the operational checklist.
 - Make the Obsidian vault a **private** git repo; enable the Obsidian Git plugin
   with a ~10 min auto-commit interval; push.
 - Clone it onto the VPS at the path you'll set as `VAULT_PATH` (e.g.
-  `/opt/tobios/vault`). The scheduled scan runs `git pull` (read-only input).
+  `/opt/orbitos/vault`). The scheduled scan runs `git pull` (read-only input).
 
 ## 3. App
 ```bash
-cd /opt/tobios
+cd /opt/orbitos
 git clone <this-repo> .
 uv sync                     # creates .venv, installs the package
 cd frontend && npm install && npm run build && cd ..   # emits frontend/dist
@@ -38,10 +38,10 @@ Fill `.env` (never commit it):
 
 ## 5. Run as a service (spec §7 step 7)
 ```bash
-sudo cp deploy/tobios.service /etc/systemd/system/tobios.service
+sudo cp deploy/orbitos.service /etc/systemd/system/orbitos.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now tobios
-journalctl -u tobios -f
+sudo systemctl enable --now orbitos
+journalctl -u orbitos -f
 ```
 
 ## 6. Harden (spec §9)
