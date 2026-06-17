@@ -1,24 +1,34 @@
-# Compiled class file
-*.class
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
-# Log file
-*.log
+# Environment / secrets (never commit real values — see .env.example)
+.env
+.env.*
+!.env.example
 
-# BlueJ files
-*.ctxt
+# SQLite database (canonical data store; back up by copying the file)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# Node / frontend build
+node_modules/
+frontend/dist/
+frontend/.vite/
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+# Local clone of the Obsidian vault on the VPS (read-only input, not source)
+/vault/
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
