@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { api } from "./api/client";
 import Layout from "./components/Layout";
 import Login from "./components/Login";

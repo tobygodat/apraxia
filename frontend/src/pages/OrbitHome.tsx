@@ -238,6 +238,15 @@ export default function OrbitHome({
                   animation: "orbitrev 220s linear 0s infinite",
                 }}
                 onClick={() => navigate("/todos")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/todos");
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label="todos"
               >
                 <div
                   style={{
@@ -314,6 +323,15 @@ export default function OrbitHome({
                   animation: "orbitrev 220s linear -44s infinite",
                 }}
                 onClick={() => navigate("/books")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/books");
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label="books"
               >
                 <div
                   style={{
@@ -391,6 +409,15 @@ export default function OrbitHome({
                   animation: "orbitrev 220s linear -132s infinite",
                 }}
                 onClick={() => navigate("/writing")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/writing");
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label="writing"
               >
                 <div
                   style={{
@@ -467,6 +494,15 @@ export default function OrbitHome({
                   animation: "orbitrev 220s linear -88s infinite",
                 }}
                 onClick={() => navigate("/movies")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/movies");
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label="movies"
               >
                 <div
                   style={{
@@ -543,6 +579,15 @@ export default function OrbitHome({
                   animation: "orbitrev 220s linear -176s infinite",
                 }}
                 onClick={() => navigate("/drafts")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/drafts");
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label="drafts"
               >
                 <div
                   style={{
