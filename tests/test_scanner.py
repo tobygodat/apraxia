@@ -1,6 +1,6 @@
 """Scanner scan_state skip-unchanged logic (spec §4a)."""
 
-from tobios.scanner import daily_notes
+from orbitos.scanner import daily_notes
 
 
 def test_scan_state_skips_unchanged_notes(migrated, tmp_path):

@@ -15,7 +15,7 @@ def settings_env(tmp_path, monkeypatch) -> Iterator[None]:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.setenv("ENV", "development")
 
-    from tobios.config import get_settings
+    from orbitos.config import get_settings
 
     get_settings.cache_clear()
     yield
@@ -25,7 +25,7 @@ def settings_env(tmp_path, monkeypatch) -> Iterator[None]:
 @pytest.fixture()
 def migrated(settings_env) -> Iterator[None]:
     """Create the schema in the temp DB."""
-    from tobios.db.migrate import migrate
+    from orbitos.db.migrate import migrate
 
     migrate()
     yield
@@ -36,6 +36,6 @@ def client(migrated):
     """A FastAPI TestClient bound to the migrated temp DB (cookies persist)."""
     from fastapi.testclient import TestClient
 
-    from tobios.web.app import create_app
+    from orbitos.web.app import create_app
 
     return TestClient(create_app())

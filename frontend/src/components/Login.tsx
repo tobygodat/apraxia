@@ -22,7 +22,7 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="center">
       <form className="card login" onSubmit={submit}>
-        <h1 className="brand">tobiOS</h1>
+        <h1 className="brand">orbitOS</h1>
         <input
           type="password"
           placeholder="Password"
