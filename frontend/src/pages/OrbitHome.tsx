@@ -26,7 +26,7 @@ export default function OrbitHome({
   wordmark = "/orbitOS/",
 }: Props) {
   const navigate = useNavigate();
-  const [footerText, setFooterText] = useState("5 collections in orbit");
+  const [footerText, setFooterText] = useState("4 collections in orbit");
 
   useEffect(() => {
     Promise.all([
@@ -106,22 +106,6 @@ export default function OrbitHome({
             onClick={() => {/* no-op hook */}}
           >
             + add
-          </span>
-          <span
-            style={{
-              width: "30px",
-              height: "30px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "12px",
-              color: "rgba(255,255,255,0.7)",
-            }}
-          >
-            xc
           </span>
         </div>
       </header>
