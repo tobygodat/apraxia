@@ -44,13 +44,3 @@ export interface Movie {
   created_at: string;
   updated_at: string;
 }
-
-export interface Draft {
-  id: number;
-  kind: string;
-  prompt: string;
-  body: string;
-  status: string;
-  related_todo: number | null;
-  created_at: string;
-}

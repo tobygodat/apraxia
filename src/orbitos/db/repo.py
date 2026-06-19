@@ -27,9 +27,8 @@ WRITABLE_COLUMNS: dict[str, list[str]] = {
         "title", "year", "status", "rating", "notes",
         "source", "source_note", "dedupe_hash",
     ],
-    "drafts": ["kind", "prompt", "body", "status", "related_todo"],
 }
-HAS_CREATED_AT = {"todos", "writing", "books", "movies", "drafts"}
+HAS_CREATED_AT = {"todos", "writing", "books", "movies"}
 HAS_UPDATED_AT = {"todos", "writing", "books", "movies"}
 
 

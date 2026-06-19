@@ -54,16 +54,6 @@ CREATE TABLE IF NOT EXISTS movies (
   updated_at    TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS drafts (
-  id            INTEGER PRIMARY KEY,
-  kind          TEXT NOT NULL,             -- 'message' | 'writing' | 'reply' | ...
-  prompt        TEXT NOT NULL,             -- what the agent was asked to draft
-  body          TEXT NOT NULL,             -- the draft itself
-  status        TEXT NOT NULL DEFAULT 'pending', -- pending|approved|skipped
-  related_todo  INTEGER REFERENCES todos(id),
-  created_at    TEXT NOT NULL
-);
-
 -- Tracks which notes have been scanned + their last-seen content hash,
 -- so the scanner skips unchanged notes.
 CREATE TABLE IF NOT EXISTS scan_state (

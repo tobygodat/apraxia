@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import type { Book, Draft, Movie, Todo, Writing } from "../types";
+import type { Book, Movie, Todo, Writing } from "../types";
 import "./OrbitHome.css";
 
 interface Props {
@@ -34,30 +34,27 @@ export default function OrbitHome({
       api.list<Book>("books").catch(() => [] as Book[]),
       api.list<Writing>("writing").catch(() => [] as Writing[]),
       api.list<Movie>("movies").catch(() => [] as Movie[]),
-      api.list<Draft>("drafts").catch(() => [] as Draft[]),
     ])
-      .then(([todos, books, writings, movies, drafts]) => {
-        // Collect all timestamps — drafts only have created_at
+      .then(([todos, books, writings, movies]) => {
         const timestamps: string[] = [
           ...todos.map((r) => r.updated_at ?? r.created_at),
           ...books.map((r) => r.updated_at ?? r.created_at),
           ...writings.map((r) => r.updated_at ?? r.created_at),
           ...movies.map((r) => r.updated_at ?? r.created_at),
-          ...drafts.map((r) => r.created_at),
         ].filter(Boolean);
 
         if (timestamps.length === 0) {
-          setFooterText("5 collections in orbit");
+          setFooterText("4 collections in orbit");
           return;
         }
 
         // Most-recent timestamp
         const latest = timestamps.reduce((a, b) => (a > b ? a : b));
         const rel = relativeTime(latest);
-        setFooterText(`5 collections in orbit · synced ${rel}`);
+        setFooterText(`4 collections in orbit · synced ${rel}`);
       })
       .catch(() => {
-        setFooterText("5 collections in orbit");
+        setFooterText("4 collections in orbit");
       });
   }, []);
 
@@ -540,91 +537,6 @@ export default function OrbitHome({
             </div>
           </div>
 
-          {/* DRAFTS (people) · ring 4 (520px), delay -176s */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "520px",
-              height: "520px",
-              marginLeft: "-260px",
-              marginTop: "-260px",
-              animation: "orbit 220s linear -176s infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                width: "140px",
-                height: "92px",
-                marginLeft: "-70px",
-                marginTop: "-46px",
-              }}
-            >
-              <div
-                className="orbit-planet"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  cursor: "pointer",
-                  animation: "orbitrev 220s linear -176s infinite",
-                }}
-                onClick={() => navigate("/drafts")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/drafts");
-                  }
-                }}
-                role="link"
-                tabIndex={0}
-                aria-label="drafts"
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "96px",
-                    height: "46px",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  <div style={{ position: "absolute", width: "60px", height: "16px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.24)", transform: "rotate(6deg)" }} />
-                  <div style={{ position: "absolute", width: "46px", height: "12px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.13)", transform: "rotate(6deg)" }} />
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "50%",
-                      background: "radial-gradient(circle at 60% 46%, rgba(255,255,255,0.07) 0 4px, transparent 8px), radial-gradient(circle at 38% 64%, rgba(0,0,0,0.06) 0 4px, transparent 7px), radial-gradient(circle at 34% 30%, #f1ece8 0%, #cbc3bb 50%, #8f867d 100%)",
-                      boxShadow: "0 0 10px 1px rgba(255,255,255,0.13), inset -3px -4px 7px rgba(0,0,0,0.5)",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    color: "rgba(255,255,255,0.92)",
-                    display: "inline-block",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  drafts
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 

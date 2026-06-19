@@ -18,7 +18,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from orbitos.config import get_settings
 from orbitos.web import auth
-from orbitos.web.routes import books, drafts, movies, todos, writing
+from orbitos.web.routes import books, movies, todos, writing
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,6 @@ def create_app() -> FastAPI:
     api.include_router(writing.router)
     api.include_router(books.router)
     api.include_router(movies.router)
-    api.include_router(drafts.router)
 
     @api.get("/health", tags=["meta"])
     def health() -> dict:

@@ -5,7 +5,6 @@ const SECTIONS = [
   { to: "/writing", label: "Writing" },
   { to: "/books", label: "Books" },
   { to: "/movies", label: "Movies" },
-  { to: "/drafts", label: "Drafts" },
 ];
 
 export default function Layout({

@@ -4,7 +4,6 @@ import { api } from "./api/client";
 import Layout from "./components/Layout";
 import Login from "./components/Login";
 import Books from "./pages/Books";
-import Drafts from "./pages/Drafts";
 import Movies from "./pages/Movies";
 import OrbitHome from "./pages/OrbitHome";
 import Todos from "./pages/Todos";
@@ -39,7 +38,6 @@ export default function App() {
         <Route path="/writing" element={<Writing />} />
         <Route path="/books" element={<Books />} />
         <Route path="/movies" element={<Movies />} />
-        <Route path="/drafts" element={<Drafts />} />
       </Route>
     </Routes>
   );

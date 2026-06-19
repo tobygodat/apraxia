@@ -67,16 +67,3 @@ class MovieUpdate(BaseModel):
     status: str | None = None
     rating: int | None = None
     notes: str | None = None
-
-
-class DraftCreate(BaseModel):
-    kind: str
-    prompt: str
-    body: str
-    status: str = "pending"
-    related_todo: int | None = None
-
-
-class DraftUpdate(BaseModel):
-    status: str | None = None
-    body: str | None = None
