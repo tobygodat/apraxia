@@ -1,6 +1,6 @@
 """Repository CRUD + upsert idempotency (spec §3, §5)."""
 
-from tobios.db import repo
+from orbitos.db import repo
 
 
 def test_todo_crud_roundtrip(migrated):

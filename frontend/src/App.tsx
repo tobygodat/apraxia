@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { api } from "./api/client";
 import Layout from "./components/Layout";
 import Login from "./components/Login";
 import Books from "./pages/Books";
-import Drafts from "./pages/Drafts";
 import Movies from "./pages/Movies";
+import OrbitHome from "./pages/OrbitHome";
 import Todos from "./pages/Todos";
 import Writing from "./pages/Writing";
 
@@ -31,15 +31,14 @@ export default function App() {
   };
 
   return (
-    <Layout onLogout={logout}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/todos" replace />} />
+    <Routes>
+      <Route path="/" element={<OrbitHome />} />
+      <Route element={<Layout onLogout={logout} />}>
         <Route path="/todos" element={<Todos />} />
         <Route path="/writing" element={<Writing />} />
         <Route path="/books" element={<Books />} />
         <Route path="/movies" element={<Movies />} />
-        <Route path="/drafts" element={<Drafts />} />
-      </Routes>
-    </Layout>
+      </Route>
+    </Routes>
   );
 }

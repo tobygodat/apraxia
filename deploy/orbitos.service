@@ -1,0 +1,22 @@
+# systemd unit for orbitOS (spec §6 — one service; §7 step 7).
+# Install: copy to /etc/systemd/system/orbitos.service, then
+#   sudo systemctl daemon-reload && sudo systemctl enable --now orbitos
+# Logs:    journalctl -u orbitos -f
+
+[Unit]
+Description=orbitOS personal CRM (web + scheduler + Telegram bot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=orbitos
+WorkingDirectory=/opt/orbitos
+EnvironmentFile=/opt/orbitos/.env
+# .venv is created by `uv sync`; the package is installed into it.
+ExecStart=/opt/orbitos/.venv/bin/python -m orbitos.main
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

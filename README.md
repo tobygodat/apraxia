@@ -1,4 +1,4 @@
-# tobiOS
+# orbitOS
 
 A self-hosted **personal CRM**. It scans your Obsidian daily notes, extracts
 structured items into a SQLite database, surfaces them in a web app, and runs a
@@ -28,7 +28,7 @@ vault (git) ──pull──▶ scanner ──changed notes──▶ extractor �
 ## Repo layout
 
 ```
-src/tobios/          Python backend (the single service)
+src/orbitos/         Python backend (the single service)
   main.py            entrypoint — wires web + scheduler + bot in one loop
   config.py          pydantic-settings; all env vars (spec §7)
   db/                schema.sql (spec §3), migrate, repo (upsert_by_dedupe_hash)
@@ -52,7 +52,7 @@ proxies `/api` to the backend (so it's one origin in the browser).
 ```bash
 uv sync                          # create .venv, install the package + deps
 cp .env.example .env             # optional in dev; leave APP_PASSWORD blank to skip login
-uv run python -m tobios.main     # serves the API on http://127.0.0.1:8000
+uv run python -m orbitos.main    # serves the API on http://127.0.0.1:8000
 ```
 
 **Frontend** (needs Node 18+):
@@ -73,7 +73,7 @@ service (spec §6):
 
 ```bash
 cd frontend && npm run build     # emits frontend/dist
-ENV=production uv run python -m tobios.main   # FastAPI serves dist/ + the API
+ENV=production uv run python -m orbitos.main   # FastAPI serves dist/ + the API
 ```
 
 Run it under systemd on a VPS — see [deploy/DEPLOY.md](deploy/DEPLOY.md) for the
@@ -81,7 +81,7 @@ full checklist (vault git sync, secrets, firewall, TLS).
 
 ## Configuration
 
-All settings are environment variables read by [config.py](src/tobios/config.py);
+All settings are environment variables read by [config.py](src/orbitos/config.py);
 see [.env.example](.env.example) for the annotated list. Key ones:
 
 | Var | Purpose |
