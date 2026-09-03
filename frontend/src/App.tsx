@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { api } from "./api/client";
 import Layout from "./components/Layout";
 import Login from "./components/Login";
-import Books from "./pages/Books";
-import Movies from "./pages/Movies";
+import Media from "./pages/Media";
 import OrbitHome from "./pages/OrbitHome";
+import Projects from "./pages/Projects";
 import Todos from "./pages/Todos";
 import Writing from "./pages/Writing";
 
-// Auth gate (spec §9): probe /api/me on load. null = checking, false = show
-// login, true = render the app. With APP_PASSWORD unset, the backend reports
-// authenticated and the login screen is skipped.
+// Transitional auth gate. Supabase Auth replaces this legacy session probe in
+// the cloud runtime, but every authenticated route already shares one shell.
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
@@ -32,12 +31,15 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<OrbitHome />} />
       <Route element={<Layout onLogout={logout} />}>
+        <Route index element={<OrbitHome />} />
         <Route path="/todos" element={<Todos />} />
-        <Route path="/writing" element={<Writing />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/movies" element={<Movies />} />
+        <Route path="/ideas" element={<Writing />} />
+        <Route path="/media" element={<Media />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/writing" element={<Navigate to="/ideas" replace />} />
+        <Route path="/books" element={<Navigate to="/media" replace />} />
+        <Route path="/movies" element={<Navigate to="/media" replace />} />
       </Route>
     </Routes>
   );

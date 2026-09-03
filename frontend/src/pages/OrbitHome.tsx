@@ -1,549 +1,247 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { Book, Movie, Todo, Writing } from "../types";
+import type { Todo } from "../types";
 import "./OrbitHome.css";
 
-interface Props {
-  accent?: string;
-  wordmark?: string;
+const shortDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const monthDate = new Intl.DateTimeFormat(undefined, { month: "long", day: "numeric" });
+const weekday = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }
 
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const secs = Math.floor(diff / 1000);
-  if (secs < 60) return "just now";
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+function addDays(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
 }
 
-export default function OrbitHome({
-  accent = "#ededed",
-  wordmark = "/orbitOS/",
-}: Props) {
-  const navigate = useNavigate();
-  const [footerText, setFooterText] = useState("4 collections in orbit");
+function startOfWeek(date: Date) {
+  const next = startOfDay(date);
+  next.setDate(next.getDate() - ((next.getDay() + 6) % 7));
+  return next;
+}
 
-  useEffect(() => {
-    Promise.all([
-      api.list<Todo>("todos").catch(() => [] as Todo[]),
-      api.list<Book>("books").catch(() => [] as Book[]),
-      api.list<Writing>("writing").catch(() => [] as Writing[]),
-      api.list<Movie>("movies").catch(() => [] as Movie[]),
-    ])
-      .then(([todos, books, writings, movies]) => {
-        const timestamps: string[] = [
-          ...todos.map((r) => r.updated_at ?? r.created_at),
-          ...books.map((r) => r.updated_at ?? r.created_at),
-          ...writings.map((r) => r.updated_at ?? r.created_at),
-          ...movies.map((r) => r.updated_at ?? r.created_at),
-        ].filter(Boolean);
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
-        if (timestamps.length === 0) {
-          setFooterText("4 collections in orbit");
-          return;
-        }
+function todoDueKey(todo: Todo) {
+  return todo.due?.slice(0, 10) ?? null;
+}
 
-        // Most-recent timestamp
-        const latest = timestamps.reduce((a, b) => (a > b ? a : b));
-        const rel = relativeTime(latest);
-        setFooterText(`4 collections in orbit · synced ${rel}`);
-      })
-      .catch(() => {
-        setFooterText("4 collections in orbit");
-      });
+function ArrowIcon({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d={direction === "left" ? "m12.5 5-5 5 5 5" : "m7.5 5 5 5-5 5"}
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="m5.5 10 3 3 6-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export default function OrbitHome() {
+  const today = startOfDay(new Date());
+  const todayKey = dateKey(today);
+  const currentWeekStart = startOfWeek(today);
+  const [weekStart, setWeekStart] = useState(currentWeekStart);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [loadingTodos, setLoadingTodos] = useState(true);
+  const [newTask, setNewTask] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadTodos = useCallback(async () => {
+    try {
+      setTodos(await api.list<Todo>("todos"));
+      setError("");
+    } catch {
+      setError("Today could not be loaded. Try again.");
+    } finally {
+      setLoadingTodos(false);
+    }
   }, []);
 
+  useEffect(() => {
+    void loadTodos();
+  }, [loadTodos]);
+
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const weekEnd = weekDays[6];
+  const hours = Array.from({ length: 16 }, (_, index) => index + 7);
+  const timezone = new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" })
+    .formatToParts(today)
+    .find((part) => part.type === "timeZoneName")?.value ?? "local";
+  const showingCurrentWeek = dateKey(weekStart) === dateKey(currentWeekStart);
+
+  const todayTodos = todos
+    .filter((todo) => {
+      const due = todoDueKey(todo);
+      return !Boolean(todo.done) && due !== null && due <= todayKey;
+    })
+    .sort((left, right) => {
+      const dueOrder = (todoDueKey(left) ?? "").localeCompare(todoDueKey(right) ?? "");
+      return dueOrder || left.created_at.localeCompare(right.created_at);
+    });
+
+  const toggle = async (todo: Todo) => {
+    setTodos((items) => items.map((item) => (item.id === todo.id ? { ...item, done: 1 } : item)));
+    try {
+      await api.update<Todo>("todos", todo.id, { done: 1 });
+    } catch {
+      setTodos((items) => items.map((item) => (item.id === todo.id ? todo : item)));
+      setError("The task could not be completed. Try again.");
+    }
+  };
+
+  const addTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = newTask.trim();
+    if (!text || submitting) return;
+
+    setSubmitting(true);
+    try {
+      await api.create<Todo>("todos", { text, due: todayKey });
+      setNewTask("");
+      await loadTodos();
+    } catch {
+      setError("The task could not be added. Your text is still here so you can retry.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const rangeLabel = `${monthDate.format(weekStart)} – ${monthDate.format(weekEnd)}`;
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#161618",
-        fontFamily: "'Space Grotesk', sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          height: "64px",
-          flexShrink: 0,
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 36px",
-          zIndex: 5,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "18px",
-            fontWeight: 500,
-            color: accent,
-          }}
-        >
-          {wordmark}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "22px" }}>
-          <span
-            className="orbit-add"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "12px",
-              color: "rgba(255,255,255,0.4)",
-              letterSpacing: "0.04em",
-              cursor: "pointer",
-              transition: "color 0.15s",
-            }}
-            onClick={() => {/* no-op hook */}}
-          >
-            + add
-          </span>
-        </div>
-      </header>
+    <section className="home-page" aria-label="Home">
+      <section className="week-calendar" aria-labelledby="calendar-heading">
+        <header className="week-calendar__toolbar">
+          <div>
+            <h1 id="calendar-heading">Calendar</h1>
+            <p>{rangeLabel}</p>
+          </div>
+          <div className="week-calendar__nav" aria-label="Calendar week navigation">
+            <button type="button" aria-label="Previous week" onClick={() => setWeekStart((week) => addDays(week, -7))}>
+              <ArrowIcon direction="left" />
+            </button>
+            <button type="button" disabled={showingCurrentWeek} onClick={() => setWeekStart(currentWeekStart)}>
+              today
+            </button>
+            <button type="button" aria-label="Next week" onClick={() => setWeekStart((week) => addDays(week, 7))}>
+              <ArrowIcon direction="right" />
+            </button>
+          </div>
+        </header>
 
-      {/* Main */}
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px",
-          position: "relative",
-        }}
-      >
-        {/* Starfield */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        >
-          <div style={{ position: "absolute", left: "8%", top: "15%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.22)" }} />
-          <div style={{ position: "absolute", left: "16%", top: "64%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.16)" }} />
-          <div style={{ position: "absolute", left: "25%", top: "30%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.18)" }} />
-          <div style={{ position: "absolute", left: "34%", top: "85%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.14)" }} />
-          <div style={{ position: "absolute", left: "46%", top: "10%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.2)" }} />
-          <div style={{ position: "absolute", left: "62%", top: "80%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.15)" }} />
-          <div style={{ position: "absolute", left: "69%", top: "18%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.22)" }} />
-          <div style={{ position: "absolute", left: "74%", top: "58%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.16)" }} />
-          <div style={{ position: "absolute", left: "82%", top: "38%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.2)" }} />
-          <div style={{ position: "absolute", left: "90%", top: "72%", width: "2px", height: "2px", borderRadius: "50%", background: "rgba(255,255,255,0.17)" }} />
-          <div style={{ position: "absolute", left: "93%", top: "24%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.14)" }} />
-          <div style={{ position: "absolute", left: "51%", top: "93%", width: "1px", height: "1px", borderRadius: "50%", background: "rgba(255,255,255,0.15)" }} />
+        <div className="week-calendar__surface">
+          <div className="week-calendar__days">
+            <div className="week-calendar__timezone">{timezone}</div>
+            {weekDays.map((day) => {
+              const isToday = dateKey(day) === todayKey;
+              return (
+                <div className={`week-calendar__day${isToday ? " week-calendar__day--today" : ""}`} key={dateKey(day)}>
+                  <span>{weekday.format(day)}</span>
+                  <strong>{day.getDate()}</strong>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="week-calendar__all-day">
+            <span>all-day</span>
+            {weekDays.map((day) => <div key={dateKey(day)} />)}
+          </div>
+
+          <div className="week-calendar__scroll">
+            <div className="week-calendar__grid" aria-label="Hourly calendar grid">
+              {hours.map((hour) => (
+                <div className="week-calendar__hour" key={hour}>
+                  <span>{hour > 12 ? hour - 12 : hour} {hour >= 12 ? "PM" : "AM"}</span>
+                  {weekDays.map((day) => (
+                    <div
+                      className={dateKey(day) === todayKey ? "week-calendar__cell week-calendar__cell--today" : "week-calendar__cell"}
+                      key={`${dateKey(day)}-${hour}`}
+                    />
+                  ))}
+                </div>
+              ))}
+              <div className="calendar-connect-state">
+                <p>Google Calendar is not connected yet.</p>
+                <span>The Calendar panel is ready for the read-only OAuth service.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside className="today-panel" aria-labelledby="today-heading">
+        <header className="today-panel__header">
+          <div>
+            <h2 id="today-heading">Today</h2>
+            <p>{shortDate.format(today)}</p>
+          </div>
+          <span aria-label={`${todayTodos.length} incomplete tasks`}>{todayTodos.length}</span>
+        </header>
+
+        {error && <p className="today-panel__error" role="alert">{error}</p>}
+
+        <div className="today-panel__list" aria-live="polite">
+          {loadingTodos && <p className="today-panel__status">Loading today…</p>}
+          {!loadingTodos && todayTodos.length === 0 && (
+            <p className="today-panel__status">Nothing due or overdue.</p>
+          )}
+          {todayTodos.map((todo) => {
+            const due = todoDueKey(todo)!;
+            const overdue = due < todayKey;
+            return (
+              <article className="today-task" key={todo.id}>
+                <button type="button" className="today-task__check" aria-label={`Complete ${todo.text}`} onClick={() => void toggle(todo)}>
+                  <CheckIcon />
+                </button>
+                <div>
+                  <p>{todo.text}</p>
+                  <span className={overdue ? "today-task__due today-task__due--overdue" : "today-task__due"}>
+                    {overdue ? `overdue · ${shortDate.format(new Date(`${due}T00:00:00`))}` : "due today"}
+                  </span>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
-        {/* Stage — 560×560, scaleY(0.8) */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            width: "560px",
-            height: "560px",
-            transform: "scaleY(0.8)",
-            transformOrigin: "center",
-          }}
-        >
-          {/* Rings */}
-          <div style={{ position: "absolute", left: "50%", top: "50%", width: "180px", height: "180px", marginLeft: "-90px", marginTop: "-90px", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%" }} />
-          <div style={{ position: "absolute", left: "50%", top: "50%", width: "280px", height: "280px", marginLeft: "-140px", marginTop: "-140px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "50%" }} />
-          <div style={{ position: "absolute", left: "50%", top: "50%", width: "400px", height: "400px", marginLeft: "-200px", marginTop: "-200px", border: "1px solid rgba(255,255,255,0.13)", borderRadius: "50%" }} />
-          <div style={{ position: "absolute", left: "50%", top: "50%", width: "520px", height: "520px", marginLeft: "-260px", marginTop: "-260px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%" }} />
-
-          {/* Sun / core */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "64px",
-              height: "64px",
-              marginLeft: "-32px",
-              marginTop: "-32px",
-              borderRadius: "50%",
-              background: `radial-gradient(circle at 42% 38%, #ffffff 0%, ${accent} 62%, ${accent} 100%)`,
-              boxShadow: "0 0 30px 6px rgba(255,255,255,0.13), 0 0 12px 2px rgba(255,255,255,0.26)",
-              transform: "scaleY(1.25)",
-              animation: "corepulse 4s ease-in-out infinite",
-              zIndex: 2,
-            }}
+        <form className="today-panel__add" onSubmit={(event) => void addTask(event)}>
+          <label htmlFor="today-task-input" className="sr-only">Add a task due today</label>
+          <input
+            id="today-task-input"
+            value={newTask}
+            onChange={(event) => setNewTask(event.target.value)}
+            placeholder="Add a task for today"
           />
-
-          {/* TODOS · ring 2 (280px), delay 0s */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "280px",
-              height: "280px",
-              marginLeft: "-140px",
-              marginTop: "-140px",
-              animation: "orbit 220s linear 0s infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                width: "140px",
-                height: "92px",
-                marginLeft: "-70px",
-                marginTop: "-46px",
-              }}
-            >
-              <div
-                className="orbit-planet"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  cursor: "pointer",
-                  animation: "orbitrev 220s linear 0s infinite",
-                }}
-                onClick={() => navigate("/todos")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/todos");
-                  }
-                }}
-                role="link"
-                tabIndex={0}
-                aria-label="todos"
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "96px",
-                    height: "46px",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  <div style={{ position: "absolute", width: "50px", height: "14px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.22)", transform: "rotate(-14deg)" }} />
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "50%",
-                      background: "radial-gradient(circle at 62% 64%, rgba(0,0,0,0.05) 0 5px, transparent 9px), radial-gradient(circle at 34% 30%, #f5f5f6 0%, #cfcfd2 50%, #949498 100%)",
-                      boxShadow: "0 0 10px 1px rgba(255,255,255,0.14), inset -3px -4px 7px rgba(0,0,0,0.48)",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    color: "rgba(255,255,255,0.92)",
-                    display: "inline-block",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  todos
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* BOOKS · ring 3 (400px), delay -44s */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "400px",
-              height: "400px",
-              marginLeft: "-200px",
-              marginTop: "-200px",
-              animation: "orbit 220s linear -44s infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                width: "140px",
-                height: "92px",
-                marginLeft: "-70px",
-                marginTop: "-46px",
-              }}
-            >
-              <div
-                className="orbit-planet"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  cursor: "pointer",
-                  animation: "orbitrev 220s linear -44s infinite",
-                }}
-                onClick={() => navigate("/books")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/books");
-                  }
-                }}
-                role="link"
-                tabIndex={0}
-                aria-label="books"
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "96px",
-                    height: "46px",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  <div style={{ position: "absolute", width: "64px", height: "20px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.3)", transform: "rotate(-24deg)" }} />
-                  <div style={{ position: "absolute", width: "50px", height: "15px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.16)", transform: "rotate(-24deg)" }} />
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "50%",
-                      background: "repeating-linear-gradient(7deg, rgba(0,0,0,0.05) 0 3px, rgba(0,0,0,0) 3px 7px), radial-gradient(circle at 34% 30%, #f0efec 0%, #cac6c0 50%, #8d8984 100%)",
-                      boxShadow: "0 0 10px 1px rgba(255,255,255,0.13), inset -3px -4px 7px rgba(0,0,0,0.5)",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    color: "rgba(255,255,255,0.92)",
-                    display: "inline-block",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  books
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* WRITING (notes) · ring 3 (400px), delay -132s */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "400px",
-              height: "400px",
-              marginLeft: "-200px",
-              marginTop: "-200px",
-              animation: "orbit 220s linear -132s infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                width: "140px",
-                height: "92px",
-                marginLeft: "-70px",
-                marginTop: "-46px",
-              }}
-            >
-              <div
-                className="orbit-planet"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  cursor: "pointer",
-                  animation: "orbitrev 220s linear -132s infinite",
-                }}
-                onClick={() => navigate("/writing")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/writing");
-                  }
-                }}
-                role="link"
-                tabIndex={0}
-                aria-label="writing"
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "96px",
-                    height: "46px",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  <div style={{ position: "absolute", width: "62px", height: "18px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.24)", transform: "rotate(18deg)" }} />
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "50%",
-                      background: "radial-gradient(circle at 66% 40%, rgba(255,255,255,0.08) 0 4px, transparent 8px), radial-gradient(circle at 34% 30%, #eaebed 0%, #babdc3 50%, #7f828a 100%)",
-                      boxShadow: "0 0 10px 1px rgba(255,255,255,0.13), inset -3px -4px 7px rgba(0,0,0,0.5)",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    color: "rgba(255,255,255,0.92)",
-                    display: "inline-block",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  writing
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* MOVIES · ring 4 (520px), delay -88s */}
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "520px",
-              height: "520px",
-              marginLeft: "-260px",
-              marginTop: "-260px",
-              animation: "orbit 220s linear -88s infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                width: "140px",
-                height: "92px",
-                marginLeft: "-70px",
-                marginTop: "-46px",
-              }}
-            >
-              <div
-                className="orbit-planet"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "7px",
-                  cursor: "pointer",
-                  animation: "orbitrev 220s linear -88s infinite",
-                }}
-                onClick={() => navigate("/movies")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/movies");
-                  }
-                }}
-                role="link"
-                tabIndex={0}
-                aria-label="movies"
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "96px",
-                    height: "46px",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  <div style={{ position: "absolute", width: "72px", height: "22px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.26)", transform: "rotate(28deg)" }} />
-                  <div
-                    style={{
-                      width: "26px",
-                      height: "26px",
-                      borderRadius: "50%",
-                      background: "radial-gradient(circle at 58% 44%, rgba(0,0,0,0.07) 0 2px, transparent 3px), radial-gradient(circle at 44% 64%, rgba(0,0,0,0.06) 0 2px, transparent 3px), radial-gradient(circle at 70% 62%, rgba(0,0,0,0.05) 0 1.5px, transparent 2.5px), radial-gradient(circle at 34% 30%, #efefef 0%, #c2c2c4 50%, #88888c 100%)",
-                      boxShadow: "0 0 10px 1px rgba(255,255,255,0.13), inset -3px -4px 7px rgba(0,0,0,0.5)",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    color: "rgba(255,255,255,0.92)",
-                    display: "inline-block",
-                    transform: "scaleY(1.25)",
-                  }}
-                >
-                  movies
-                </span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer
-        style={{
-          flexShrink: 0,
-          padding: "22px 36px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "11px",
-            color: "rgba(255,255,255,0.25)",
-            letterSpacing: "0.08em",
-          }}
-        >
-          {footerText}
-        </span>
-      </footer>
-    </div>
+          <button type="submit" disabled={!newTask.trim() || submitting}>
+            {submitting ? "adding…" : "add"}
+          </button>
+        </form>
+      </aside>
+    </section>
   );
 }

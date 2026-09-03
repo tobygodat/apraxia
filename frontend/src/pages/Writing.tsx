@@ -4,7 +4,7 @@ import type { Writing } from "../types";
 export default function WritingPage() {
   return (
     <ResourcePage<Writing>
-      title="Writing"
+      title="Ideas"
       resource="writing"
       primary={(w) => w.title || w.body.slice(0, 80)}
     />
