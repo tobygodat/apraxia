@@ -2,7 +2,7 @@
 
 **Status:** Approved product direction; implementation pending
 
-**Last updated:** 2026-09-02
+**Last updated:** 2026-09-03
 
 **Supersedes:** The Obsidian, SQLite, Telegram, Anthropic, Brain Dump, ChatGPT Scheduled Task, MCP, VPS, and always-on-process designs
 
@@ -21,7 +21,7 @@ All records are added manually. There is no Brain Dump, automated sifting, Needs
 | Product shape | Standalone personal web app; Obsidian is not part of the replacement |
 | Hosting | Vercel for the React app and server-only Calendar endpoints |
 | Canonical database | Supabase Postgres |
-| Authentication | Supabase Auth; every user-owned row is protected by Row Level Security (RLS) |
+| Authentication | Google sign-in through Supabase Auth; every user-owned row is protected by Row Level Security (RLS) |
 | Organization | Todos, Ideas, Media, and Projects |
 | Capture | Manual entry through contextual Add controls and one global **+ Add** action |
 | Media | Books and movies share one Media section and table, distinguished by type |

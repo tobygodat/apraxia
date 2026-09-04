@@ -1,0 +1,628 @@
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
+import type { TodayTodo, UUID } from "../../types/domain";
+import { parseSqlDate } from "./dateDomain";
+import type { TodayListControllerState } from "./todayListController";
+import type { TodayDropPlacement } from "./todayListModel";
+import type { MoveDirection } from "./todayOrder";
+import "./TodayList.css";
+
+export type TodayListReturnFocus = () => void;
+
+export interface TodayListProps {
+  readonly state: TodayListControllerState;
+  readonly onRetry: () => void;
+  readonly onAddTodo: () => void;
+  readonly onCompleteTodo: (todoId: UUID) => void;
+  /** Call returnFocus after the edit surface closes, if it does not restore focus itself. */
+  readonly onEditTodo: (
+    todo: TodayTodo,
+    returnFocus?: TodayListReturnFocus,
+  ) => void;
+  /** Call returnFocus after the reschedule surface closes. */
+  readonly onRescheduleTodo: (
+    todo: TodayTodo,
+    returnFocus: TodayListReturnFocus,
+  ) => void;
+  readonly onDeleteTodo: (todo: TodayTodo) => void;
+  readonly onUndoDelete: () => void;
+  readonly onDismissUndo: () => void;
+  readonly onMoveTodo: (todoId: UUID, direction: MoveDirection) => void;
+  readonly onPlaceTodo: (
+    todoId: UUID,
+    targetTodoId: UUID,
+    placement: TodayDropPlacement,
+  ) => void;
+}
+
+interface DragTarget {
+  readonly todoId: UUID;
+  readonly placement: TodayDropPlacement;
+}
+
+interface MutationFocusRecovery {
+  readonly kind: "complete" | "delete" | "restore" | "dismiss";
+  readonly sourceTodoId: UUID;
+  readonly sourceControlId: string;
+  readonly targetTodoIds: readonly UUID[];
+  ownedFocus: HTMLElement;
+}
+
+interface SurfaceFocusRecovery {
+  readonly sourceControl: HTMLElement;
+  surface: Element | null;
+}
+
+function isDocumentFocus(element: Element | null): boolean {
+  return element === null || element === document.body || element === document.documentElement;
+}
+
+const dueDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  weekday: "short",
+  timeZone: "UTC",
+});
+
+function dateAtUtcNoon(value: string): Date {
+  const { year, month, day } = parseSqlDate(value);
+  const date = new Date(0);
+  date.setUTCHours(12, 0, 0, 0);
+  date.setUTCFullYear(year, month - 1, day);
+  return date;
+}
+
+function dueDateLabel(todo: TodayTodo): string {
+  const prefix = todo.isOverdue ? "Overdue" : "Due today";
+  return `${prefix} · ${dueDateFormatter.format(dateAtUtcNoon(todo.dueDate))}`;
+}
+
+function dueTimeLabel(value: string): string {
+  const [hour = "00", minute = "00"] = value.split(":");
+  const numericHour = Number(hour);
+  const suffix = numericHour >= 12 ? "PM" : "AM";
+  return `${numericHour % 12 || 12}:${minute} ${suffix}`;
+}
+
+function PlusIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <path
+        d="M10 4v12M4 10h12"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.7"
+      />
+    </svg>
+  );
+}
+
+function MoveIcon({ direction }: { readonly direction: MoveDirection }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16">
+      <path
+        d={direction === "up" ? "m4.5 9.5 3.5-3 3.5 3" : "m4.5 6.5 3.5 3 3.5-3"}
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function DragIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 20">
+      <path
+        d="M5 5h.01M11 5h.01M5 10h.01M11 10h.01M5 15h.01M11 15h.01"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2.4"
+      />
+    </svg>
+  );
+}
+
+export function TodayList({
+  state,
+  onRetry,
+  onAddTodo,
+  onCompleteTodo,
+  onEditTodo,
+  onRescheduleTodo,
+  onDeleteTodo,
+  onUndoDelete,
+  onDismissUndo,
+  onMoveTodo,
+  onPlaceTodo,
+}: TodayListProps) {
+  const idBase = useId();
+  const draggedTodoIdRef = useRef<UUID | null>(null);
+  const dragTargetRef = useRef<DragTarget | null>(null);
+  const mutationFocusRef = useRef<MutationFocusRecovery | null>(null);
+  const surfaceFocusRef = useRef<SurfaceFocusRecovery | null>(null);
+  const [dragTarget, setDragTarget] = useState<DragTarget | null>(null);
+  const { model } = state;
+  const listLocked =
+    state.loadStatus !== "ready" || state.pendingMutation !== null;
+  const scrollId = `${idBase}-scroll`;
+  const addTodoId = `${idBase}-add`;
+  const undoControlId = `${idBase}-undo`;
+  const dismissUndoId = `${idBase}-dismiss-undo`;
+  const undoSummaryId = `${idBase}-undo-summary`;
+  const undoLocked = state.pendingMutation !== null || Boolean(state.undoNotice?.pending);
+  const deleteLocked = listLocked || state.undoNotice !== null;
+  const completeControlId = (todoId: UUID) =>
+    `${idBase}-complete-${encodeURIComponent(todoId)}`;
+
+  useLayoutEffect(() => {
+    const trackNewFocus = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || isDocumentFocus(target)) return;
+      const mutation = mutationFocusRef.current;
+      if (mutation && target !== mutation.ownedFocus) mutationFocusRef.current = null;
+
+      const surface = surfaceFocusRef.current;
+      if (!surface || target === surface.sourceControl) return;
+      const dialog = target.closest('[role="dialog"], dialog');
+      if (dialog && (surface.surface === null || surface.surface === dialog)) {
+        surface.surface = dialog;
+      } else {
+        surfaceFocusRef.current = null;
+      }
+    };
+    document.addEventListener("focusin", trackNewFocus);
+    return () => {
+      document.removeEventListener("focusin", trackNewFocus);
+      mutationFocusRef.current = null;
+      surfaceFocusRef.current = null;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const recovery = mutationFocusRef.current;
+    if (!recovery) return;
+    const activeElement = document.activeElement;
+    if (activeElement !== recovery.ownedFocus && !isDocumentFocus(activeElement)) {
+      mutationFocusRef.current = null;
+      return;
+    }
+
+    function focusControl(controlIds: readonly string[]) {
+      const target = controlIds
+        .map((controlId) => document.getElementById(controlId))
+        .find((element) => element !== null);
+      if (!target) return;
+      // Record our own move before focusin, so only a newer interaction cancels it.
+      recovery!.ownedFocus = target;
+      target.focus();
+    }
+
+    const sourceStillVisible = model.todos.some((todo) => todo.id === recovery.sourceTodoId);
+    if (recovery.kind === "restore" || recovery.kind === "dismiss") {
+      if (state.pendingMutation !== null || state.undoNotice?.pending) return;
+      if (recovery.kind === "restore" && sourceStillVisible) {
+        focusControl([completeControlId(recovery.sourceTodoId), addTodoId]);
+      } else if (state.undoNotice === null) {
+        focusControl([...model.todos.map((todo) => completeControlId(todo.id)), addTodoId]);
+      } else if (!state.undoNotice.error && state.loadStatus !== "error") {
+        return;
+      }
+      mutationFocusRef.current = null;
+      return;
+    }
+
+    const mutationPending = state.pendingMutation?.kind === recovery.kind &&
+      state.pendingMutation.todoId === recovery.sourceTodoId;
+    if (sourceStillVisible) {
+      if (!mutationPending && state.mutationError) focusControl([recovery.sourceControlId]);
+      if (!mutationPending) mutationFocusRef.current = null;
+      return;
+    }
+
+    if (mutationPending) {
+      focusControl([scrollId]);
+      return;
+    }
+    focusControl([...recovery.targetTodoIds.map(completeControlId), addTodoId]);
+    mutationFocusRef.current = null;
+  }, [addTodoId, model.todos, scrollId, state.loadStatus, state.mutationError,
+    state.pendingMutation, state.undoNotice]);
+
+  function prepareMutationFocus(
+    kind: MutationFocusRecovery["kind"],
+    todoId: UUID,
+    sourceControlId: string,
+    targetTodoIds: readonly UUID[] = [],
+  ) {
+    const source = document.getElementById(sourceControlId);
+    const active = document.activeElement;
+    mutationFocusRef.current = source && active instanceof HTMLElement && (
+      active === source || Boolean(source.closest("article")?.contains(active))
+    ) ? { kind, sourceTodoId: todoId, sourceControlId, targetTodoIds, ownedFocus: active } : null;
+  }
+
+  function resetDrag() {
+    draggedTodoIdRef.current = null;
+    dragTargetRef.current = null;
+    setDragTarget(null);
+  }
+
+  function handleDragOver(
+    event: DragEvent<HTMLElement>,
+    targetTodoId: UUID,
+  ) {
+    if (listLocked || draggedTodoIdRef.current === null) return;
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const placement: TodayDropPlacement =
+      event.clientY > bounds.top + bounds.height / 2 ? "after" : "before";
+    const nextDragTarget = { todoId: targetTodoId, placement };
+    dragTargetRef.current = nextDragTarget;
+    setDragTarget(nextDragTarget);
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+  }
+
+  function handleDrop(event: DragEvent<HTMLElement>, targetTodoId: UUID) {
+    event.preventDefault();
+    const todoId = draggedTodoIdRef.current;
+    const placement =
+      dragTargetRef.current?.todoId === targetTodoId
+        ? dragTargetRef.current.placement
+        : "before";
+    resetDrag();
+    if (!listLocked && todoId && todoId !== targetTodoId) {
+      onPlaceTodo(todoId, targetTodoId, placement);
+    }
+  }
+
+  function createReturnFocus(
+    todoIndex: number,
+    sourceControlId: string,
+  ): TodayListReturnFocus {
+    const adjacentTodoIds = [
+      model.todos[todoIndex + 1]?.id,
+      model.todos[todoIndex - 1]?.id,
+    ].filter((todoId): todoId is UUID => Boolean(todoId));
+    const sourceControl = document.getElementById(sourceControlId);
+    const active = document.activeElement;
+    const recovery = sourceControl && active instanceof HTMLElement && (
+      active === sourceControl || Boolean(sourceControl.closest("article")?.contains(active))
+    ) ? { sourceControl, surface: null } : null;
+    surfaceFocusRef.current = recovery;
+
+    return () => {
+      if (!recovery || surfaceFocusRef.current !== recovery) return;
+      const active = document.activeElement;
+      // The closing surface owns its own focus until it has unmounted. Newer
+      // interaction outside that surface permanently cancels this recovery.
+      if (!isDocumentFocus(active) && active !== recovery.sourceControl) return;
+      surfaceFocusRef.current = null;
+      const currentSource = document.getElementById(sourceControlId);
+      if (currentSource) {
+        currentSource.focus();
+        return;
+      }
+
+      const adjacentControl = adjacentTodoIds
+        .map((todoId) => document.getElementById(completeControlId(todoId)))
+        .find((element) => element !== null);
+      (adjacentControl ?? document.getElementById(addTodoId))?.focus();
+    };
+  }
+
+  return (
+    <section
+      className="today-list"
+      aria-labelledby={`${idBase}-heading`}
+      aria-busy={
+        state.loadStatus === "loading" || state.pendingMutation !== null || undefined
+      }
+    >
+      <header className="today-list__header">
+        <div>
+          <h2 id={`${idBase}-heading`}>Today</h2>
+          <p id={`${idBase}-summary`}>
+            {model.todos.length === 0
+              ? "Tasks due today and overdue"
+              : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
+          </p>
+        </div>
+        <button
+          className="today-list__add"
+          id={addTodoId}
+          type="button"
+          aria-disabled={state.pendingMutation !== null || undefined}
+          onClick={() => {
+            if (state.pendingMutation === null) onAddTodo();
+          }}
+        >
+          <PlusIcon />
+          Add task
+        </button>
+      </header>
+
+      {state.undoNotice ? (
+        <a
+          className="today-list__undo-shortcut"
+          href={`#${undoControlId}`}
+          onClick={(event) => {
+            event.preventDefault();
+            document.getElementById(undoControlId)?.focus();
+          }}
+        >
+          Skip to Undo
+        </a>
+      ) : null}
+
+      {state.loadStatus === "loading" ? (
+        <p className="today-list__status" role="status">
+          Loading Today…
+        </p>
+      ) : null}
+
+      {state.loadStatus === "error" && state.loadError ? (
+        <div className="today-list__error" role="alert">
+          <p>{state.loadError}</p>
+          <button type="button" onClick={onRetry}>
+            Try again
+          </button>
+        </div>
+      ) : null}
+
+      {state.mutationError ? (
+        <p className="today-list__error today-list__error--mutation" role="alert">
+          {state.mutationError}
+        </p>
+      ) : null}
+
+      <div
+        className="today-list__scroll"
+        id={scrollId}
+        role="region"
+        aria-label="Today task list"
+        tabIndex={0}
+        aria-describedby={`${idBase}-summary`}
+      >
+        {model.todos.length === 0 && state.pendingMutation !== null ? (
+          <p className="today-list__pending-empty" role="status">
+            Updating Today…
+          </p>
+        ) : model.todos.length === 0 && state.loadStatus === "ready" ? (
+          <div className="today-list__empty">
+            <p>Nothing is due yet.</p>
+            <button type="button" onClick={onAddTodo}>
+              Add a task
+            </button>
+          </div>
+        ) : model.todos.length > 0 ? (
+          <ol className="today-list__items" aria-label="Today todos">
+            {model.todos.map((todo, index) => {
+              const titleId = `${idBase}-todo-${encodeURIComponent(todo.id)}`;
+              const isPending = state.pendingMutation?.todoId === todo.id;
+              const isDragTarget = dragTarget?.todoId === todo.id;
+              const rowClassName = [
+                "today-list-item",
+                todo.isOverdue ? "today-list-item--overdue" : "",
+                isDragTarget
+                  ? `today-list-item--drop-${dragTarget.placement}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              return (
+                <li
+                  className={rowClassName}
+                  key={todo.id}
+                  draggable={!listLocked}
+                  onDragStart={(event) => {
+                    if (listLocked) {
+                      event.preventDefault();
+                      return;
+                    }
+                    draggedTodoIdRef.current = todo.id;
+                    if (event.dataTransfer) {
+                      event.dataTransfer.effectAllowed = "move";
+                      // Only this list's private ref carries the record identity.
+                      event.dataTransfer.setData("text/plain", "orbitos-today-reorder");
+                    }
+                  }}
+                  onDragOver={(event) => handleDragOver(event, todo.id)}
+                  onDrop={(event) => handleDrop(event, todo.id)}
+                  onDragEnd={resetDrag}
+                >
+                  <article aria-labelledby={titleId} aria-busy={isPending || undefined}>
+                    <span className="today-list-item__drag" title="Drag to reorder">
+                      <DragIcon />
+                    </span>
+
+                    <label className="today-list-item__check">
+                      <input
+                        id={completeControlId(todo.id)}
+                        type="checkbox"
+                        checked={false}
+                        aria-disabled={listLocked || undefined}
+                        onChange={() => {
+                          if (!listLocked) {
+                            prepareMutationFocus("complete", todo.id, completeControlId(todo.id), [
+                                model.todos[index + 1]?.id,
+                                model.todos[index - 1]?.id,
+                              ].filter((todoId): todoId is UUID => Boolean(todoId)));
+                            onCompleteTodo(todo.id);
+                          }
+                        }}
+                      />
+                      <span aria-hidden="true" />
+                      <span className="today-list-sr-only">
+                        Mark {todo.text} complete
+                      </span>
+                    </label>
+
+                    <div className="today-list-item__content">
+                      <p id={titleId}>{todo.text}</p>
+                      <div className="today-list-item__meta">
+                        <time dateTime={todo.dueDate}>{dueDateLabel(todo)}</time>
+                        {todo.dueTime ? (
+                          <time dateTime={todo.dueTime}>
+                            {dueTimeLabel(todo.dueTime)}
+                          </time>
+                        ) : null}
+                        {todo.projectTitle ? <span>{todo.projectTitle}</span> : null}
+                      </div>
+                    </div>
+
+                    <div className="today-list-item__actions">
+                      <div
+                        className="today-list-item__move"
+                        role="group"
+                        aria-label={`Reorder ${todo.text}`}
+                      >
+                        <button
+                          type="button"
+                          aria-disabled={listLocked || index === 0 || undefined}
+                          onClick={() => {
+                            if (!listLocked && index > 0) {
+                              onMoveTodo(todo.id, "up");
+                            }
+                          }}
+                          aria-label={`Move ${todo.text} up`}
+                        >
+                          <MoveIcon direction="up" />
+                          Up
+                        </button>
+                        <button
+                          type="button"
+                          aria-disabled={
+                            listLocked || index === model.todos.length - 1 || undefined
+                          }
+                          onClick={() => {
+                            if (!listLocked && index < model.todos.length - 1) {
+                              onMoveTodo(todo.id, "down");
+                            }
+                          }}
+                          aria-label={`Move ${todo.text} down`}
+                        >
+                          <MoveIcon direction="down" />
+                          Down
+                        </button>
+                      </div>
+                      <div className="today-list-item__manage">
+                        <button
+                          id={`${titleId}-edit`}
+                          type="button"
+                          aria-disabled={listLocked || undefined}
+                          onClick={() => {
+                            if (!listLocked) {
+                              onEditTodo(todo, createReturnFocus(index, `${titleId}-edit`));
+                            }
+                          }}
+                          aria-label={`Edit ${todo.text}`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          id={`${titleId}-reschedule`}
+                          type="button"
+                          aria-disabled={listLocked || undefined}
+                          onClick={() => {
+                            if (!listLocked) {
+                              onRescheduleTodo(
+                                todo,
+                                createReturnFocus(
+                                  index,
+                                  `${titleId}-reschedule`,
+                                ),
+                              );
+                            }
+                          }}
+                          aria-label={`Reschedule ${todo.text}`}
+                        >
+                          Reschedule
+                        </button>
+                        <button
+                          id={`${titleId}-delete`}
+                          type="button"
+                          aria-disabled={deleteLocked || undefined}
+                          aria-describedby={state.undoNotice ? undoSummaryId : undefined}
+                          onClick={() => {
+                            if (!deleteLocked) {
+                              prepareMutationFocus("delete", todo.id, `${titleId}-delete`, [
+                                model.todos[index + 1]?.id,
+                                model.todos[index - 1]?.id,
+                              ].filter((todoId): todoId is UUID => Boolean(todoId)));
+                              onDeleteTodo(todo);
+                            }
+                          }}
+                          aria-label={`Delete ${todo.text}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+      </div>
+
+      {state.undoNotice ? (
+        <footer className="today-list__undo" role="group" aria-label="Undo deletion">
+          <div className="today-list__undo-copy">
+            <p id={undoSummaryId}>
+              {state.undoNotice.pending
+                ? `Restoring ${state.undoNotice.todoText}…`
+                : `${state.undoNotice.todoText} deleted. Undo or dismiss before deleting another task.`}
+            </p>
+            {state.undoNotice.error ? <p role="alert">{state.undoNotice.error}</p> : null}
+          </div>
+          <div className="today-list__undo-actions">
+            <button
+              id={undoControlId}
+              type="button"
+              aria-disabled={undoLocked || undefined}
+              aria-describedby={undoSummaryId}
+              onClick={() => {
+                if (undoLocked) return;
+                prepareMutationFocus("restore", state.undoNotice!.todoId, undoControlId);
+                onUndoDelete();
+              }}
+            >
+              {state.undoNotice.pending ? "Restoring…" : "Undo"}
+            </button>
+            <button
+              id={dismissUndoId}
+              type="button"
+              aria-label="Dismiss undo"
+              aria-disabled={undoLocked || undefined}
+              onClick={() => {
+                if (undoLocked) return;
+                prepareMutationFocus("dismiss", state.undoNotice!.todoId, dismissUndoId);
+                onDismissUndo();
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </footer>
+      ) : null}
+
+      <p className="today-list-sr-only" aria-live="polite" aria-atomic="true">
+        <span key={state.announcement.sequence}>
+          {state.mutationError || state.undoNotice?.error ? "" : state.announcement.message}
+        </span>
+      </p>
+    </section>
+  );
+}

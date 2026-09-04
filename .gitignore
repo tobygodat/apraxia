@@ -11,6 +11,12 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!.env.cloud.example
+
+# Local provider state
+.vercel/
+supabase/.branches/
+supabase/.temp/
 
 # SQLite database (canonical data store; back up by copying the file)
 *.db

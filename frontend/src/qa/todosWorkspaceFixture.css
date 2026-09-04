@@ -1,0 +1,62 @@
+.qa-fixture-banner {
+  background: #2e291c;
+  color: #eee1b6;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.qa-fixture-note {
+  margin: 0;
+  padding: 8px 20px 4px;
+}
+
+.qa-fixture-navigation,
+.qa-fixture-navigation nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.qa-fixture-navigation {
+  justify-content: space-between;
+  padding: 0 20px 8px;
+}
+
+.qa-fixture-navigation a {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  color: #eee1b6;
+  text-underline-offset: 3px;
+}
+
+.qa-fixture-navigation a[aria-current] {
+  color: #fff7db;
+  font-weight: 700;
+}
+
+.qa-fixture-navigation a:hover {
+  color: #fff;
+}
+
+.qa-fixture-navigation a:focus-visible {
+  outline: 2px solid #fff7db;
+  outline-offset: 3px;
+}
+
+.qa-today-stage {
+  display: flex;
+  justify-content: center;
+  height: calc(100dvh - 76px);
+  min-height: 320px;
+  padding: 20px;
+}
+
+.qa-today-panel {
+  width: min(100%, 520px);
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}

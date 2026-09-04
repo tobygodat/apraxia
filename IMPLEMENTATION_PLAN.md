@@ -4,6 +4,10 @@
 
 **Planning date:** 2026-09-02
 
+**Execution bookmark:** [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+and [owner-only actions](USER_ACTIONS.md). Prepared code is not phase completion;
+the exit criteria below still require real-stack verification.
+
 **Delivery strategy:** build the manual organizational hub in goal-bearing vertical slices; make the Calendar/Today Home usable early; migrate legacy data only after the replacement is stable
 
 ## 1. Delivery principles
@@ -466,10 +470,18 @@ This phase starts only after stable cloud use and explicit migration approval.
 
 ## 12. Explicitly deferred decisions
 
+Resolved by the owner on 2026-09-03: initial application sign-in uses Google
+through Supabase Auth. Calendar authorization remains a separate read-only flow.
+
+Also resolved: hosted Supabase `tobydev / orbitos` (`oidvvenjamgcezdptfjr`) is
+the permanent Production target, currently empty according to the owner. Its
+region is East US / North Virginia (`us-east-1`). Development remains local;
+the isolated Preview target is still unselected. This designation does not
+authorize deployment, destructive tests, or bypassing verification gates.
+
 These are not required to begin the approved rebuild:
 
-- Initial sign-in method: Google sign-in or email magic link.
-- Supabase and Vercel production region.
+- Vercel production region.
 - Production domain.
 - Media rating scale.
 - Advanced recurring-task behavior.

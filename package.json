@@ -1,0 +1,51 @@
+{
+  "name": "orbitos",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.9.3",
+  "engines": {
+    "node": "22.x"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run db:start && vercel dev",
+    "dev:web": "cross-env ORBITOS_CLOUD_DEV=1 VITE_ORBITOS_RUNTIME=cloud npm run dev --workspace=frontend",
+    "dev:legacy-web": "cross-env ORBITOS_CLOUD_DEV=0 VITE_ORBITOS_RUNTIME=legacy npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "typecheck": "npm run typecheck:server && npm run typecheck --workspace=frontend",
+    "typecheck:server": "tsc --project tsconfig.server.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:bundle": "node scripts/check-browser-bundle.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:bundle",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:test:oauth-concurrency": "node scripts/check-oauth-concurrency.mjs",
+    "db:lint": "supabase db lint --local --level error --fail-on error",
+    "db:verify": "supabase db reset --local && npm run db:lint && npm run db:test",
+    "db:rewind:verify": "supabase --yes migration down --local --last 5 && supabase migration up --local && npm run db:test",
+    "db:types": "supabase gen types typescript --local > frontend/src/types/database.ts"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "zod": "^4.1.5"
+  },
+  "overrides": {
+    "tar": "^7.5.22"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^22.18.1",
+    "cross-env": "^10.0.0",
+    "supabase": "^2.116.0",
+    "typescript": "^5.9.2",
+    "vercel": "^59.11.2",
+    "vitest": "^4.1.11"
+  }
+}

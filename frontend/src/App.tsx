@@ -1,46 +1,45 @@
-import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
-import { api } from "./api/client";
-import Layout from "./components/Layout";
-import Login from "./components/Login";
-import Media from "./pages/Media";
-import OrbitHome from "./pages/OrbitHome";
-import Projects from "./pages/Projects";
-import Todos from "./pages/Todos";
-import Writing from "./pages/Writing";
+import { lazy, Suspense } from "react";
+import { resolveRuntimeMode } from "./config/runtime";
 
-// Transitional auth gate. Supabase Auth replaces this legacy session probe in
-// the cloud runtime, but every authenticated route already shares one shell.
+const CloudApp = lazy(() => import("./apps/CloudApp"));
+const LegacyApp = lazy(() => import("./apps/LegacyApp"));
+
+function RuntimeConfigurationError({ message }: { message: string }) {
+  return (
+    <main className="auth-screen">
+      <section className="auth-card" aria-labelledby="runtime-error-title">
+        <p className="auth-card__eyebrow">orbitOS setup</p>
+        <h1 id="runtime-error-title">The app runtime is not configured</h1>
+        <p className="auth-card__copy" role="alert">
+          {message}
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default function App() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  let runtime;
 
-  useEffect(() => {
-    api
-      .me()
-      .then(() => setAuthed(true))
-      .catch(() => setAuthed(false));
-  }, []);
-
-  if (authed === null) return <div className="center muted">Loading…</div>;
-  if (!authed) return <Login onSuccess={() => setAuthed(true)} />;
-
-  const logout = async () => {
-    await api.logout();
-    setAuthed(false);
-  };
+  try {
+    runtime = resolveRuntimeMode(import.meta.env.VITE_ORBITOS_RUNTIME);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Check VITE_ORBITOS_RUNTIME.";
+    return <RuntimeConfigurationError message={message} />;
+  }
 
   return (
-    <Routes>
-      <Route element={<Layout onLogout={logout} />}>
-        <Route index element={<OrbitHome />} />
-        <Route path="/todos" element={<Todos />} />
-        <Route path="/ideas" element={<Writing />} />
-        <Route path="/media" element={<Media />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/writing" element={<Navigate to="/ideas" replace />} />
-        <Route path="/books" element={<Navigate to="/media" replace />} />
-        <Route path="/movies" element={<Navigate to="/media" replace />} />
-      </Route>
-    </Routes>
+    <Suspense
+      fallback={
+        <main className="auth-screen" aria-busy="true">
+          <p className="auth-status" role="status">
+            Opening orbitOS…
+          </p>
+        </main>
+      }
+    >
+      {runtime === "legacy" ? <LegacyApp /> : <CloudApp />}
+    </Suspense>
   );
 }

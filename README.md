@@ -1,102 +1,156 @@
 # orbitOS
 
-A self-hosted **personal CRM**. It scans your Obsidian daily notes, extracts
-structured items into a SQLite database, surfaces them in a web app, and runs a
-draft-only agent that texts you proposals over Telegram.
+orbitOS is a private, manual-entry organizational hub for Todos, Ideas, Media,
+and Projects. The approved replacement is a React/Vite app on Vercel with
+Supabase Postgres, Auth, and Row Level Security. Home will pair a read-only
+Monday-Sunday Google Calendar with an accumulated Today todo list.
 
-The full design and the locked v1 decisions live in [SPEC.md](SPEC.md). This
-README covers the repo layout and how to run it.
+The locked product behavior lives in [SPEC.md](SPEC.md), and implementation
+order and exit criteria live in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
-> **Status: scaffold.** The structure, database, web API + SPA, and the spec's
-> "spine" (idempotent upsert, confidence routing, scan-state) are implemented and
-> tested. The LLM extractor, drafting agent, and Telegram handlers are typed
-> stubs marked `TODO(v1)` — the app boots and the web CRUD works without them.
+## Status
 
-## Architecture
+The Phase 0 cloud foundation code is in place and its local contract/build
+checks pass. The real local Supabase/Vercel workflow and hosted Preview are
+not yet verified. Phase 1's migrations, security boundary, and browser auth boundary are in
+place, while its real-stack verification and canonical generated database
+types remain blocked on local Supabase startup; Docker is healthy, but its
+first-time container image downloads failed. Hosted owner setup remains in
+`USER_ACTIONS.md`. The schema now
+includes RLS, a private Calendar credential store, serialized Today ordering,
+soft-delete/undo functions, and user-scoped search. The cloud frontend fails
+closed during session restoration, account changes, and user-state cleanup.
+The owner selected Google sign-in on 2026-09-03. The signed-out control now
+starts the identity-only Supabase PKCE flow with pending, failure, retry, and
+cancellation handling. Provider setup and a real callback/storage check remain
+open; the local simulated preview does not prove live login.
 
-One process, one repo, one service (spec §6): a FastAPI JSON API, an APScheduler
-job runner, and a Telegram bot all run in a single asyncio loop over one SQLite
-file. Data flows one way — the vault is a read-only input; the database is canonical.
+Phase 2 now includes an integrated, provider-injected Todos workspace: global
+Add, editing, completion, delete/Undo, project association, Inbox, Overdue,
+and navigable weeks. Account-scoped controllers reconcile saved rows, reject
+malformed provider responses, and abandon stale requests. A timezone-aware
+date hook advances the current week after midnight or waking the browser.
+The reusable Today panel also supports contextual Add, editing, schedule-only
+rescheduling, completion, keyboard/drag ordering, and delete/Undo with rollback.
+Undo survives local midnight and reloads authoritative rows after restoration;
+a failed refresh never repeats a successful restore. These pieces
+are not connected to Supabase yet; that
+integration deliberately waits for canonical generated `database.ts` types
+rather than introducing an untyped temporary data layer.
 
+The [Today data protocol](docs/TODAY_DATA_PROTOCOL.md) retrieves bounded pages
+without exposing an incomplete snapshot and confirms a full atomic reorder
+with one compact receipt. Local SQL/client tests cover lists above 1,000 tasks;
+real Data API verification remains an explicit gate.
+
+Phase 3's [Calendar read core](docs/CALENDAR_READ_CORE.md) now handles civil-week
+boundaries, server-side event normalization, bounded pagination, partial
+calendar failures, and a size/deadline-limited Google read transport. It remains
+disconnected from live Google accounts and Home while authenticated OAuth,
+credential refresh, persistence, and endpoint integration continue.
+The [Calendar security core](docs/CALENDAR_SECURITY_CORE.md) adds server-verified
+sessions, authenticated refresh-token encryption, strict OAuth policy, and
+service-only atomic state creation/consumption. Embedded SQL tests pass. A
+local-only multi-session concurrency runner is prepared, but its real database
+execution, the generated-type adapter, and the browser callback handoff still
+need verification before live routes open.
+
+The Python/FastAPI/SQLite app under `src/` remains available during the
+transition. It is legacy code, not the target architecture, and should not
+receive new target product features.
+
+Owner-only setup and product decisions are tracked without secrets in
+[USER_ACTIONS.md](USER_ACTIONS.md). Current implementation gaps and the next
+safe work are recorded in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+
+## Cloud quick start
+
+Prerequisites are Node.js 22 and a running Docker-compatible runtime.
+
+```powershell
+npm ci
+Copy-Item .env.cloud.example .env.local
+npm run db:start
+npm run db:status
+npm run dev
 ```
-vault (git) ──pull──▶ scanner ──changed notes──▶ extractor ──┬─▶ tables   (auto-file, high-confidence titles)
-                      (every 15m)                            └─▶ proposals ─▶ Telegram ─▶ approve ─▶ tables / drafts
-                                                                                  ▲
-                                          web app (React SPA + FastAPI CRUD) ─────┘ (reads/writes the DB)
+
+Use the local Supabase status output to populate the ignored `.env.local` file.
+The first `vercel dev` run may require the owner to authorize and link a Vercel
+project. Full setup and environment-isolation guidance is in
+[docs/CLOUD_DEVELOPMENT.md](docs/CLOUD_DEVELOPMENT.md).
+
+### Local UI preview without account setup
+
+Run `npm run dev:web`, then open
+[the local Todos QA fixture](http://localhost:5173/qa/todos-workspace.html)
+or [the reusable Today panel](http://localhost:5173/qa/today-panel.html).
+It uses fictional, in-memory test records and updates with Vite hot reload;
+changes reset on page reload. It is not the production app or a substitute
+for Supabase persistence. Optional `?scenario=empty`, `?scenario=dense`, and
+`?scenario=error` views support visual checks. The normal `/todos` cloud route
+continues to fail closed while configuration/adapter work remains incomplete.
+
+The [Google sign-in preview](http://localhost:5173/qa/google-sign-in.html) shows
+the real signed-out interface with a simulated connection failure. It does not
+open Google, use credentials, or sign in.
+
+## Cloud verification
+
+```powershell
+npm run verify
+npm run db:verify
+npm run db:test:oauth-concurrency
 ```
 
-## Repo layout
+`npm run verify` performs server and frontend type checking, contract tests, a
+production Vite build, and a browser-bundle scan for server-only material. The
+contract tests apply the migrations to an embedded PostgreSQL runtime even when
+Docker is unavailable. `npm run db:verify` remains the authoritative local
+Supabase reset, lint, and pgTAP verification.
 
-```
-src/orbitos/         Python backend (the single service)
-  main.py            entrypoint — wires web + scheduler + bot in one loop
-  config.py          pydantic-settings; all env vars (spec §7)
-  db/                schema.sql (spec §3), migrate, repo (upsert_by_dedupe_hash)
-  scanner/           git pull, daily-note discovery, scan_state skip (spec §4a)
-  extractor/         dedupe hash, confidence routing, LLM call (spec §4b, §5)
-  agent/             proposal poll loop + draft generation (spec §4c)
-  telegram/          bot + Approve/Skip/Edit handlers (spec §4d)
-  web/               FastAPI app, session auth, /api CRUD routers (spec §4e)
-frontend/            React + Vite + TS SPA (five pages: Todos/Writing/Books/Movies/Drafts)
-tests/               pytest: dedupe, routing, repo, scanner, api
-deploy/              systemd unit + DEPLOY.md (VPS bring-up, spec §7/§9)
-```
+The cloud diagnostic endpoint is `/api/health`. A Node response identifies
+`orbitos-cloud` and `vercel-function`, making it distinguishable from the legacy
+FastAPI health route.
 
-## Quick start (development)
+## Repository boundaries
 
-Two servers in dev: FastAPI on `:8000` and the Vite dev server on `:5173`, which
-proxies `/api` to the backend (so it's one origin in the browser).
-
-**Backend** (needs [uv](https://docs.astral.sh/uv/) and Python 3.11+):
-
-```bash
-uv sync                          # create .venv, install the package + deps
-cp .env.example .env             # optional in dev; leave APP_PASSWORD blank to skip login
-uv run python -m orbitos.main    # serves the API on http://127.0.0.1:8000
+```text
+api/                    Thin Vercel Function handlers
+server/                 Reusable server-only TypeScript
+frontend/               React/Vite browser app
+supabase/               Tracked local config, migrations, seed, and DB tests
+tests/contract/          Server/function contract tests
+src/orbitos/             Legacy Python application; preserved during migration
+tests/*.py               Legacy Python tests
+deploy/                  Legacy VPS material; preserved during migration
 ```
 
-**Frontend** (needs Node 18+):
+Database changes must be committed as migrations. Browser code may use only
+browser-safe `VITE_` values; the Supabase service-role key and Google credentials
+remain server-only.
 
-```bash
-cd frontend
-npm install
-npm run dev                      # http://localhost:5173
+The browser defaults to `VITE_ORBITOS_RUNTIME=cloud`. Only the explicit
+`npm run dev:legacy-web` command loads the transitional API client and FastAPI
+session flow.
+
+## Legacy recovery workflow
+
+Use this only to maintain or verify the existing local application while the
+cloud replacement is incomplete:
+
+```powershell
+uv sync
+uv run python -m orbitos.main
+npm run dev:legacy-web
 ```
 
-Open `http://localhost:5173`. With `APP_PASSWORD` unset the auth gate is disabled;
-set it to require a password.
+Legacy checks remain:
 
-## Production
-
-The SPA is built to static files and served by FastAPI, so prod is a single
-service (spec §6):
-
-```bash
-cd frontend && npm run build     # emits frontend/dist
-ENV=production uv run python -m orbitos.main   # FastAPI serves dist/ + the API
+```powershell
+uv run pytest
+uv run ruff check
 ```
 
-Run it under systemd on a VPS — see [deploy/DEPLOY.md](deploy/DEPLOY.md) for the
-full checklist (vault git sync, secrets, firewall, TLS).
-
-## Configuration
-
-All settings are environment variables read by [config.py](src/orbitos/config.py);
-see [.env.example](.env.example) for the annotated list. Key ones:
-
-| Var | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | LLM extraction + drafting (blank → those steps no-op) |
-| `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` | the approval bot (blank → bot disabled) |
-| `VAULT_PATH`, `DB_PATH` | vault checkout + the canonical SQLite file |
-| `APP_PASSWORD`, `SESSION_SECRET` | single-password web auth (spec §9) |
-| `SCAN_INTERVAL_MIN`, `CONFIDENCE_THRESHOLD` | scan cadence + auto-file vs. propose tuning |
-| `ENV` | `development` (CORS for Vite) or `production` (serve `dist/`) |
-
-## Testing & linting
-
-```bash
-uv run pytest          # backend tests
-uv run ruff check      # lint
-cd frontend && npm run typecheck && npm run build
-```
+Do not remove the legacy runtime or migrate personal data until the cloud app is
+verified and cleanup/migration is explicitly approved.

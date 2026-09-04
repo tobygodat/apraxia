@@ -1,0 +1,39 @@
+.global-add-notice {
+  position: fixed;
+  z-index: 80;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 48px));
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  border: 1px solid #66666b;
+  border-radius: 4px;
+  background: #202024;
+  color: #ededf0;
+  box-shadow: 0 8px 30px #0006;
+}
+
+.global-add-notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.global-add-notice button {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #77777d;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+}
+
+.global-add-notice button:focus-visible {
+  outline: 2px solid #ededf0;
+  outline-offset: 4px;
+}

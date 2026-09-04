@@ -1,0 +1,464 @@
+.today-list {
+  --today-list-line: rgba(255, 255, 255, 0.11);
+  --today-list-line-strong: rgba(255, 255, 255, 0.24);
+  --today-list-text: rgba(255, 255, 255, 0.93);
+  --today-list-muted: rgba(255, 255, 255, 0.64);
+  --today-list-faint: rgba(255, 255, 255, 0.5);
+  --today-list-overdue: #ffb1b1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #19191c;
+  color: var(--today-list-text);
+}
+
+.today-list ::selection {
+  background: rgba(176, 190, 255, 0.3);
+  color: #fff;
+}
+
+.today-list__header {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--today-list-line);
+}
+
+.today-list__header > div {
+  min-width: 0;
+}
+
+.today-list__header h2 {
+  margin: 0;
+  font-size: clamp(24px, 2.2vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.today-list__header p,
+.today-list__add,
+.today-list__status,
+.today-list__error,
+.today-list__empty,
+.today-list__undo,
+.today-list-item__meta,
+.today-list-item__actions button {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.today-list__header p {
+  margin: 8px 0 0;
+  color: var(--today-list-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.today-list__add,
+.today-list__error button,
+.today-list__empty button,
+.today-list__undo button,
+.today-list-item__actions button {
+  border: 1px solid var(--today-list-line);
+  background: transparent;
+  color: var(--today-list-muted);
+  font-weight: 500;
+}
+
+.today-list__add {
+  min-height: 40px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.today-list__add svg {
+  width: 17px;
+  height: 17px;
+}
+
+.today-list__add:hover,
+.today-list__error button:hover,
+.today-list__empty button:hover,
+.today-list__undo button:hover:not([aria-disabled="true"]),
+.today-list-item__actions button:hover:not(:disabled) {
+  border-color: var(--today-list-line-strong);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--today-list-text);
+}
+
+.today-list [aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.52;
+}
+
+.today-list__status,
+.today-list__error {
+  margin: 14px 20px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.today-list__status {
+  color: var(--today-list-muted);
+}
+
+.today-list__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 177, 177, 0.36);
+  background: rgba(135, 36, 36, 0.14);
+  color: #ffc1c1;
+}
+
+.today-list__error p,
+.today-list__error--mutation {
+  margin: 0;
+}
+
+.today-list__error button {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  border-color: rgba(255, 193, 193, 0.38);
+  border-radius: 999px;
+  color: #ffd4d4;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.today-list__error--mutation {
+  display: block;
+}
+
+.today-list__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+  scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
+  scrollbar-width: thin;
+}
+
+.today-list__undo-shortcut {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  color: var(--today-list-text);
+}
+
+.today-list__undo-shortcut:focus {
+  position: static;
+  flex: 0 0 auto;
+  width: auto;
+  height: auto;
+  padding: 10px 20px;
+  clip-path: none;
+  white-space: normal;
+  text-underline-offset: 3px;
+}
+
+.today-list__undo {
+  min-height: 0;
+  max-height: 45%;
+  flex: 0 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 14px 20px;
+  border-top: 1px solid var(--today-list-line-strong);
+  color: var(--today-list-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
+  scrollbar-width: thin;
+}
+
+.today-list__undo-copy {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.today-list__undo p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.today-list__undo p[role="alert"] {
+  margin-top: 8px;
+  color: var(--today-list-overdue);
+}
+
+.today-list__undo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.today-list__undo button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-color: var(--today-list-line-strong);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.today-list__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.today-list-item {
+  position: relative;
+  border-bottom: 1px solid var(--today-list-line);
+}
+
+.today-list-item::before,
+.today-list-item::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  left: 14px;
+  height: 2px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.today-list-item::before {
+  top: -1px;
+}
+
+.today-list-item::after {
+  bottom: -1px;
+}
+
+.today-list-item--drop-before::before,
+.today-list-item--drop-after::after {
+  background: #b9c4ff;
+}
+
+.today-list-item article {
+  display: grid;
+  grid-template-columns: 16px 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 16px 18px 14px;
+  transition: background 140ms ease-out;
+}
+
+.today-list-item article:hover,
+.today-list-item article:focus-within {
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.today-list-item article[aria-busy="true"] {
+  opacity: 0.58;
+}
+
+.today-list-item__drag {
+  width: 16px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--today-list-faint);
+  cursor: grab;
+}
+
+.today-list-item__drag svg {
+  width: 13px;
+  height: 18px;
+}
+
+.today-list-item__check {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.today-list-item__check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.today-list-item__check > span[aria-hidden="true"] {
+  width: 17px;
+  height: 17px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.today-list-item__content {
+  min-width: 0;
+}
+
+.today-list-item__content > p {
+  margin: 1px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.today-list-item__meta {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin-top: 8px;
+  color: var(--today-list-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.today-list-item--overdue .today-list-item__meta time:first-child {
+  color: var(--today-list-overdue);
+}
+
+.today-list-item__meta span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.today-list-item__actions {
+  grid-column: 3;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 3px;
+}
+
+.today-list-item__move,
+.today-list-item__manage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.today-list-item__actions button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 7px;
+  border-color: transparent;
+  border-radius: 5px;
+  font-size: 10px;
+}
+
+.today-list-item__actions button:disabled {
+  cursor: default;
+  opacity: 0.32;
+}
+
+.today-list-item__actions svg {
+  width: 14px;
+  height: 14px;
+}
+
+.today-list__empty,
+.today-list__pending-empty {
+  min-height: 220px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 32px 20px;
+  color: var(--today-list-muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+.today-list__empty p,
+.today-list__pending-empty {
+  margin: 0;
+}
+
+.today-list__empty button {
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.today-list__add:focus-visible,
+.today-list__error button:focus-visible,
+.today-list__empty button:focus-visible,
+.today-list__scroll:focus-visible,
+.today-list__undo-shortcut:focus-visible,
+.today-list__undo button:focus-visible,
+.today-list-item__check input:focus-visible + span,
+.today-list-item__actions button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+}
+
+.today-list-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-list-item article {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .today-list,
+  .today-list__add,
+  .today-list__error,
+  .today-list__error button,
+  .today-list__empty button,
+  .today-list__undo,
+  .today-list__undo button,
+  .today-list-item,
+  .today-list-item__actions button {
+    border-color: CanvasText;
+  }
+
+  .today-list-item--drop-before::before,
+  .today-list-item--drop-after::after {
+    background: Highlight;
+  }
+}

@@ -35,14 +35,24 @@
 
 ## Commands
 
-Current frontend:
+Cloud replacement (primary):
 
 ```bash
-cd frontend
-npm install
+npm ci
 npm run dev
-npm run typecheck
-npm run build
+npm run verify
+npm run db:reset
+npm run db:types
+```
+
+`npm run dev` starts local Supabase before Vercel's local frontend/function
+runtime. It requires a running Docker-compatible runtime and one-time local
+environment/project setup documented in `docs/CLOUD_DEVELOPMENT.md`.
+
+Transitional legacy frontend only:
+
+```bash
+npm run dev:legacy-web
 ```
 
 Legacy backend, only when maintaining or verifying existing behavior:
@@ -54,7 +64,7 @@ uv run ruff check
 uv run python -m orbitos.main
 ```
 
-Root scripts introduced during the cloud migration supersede these commands. Update this file when that happens.
+The root scripts supersede direct `frontend/` npm commands for cloud work.
 
 ## Working rules
 
@@ -66,7 +76,7 @@ Root scripts introduced during the cloud migration supersede these commands. Upd
 - Request no Google Calendar write scopes. Keep calendar and Today loading paths independent.
 - Keep domain contracts and generated database types shared across UI and server code.
 - Do not add mobile-specific work unless requested.
-- For frontend changes, run `npm run typecheck` and `npm run build`. Run focused tests for the behavior changed.
+- For cloud/frontend changes, run `npm run verify`. Run focused tests for the behavior changed.
 
 ## Git on this Windows checkout
 
