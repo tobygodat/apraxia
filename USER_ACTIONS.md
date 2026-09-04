@@ -85,15 +85,13 @@ does not complete the outstanding real-stack or hosted checkpoints below.
   - Verified the Linux engine responds with version 28.3.3. The restricted
     execution context cannot access its pipe, but the approved host-level
     read succeeds; this is no longer a Docker startup failure.
-  - Owner action is complete. Local Supabase startup, disposable reset/lint/
-    pgTAP, generated `database.ts`, and committed migration rewind/reapply
-    remain implementation verification work, not completed by this engine check.
-  - Current implementation blocker: first-time image downloads failed with
-    connection EOF errors across registry mirrors. A direct retry also failed.
-    No network/security settings were changed and no database reset ran.
-  - Real API checks still need complete Today lists above 1,000 tasks and
-    atomic ordering. Calendar state also needs two-session replay/expiry and
-    service-only Data API checks. See `docs/IMPLEMENTATION_STATUS.md`.
+  - On 2026-09-04 image downloads and local Supabase startup succeeded without
+    network/security changes. Reset, lint, all 166 pgTAP assertions, migration
+    rewind/reapply, and canonical `database.ts` generation passed.
+  - Real HTTP Todo checks now cover 1,005 eligible tasks and atomic ordering.
+    Calendar two-session replay/expiry/rollback checks passed. Calendar's
+    service-only Data API adapter and hosted checks remain implementation work.
+    See `docs/IMPLEMENTATION_STATUS.md`.
 
 - [ ] **UA-002 · Phase 0 Preview — Authorize and link Vercel**
   - Received: `Toby Godat's projects / orbitos`, with the intended repository

@@ -18,6 +18,8 @@
     "api/**/*.ts",
     "server/**/*.ts",
     "tests/contract/**/*.ts",
-    "vitest.config.ts"
+    "tests/local/**/*.ts",
+    "vitest.config.ts",
+    "vitest.local.config.ts"
   ]
 }

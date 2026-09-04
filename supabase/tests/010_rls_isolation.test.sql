@@ -320,16 +320,14 @@ select throws_ok(
   'B cannot supply A as the owner of a new todo'
 );
 
+with changed as (
+  update public.todos
+  set text = 'tampered by B'
+  where id = 'a0000000-0000-4000-8000-000000000002'
+  returning id
+)
 select is(
-  (
-    with changed as (
-      update public.todos
-      set text = 'tampered by B'
-      where id = 'a0000000-0000-4000-8000-000000000002'
-      returning id
-    )
-    select count(*) from changed
-  ),
+  (select count(*) from changed),
   0::bigint,
   'B update of an A row affects zero rows'
 );

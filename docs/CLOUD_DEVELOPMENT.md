@@ -45,6 +45,7 @@ npm run verify
 npm run db:verify
 npm run db:rewind:verify
 npm run db:test:oauth-concurrency
+npm run db:test:todos-http
 ```
 
 `npm run verify` runs server and frontend type checking, contract tests, the
@@ -58,6 +59,21 @@ back only an uncommitted batch to verify transaction atomicity. A committed
 rewind and reapply is verified separately by `npm run db:rewind:verify` against
 the real local stack. Docker must be reachable before running these checks;
 their current verification status is recorded in `IMPLEMENTATION_STATUS.md`.
+
+The rewind command retains the initial migration because the CLI rejects
+rewinding every migration; the reset command separately recreates the full
+database. Both paths passed on the local stack on 2026-09-04.
+
+`npm run db:test:todos-http` reads local CLI status without printing credentials
+and accepts only the fixed `127.0.0.1:54321` API and local database port. It
+creates fictional Auth users, exercises the typed Todo adapter and authenticated
+Todo UI against real PostgREST, and deletes/verifies its exact users afterward.
+The configured 1,000-row cap stays unchanged. Its UI test uses happy-dom and a
+test-only password session; this does not add password login to the app or verify
+Google OAuth. Hosted browser acceptance remains separate.
+
+Authenticated `/todos` now mounts the persisted workspace. Other unfinished
+cloud routes still show the session checkpoint with a link to Todos.
 
 `npm run db:test:oauth-concurrency` runs after migrations are applied, against
 only the local `supabase_db_orbitos` PostgreSQL 17 container. It pins a local

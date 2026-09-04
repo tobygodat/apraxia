@@ -27,9 +27,10 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:test:oauth-concurrency": "node scripts/check-oauth-concurrency.mjs",
+    "db:test:todos-http": "node scripts/check-local-todos.mjs",
     "db:lint": "supabase db lint --local --level error --fail-on error",
     "db:verify": "supabase db reset --local && npm run db:lint && npm run db:test",
-    "db:rewind:verify": "supabase --yes migration down --local --last 5 && supabase migration up --local && npm run db:test",
+    "db:rewind:verify": "supabase --yes migration down --local --last 4 && supabase migration up --local && npm run db:test",
     "db:types": "supabase gen types typescript --local > frontend/src/types/database.ts"
   },
   "dependencies": {

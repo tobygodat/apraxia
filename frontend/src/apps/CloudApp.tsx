@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth, type AnonymousReason } from "../auth/AuthProvider";
 import { RequireAuth } from "../auth/RequireAuth";
 import type { AuthIdentity } from "../auth/authPort";
@@ -12,6 +12,10 @@ import {
 } from "../auth/googleSignIn";
 import { BrowserEnvironmentError } from "../config/browserEnv";
 import { getBrowserSupabaseClient } from "../lib/supabase";
+import type { Database } from "../types/database";
+import type { TodoService } from "../features/todos/todoService";
+import { createSupabaseTodoService } from "../features/todos/supabaseTodoService";
+import { TodosWorkspace } from "../features/todos/TodosWorkspace";
 
 function AuthFrame({
   eyebrow,
@@ -183,11 +187,19 @@ function CloudConfigurationError({ error }: { readonly error: unknown }) {
   );
 }
 
-function CloudWorkspace({ identity }: { readonly identity: AuthIdentity }) {
+function CloudWorkspace({ identity, service }: {
+  readonly identity: AuthIdentity;
+  readonly service: TodoService;
+}) {
   const { state, signOut } = useAuth();
   const location = useLocation();
   const signOutStatus =
     state.status === "authenticated" ? state.signOutStatus : "idle";
+
+  if (location.pathname === "/todos" || location.pathname === "/todos/") {
+    return <TodosWorkspace identity={identity} service={service}
+      workspaceSessionKey={identity.userId} signOutStatus={signOutStatus} onSignOut={signOut} />;
+  }
 
   return (
     <main className="cloud-ready">
@@ -199,10 +211,10 @@ function CloudWorkspace({ identity }: { readonly identity: AuthIdentity }) {
         <p className="auth-card__eyebrow">Cloud workspace</p>
         <h1 id="cloud-ready-title">Your secure session is ready</h1>
         <p className="auth-card__copy">
-          The requested path <code>{location.pathname}</code> is protected. Cloud
-          feature pages will replace this checkpoint in the next implementation
-          slice.
+          The requested path <code>{location.pathname}</code> is protected.
+          Todos are available now. Home and the remaining sections are still being built.
         </p>
+        <p><Link className="auth-card__button" to="/todos">Open your todos</Link></p>
         {identity.email ? (
           <p className="cloud-ready__identity">Signed in as {identity.email}</p>
         ) : null}
@@ -241,10 +253,11 @@ export function ConfiguredCloudApp({
   client,
   googleSignInPort,
 }: {
-  readonly client: SupabaseClient;
+  readonly client: SupabaseClient<Database>;
   readonly googleSignInPort?: GoogleSignInPort;
 }) {
   const port = useMemo(() => createSupabaseAuthPort(client), [client]);
+  const service = useMemo(() => createSupabaseTodoService(client), [client]);
   const signInPort = useMemo(
     () => googleSignInPort ?? createGoogleSignInPort(client),
     [client, googleSignInPort],
@@ -258,7 +271,7 @@ export function ConfiguredCloudApp({
         cleanupError={<CleanupError />}
         anonymous={(reason) => <SignedOut reason={reason} signInPort={signInPort} />}
       >
-        {(identity) => <CloudWorkspace identity={identity} />}
+        {(identity) => <CloudWorkspace key={identity.userId} identity={identity} service={service} />}
       </RequireAuth>
     </AuthProvider>
   );

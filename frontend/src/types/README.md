@@ -1,9 +1,8 @@
 # Generated and shared types
 
 `database.ts` is generated from the active local Supabase schema with
-`npm run db:types` after each migration change. Generation currently waits on
-the local Supabase stack tracked in `USER_ACTIONS.md`; do not hand-edit a file
-under that name.
+`npm run db:types` after each migration change. It was generated successfully
+from all five local migrations on 2026-09-04. Do not hand-edit this file.
 
 `domain.ts` contains browser-facing contracts and write inputs. Its create
 types intentionally omit ownership and protected lifecycle fields, and its

@@ -73,7 +73,7 @@ export interface TodayRankUpdate {
 /**
  * Browser-facing Todo operations. Ownership is always derived from the active
  * Supabase session and is deliberately absent from every method signature.
- * A concrete adapter may be added only after database.ts is generated.
+ * The concrete Supabase adapter uses the generated database.ts contract.
  */
 export interface TodoService {
   loadWorkspace(options: TodoRequestOptions): Promise<TodoWorkspaceSnapshot>;

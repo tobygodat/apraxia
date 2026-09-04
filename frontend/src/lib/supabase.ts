@@ -1,14 +1,15 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createProviderSafeStorage } from "../auth/providerSafeStorage";
 import { getBrowserEnvironment } from "../config/browserEnv";
+import type { Database } from "../types/database";
 
-let browserClient: SupabaseClient | undefined;
+let browserClient: SupabaseClient<Database> | undefined;
 
-export function getBrowserSupabaseClient(): SupabaseClient {
+export function getBrowserSupabaseClient(): SupabaseClient<Database> {
   if (browserClient) return browserClient;
 
   const environment = getBrowserEnvironment();
-  browserClient = createClient(
+  browserClient = createClient<Database>(
     environment.supabaseUrl,
     environment.supabaseAnonKey,
     {

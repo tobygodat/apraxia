@@ -18,7 +18,7 @@ describe("pgTAP database suite", () => {
     ) as { scripts: Record<string, string> };
 
     expect(packageJson.scripts["db:rewind:verify"]).toBe(
-      `supabase --yes migration down --local --last ${migrations.length} && supabase migration up --local && npm run db:test`,
+      `supabase --yes migration down --local --last ${migrations.length - 1} && supabase migration up --local && npm run db:test`,
     );
   });
 

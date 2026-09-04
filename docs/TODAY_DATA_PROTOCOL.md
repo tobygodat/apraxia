@@ -57,8 +57,8 @@ apply.
 
 `shared/todayRpcContract.ts` contains the wire names/constants;
 `todayRpcProtocol.ts` contains provider-neutral validation and collection. The
-concrete Supabase TodoService adapter still waits for canonical generated
-`database.ts`. It must call the page RPC once per collector callback and map
+concrete `supabaseTodoService.ts` adapter uses the generated `database.ts`.
+It calls the page RPC once per collector callback and maps
 only SQLSTATE `40001` to `TodaySnapshotChangedError`. Ownership never comes from
 a callback argument.
 
@@ -68,9 +68,10 @@ the browser list API or use a table-returning reorder confirmation. Keep
 
 Embedded PostgreSQL tests feed real SQL envelopes through the same client
 protocol, including more than 1,000 tasks and mid-pagination project edits.
-That is not a PostgREST HTTP test. Local Supabase/Preview must still verify JWT
-grants, schema-cache refresh, actual response shapes, and complete reload/order
-behavior with the configured Data API limit.
+The separate `npm run db:test:todos-http` passed on local Supabase on 2026-09-04:
+real Auth/JWT reads, response mapping, 1,005 eligible tasks, complete reload/order,
+and cross-user denial with the configured 1,000-row Data API limit unchanged.
+Hosted Preview and per-page fingerprint profiling on larger data remain open.
 
 PostgREST distinguishes scalar responses from table-valued responses, while
 table-valued functions support row limits and filters. This is why page metadata

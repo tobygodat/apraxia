@@ -1,11 +1,33 @@
 # Cloud rebuild execution bookmark
 
-Updated 2026-09-03. Follow `IMPLEMENTATION_PLAN.md` for sequencing and acceptance;
+Updated 2026-09-04. Follow `IMPLEMENTATION_PLAN.md` for sequencing and acceptance;
 this file records progress without marking blocked phases complete.
 
-Latest root `npm run verify`: 48 test files / 1568 tests passed, both typechecks,
-production build, and six-file browser secret-boundary scan clean. Browser QA
+Latest root `npm run verify`: 49 test files / 1572 tests passed, both typechecks,
+production build, and seven-file browser secret-boundary scan clean. Browser QA
 evidence and its limits are in `LOCAL_UI_QA.md`.
+
+## Local persistence milestone — 2026-09-04
+
+- Local Supabase starts successfully. All five migrations apply; reset and lint
+  passed, as did all 166 pgTAP assertions after correcting a nested modifying
+  CTE in the isolation test. The local rewind/reapply command now retains the
+  initial migration, as the CLI requires, and passed the same suite afterward.
+- Canonical `frontend/src/types/database.ts` was generated from the local stack.
+- OAuth concurrent consumption, expiry while waiting, and rollback/retry all
+  passed on independent PostgreSQL sessions; exact fixture cleanup was verified.
+  Fixed a missing closing brace in the runner's Docker metadata projection.
+- The typed Supabase TodoService is mounted at authenticated `/todos`, with
+  bounded workspace pages, exact Undo tokens, Today snapshot collection, and
+  one-write reorder receipts. Home and other unfinished routes retain a checkpoint
+  with a link to Todos; the reusable Today panel is not yet mounted on Home.
+- `npm run db:test:todos-http` passed three tests across two files using real
+  local Auth and PostgREST with fictional users and verified cleanup. Covers CRUD,
+  ownership/relationship denial, Undo, completion, rescheduling, 1,005 eligible
+  Today rows with the 1,000-row cap unchanged, and saved order on a fresh read.
+  The authenticated UI test exercises Add, remount/reload, completion, delete/Undo,
+  and sign-out in happy-dom against the same real API. It does not verify a real
+  browser, Google sign-in, or a deployed Vercel environment.
 
 ## Prepared and locally checked
 
@@ -28,7 +50,7 @@ evidence and its limits are in `LOCAL_UI_QA.md`.
   receipt, without the former 1,000-task cap. SQL/client integration checks
   cover complete 1,001/2,500-task lists and changes between pages; client-only
   rank/controller regressions also cover 5,000 tasks. Thirty-three additional
-  pgTAP assertions are prepared but await the real local database. See
+  pgTAP assertions have now passed on the real local database. See
   `TODAY_DATA_PROTOCOL.md` for the contract and real-stack gates.
 - Phase 2: provider-injected Todos workspace and reusable Today panel. Both
   support manual CRUD, date/time/project edits, completion, and delete/Undo.
@@ -50,23 +72,19 @@ evidence and its limits are in `LOCAL_UI_QA.md`.
   and validates exact OAuth origins, callback/state shapes, and read-only
   scopes. Migration 005 adds service-only atomic OAuth state creation and
   consumption, with database-time expiry and exact owner/redirect matching.
-  Its 56 embedded tests exercise the policy-to-SQL flow; 25 new pgTAP assertions await
-  real Supabase. `CALENDAR_SECURITY_CORE.md` records the generated-type adapter,
-  concurrent replay/lock-wait checks, browser callback/session handoff, and real
+  Its 56 embedded tests exercise the policy-to-SQL flow; 25 new pgTAP assertions passed
+  on local Supabase. `CALENDAR_SECURITY_CORE.md` records the transaction adapter,
+  browser callback/session handoff, and real
   OAuth verification still required.
   A guarded local-only runner now prepares all three true multi-session
-  consume/expiry/rollback checks, with 27 guard tests. Its actual PostgreSQL
-  execution remains pending; it is not evidence that concurrent consumption
-  has already passed on the real stack.
+  consume/expiry/rollback checks, with 27 guard tests. All three actual PostgreSQL
+  scenarios passed on 2026-09-04.
 
 ## Next implementation work
 
-- Once canonical generated database types exist, implement the Supabase
-  TodoService adapter, wire the bounded Today collector and scalar reorder
-  receipt, and connect authenticated routes. Repeat fixture flows against
-  actual persisted records, including cross-user and reload tests. Verify
-  more than 1,000 tasks over real PostgREST HTTP with its row cap unchanged;
-  measure the per-page complete-snapshot fingerprint cost before launch.
+- Verify the persisted Todo route in a real browser and hosted Preview, including
+  real Google sign-in and account switching. Measure per-page complete-snapshot
+  fingerprint cost on representative larger data before launch.
 - Continue the typed Calendar state adapter and secure callback/session
   handoff, Google token exchange/refresh, read-transport integration, and visibility
   persistence, then independent Calendar/Today Home
@@ -74,12 +92,6 @@ evidence and its limits are in `LOCAL_UI_QA.md`.
 
 ## Gates still open
 
-- Local Supabase startup; real reset/lint/pgTAP; committed migration rewind/reapply;
-  canonical `database.ts` generation. Docker's Linux engine is now reachable:
-  version 28.3.3 verified on 2026-09-03 outside the restricted execution context.
-  Startup then failed on first-time container-image downloads with registry
-  connection EOF errors, including direct retries. No local migration/reset,
-  real pgTAP, or database type generation ran. No network/security settings changed.
 - Google provider URL/callback and real sign-in verification. The owner reports
   provider credentials saved, the secret replaced, and the old secret disabled
   on 2026-09-03. Google's old-secret Disabled/new-secret Enabled labels and

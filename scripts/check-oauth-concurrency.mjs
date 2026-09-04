@@ -251,7 +251,7 @@ export async function runConcurrencyCheck() {
   let container;
   try {
     container = JSON.parse(await dockerOutput([...dockerArgs, "inspect", CONTAINER, "--format",
-      '{"name":{{json .Name}},"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}},"image":{{json .Config.Image}}']));
+      '{"name":{{json .Name}},"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}},"image":{{json .Config.Image}}}']));
   } catch { throw new CheckError("The expected local Supabase database container is unavailable."); }
   const containerId = assertLocalContainer(container);
   const runId = randomUUID();

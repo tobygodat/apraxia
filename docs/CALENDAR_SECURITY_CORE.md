@@ -2,8 +2,8 @@
 
 These server-only helpers and database functions prepare Phase 3. They do not
 expose a live connect, callback, or disconnect route. Local embedded PostgreSQL
-tests now exercise transaction persistence and consumption; real Supabase and
-concurrent-request verification remain open. No Google account or live
+tests exercise transaction persistence and consumption; local Supabase pgTAP and
+concurrent-request checks also pass. Hosted OAuth verification remains open. No Google account or live
 credential was used.
 
 ## Verified application identity
@@ -117,7 +117,7 @@ database messages, SQL context, state hashes, callback codes, or credentials.
 
 Embedded tests cover the actual policy-to-SQL lifecycle with a fake Auth
 provider, role denials, expiry, exact binding, rollback, and sequential reuse.
-The prepared pgTAP suite has 25 assertions but has not run on local Supabase.
+The pgTAP suite's 25 assertions passed on local Supabase on 2026-09-04.
 Neither suite proves simultaneous consumption or a lock held past expiry.
 
 Before release, use two independent sessions on disposable local Supabase to
@@ -133,15 +133,15 @@ It observes `pg_blocking_pids` and independent backend identities rather than
 assuming overlapping promises prove concurrency. A unique fictional Auth user
 and three transactions are cleaned up by exact generated identifiers; no
 reset, broad delete, or hosted connection is accepted. Its 27 safety-guard
-tests pass, but the actual database run remains pending because local Supabase
-image downloads failed. Run it after the real migration/lint/pgTAP checks;
+tests pass. All three actual database scenarios and exact fixture cleanup also
+passed on 2026-09-04 after local Supabase became available;
 see `CLOUD_DEVELOPMENT.md` for the invocation and safeguards.
 
 ## Required before opening the routes
 
-- Apply and test migration 005 on the real local stack, generate canonical
-  database types, and wire the bounded server-only transaction adapter. Complete
-  the two-session and real Data API checks above.
+- Migration 005, generated database types, and the two-session checks are verified
+  locally. Wire the bounded server-only transaction adapter and complete the real
+  Data API access checks above.
 - Implement and review the browser-to-server session handoff for Google's
   top-level callback. A normal redirect does not carry the SPA's Bearer header;
   the saved user ID or possession of state alone is not current-session proof.

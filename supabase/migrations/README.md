@@ -12,8 +12,10 @@ migration that replaces or adds an `orbitos_rpc`-owned helper must explicitly
 repeat that temporary grant, transfer ownership, reapply exact function grants,
 and revoke the temporary privileges before it ends.
 
-`npm run db:rewind:verify` is a disposable-local full-schema rewind/reapply
-check. Its explicit `--last 5` count must be updated when migrations are added.
+`npm run db:rewind:verify` is a disposable-local rewind/reapply check down to
+the initial schema migration. The CLI requires at least one migration to remain;
+`npm run db:verify` separately verifies full database recreation. The explicit
+`--last 4` count must stay one below the migration count when migrations are added.
 Never run that check against hosted or personal data.
 
 Migration 004 keeps the complete set-returning Today helper in the non-exposed

@@ -22,9 +22,8 @@ export interface TodosWorkspaceProps extends Pick<
 }
 
 /**
- * Complete provider-injected Todos slice. The production router deliberately
- * keeps its setup checkpoint until the generated-type Supabase adapter exists.
- * This component never substitutes in-memory persistence for the cloud service.
+ * Complete provider-injected Todos slice, mounted at the authenticated /todos
+ * route with the generated-type Supabase adapter.
  */
 export function TodosWorkspace(props: TodosWorkspaceProps) {
   return <TodosWorkspaceSession key={props.workspaceSessionKey} {...props} />;
