@@ -1,8 +1,8 @@
-import type { ApplicationEnvironment } from "../env/cloud";
+import type { ApplicationEnvironment } from "../env/cloud.js";
 import {
   normalizeBrowserSafeSupabaseKey,
   normalizeSecureHttpOrigin,
-} from "../../shared/supabaseEnvironment";
+} from "../../shared/supabaseEnvironment.js";
 
 export interface VerifiedSession {
   readonly userId: string;

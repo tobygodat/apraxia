@@ -3,11 +3,11 @@ import { Temporal } from "@js-temporal/polyfill";
 import type {
   CalendarEvent, CalendarPartialError, CalendarPreference,
   VisibleCalendarMetadata, WeekViewModel,
-} from "../../frontend/src/types/domain";
-import { normalizeGoogleEvent } from "./normalizeGoogleEvent";
+} from "../../frontend/src/types/domain.js";
+import { normalizeGoogleEvent } from "./normalizeGoogleEvent.js";
 import {
   buildCalendarWeekWindow, CalendarWeekRequestError, type CalendarWeekWindow,
-} from "./weekWindow";
+} from "./weekWindow.js";
 
 export const CALENDAR_PAGE_SIZE = 250;
 export const CALENDAR_MAX_PAGES = 100;

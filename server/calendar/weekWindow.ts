@@ -1,6 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 
-import type { CalendarWeekRange } from "../../frontend/src/types/domain";
+import type { CalendarWeekRange } from "../../frontend/src/types/domain.js";
 
 export interface CalendarWeekWindow {
   readonly range: CalendarWeekRange;

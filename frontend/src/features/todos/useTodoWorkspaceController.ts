@@ -58,6 +58,7 @@ export interface TodoWorkspaceController {
   readonly mutationError: TodoMutationErrorKind | null;
   readonly undoNotice: TodoWorkspaceUndoNotice | null;
   readonly retryLoad: () => void;
+  readonly refreshWorkspace: () => Promise<void>;
   /** Reconcile one persisted create response without reloading the workspace. */
   readonly acceptCreatedTodo: (todo: Todo) => boolean;
   /** Returns false when the row is absent or already has a mutation in flight. */
@@ -190,6 +191,30 @@ export function useTodoWorkspaceController(
     publishTodos,
     publishUndo,
   ]);
+
+  const refreshWorkspace = useCallback(async () => {
+    if (!isCurrentScope() || !readyRef.current || pendingTodoIdsRef.current.size > 0) return;
+    const generation = activeGenerationRef.current;
+    const startingTodos = todosRef.current;
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
+    try {
+      const response = await service.loadWorkspace({ signal: controller.signal });
+      if (controller.signal.aborted || generation !== activeGenerationRef.current || !isCurrentScope()) return;
+      // A mutation that began while this read was in flight owns its row.
+      if (pendingTodoIdsRef.current.size > 0 || todosRef.current !== startingTodos) return;
+      const snapshot = readTodoWorkspaceSnapshot(response);
+      if (!snapshot) throw new Error("Invalid workspace response.");
+      setProfile(snapshot.profile);
+      setProjects(snapshot.projects);
+      publishTodos(snapshot.todos);
+      setLoadState({ status: "idle" });
+    } catch {
+      if (!controller.signal.aborted && generation === activeGenerationRef.current && isCurrentScope()) {
+        setLoadState({ status: "error", kind: "load_failed" });
+      }
+    } finally { controllersRef.current.delete(controller); }
+  }, [isCurrentScope, publishTodos, service]);
 
   useLayoutEffect(() => {
     const generation = ++activeGenerationRef.current;
@@ -672,6 +697,7 @@ export function useTodoWorkspaceController(
     mutationError: scopeMatches ? mutationError : null,
     undoNotice: scopeMatches ? undoNotice : null,
     retryLoad,
+    refreshWorkspace,
     acceptCreatedTodo,
     setCompleted,
     updateDetails,

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { isCanonicalEncryptionKey } from "../calendar/tokenEncryption";
+import { isCanonicalEncryptionKey } from "../calendar/tokenEncryption.js";
 
 import {
   normalizeBrowserSafeSupabaseKey,
   normalizeSecureHttpOrigin,
-} from "../../shared/supabaseEnvironment";
+} from "../../shared/supabaseEnvironment.js";
 
 type EnvironmentSource = Record<string, string | undefined>;
 

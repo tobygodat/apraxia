@@ -49,6 +49,7 @@ it("uses the authenticated route for Add, reload, completion, delete/Undo, and s
   let view = mount();
   await screen.findByRole("heading", { name: "Inbox" });
   fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
+  fireEvent.click(await screen.findByRole("button", { name: "Todo" }));
   const dialog = await screen.findByRole("dialog");
   fireEvent.change(within(dialog).getByLabelText("Task"), { target: { value: "Persisted from the UI" } });
   fireEvent.click(within(dialog).getByRole("button", { name: "Add todo" }));

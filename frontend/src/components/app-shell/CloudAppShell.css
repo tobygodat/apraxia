@@ -124,6 +124,19 @@
   gap: 16px;
 }
 
+.cloud-shell .cloud-shell__search {
+  min-height: 42px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cloud-shell-muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+.cloud-shell .cloud-shell__search:hover { color: var(--cloud-shell-text); }
+.cloud-shell .cloud-shell__search:focus-visible { outline: 2px solid var(--cloud-shell-focus); outline-offset: 4px; }
+
 .cloud-shell .cloud-shell__add,
 .cloud-shell .cloud-shell__account-trigger,
 .cloud-shell .cloud-shell__menu-item {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { AuthProvider, useAuth, type AnonymousReason } from "../auth/AuthProvider";
 import { RequireAuth } from "../auth/RequireAuth";
 import type { AuthIdentity } from "../auth/authPort";
@@ -15,7 +15,11 @@ import { getBrowserSupabaseClient } from "../lib/supabase";
 import type { Database } from "../types/database";
 import type { TodoService } from "../features/todos/todoService";
 import { createSupabaseTodoService } from "../features/todos/supabaseTodoService";
-import { TodosWorkspace } from "../features/todos/TodosWorkspace";
+import { MainWorkspace } from "./MainWorkspace";
+import { createWorkspaceData } from "./workspaceData";
+import { CalendarCallback } from "./CalendarCallback";
+import { createCollectionService } from "../features/collections/collectionService";
+import { createCalendarService } from "../features/calendar/calendarService";
 
 function AuthFrame({
   eyebrow,
@@ -187,68 +191,21 @@ function CloudConfigurationError({ error }: { readonly error: unknown }) {
   );
 }
 
-function CloudWorkspace({ identity, service }: {
+function CloudWorkspace({ identity, service, client }: {
   readonly identity: AuthIdentity;
   readonly service: TodoService;
+  readonly client: SupabaseClient<Database>;
 }) {
   const { state, signOut } = useAuth();
   const location = useLocation();
-  const signOutStatus =
-    state.status === "authenticated" ? state.signOutStatus : "idle";
-
-  if (location.pathname === "/todos" || location.pathname === "/todos/") {
-    return <TodosWorkspace identity={identity} service={service}
-      workspaceSessionKey={identity.userId} signOutStatus={signOutStatus} onSignOut={signOut} />;
-  }
-
-  return (
-    <main className="cloud-ready">
-      <section
-        className="cloud-ready__panel"
-        aria-busy={signOutStatus === "pending"}
-        aria-labelledby="cloud-ready-title"
-      >
-        <p className="auth-card__eyebrow">Cloud workspace</p>
-        <h1 id="cloud-ready-title">Your secure session is ready</h1>
-        <p className="auth-card__copy">
-          The requested path <code>{location.pathname}</code> is protected.
-          Todos are available now. Home and the remaining sections are still being built.
-        </p>
-        <p><Link className="auth-card__button" to="/todos">Open your todos</Link></p>
-        {identity.email ? (
-          <p className="cloud-ready__identity">Signed in as {identity.email}</p>
-        ) : null}
-        {signOutStatus === "error" ? (
-          <p className="auth-card__error" role="alert">
-            Couldn’t sign out. Your workspace is still open; try again.
-          </p>
-        ) : null}
-        <p
-          className="auth-live-region"
-          id="sign-out-progress"
-          role="status"
-          aria-live="polite"
-        >
-          {signOutStatus === "pending"
-            ? "Signing out and closing this private workspace."
-            : ""}
-        </p>
-        <button
-          className="auth-card__button auth-card__button--quiet"
-          type="button"
-          aria-describedby={
-            signOutStatus === "pending" ? "sign-out-progress" : undefined
-          }
-          disabled={signOutStatus === "pending"}
-          onClick={() => void signOut()}
-        >
-          {signOutStatus === "pending" ? "Signing out…" : "Sign out"}
-        </button>
-      </section>
-    </main>
-  );
+  const collectionService = useMemo(() => createCollectionService(client), [client]);
+  const calendarService = useMemo(() => createCalendarService(client), [client]);
+  const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
+  const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
+  if (location.pathname === "/calendar/callback") return <CalendarCallback client={client} userId={identity.userId} />;
+  return <MainWorkspace identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
+    todoService={service} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} />;
 }
-
 export function ConfiguredCloudApp({
   client,
   googleSignInPort,
@@ -271,7 +228,7 @@ export function ConfiguredCloudApp({
         cleanupError={<CleanupError />}
         anonymous={(reason) => <SignedOut reason={reason} signInPort={signInPort} />}
       >
-        {(identity) => <CloudWorkspace key={identity.userId} identity={identity} service={service} />}
+        {(identity) => <CloudWorkspace key={identity.userId} identity={identity} service={service} client={client} />}
       </RequireAuth>
     </AuthProvider>
   );

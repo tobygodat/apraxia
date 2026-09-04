@@ -4,7 +4,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import {
   CALENDAR_EVENT_FIELDS, CALENDAR_PAGE_SIZE, CalendarProviderError,
   type CalendarEventPageRequest, type CalendarSelection, type FetchCalendarEventPage,
-} from "./loadCalendarWeek";
+} from "./loadCalendarWeek.js";
 
 export const GOOGLE_CALENDAR_REQUEST_TIMEOUT_MS = 8_000;
 export const GOOGLE_CALENDAR_LIST_TIMEOUT_MS = 20_000;

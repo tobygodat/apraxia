@@ -1,7 +1,7 @@
 import {
   deploymentEnvironment,
   inspectCloudEnvironment,
-} from "../server/env/cloud";
+} from "../server/env/cloud.js";
 
 type EnvironmentSource = Record<string, string | undefined>;
 

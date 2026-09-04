@@ -24,6 +24,9 @@ export interface CloudAppShellProps {
   readonly onSignOut: () => Promise<void>;
   readonly onOpenGlobalAdd: () => void;
   readonly globalAddDisabled?: boolean;
+  readonly onOpenSearch?: () => void;
+  readonly availableDestinations?: readonly string[];
+  readonly settingsAvailable?: boolean;
   /**
    * Tests and self-contained surfaces may provide content directly. When this
    * prop is omitted, the shell renders the router's nested route outlet.
@@ -37,6 +40,9 @@ export function CloudAppShell({
   onSignOut,
   onOpenGlobalAdd,
   globalAddDisabled = false,
+  onOpenSearch,
+  availableDestinations,
+  settingsAvailable = true,
   children,
 }: CloudAppShellProps) {
   const [accountOpen, setAccountOpen] = useState(false);
@@ -128,7 +134,7 @@ export function CloudAppShell({
   };
 
   return (
-    <div className="cloud-shell">
+    <div className="cloud-shell" aria-busy={signOutStatus === "pending"}>
       <a className="cloud-shell__skip-link" href="#cloud-main-content">
         Skip to main content
       </a>
@@ -139,7 +145,7 @@ export function CloudAppShell({
         </Link>
 
         <nav className="cloud-shell__nav" aria-label="Primary navigation">
-          {PRIMARY_DESTINATIONS.map((destination) => (
+          {PRIMARY_DESTINATIONS.filter((destination) => !availableDestinations || availableDestinations.includes(destination.to)).map((destination) => (
             <NavLink
               key={destination.to}
               to={destination.to}
@@ -157,6 +163,7 @@ export function CloudAppShell({
           className="cloud-shell__actions"
           data-account-open={accountOpen}
         >
+          {onOpenSearch ? <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>search</button> : null}
           <button
             className="cloud-shell__add"
             type="button"
@@ -193,14 +200,14 @@ export function CloudAppShell({
                 ) : (
                   <p className="cloud-shell__account-email">Signed in</p>
                 )}
-                <Link
+                {settingsAvailable ? <Link
                   ref={settingsLinkRef}
                   className="cloud-shell__menu-item"
                   to="/settings"
                   onClick={() => setAccountOpen(false)}
                 >
                   settings
-                </Link>
+                </Link> : null}
                 <button
                   ref={signOutButtonRef}
                   className="cloud-shell__menu-item cloud-shell__sign-out"

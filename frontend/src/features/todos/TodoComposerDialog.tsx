@@ -20,6 +20,7 @@ import "./TodoComposerDialog.css";
 export interface TodoComposerDialogProps {
   open: boolean;
   initialDueDate?: string | null;
+  initialProjectId?: string | null;
   projects: readonly ProjectSummary[];
   onCreate: (
     input: NewTodoInput,
@@ -53,6 +54,7 @@ function fieldErrorId(baseId: string, field: TodoInputField) {
 export function TodoComposerDialog({
   open,
   initialDueDate = null,
+  initialProjectId = null,
   projects,
   onCreate,
   onClose,
@@ -73,7 +75,7 @@ export function TodoComposerDialog({
     text: "",
     dueDate: initialDueDate ?? "",
     dueTime: "",
-    projectId: "",
+    projectId: initialProjectId ?? "",
   });
   const [errors, setErrors] = useState<TodoInputErrors>(EMPTY_ERRORS);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export function TodoComposerDialog({
       text: "",
       dueDate: initialDueDate ?? "",
       dueTime: "",
-      projectId: "",
+      projectId: initialProjectId ?? "",
     });
     setErrors(EMPTY_ERRORS);
     setSubmitError(null);

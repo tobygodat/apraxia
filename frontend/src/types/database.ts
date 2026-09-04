@@ -343,9 +343,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      begin_calendar_oauth_attempt: {
+        Args: {
+          p_code_verifier: string
+          p_expires_at: string
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
       begin_calendar_oauth_transaction: {
         Args: {
           p_expires_at: string
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
+      clear_calendar_credentials: {
+        Args: {
+          p_expected_updated_at?: string
+          p_state: Database["public"]["Enums"]["google_calendar_connection_state"]
+          p_verified_user_id: string
+        }
+        Returns: boolean
+      }
+      consume_calendar_oauth_attempt: {
+        Args: {
           p_redirect_uri: string
           p_state_hash: string
           p_verified_user_id: string
@@ -369,6 +395,10 @@ export type Database = {
         }
         Returns: Json
       }
+      read_calendar_credentials: {
+        Args: { p_verified_user_id: string }
+        Returns: Json
+      }
       reorder_today_todos: {
         Args: { p_local_date: string; p_todo_ids: string[] }
         Returns: Json
@@ -378,6 +408,17 @@ export type Database = {
           p_deleted_at: string
           p_record_id: string
           p_record_type: Database["public"]["Enums"]["orbitos_record_type"]
+        }
+        Returns: boolean
+      }
+      save_calendar_credentials: {
+        Args: {
+          p_connection_id: string
+          p_envelope: string
+          p_expected_updated_at: string
+          p_key_version: number
+          p_scopes: string[]
+          p_verified_user_id: string
         }
         Returns: boolean
       }
@@ -399,6 +440,10 @@ export type Database = {
           p_record_type: Database["public"]["Enums"]["orbitos_record_type"]
         }
         Returns: string
+      }
+      sync_calendar_preferences: {
+        Args: { p_calendars: Json; p_verified_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

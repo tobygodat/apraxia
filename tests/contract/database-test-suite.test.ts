@@ -36,6 +36,7 @@ describe("pgTAP database suite", () => {
       "050_todo_schedule_bounds.test.sql",
       "060_today_pagination.test.sql",
       "070_calendar_oauth_transactions.test.sql",
+      "080_calendar_service.test.sql",
     ]);
 
     for (const name of testNames) {

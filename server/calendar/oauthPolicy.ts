@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { normalizeSecureHttpOrigin } from "../../shared/supabaseEnvironment";
-import type { VerifiedSession } from "../auth/verifySession";
+import { normalizeSecureHttpOrigin } from "../../shared/supabaseEnvironment.js";
+import type { VerifiedSession } from "../auth/verifySession.js";
 
 export const CALENDAR_READ_SCOPES = Object.freeze([
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",

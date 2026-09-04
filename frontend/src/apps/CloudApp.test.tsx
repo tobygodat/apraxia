@@ -205,10 +205,10 @@ describe("CloudApp Google sign-in", () => {
     );
     fireEvent.click(await screen.findByRole("button", { name: "Continue with Google" }));
     act(() => fake.emit("SIGNED_IN", session()));
-    expect(await screen.findByRole("heading", { name: "Your secure session is ready" })).toBeTruthy();
+    expect(await screen.findByRole("navigation", { name: "Primary navigation" })).toBeTruthy();
     expect(start.mock.calls[0][0].aborted).toBe(true);
     await act(async () => { reject(new Error("private late error")); await result.catch(() => {}); });
-    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(GOOGLE_SIGN_IN_ERROR)).toBeNull();
     expect(screen.queryByRole("button", { name: "Continue with Google" })).toBeNull();
     expect(document.body.textContent).not.toContain("private late error");
   });
@@ -242,19 +242,13 @@ describe("CloudApp sign-out accessibility", () => {
       </BrowserRouter>,
     );
 
-    const signOutButton = await screen.findByRole("button", {
-      name: "Sign out",
-    });
+    fireEvent.click(await screen.findByRole("button", { name: "account" }));
+    const signOutButton = await screen.findByRole("button", { name: "sign out" });
     fireEvent.click(signOutButton);
 
-    const panel = screen.getByRole("heading", {
-      name: "Your secure session is ready",
-    }).parentElement;
+    const panel = screen.getByRole("navigation", { name: "Primary navigation" }).closest(".cloud-shell");
     expect(panel?.getAttribute("aria-busy")).toBe("true");
     expect(signOutButton.hasAttribute("disabled")).toBe(true);
-    expect(signOutButton.getAttribute("aria-describedby")).toBe(
-      "sign-out-progress",
-    );
     expect(screen.getByRole("status").textContent).toContain(
       "Signing out and closing this private workspace.",
     );

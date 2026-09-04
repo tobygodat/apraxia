@@ -3,7 +3,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import type {
   CalendarEvent,
   VisibleCalendarMetadata,
-} from "../../frontend/src/types/domain";
+} from "../../frontend/src/types/domain.js";
 
 export type GoogleEventNormalizationResult =
   | { status: "event"; event: CalendarEvent }
