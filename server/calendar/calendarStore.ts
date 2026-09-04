@@ -3,6 +3,9 @@ import type { CalendarPreference, GoogleCalendarConnectionStatus } from '../../f
 import type { CalendarSelection } from './loadCalendarWeek.js';
 import { boundedFetchJson, CalendarHttpError, object } from './calendarHttp.js';
 
+const diagnosticCodes = new Set(['PGRST000', 'PGRST001', 'PGRST002', 'PGRST202', 'PGRST301', 'PGRST302',
+  'PGRST303', '42501', '42883', '42P01', '42703', '22023', '23503', '23505', '57014', '53300']);
+
 export interface StoredCalendarCredentials {
   connection: GoogleCalendarConnectionStatus;
   envelope: string | null;
@@ -25,13 +28,25 @@ export function connectionStatus(value: unknown): GoogleCalendarConnectionStatus
 
 export function createCalendarStore(environment: ApplicationEnvironment, signal: AbortSignal, fetcher = fetch) {
   async function rpc(name: string, arguments_: Record<string, unknown>): Promise<unknown> {
+    const key = environment.SUPABASE_SERVICE_ROLE_KEY;
+    // Modern secret keys authenticate through apikey; they are not JWT bearer tokens.
+    // Retain the Authorization fallback only for legacy service-role JWT keys.
+    const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' };
+    if (!key.startsWith('sb_secret_') && !key.startsWith('sb_publishable_')) headers.Authorization = `Bearer ${key}`;
     const { response, value } = await boundedFetchJson(`${environment.SUPABASE_URL}/rest/v1/rpc/${name}`, {
-      method: 'POST', signal, headers: { apikey: environment.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${environment.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
+      method: 'POST', signal, headers,
       body: JSON.stringify(arguments_),
     }, fetcher, 4 * 1024 * 1024);
-    if (!response.ok) throw new CalendarHttpError(
-      name.includes('oauth') ? 'invalid_request' : 'calendar_unavailable', name.includes('oauth') ? 400 : 502);
+    if (!response.ok) {
+      // Operational diagnostics contain no provider messages, arguments, owners, or credentials.
+      // Only recognized SQLSTATE/PostgREST identifiers may leave the provider response.
+      const providerCode = object(value) && typeof value.code === 'string' &&
+        diagnosticCodes.has(value.code) ? value.code : undefined;
+      console.warn('Calendar storage request failed.', { operation: name, status: response.status,
+        ...(providerCode === undefined ? {} : { code: providerCode }) });
+      throw new CalendarHttpError(
+        name.includes('oauth') ? 'invalid_request' : 'calendar_unavailable', name.includes('oauth') ? 400 : 502);
+    }
     return value;
   }
   return {

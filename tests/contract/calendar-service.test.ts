@@ -3,6 +3,7 @@ import { createCalendarHandler } from '../../server/calendar/calendarHandlers';
 import { createGoogleOAuthTransport } from '../../server/calendar/googleOAuthTransport';
 import { CALENDAR_READ_SCOPES } from '../../server/calendar/oauthPolicy';
 import { encryptRefreshToken, decryptRefreshToken } from '../../server/calendar/tokenEncryption';
+import { createCalendarStore } from '../../server/calendar/calendarStore';
 
 const userId = '11111111-1111-4111-8111-111111111111';
 const environment = {
@@ -24,6 +25,38 @@ const stored = () => ({ connection: { id: connectionId, connection_state: 'conne
   envelope: encryptRefreshToken('existing-refresh', { userId, connectionId, keyVersion: 1 }, environment.GOOGLE_TOKEN_ENCRYPTION_KEY), key_version: 1 });
 
 describe('Calendar endpoint session and callback boundary', () => {
+  it.each(['sb_secret_fixture-key', 'legacy.service-role.jwt'])('reads a disconnected status with the correct headers for %s', async key => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json(null));
+    const result = await createCalendarStore({ ...environment, SUPABASE_SERVICE_ROLE_KEY: key }, new AbortController().signal, fetcher).read(userId);
+    expect(result).toBeNull();
+    const headers = new Headers(fetcher.mock.calls[0]![1]!.headers);
+    expect(headers.get('apikey')).toBe(key);
+    expect(headers.get('authorization')).toBe(key.startsWith('sb_secret_') ? null : `Bearer ${key}`);
+  });
+
+  it('logs only the static RPC name, status, and provider code when storage fails', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ code: 'PGRST202',
+      message: 'private-provider-message', details: 'private-token-value', hint: userId }, { status: 404 }));
+    await expect(createCalendarStore(environment, new AbortController().signal, fetcher).read(userId)).rejects.toThrow();
+    expect(warning).toHaveBeenCalledExactlyOnceWith('Calendar storage request failed.', {
+      operation: 'read_calendar_credentials', status: 404, code: 'PGRST202',
+    });
+    const logged = JSON.stringify(warning.mock.calls);
+    for (const sensitive of ['private-provider-message', 'private-token-value', userId, environment.SUPABASE_SERVICE_ROLE_KEY]) {
+      expect(logged).not.toContain(sensitive);
+    }
+  });
+
+  it('does not log arbitrary text supplied in a provider code field', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ code: 'private-token-value', message: 'private-provider-message' }, { status: 401 }));
+    await expect(createCalendarStore(environment, new AbortController().signal, fetcher).read(userId)).rejects.toThrow();
+    expect(warning).toHaveBeenCalledExactlyOnceWith('Calendar storage request failed.', {
+      operation: 'read_calendar_credentials', status: 401,
+    });
+  });
+
   it('moves callback data into a same-origin fragment without exchanging or verifying a code', async () => {
     const fetcher = vi.fn<typeof fetch>();
     const response = await createCalendarHandler('callback', { environment, fetch: fetcher })(new Request(

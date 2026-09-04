@@ -315,6 +315,8 @@
 .calendar-settings input {
   width: 16px;
   height: 16px;
+  margin: 0;
+  padding: 0;
   accent-color: #c5c9ed;
   flex: 0 0 auto;
 }

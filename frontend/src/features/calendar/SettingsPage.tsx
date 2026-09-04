@@ -26,8 +26,8 @@ export function SettingsPage({ calendarService: service, profile, onSignOut }: {
     try { await action(); } catch (reason) { setError(reason instanceof Error ? reason.message : "The change could not be saved."); } finally { setBusy(false); }
   };
   const connected = status?.connectionState === "connected";
-  return <main className="calendar-settings">
-    <h1>Settings</h1>
+  return <section className="calendar-settings" aria-labelledby="calendar-settings-title">
+    <h1 id="calendar-settings-title">Settings</h1>
 
     <section>
       <h2>Google Calendar</h2>
@@ -79,5 +79,5 @@ export function SettingsPage({ calendarService: service, profile, onSignOut }: {
       <button disabled={busy} onClick={() => void act(async () => { await onSignOut(); })}>Sign out</button>
     </section>
 
-  </main>;
+  </section>;
 }
