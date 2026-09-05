@@ -32,4 +32,4 @@ only `service_role` receives EXECUTE. Browser roles cannot invoke them. The
 verified owner argument must come from the server's authenticated session, not
 request data. Creation caps expiry using database time, and consumption locks
 the exact transaction before checking the current clock and marking it used.
-See `docs/CALENDAR_SECURITY_CORE.md` for remaining integration gates.
+See [Calendar guidance](../../docs/CALENDAR.md) for the integrated OAuth flow.

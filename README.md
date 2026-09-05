@@ -1,34 +1,15 @@
 # orbitOS
 
-orbitOS is a private, manual-entry organizational hub for Todos, Ideas, Media,
-and Projects. The approved replacement is a React/Vite app on Vercel with
-Supabase Postgres, Auth, and Row Level Security. Home pairs a read-only
-Monday-Sunday Google Calendar with an accumulated Today todo list.
+A private, manual-entry workspace for Todos, Projects, Ideas, and Media.
+Home pairs a read-only Monday–Sunday Google Calendar with Today. Built with
+React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
-The locked product behavior lives in [SPEC.md](SPEC.md), and implementation
-order and exit criteria live in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+Product behavior lives in [SPEC.md](SPEC.md). The personal live app is
+[orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).
 
-## Status
+## Development
 
-The app is for personal use: develop against local Supabase and release useful
-features to the existing Vercel/Supabase app. No separate Preview environment
-or commercial launch checklist is required.
-
-Home/Today, Todos, Projects, Ideas, Media, Settings, global capture and search
-are implemented and deployed. Fresh Google application sign-in, persisted records,
-editing, delete/Undo and direct-route refresh were checked live on 2026-09-04.
-The health endpoint now returns 200. Calendar code is implemented; live Calendar
-still needs a rejected Supabase server credential repaired, its Google server
-settings entered, and separate owner consent. Actual 200% zoom QA remains open.
-
-See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification
-results, [the plan](IMPLEMENTATION_PLAN.md) for next steps, and
-[account setup](USER_ACTIONS.md) for remaining owner interactions. The legacy
-Python/FastAPI/SQLite source under `src/` stays preserved during the transition.
-
-## Cloud quick start
-
-Prerequisites are Node.js 22 and a running Docker-compatible runtime.
+Use Node.js 22 and a running Docker-compatible runtime:
 
 ```powershell
 npm ci
@@ -38,82 +19,49 @@ npm run db:status
 npm run dev
 ```
 
-Use the local Supabase status output to populate the ignored `.env.local` file.
-The first `vercel dev` run may require the owner to authorize and link a Vercel
-project. Full setup and environment-isolation guidance is in
-[docs/CLOUD_DEVELOPMENT.md](docs/CLOUD_DEVELOPMENT.md).
+Populate the ignored `.env.local` from local Supabase status. See
+[cloud development](docs/CLOUD_DEVELOPMENT.md) for setup, release, and database
+checks, and [Calendar](docs/CALENDAR.md) for provider configuration and security.
 
-### Local UI preview without account setup
+Run `npm run verify` for type checks, tests, the production build, and the
+browser secret scan. Database changes also need local `npm run db:verify` and
+regenerated types via `npm run db:types`.
 
-Run `npm run dev:web`, then open
-[the local Todos QA fixture](http://localhost:5173/qa/todos-workspace.html)
-or [the reusable Today panel](http://localhost:5173/qa/today-panel.html).
-It uses fictional, in-memory test records and updates with Vite hot reload;
-changes reset on page reload. It is not the production app or a substitute
-for Supabase persistence. Optional `?scenario=empty`, `?scenario=dense`, and
-`?scenario=error` views support visual checks. The normal `/todos` cloud route
-continues to fail closed while configuration/adapter work remains incomplete.
+For UI checks, run `npm run dev:web` and open
+[/qa/workspace.html](http://localhost:5173/qa/workspace.html).
+Use `?route=/ideas` (or `/`, `/todos`, `/projects`, `/media`, `/settings`) and
+`&scenario=typical|empty|error|long|disconnected` to inspect fictional data.
+The standalone Todo and Today fixtures remain at `/qa/todos-workspace.html`
+and `/qa/today-panel.html`; these use `?scenario=empty|dense|error`.
+Fixtures reset on reload and do not verify persistence or provider access.
 
-The [Google sign-in preview](http://localhost:5173/qa/google-sign-in.html) shows
-the real signed-out interface with a simulated connection failure. It does not
-open Google, use credentials, or sign in.
+## Verification record
 
-## Cloud verification
+All planned feature slices are implemented and deployed. On 2026-09-04,
+`npm run verify` passed 1,635 tests; local database checks passed 176 pgTAP
+assertions. Live checks covered Google app sign-in/out, persisted collection
+CRUD, search, Undo, project deletion preserving children, and Today during
+Calendar failure. The owner reported the app looks good on 2026-09-05.
 
-```powershell
-npm run verify
-npm run db:verify
-npm run db:test:oauth-concurrency
-```
+The last recorded agent checks still leave real Calendar connection/week,
+hidden-calendar persistence, reconnect/disconnect, and actual 200% desktop zoom
+unverified. Provider setup changes since that check have not been rechecked;
+see Calendar guidance before diagnosing an old configuration failure as current.
 
-`npm run verify` performs server and frontend type checking, contract tests, a
-production Vite build, and a browser-bundle scan for server-only material. The
-contract tests apply the migrations to an embedded PostgreSQL runtime even when
-Docker is unavailable. `npm run db:verify` remains the authoritative local
-Supabase reset, lint, and pgTAP verification.
+## Repository and recovery
 
-The cloud diagnostic endpoint is `/api/health`. A Node response identifies
-`orbitos-cloud` and `vercel-function`, making it distinguishable from the legacy
-FastAPI health route.
+- `frontend/`: React application; `api/` and `server/`: server-only endpoints.
+- `supabase/`: migrations and database tests; `tests/contract/`: cloud tests.
+- `src/`, Python tests, and `deploy/`: preserved legacy runtime and recovery files.
 
-## Repository boundaries
+Legacy recovery: `uv sync`, `uv run python -m orbitos.main`, then
+`npm run dev:legacy-web`. Legacy checks are `uv run pytest` and
+`uv run ruff check`. Do not remove legacy source or import personal data without
+an explicit request.
 
-```text
-api/                    Thin Vercel Function handlers
-server/                 Reusable server-only TypeScript
-frontend/               React/Vite browser app
-supabase/               Tracked local config, migrations, seed, and DB tests
-tests/contract/          Server/function contract tests
-src/orbitos/             Legacy Python application; preserved during migration
-tests/*.py               Legacy Python tests
-deploy/                  Legacy VPS material; preserved during migration
-```
+The SQLite backup is `.local/backups/orbitos-legacy-20260904T212441Z.db`
+(ignored by Git; integrity check passed). Original `orbitos.db` is preserved.
+Off-device backup and hosted retention have not been verified.
 
-Database changes must be committed as migrations. Browser code may use only
-browser-safe `VITE_` values; the Supabase service-role key and Google credentials
-remain server-only.
-
-The browser defaults to `VITE_ORBITOS_RUNTIME=cloud`. Only the explicit
-`npm run dev:legacy-web` command loads the transitional API client and FastAPI
-session flow.
-
-## Legacy recovery workflow
-
-Use this only to maintain or verify the existing local application while the
-cloud replacement is incomplete:
-
-```powershell
-uv sync
-uv run python -m orbitos.main
-npm run dev:legacy-web
-```
-
-Legacy checks remain:
-
-```powershell
-uv run pytest
-uv run ruff check
-```
-
-Do not remove the legacy runtime or migrate personal data until the cloud app is
-verified and cleanup/migration is explicitly approved.
+Export/account deletion UI and legacy import remain deferred, as do mobile,
+recurrence, AI, reminders, analytics, rich text, and media metadata services.
