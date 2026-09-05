@@ -20,6 +20,8 @@ import { createWorkspaceData } from "./workspaceData";
 import { CalendarCallback } from "./CalendarCallback";
 import { createCollectionService } from "../features/collections/collectionService";
 import { createCalendarService } from "../features/calendar/calendarService";
+import { cacheNavigationService, NavigationCache } from "./navigationCache";
+import { registerUserStateResetter } from "../auth/userState";
 
 function AuthFrame({
   eyebrow,
@@ -198,13 +200,40 @@ function CloudWorkspace({ identity, service, client }: {
 }) {
   const { state, signOut } = useAuth();
   const location = useLocation();
-  const collectionService = useMemo(() => createCollectionService(client), [client]);
-  const calendarService = useMemo(() => createCalendarService(client), [client]);
+  const cache = useMemo(() => new NavigationCache(), [client, identity.userId]);
+  const todoService = useMemo(() => cacheNavigationService(service, cache, "todos",
+    ["loadWorkspace", "loadToday"], ["createTodo", "updateTodoDetails", "setTodoCompleted", "softDeleteTodo", "restoreTodo", "reorderToday"]), [service, cache]);
+  const collectionService = useMemo(() => cacheNavigationService(createCollectionService(client), cache, "collections",
+    ["listProjects", "listIdeas", "listMedia", "getProject", "getIdea", "getMedia", "getTodo", "projectTodos"],
+    ["saveProject", "saveIdea", "saveMedia", "softDelete", "restore"]), [client, cache]);
+  const calendarService = useMemo(() => ({ ...cacheNavigationService(createCalendarService(client), cache, "calendar",
+    ["status", "calendars", "week"], ["connect", "disconnect", "setVisibility"]), invalidate: cache.invalidate }), [client, cache]);
   const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
+  useEffect(() => {
+    const unregister = registerUserStateResetter(cache.clear, { phase: "cancel" });
+    const refresh = () => cache.invalidate();
+    window.addEventListener("focus", refresh);
+    return () => { unregister(); window.removeEventListener("focus", refresh); cache.clear(); };
+  }, [cache]);
+  useEffect(() => {
+    if (location.pathname === "/calendar/callback") { cache.clear(); return; }
+    const controller = new AbortController();
+    const signal = controller.signal;
+    // Let the current route start its requests before warming other destinations.
+    const timer = window.setTimeout(() => {
+      void Promise.allSettled([
+        todoService.loadWorkspace({ signal }),
+        collectionService.listProjects({ status: "active", mediaType: "all", offset: 0, signal }),
+        collectionService.listIdeas({ status: "all", mediaType: "all", offset: 0, signal }),
+        collectionService.listMedia({ status: "all", mediaType: "all", offset: 0, signal }),
+      ]);
+    }, 100);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [cache, todoService, collectionService, location.pathname === "/calendar/callback"]);
   const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
   if (location.pathname === "/calendar/callback") return <CalendarCallback client={client} userId={identity.userId} />;
   return <MainWorkspace identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
-    todoService={service} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} />;
+    todoService={todoService} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} />;
 }
 export function ConfiguredCloudApp({
   client,

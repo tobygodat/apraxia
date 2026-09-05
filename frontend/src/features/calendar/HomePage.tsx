@@ -79,7 +79,7 @@ export function CalendarPanel({ service, timezone }: { service: CalendarService;
         <button aria-label="Previous week" onClick={() => setMonday(addSqlDateDays(monday, -7))}>←</button>
         <button onClick={() => setMonday(startOfWeekMonday(today))}>Today</button>
         <button aria-label="Next week" onClick={() => setMonday(addSqlDateDays(monday, 7))}>→</button>
-        <button onClick={() => setRevision((value) => value + 1)} disabled={state.loading}>Refresh</button>
+        <button onClick={() => { service.invalidate?.(); setRevision((value) => value + 1); }} disabled={state.loading}>Refresh</button>
       </div>
 
     </header>

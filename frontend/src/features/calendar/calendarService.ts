@@ -6,6 +6,7 @@ export class CalendarServiceError extends Error {
   constructor(message: string, readonly code: string) { super(message); }
 }
 export interface CalendarService {
+  invalidate?(): void;
   status(signal?: AbortSignal): Promise<GoogleCalendarConnectionStatus | null>;
   calendars(signal?: AbortSignal): Promise<CalendarPreference[]>;
   week(monday: string, signal?: AbortSignal): Promise<WeekViewModel>;

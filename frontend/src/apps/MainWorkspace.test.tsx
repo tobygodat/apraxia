@@ -7,6 +7,7 @@ import type { CalendarService } from "../features/calendar/calendarService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
 import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
+import { cacheNavigationService, NavigationCache } from "./navigationCache";
 
 afterEach(cleanup);
 const todo: Todo = { id: "a6754c75-3acd-48d2-9539-5dc18299137c", text: "Book the appointment", completed: false, completedAt: null, dueDate: null, dueTime: null, projectId: null, todayRank: null, createdAt: "2026-09-04T12:00:00Z", updatedAt: "2026-09-04T12:00:00Z" };
@@ -38,6 +39,22 @@ async function openSearch(query: string) {
   fireEvent.change(input, { target: { value: query } });
 }
 describe("Main workspace integration", () => {
+  it("reuses a preloaded collection while navigating away and back", async () => {
+    const f = fixture();
+    const listIdeas = vi.fn().mockResolvedValue([idea]);
+    const service = cacheNavigationService({ ...f.props.collectionService, listIdeas }, new NavigationCache(),
+      "collections", ["listMedia", "listIdeas"], []);
+    await service.listMedia({ status: "all", mediaType: "all", offset: 0, signal: new AbortController().signal });
+    mount({ ...f.props, collectionService: service });
+    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "ideas" }));
+    await screen.findByText("Garden thought");
+    fireEvent.click(screen.getByRole("link", { name: "media" }));
+    await screen.findByText("No books or movies in this view.");
+    expect(f.listMedia).toHaveBeenCalledTimes(1);
+    expect(listIdeas).toHaveBeenCalledTimes(1);
+  });
+
   it("captures a Todo from Media, stays on Media, and refreshes visible data once", async () => {
     const f = fixture(); mount(f.props);
     await screen.findByText("No books or movies in this view.");

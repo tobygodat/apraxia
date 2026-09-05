@@ -4,7 +4,7 @@ A private, manual-entry workspace for Todos, Projects, Ideas, and Media.
 Home pairs a read-only Monday–Sunday Google Calendar with Today. Built with
 React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
-Product behavior lives in [SPEC.md](SPEC.md). The personal live app is
+Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).
 
 ## Development
