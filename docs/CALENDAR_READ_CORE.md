@@ -102,7 +102,7 @@ cancellation, projection, pagination, and error handling.
   default newly discovered calendars to visible.
 - Wire the bounded HTTP transport behind authentication and refreshed
   credentials; add disconnect/reconnect routes and private no-store responses.
-- Exercise a real Google week fetch in the isolated Preview environment,
+- Exercise a real Google week fetch on the live personal app,
   including pagination, date-line calendars, refresh, and revoked access.
 - Compose Calendar and Today independently in Home, then perform browser and
   accessibility acceptance checks. This core does not complete those checks.

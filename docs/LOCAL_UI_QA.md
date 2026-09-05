@@ -94,12 +94,51 @@ browser Back, and stale-result checks are automated separately. No real Google
 login, Supabase provider, session callback, or provider-token storage check
 was performed in this fixture.
 
-## Still required before phase completion
+## Follow-up browser checks
 
-- Repeat these flows against the generated-type Supabase adapter, not fixtures.
-- Verify actual 200% browser zoom, keyboard-only end-to-end flows, and assistive
-  technology behavior with authenticated data.
-- Complete local Supabase, pgTAP, committed migration rewind/reapply, Preview,
-  and Auth checks recorded in `USER_ACTIONS.md`.
+- Repeat the changed flows in the live browser with persisted data. Local
+  adapter/HTTP and happy-dom integration checks now pass; see
+  `IMPLEMENTATION_STATUS.md` for those results.
+- Check keyboard use and actual browser zoom with authenticated data as these
+  surfaces are connected. A formal accessibility certification is not required.
+- Verify fresh Google sign-in using the existing live setup. Local Supabase,
+  pgTAP, and migration rewind/reapply now pass; no separate Preview setup is needed.
 - Verify persisted Today order across a real reload and Calendar-independent
   Today loading once the Home integration is implemented.
+
+## Integrated workspace, checked on 2026-09-04
+
+`http://localhost:5173/qa/workspace.html` mounts the real authenticated workspace
+shell and pages with fictional in-memory services. Use `?route=/ideas` (or `/`,
+`/todos`, `/projects`, `/media`, `/settings`) and optionally
+`&scenario=typical|empty|error|long|disconnected`. This development-only entry
+reads no credentials and makes no account requests. Reloading resets its data.
+
+The following observations were recorded during the integrated browser pass:
+
+- Typical Home opened the timed grid at 8 a.m., with overlapping timed events
+  in adjacent lanes. Multi-day all-day events were refined to one spanning
+  link with an exclusive end date, rather than repeated labels for each day.
+- Disconnected Calendar displayed its connection action while four Today
+  tasks remained usable alongside it.
+- The Home error fixture showed separate Calendar and Today failures. This
+  scenario deliberately fails both services; it does not prove Today recovery
+  from a Calendar-only failure. Independent loading is covered separately by
+  the focused component test and the disconnected browser scenario.
+- Long project-detail titles and descriptions were inspected. A project-task
+  checkbox alignment problem was fixed and visually confirmed.
+- Ideas and Media lists and editors rendered in the integrated shell.
+- Ctrl+K opened global Search, and selecting a task opened that exact task's
+  editor.
+- At a reduced 760×421 viewport, Shift+Tab in the Media editor reached Save
+  and scrolled it into view. Actual 200% browser zoom was **not verified**:
+  the browser tool's Ctrl+= command did not change zoom. The reduced viewport
+  observation must not be presented as real-browser zoom acceptance.
+
+Settings uses the shell's single main landmark; its content is a labelled
+section. Its checkbox already has `flex: 0 0 auto`, so the global input growth
+rule does not stretch this control as it did the project task checkbox.
+
+These checks use fictional data. They do not establish live sign-in, Calendar
+OAuth, durable CRUD, or persistence across reloads; those require the separate
+connected-environment checks recorded in `IMPLEMENTATION_STATUS.md`.

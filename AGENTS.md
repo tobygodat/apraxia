@@ -1,89 +1,51 @@
 # AGENTS.md
 
-## Source of truth
+- Read `SPEC.md` before changing product behavior. Follow `IMPLEMENTATION_PLAN.md`
+  for sequencing and `docs/IMPLEMENTATION_STATUS.md` for verified progress.
+- This is a personal-use app: local development plus one live Vercel/Supabase
+  environment. No separate Preview setup or commercial launch process is required.
+  Ship useful slices; keep personal data and credentials protected.
+- Target React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions for Google
+  Calendar. `src/` is the legacy Python backend; preserve it and do not extend it
+  for new product features.
+- Browser CRUD uses the authenticated session and RLS. Keep Google credentials
+  in the private schema; use atomic Postgres functions for Today ordering.
+- Keep due dates date-only and overdue dates unchanged. Calendar is read-only
+  and must never block Today loading. Other product rules live in `SPEC.md`.
 
-- Read `SPEC.md` before changing product behavior. It contains the locked product decisions.
-- Use `IMPLEMENTATION_PLAN.md` for sequencing and completion criteria.
-- The target is a manual-entry, cloud-hosted executive-function hub. The existing FastAPI/SQLite application is transitional, not the architecture to extend.
+## Agent workflow
 
-## Product invariants
+- Carry requested work through implementation and required checks. Choose reasonable
+  defaults for routine gaps; ask when missing information materially changes scope
+  or outcome. Incorporate follow-ups without dropping unfinished work.
+- Act within existing authorization. Before requesting necessary approval, prepare
+  the reviewable result and finish independent work.
+- User instructions override skill guidance, subject to system and developer
+  requirements. If a skill blocks progress, cite its file and exact rule and explain
+  the unresolved requirement.
+- Delegate independent, bounded tasks when parallel work improves speed or quality.
+  Coordinate shared files and preserve unrelated changes in a dirty worktree.
+- Lead with results in concise, plain prose. State changes, verification, and
+  remaining limits; avoid stock phrases and unnecessary formatting.
+- Complete required checks below. Add tests for meaningful behavior; broaden or
+  repeat checks only when failures, changes, or unresolved risks warrant it.
 
-- Primary sections are Todos, Ideas, Media, and Projects.
-- Entry is manual through section forms and a global Add action. Search is global.
-- The desktop Home page places a Monday-Sunday Google Calendar-style week on the left and Today todos on the right.
-- Today contains every incomplete todo due on or before the user's local date. Overdue items keep their original due dates and remain until completed or rescheduled.
-- The complete todo system lives on its own page, including Inbox, Overdue, the current week, and navigable Monday-Sunday weeks.
-- Google Calendar is read-only. Calendar failure must not prevent Today from loading.
-- Mobile design and advanced recurring tasks are outside the current scope.
-- Do not add Brain Dump, AI extraction, MCP, Telegram, Obsidian, or automatic priority features unless the spec is explicitly revised.
+## Development
 
-## Target architecture
+- Use root npm scripts. `npm run dev` requires Docker/local Supabase; setup is in
+  `docs/CLOUD_DEVELOPMENT.md`. `npm run dev:legacy-web` selects the old frontend.
+- Run `npm run verify` for cloud code changes and focused checks for the changed
+  behavior. Documentation-only edits need a consistency check, not a full test run.
+- Change schema through `supabase/migrations/`, cover ownership with local RLS
+  tests, and regenerate `frontend/src/types/database.ts` using `npm run db:types`.
+  Database reset/rewind tests are local-only; apply forward migrations to live data.
 
-- React/Vite frontend deployed on Vercel.
-- Supabase Postgres, Auth, and Row Level Security for application data.
-- Browser clients may perform ordinary CRUD directly through Supabase under the signed-in user's JWT and RLS.
-- Use Postgres functions for operations that must be atomic, such as persisted Today ordering.
-- Use Vercel Functions for Google OAuth and Calendar API calls.
-- Store Google credentials and OAuth transactions in a private schema that browser roles cannot access.
-- Never trust a client-supplied `user_id`; derive ownership from the authenticated session.
-
-## Repository status
-
-- The Python/FastAPI/SQLite service under `src/` is the legacy implementation. Preserve it until the cloud replacement is verified.
-- Do not implement target features in the legacy backend unless `IMPLEMENTATION_PLAN.md` explicitly calls for it.
-- The current frontend may still proxy FastAPI during the transition. Phase 0 replaces that setup with the root Vercel/Supabase workspace.
-
-## Commands
-
-Cloud replacement (primary):
-
-```bash
-npm ci
-npm run dev
-npm run verify
-npm run db:reset
-npm run db:types
-```
-
-`npm run dev` starts local Supabase before Vercel's local frontend/function
-runtime. It requires a running Docker-compatible runtime and one-time local
-environment/project setup documented in `docs/CLOUD_DEVELOPMENT.md`.
-
-Transitional legacy frontend only:
-
-```bash
-npm run dev:legacy-web
-```
-
-Legacy backend, only when maintaining or verifying existing behavior:
-
-```bash
-uv sync
-uv run pytest
-uv run ruff check
-uv run python -m orbitos.main
-```
-
-The root scripts supersede direct `frontend/` npm commands for cloud work.
-
-## Working rules
-
-- Preserve unrelated changes in a dirty worktree.
-- Make database changes through committed migrations, not dashboard-only edits.
-- Add RLS policies and cross-user isolation tests for every user-owned table.
-- Keep `due_date` as a date-only value; store any optional time separately. Do not roll overdue dates forward automatically.
-- Derive Today with `completed_at IS NULL AND due_date <= local_today`, then apply the saved manual order.
-- Request no Google Calendar write scopes. Keep calendar and Today loading paths independent.
-- Keep domain contracts and generated database types shared across UI and server code.
-- Do not add mobile-specific work unless requested.
-- For cloud/frontend changes, run `npm run verify`. Run focused tests for the behavior changed.
-
-## Git on this Windows checkout
+## Windows Git
 
 If Git reports dubious ownership, use command-local configuration:
 
-```bash
+```powershell
 git -c safe.directory='C:/Users/tobyg/OneDrive/Documents/ChatGPT/tobiOS' status
 ```
 
-Apply the same `-c safe.directory=...` option to other Git commands. Do not change the user's global Git configuration.
+Use the same option for other Git commands; do not change global configuration.

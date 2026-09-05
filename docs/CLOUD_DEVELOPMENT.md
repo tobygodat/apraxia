@@ -97,25 +97,27 @@ Keep the soft-delete timestamp returned by `soft_delete_record` as the original
 string when calling `restore_record`; converting through a JavaScript `Date`
 can lose the precision required by the exact undo token.
 
-## Environment isolation
+## Local development and the live personal app
 
 | Environment | Database | App/OAuth origin | Secret storage |
 |---|---|---|---|
 | Development | Local Supabase | Local Vercel URL | Ignored `.env.local` |
-| Preview | Hosted non-production Supabase | Preview-only callbacks | Vercel Preview variables |
-| Production | Separate production Supabase | Production domain only | Vercel Production variables |
+| Live (Vercel Production) | Existing hosted `orbitos` Supabase | `https://orbitos-virid.vercel.app` | Vercel Production variables |
 
-Owner designation, 2026-09-03: the hosted `tobydev / orbitos` project
-(`oidvvenjamgcezdptfjr`) is the permanent Production target and is currently
-empty according to the owner. It must not be used as a disposable test database.
-Development remains local; the separate hosted Preview target is not selected.
-Apply only reviewed forward migrations to the permanent project after local
-verification and approval; never run reset or rewind checks there. Project
-selection alone does not authorize hosted migrations or deployment.
+The owner removed the separate Preview requirement on 2026-09-04. Use local
+Supabase for disposable tests and the existing hosted `tobydev / orbitos` project
+(`oidvvenjamgcezdptfjr`) for personal data. Do not treat old reports that it was
+empty as current evidence: inspect migration history and data before changes,
+preserve a backup/export when data exists, and apply forward migrations only.
+Never run reset or rewind checks on the hosted project.
 
-Never pull Production credentials into local development or reuse personal
-Production data in Preview. Browser code may receive only the `VITE_` values;
-service-role and Google credentials are server-only.
+For a live release, use Vercel's Production variables when building the frontend;
+Supabase browser settings are embedded at build time. A `main` push may deploy
+immediately, so apply required migrations before publishing dependent code.
+There is no Preview provisioning step. Any automatically created Preview
+deployment is optional and should not receive live credentials by default.
+Local tests use local keys. Browser code may receive only the `VITE_` values;
+privileged Supabase and Google credentials stay server-only.
 
 The Calendar encryption key must be exactly 32 cryptographically random bytes
 encoded as padded standard Base64, stored only in the server environment. The

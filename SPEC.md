@@ -1,14 +1,20 @@
 # orbitOS — Cloud Product Specification
 
-**Status:** Approved product direction; implementation pending
+**Status:** Approved personal-use scope; implementation in progress
 
-**Last updated:** 2026-09-03
+**Last updated:** 2026-09-04
 
 **Supersedes:** The Obsidian, SQLite, Telegram, Anthropic, Brain Dump, ChatGPT Scheduled Task, MCP, VPS, and always-on-process designs
 
 ## 1. Product definition
 
 orbitOS is a private organizational and collection hub. Its job is to keep personal commitments and reference items visible in one place so the user does not have to hold them in working memory.
+
+It is built solely for the owner's personal use. Useful features can be used as
+they are completed; commercial launch readiness is not a goal. Development uses
+local Supabase and releases go to one live Vercel/Supabase app. No separate
+Preview environment is required. Authentication, personal-data protection,
+credential security, and correct persistence remain part of the product.
 
 The application does not prioritize work or decide what the user should do next. The user remains responsible for judgment and prioritization. orbitOS provides a dependable agenda, a complete todo workspace, and small collections for Ideas, Media, and Projects.
 
@@ -20,6 +26,8 @@ All records are added manually. There is no Brain Dump, automated sifting, Needs
 |---|---|
 | Product shape | Standalone personal web app; Obsidian is not part of the replacement |
 | Hosting | Vercel for the React app and server-only Calendar endpoints |
+| Environments | Local development and one live personal app; no required Preview/staging environment |
+| Delivery | Incremental personal use, starting with working Todos; no all-features launch gate |
 | Canonical database | Supabase Postgres |
 | Authentication | Google sign-in through Supabase Auth; every user-owned row is protected by Row Level Security (RLS) |
 | Organization | Todos, Ideas, Media, and Projects |
@@ -59,10 +67,11 @@ All records are added manually. There is no Brain Dump, automated sifting, Needs
 - Contact or people management
 - Obsidian or filesystem synchronization
 - Collaborative workspaces, sharing, or team administration
+- Commercial release processes, separate staging infrastructure, formal certification, or mandatory monitoring services
 - Mobile or tablet-specific layouts
 - Native mobile applications
 - Advanced recurring-task behavior until it is separately specified
-- Importing legacy data before the cloud replacement reaches feature parity
+- Importing legacy data before the relevant cloud collections are verified
 
 ## 5. Target architecture
 
@@ -111,6 +120,11 @@ The primary destinations are:
 - Ideas
 - Media
 - Projects
+
+During incremental delivery, show only usable destinations. Until Home is
+implemented, `/` opens `/todos`; restore the Calendar/Today Home as the default
+when it works. This is an implementation target, not a claim about the current
+deployed entry page. Add and search expand with the available collections.
 
 Settings is accessed from the account menu rather than competing with the primary destinations.
 
@@ -418,7 +432,9 @@ The server:
 - Never returns tokens to the browser or logs them.
 - Handles Google responses that omit a new refresh token without overwriting the stored valid token.
 
-The OAuth application must not rely on Testing-mode refresh tokens for normal use.
+Choose an OAuth setup appropriate for personal use. If it requires periodic
+reauthorization, document that limitation and provide reconnect; public OAuth
+publishing/verification is not an automatic prerequisite for the Todo release.
 
 ### 15.2 Event retrieval
 
@@ -443,8 +459,8 @@ Calendar responses must never use a shared public cache containing personal even
 - The Supabase service-role key, Google client secret, and token-encryption keys exist only in server environments.
 - Logs contain record identifiers, timing, counts, and sanitized errors—not todo text, idea bodies, notes, tokens, or Calendar descriptions.
 - Sign-out clears user-specific application caches and transient form state.
-- Environment-specific OAuth clients and callback URLs are used for Development, Preview, and Production.
-- Security headers and a Content Security Policy are configured before launch.
+- Use exact OAuth callbacks for the live app. Add separate local OAuth configuration only when needed; no Preview client is required.
+- Add basic security headers and a Content Security Policy as ordinary upkeep, without a separate launch process.
 
 ## 17. Failure and recovery behavior
 
@@ -475,7 +491,12 @@ orbitOS sends no external failure notification in the initial release.
 
 ## 19. Acceptance criteria
 
-The replacement is ready for normal use when all of the following are true:
+The following define the complete product. Each implemented slice can be used
+earlier once its persistence, authentication, and relevant interactions work on
+the live app. Completing Calendar or the other collections is not a prerequisite
+for personal Todo use. No formal accessibility certification or comprehensive
+automated browser matrix is required; keep usable keyboard/focus behavior and
+test the changed flows.
 
 1. A user can authenticate and manually create, edit, soft-delete, restore, and search orbitOS records.
 2. The global **+ Add** action creates Todos, Ideas, Media, and Projects from every authenticated route.

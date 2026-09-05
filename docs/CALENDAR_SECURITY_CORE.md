@@ -150,7 +150,7 @@ see `CLOUD_DEVELOPMENT.md` for the invocation and safeguards.
 - Keep a valid existing refresh token when Google omits a replacement. Validate
   scopes, handle refresh and revocation, and persist status changes atomically.
 - Enforce no-store/no-referrer behavior and prevent callback query material
-  from entering application/hosting logs. Add real Preview flow verification.
+  from entering application/hosting logs. Check the real flow on the live app.
 - Wire the generated-type private-store adapter and Calendar read transport,
   then connect Settings and independent Home loading.
 

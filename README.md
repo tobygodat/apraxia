@@ -2,7 +2,7 @@
 
 orbitOS is a private, manual-entry organizational hub for Todos, Ideas, Media,
 and Projects. The approved replacement is a React/Vite app on Vercel with
-Supabase Postgres, Auth, and Row Level Security. Home will pair a read-only
+Supabase Postgres, Auth, and Row Level Security. Home pairs a read-only
 Monday-Sunday Google Calendar with an accumulated Today todo list.
 
 The locked product behavior lives in [SPEC.md](SPEC.md), and implementation
@@ -10,58 +10,21 @@ order and exit criteria live in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 
 ## Status
 
-The Phase 0 cloud foundation code is in place and its local contract/build
-checks pass. The real local Supabase/Vercel workflow and hosted Preview are
-not yet verified. Phase 1's migrations, security boundary, and browser auth boundary are in
-place, while its real-stack verification and canonical generated database
-types remain blocked on local Supabase startup; Docker is healthy, but its
-first-time container image downloads failed. Hosted owner setup remains in
-`USER_ACTIONS.md`. The schema now
-includes RLS, a private Calendar credential store, serialized Today ordering,
-soft-delete/undo functions, and user-scoped search. The cloud frontend fails
-closed during session restoration, account changes, and user-state cleanup.
-The owner selected Google sign-in on 2026-09-03. The signed-out control now
-starts the identity-only Supabase PKCE flow with pending, failure, retry, and
-cancellation handling. Provider setup and a real callback/storage check remain
-open; the local simulated preview does not prove live login.
+The app is for personal use: develop against local Supabase and release useful
+features to the existing Vercel/Supabase app. No separate Preview environment
+or commercial launch checklist is required.
 
-Phase 2 now includes an integrated, provider-injected Todos workspace: global
-Add, editing, completion, delete/Undo, project association, Inbox, Overdue,
-and navigable weeks. Account-scoped controllers reconcile saved rows, reject
-malformed provider responses, and abandon stale requests. A timezone-aware
-date hook advances the current week after midnight or waking the browser.
-The reusable Today panel also supports contextual Add, editing, schedule-only
-rescheduling, completion, keyboard/drag ordering, and delete/Undo with rollback.
-Undo survives local midnight and reloads authoritative rows after restoration;
-a failed refresh never repeats a successful restore. These pieces
-are not connected to Supabase yet; that
-integration deliberately waits for canonical generated `database.ts` types
-rather than introducing an untyped temporary data layer.
+Home/Today, Todos, Projects, Ideas, Media, Settings, global capture and search
+are implemented and deployed. Fresh Google application sign-in, persisted records,
+editing, delete/Undo and direct-route refresh were checked live on 2026-09-04.
+The health endpoint now returns 200. Calendar code is implemented; live Calendar
+still needs a rejected Supabase server credential repaired, its Google server
+settings entered, and separate owner consent. Actual 200% zoom QA remains open.
 
-The [Today data protocol](docs/TODAY_DATA_PROTOCOL.md) retrieves bounded pages
-without exposing an incomplete snapshot and confirms a full atomic reorder
-with one compact receipt. Local SQL/client tests cover lists above 1,000 tasks;
-real Data API verification remains an explicit gate.
-
-Phase 3's [Calendar read core](docs/CALENDAR_READ_CORE.md) now handles civil-week
-boundaries, server-side event normalization, bounded pagination, partial
-calendar failures, and a size/deadline-limited Google read transport. It remains
-disconnected from live Google accounts and Home while authenticated OAuth,
-credential refresh, persistence, and endpoint integration continue.
-The [Calendar security core](docs/CALENDAR_SECURITY_CORE.md) adds server-verified
-sessions, authenticated refresh-token encryption, strict OAuth policy, and
-service-only atomic state creation/consumption. Embedded SQL tests pass. A
-local-only multi-session concurrency runner is prepared, but its real database
-execution, the generated-type adapter, and the browser callback handoff still
-need verification before live routes open.
-
-The Python/FastAPI/SQLite app under `src/` remains available during the
-transition. It is legacy code, not the target architecture, and should not
-receive new target product features.
-
-Owner-only setup and product decisions are tracked without secrets in
-[USER_ACTIONS.md](USER_ACTIONS.md). Current implementation gaps and the next
-safe work are recorded in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+See [implementation status](docs/IMPLEMENTATION_STATUS.md) for verification
+results, [the plan](IMPLEMENTATION_PLAN.md) for next steps, and
+[account setup](USER_ACTIONS.md) for remaining owner interactions. The legacy
+Python/FastAPI/SQLite source under `src/` stays preserved during the transition.
 
 ## Cloud quick start
 

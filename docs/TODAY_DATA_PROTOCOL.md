@@ -27,7 +27,7 @@ settles immediately, even if a provider ignores its signal.
 
 The complete eligibility fingerprint scans the eligible set on each page.
 This trades extra database work for consistency without a new persisted
-snapshot table. Measure that cost on the real stack before launch; an indexed
+snapshot table. Profile that cost if actual list size or latency warrants it; an indexed
 revision scheme can replace the fingerprint if measurements justify it.
 
 ## Atomic order protocol
@@ -71,7 +71,8 @@ protocol, including more than 1,000 tasks and mid-pagination project edits.
 The separate `npm run db:test:todos-http` passed on local Supabase on 2026-09-04:
 real Auth/JWT reads, response mapping, 1,005 eligible tasks, complete reload/order,
 and cross-user denial with the configured 1,000-row Data API limit unchanged.
-Hosted Preview and per-page fingerprint profiling on larger data remain open.
+Check the live personal Todo flow after deployment. Larger-data fingerprint
+profiling is follow-up work if observed performance warrants it, not a release gate.
 
 PostgREST distinguishes scalar responses from table-valued responses, while
 table-valued functions support row limits and filters. This is why page metadata
