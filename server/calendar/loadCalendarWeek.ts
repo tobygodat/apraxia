@@ -22,6 +22,7 @@ export type CalendarSelection = Pick<
 > & {
   /** Fresh Google Calendar metadata, loaded server-side, not a browser choice. */
   readonly timeZone: string;
+  readonly canEdit?: boolean;
 };
 
 export interface CalendarEventPageRequest {

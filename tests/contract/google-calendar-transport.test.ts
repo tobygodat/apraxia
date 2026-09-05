@@ -132,7 +132,7 @@ describe("fresh calendar list metadata", () => {
     const result = await transport(fetch).listCalendars(options());
     expect(result).toEqual([{
       calendarId: "team@example.test", displayName: "My team", timeZone: ZONE,
-      color: { background: "#336699", foreground: "#ffffff" }, isVisible: true,
+      color: { background: "#336699", foreground: "#ffffff" }, isVisible: true, canEdit: false,
     }]);
     const first = new URL(String(fetch.mock.calls[0]![0]));
     const second = new URL(String(fetch.mock.calls[1]![0]));
@@ -162,7 +162,7 @@ describe("fresh calendar list metadata", () => {
     const fetch = fakeFetch(async () => response({ items: [{ id: "team", timeZone: "UTC" }] }));
     expect(await transport(fetch).listCalendars(options())).toEqual([{
       calendarId: "team", timeZone: "UTC", displayName: "(Untitled calendar)",
-      color: { background: null, foreground: null }, isVisible: true,
+      color: { background: null, foreground: null }, isVisible: true, canEdit: false,
     }]);
   });
 
@@ -304,7 +304,7 @@ describe("bounded response handling", () => {
     const fetch = fakeFetch().mockResolvedValueOnce(response({ items: [event()], nextPageToken: "next" }))
       .mockResolvedValueOnce(response({ error: PRIVATE }, 503));
     const result = await loadCalendarWeek({ monday: "2026-09-07", timezone: ZONE, calendars: [{
-      calendarId: "team", displayName: "Team", timeZone: ZONE, isVisible: true,
+      calendarId: "team", displayName: "Team", timeZone: ZONE, isVisible: true, canEdit: false,
       color: { background: null, foreground: null },
     }] }, transport(fetch).fetchEventPage, options());
     expect(result.events).toEqual([]);

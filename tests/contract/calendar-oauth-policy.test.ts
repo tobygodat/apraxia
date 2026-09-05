@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CALENDAR_OAUTH_TTL_MS,
-  CALENDAR_READ_SCOPES,
+  CALENDAR_SCOPES,
   CalendarOAuthPolicyError,
   assertCalendarMutationRequest,
   createCalendarOAuthAttempt,
@@ -26,7 +26,7 @@ const CODE = "4/legitimate.Google-code_123";
 const SECRET = "private-provider-code-or-token";
 const REQUIRED_SCOPES = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
-  "https://www.googleapis.com/auth/calendar.events.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
 ];
 
 function callback(params: Record<string, string> = { state: STATE, code: CODE }, base = REDIRECT_URI) {
@@ -153,8 +153,8 @@ describe("Calendar OAuth attempt creation", () => {
       "client_id", "redirect_uri", "response_type", "scope", "state",
       "access_type", "prompt", "include_granted_scopes",
     ].sort());
-    expect(CALENDAR_READ_SCOPES).toEqual(REQUIRED_SCOPES);
-    expect(Object.isFrozen(CALENDAR_READ_SCOPES)).toBe(true);
+    expect(CALENDAR_SCOPES).toEqual(REQUIRED_SCOPES);
+    expect(Object.isFrozen(CALENDAR_SCOPES)).toBe(true);
   });
 
   it("creates independent canonical 32-byte states and persists only their SHA-256 hashes", () => {
@@ -373,7 +373,7 @@ describe("Calendar granted-scope validation", () => {
     const first = validateGrantedCalendarScopes(REQUIRED_SCOPES.join(" "));
     const second = validateGrantedCalendarScopes(REQUIRED_SCOPES.join(" "));
     expect(first).not.toBe(second);
-    expect(first).not.toBe(CALENDAR_READ_SCOPES);
+    expect(first).not.toBe(CALENDAR_SCOPES);
     expect(first).toEqual(second);
   });
 });

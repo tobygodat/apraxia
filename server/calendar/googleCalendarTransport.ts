@@ -13,7 +13,7 @@ export const GOOGLE_CALENDAR_MAX_HEADER_BYTES = 16 * 1024;
 export const GOOGLE_CALENDAR_LIST_MAX_PAGES = 20;
 export const GOOGLE_CALENDAR_MAX_PAGE_TOKEN_LENGTH = 2_048;
 export const GOOGLE_CALENDAR_LIST_FIELDS =
-  "nextPageToken,items(id,summary,summaryOverride,timeZone,backgroundColor,foregroundColor)";
+  "nextPageToken,items(id,summary,summaryOverride,timeZone,backgroundColor,foregroundColor,accessRole)";
 
 const API_ROOT = "https://www.googleapis.com/calendar/v3/";
 const MAX_IDENTIFIER_LENGTH = 1_024;
@@ -207,6 +207,7 @@ function projectCalendar(raw: unknown): CalendarSelection {
     timeZone: namedZone(raw.timeZone) ? raw.timeZone : "",
     // Google hidden/selected preferences are not orbitOS visibility settings.
     isVisible: true,
+    canEdit: raw.accessRole === 'owner' || raw.accessRole === 'writer',
   };
 }
 

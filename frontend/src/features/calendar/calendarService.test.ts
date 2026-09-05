@@ -13,5 +13,5 @@ it("sends authenticated JSON mutations and returns only the authorization URL", 
 });
 it("does not expose upstream error messages", async () => {
   vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ error: { code: "reconnect_required", message: "secret upstream body" } }), { status: 401 }));
-  await expect(createCalendarService(client).status()).rejects.toThrow("Reconnect Google Calendar to see your events.");
+  await expect(createCalendarService(client).status()).rejects.toThrow("Reconnect Google Calendar in Settings to allow event editing.");
 });

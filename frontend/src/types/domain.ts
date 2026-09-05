@@ -28,6 +28,7 @@ export interface CalendarMetadata {
 
 /** The browser-visible calendar preference row. */
 export interface CalendarPreference extends CalendarMetadata {
+  canEdit?: boolean;
   id: UUID;
   isVisible: boolean;
   lastSeenAt: Timestamp;

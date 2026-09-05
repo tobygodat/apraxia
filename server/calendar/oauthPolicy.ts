@@ -3,9 +3,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { normalizeSecureHttpOrigin } from "../../shared/supabaseEnvironment.js";
 import type { VerifiedSession } from "../auth/verifySession.js";
 
-export const CALENDAR_READ_SCOPES = Object.freeze([
+export const CALENDAR_SCOPES = Object.freeze([
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
-  "https://www.googleapis.com/auth/calendar.events.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
 ] as const);
 export const CALENDAR_OAUTH_TTL_MS = 10 * 60 * 1000;
 const AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -100,7 +100,7 @@ export function createCalendarOAuthAttempt(
       client_id: configuration.clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: CALENDAR_READ_SCOPES.join(" "),
+      scope: CALENDAR_SCOPES.join(" "),
       state: rawState,
       access_type: "offline",
       prompt: "consent",
@@ -177,15 +177,15 @@ export function createCalendarOAuthConsumeCommand(
   }
 }
 
-/** Reject excess grants as well as missing grants; never retain a write-capable token. */
+/** Reject excess grants as well as missing grants; retain only the requested Calendar permissions. */
 export function validateGrantedCalendarScopes(value: unknown): readonly string[] {
   if (typeof value !== "string" || value.length > 1024 || value.trim() === "") {
     throw new CalendarOAuthPolicyError();
   }
   const scopes = value.trim().split(/\s+/);
-  if (scopes.length !== CALENDAR_READ_SCOPES.length || new Set(scopes).size !== scopes.length ||
-    !CALENDAR_READ_SCOPES.every((scope) => scopes.includes(scope))) {
+  if (scopes.length !== CALENDAR_SCOPES.length || new Set(scopes).size !== scopes.length ||
+    !CALENDAR_SCOPES.every((scope) => scopes.includes(scope))) {
     throw new CalendarOAuthPolicyError();
   }
-  return [...CALENDAR_READ_SCOPES];
+  return [...CALENDAR_SCOPES];
 }

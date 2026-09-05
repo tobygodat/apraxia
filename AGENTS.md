@@ -29,6 +29,13 @@
 - Run commands from the repository root. Use `npm run dev` for the full local app
   or `npm run dev:web` for frontend work. Setup and release: `docs/CLOUD_DEVELOPMENT.md`.
   Calendar configuration and security: `docs/CALENDAR.md`. Status: `README.md`.
+- Whenever a change is complete and ready to test, ensure `npm run dev:web` is
+  running, check the affected flow in `http://localhost:5173/qa/workspace.html`,
+  and open that local test workspace in the browser panel for the user. Use
+  relevant fixture scenarios (for example, `?scenario=empty`) as needed. These
+  fixtures use fictional data and require no cloud configuration; do not open
+  the unconfigured `/` route as the test entry point. State any behavior the
+  fixtures cannot verify.
 - Run `npm run verify` for cloud code changes. For schema changes, also run
   `npm run db:verify` locally and regenerate types with `npm run db:types`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits

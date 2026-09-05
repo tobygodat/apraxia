@@ -31,14 +31,14 @@ export function SettingsPage({ calendarService: service, profile, onSignOut }: {
 
     <section>
       <h2>Google Calendar</h2>
-      <p>Read-only access to your week. Choose which calendars appear on Home.</p>
+      <p>Add, edit, and delete events on calendars you can edit. Choose which calendars appear on Home.</p>
 
       {loading ? <p role="status">Loading Calendar settings…</p> : <><p>
         {connected ? `Connected${status.displayEmail ? ` as ${status.displayEmail}` : ""}` : status?.connectionState === "reconnect_required" ? "Reconnect to see your events again." : "Calendar is not connected."}
       </p>
         <div className="calendar-controls">
-          {!connected && <button disabled={busy} onClick={() => void act(async () => { window.location.assign(await service.connect()); })}>
-            {status?.connectionState === "reconnect_required" ? "Reconnect Calendar" : "Connect Calendar"}
+          {<button disabled={busy} onClick={() => void act(async () => { window.location.assign(await service.connect()); })}>
+            {(connected || status?.connectionState === "reconnect_required") ? "Reconnect Calendar" : "Connect Calendar"}
           </button>}
           {status && status.connectionState !== "disconnected" && <button disabled={busy} onClick={() => void act(async () => { await service.disconnect(); setStatus(null); setCalendars([]); })}>Disconnect</button>}
         </div>

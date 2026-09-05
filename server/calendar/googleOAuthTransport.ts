@@ -1,6 +1,6 @@
 import type { CalendarEnvironment } from '../env/cloud.js';
 import { boundedFetchJson, CalendarHttpError, object } from './calendarHttp.js';
-import { CALENDAR_READ_SCOPES, validateGrantedCalendarScopes } from './oauthPolicy.js';
+import { CALENDAR_SCOPES, validateGrantedCalendarScopes } from './oauthPolicy.js';
 
 export interface GoogleTokens { accessToken: string; refreshToken: string | null; scopes: readonly string[] }
 
@@ -23,7 +23,7 @@ export function createGoogleOAuthTransport(configuration: CalendarEnvironment, s
       throw new CalendarHttpError('calendar_unavailable');
     }
     // A refresh response may omit scope: it retains the previously verified grant.
-    const scopes = refreshing && value.scope === undefined ? CALENDAR_READ_SCOPES : validateGrantedCalendarScopes(value.scope);
+    const scopes = refreshing && value.scope === undefined ? CALENDAR_SCOPES : validateGrantedCalendarScopes(value.scope);
     return { accessToken: value.access_token, refreshToken: typeof value.refresh_token === 'string' ? value.refresh_token : null, scopes };
   }
   return {

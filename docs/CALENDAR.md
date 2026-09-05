@@ -1,6 +1,6 @@
 # Calendar
 
-Calendar is read-only and loads independently of Today. Settings handles
+Calendar supports event creation, editing, and deletion and loads independently of Today. Settings handles
 connection, visibility, refresh, and disconnect. Events are fetched on opening
 or changing the week and explicit refresh, without a persisted event cache.
 
@@ -19,7 +19,8 @@ Retain the separate Supabase app sign-in redirect:
 `https://oidvvenjamgcezdptfjr.supabase.co/auth/v1/callback`.
 Supabase's Site URL and allowed app return are `https://orbitos-virid.vercel.app/`.
 Redeploy after changing environment settings; connect through Settings and
-complete the separate read-only consent. App sign-in alone does not connect Calendar.
+complete the separate Calendar consent. Existing read-only connections must
+reconnect to grant event editing. App sign-in alone does not connect Calendar.
 
 On 2026-09-04, the live Calendar store returned upstream 401 and the Google
 settings were absent. Reinspect current configuration before taking action.
@@ -46,6 +47,41 @@ access, and disconnect after setup. Never log credential values or OAuth materia
   can invoke credential RPCs. Callback responses use no-store/no-referrer.
 - Key rotation requires the previous key to decrypt and re-encrypt records;
   no operational rotation procedure has been verified.
+
+## Event editing
+
+Click **Add event**, select an all-day slot, or drag an empty time range in
+15-minute increments. Click an event to edit its title, location, calendar,
+dates, times, all-day status, and repeat schedule. Timed inputs use the event
+timezone; new events use the profile timezone. All-day end dates in the editor
+are inclusive and become exclusive Google dates. Skipped or ambiguous DST
+times are rejected.
+
+Repeating events offer **This event** and **Entire series**. Series editing
+loads the first event's dates and affects past events too. Daily, weekly,
+weekday, monthly-by-date, and yearly schedules support intervals and optional
+end dates/counts. Existing custom rules are preserved unless explicitly changed.
+Google expands repeat instances when the week reloads.
+
+The separate OAuth grant requests `calendar.events` and
+`calendar.calendarlist.readonly` under `https://www.googleapis.com/auth/`.
+Server writes require the verified session, expected origin, and fresh Google
+writer/owner access. Read-only calendars remain viewable. No migration is needed.
+
+POST commands on `/api/calendar/events` validate bounded input. Details are
+projected to editor fields only. Conditional PATCH/DELETE requests reject stale
+edits; PATCH preserves guests, descriptions, and other untouched fields.
+Existing guests receive Google updates. Delete requires in-app confirmation.
+Calendar moves use Google's move endpoint for eligible events the user organizes;
+individual recurring instances cannot move. A failed move after a successful
+edit reports partial success and refreshes the week. Mutations are never blindly
+retried; creation uses a stable draft ID. After an uncertain result, close and
+refresh before retrying.
+
+The local workspace fixture exercises editor, drag selection, and CRUD with
+fictional data. It stores repeat settings but does not expand recurrence or
+verify Google OAuth, permissions, notifications, or persistence. Live Google
+verification remains required after deployment and renewed consent.
 
 ## Reads and contracts
 

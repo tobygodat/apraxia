@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCalendarHandler } from '../../server/calendar/calendarHandlers';
 import { createGoogleOAuthTransport } from '../../server/calendar/googleOAuthTransport';
-import { CALENDAR_READ_SCOPES } from '../../server/calendar/oauthPolicy';
+import { CALENDAR_SCOPES } from '../../server/calendar/oauthPolicy';
 import { encryptRefreshToken, decryptRefreshToken } from '../../server/calendar/tokenEncryption';
 import { createCalendarStore } from '../../server/calendar/calendarStore';
 
@@ -17,10 +17,10 @@ const request = (action: string, body?: unknown) => new Request(`${environment.A
   headers: { Authorization: 'Bearer session-token', Origin: environment.APP_URL, 'Content-Type': 'application/json' },
   ...(body === undefined ? {} : { body: JSON.stringify(body) }),
 });
-const tokens = { access_token: 'access-token', token_type: 'Bearer', refresh_token: 'refresh-token', scope: CALENDAR_READ_SCOPES.join(' ') };
+const tokens = { access_token: 'access-token', token_type: 'Bearer', refresh_token: 'refresh-token', scope: CALENDAR_SCOPES.join(' ') };
 const config = { GOOGLE_CLIENT_ID: 'client', GOOGLE_CLIENT_SECRET: 'secret', GOOGLE_TOKEN_ENCRYPTION_KEY: environment.GOOGLE_TOKEN_ENCRYPTION_KEY };
 const connectionId = '22222222-2222-4222-8222-222222222222';
-const stored = () => ({ connection: { id: connectionId, connection_state: 'connected', granted_scopes: [...CALENDAR_READ_SCOPES],
+const stored = () => ({ connection: { id: connectionId, connection_state: 'connected', granted_scopes: [...CALENDAR_SCOPES],
   created_at: '2026-09-04T12:00:00Z', updated_at: '2026-09-04T12:00:00Z' },
   envelope: encryptRefreshToken('existing-refresh', { userId, connectionId, keyVersion: 1 }, environment.GOOGLE_TOKEN_ENCRYPTION_KEY), key_version: 1 });
 
@@ -273,7 +273,7 @@ describe('Google OAuth transport', () => {
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ access_token: 'new-access', token_type: 'Bearer' }));
     const result = await createGoogleOAuthTransport(config, new AbortController().signal, fetcher).refresh('old-refresh');
     expect(result.refreshToken).toBeNull();
-    expect(result.scopes).toEqual(CALENDAR_READ_SCOPES);
+    expect(result.scopes).toEqual(CALENDAR_SCOPES);
   });
   it('maps a revoked refresh grant to reconnect without provider text', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ error: 'invalid_grant', error_description: 'private-details' }, { status: 400 }));

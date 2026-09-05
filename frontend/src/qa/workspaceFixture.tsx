@@ -1,3 +1,5 @@
+import type { EventDetail } from "../../../shared/calendarEventContract";
+import type { CalendarEvent } from "../types/domain";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
@@ -100,18 +102,55 @@ const collectionService: CollectionService = {
   },
 };
 let connected = scenario !== "disconnected";
-let preferences: CalendarPreference[] = [{ ...base(), calendarId: "personal", displayName: long ? longText : "Personal", color: { background: "#91b0d7", foreground: "#ffffff" }, isVisible: true, lastSeenAt: now }];
+let preferences: CalendarPreference[] = [{ ...base(), calendarId: "personal", displayName: long ? longText : "Personal", color: { background: "#91b0d7", foreground: "#ffffff" }, isVisible: true, canEdit: true, lastSeenAt: now }, { ...base(), calendarId: "work", displayName: "Work", color: { background: "#c5b293", foreground: "#ffffff" }, isVisible: true, canEdit: true, lastSeenAt: now }];
+const fixtureEvents = new Map<string, EventDetail>();
+const seededWeeks = new Set<string>();
 const calendarService: CalendarService = {
+  async eventDetail(calendarId, eventId) {
+    check(); const detail = fixtureEvents.get(eventId);
+    if (!detail || detail.calendarId !== calendarId) throw new Error('Event not found.');
+    return structuredClone(detail);
+  },
+  async mutateEvent(command) {
+    check();
+    if (command.action === 'delete') fixtureEvents.delete(command.eventId);
+    else {
+      const current = fixtureEvents.get(command.eventId);
+      const recurrence = command.values.recurrence ?? current?.values.recurrence ?? [];
+      fixtureEvents.set(command.eventId, { eventId: command.eventId, calendarId: command.action === 'create' ? command.calendarId : command.destinationCalendarId,
+        etag: id(), recurring: recurrence.length > 0, canMove: true, values: { ...command.values, recurrence } });
+    }
+    return { saved: true };
+  },
   async status() { check(); return connected ? { ...base(), googleAccountId: null, displayEmail: "alex@example.invalid", connectionState: "connected", grantedScopes: [], lastSuccessfulRefreshAt: now } : null; },
   async calendars() { return preferences; }, async setVisibility(rowId, isVisible) { preferences = preferences.map(p => p.id === rowId ? { ...p, isVisible } : p); },
   async disconnect() { connected = false; }, async connect() { connected = true; return window.location.href; },
   async week(monday) {
     check(); const instant = (day: number, hour: number, minute = 0) => Temporal.PlainDate.from(monday).add({ days: day }).toZonedDateTime({ timeZone: timezone, plainTime: { hour, minute } }).toInstant().toString();
     const common = { calendarId: "personal", calendarColor: preferences[0].color, googleEventUrl: "https://calendar.google.com" };
-    return { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars: preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const })), partialErrors: [], events: empty || !preferences[0].isVisible ? [] : [
+    const model = { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars: preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const })), partialErrors: [], events: empty || !preferences[0].isVisible ? [] : [
       { ...common, kind: "all_day", eventId: "trip", title: "Studio open week", startDate: monday, endDateExclusive: addSqlDateDays(monday, 3) },
       ...[{ day: 0, start: 9, end: 10, title: "Weekly planning" }, { day: 1, start: 10, end: 12, title: "A morning to write" }, { day: 1, start: 11, end: 12, title: "Coffee with Sam" }, { day: 3, start: 13, end: 14, title: "Lunch at the park" }, { day: 4, start: 9, end: 10, title: long ? longText : "Reading group" }].map((e, i) => ({ ...common, kind: "timed" as const, eventId: String(i), title: e.title, startAt: instant(e.day, e.start), endAt: instant(e.day, e.end), startTimeZone: timezone, endTimeZone: timezone })),
     ] };
+    if (!seededWeeks.has(monday)) {
+      seededWeeks.add(monday);
+      for (const original of model.events) {
+        const event = original as CalendarEvent;
+        const eventId = monday + event.eventId;
+        fixtureEvents.set(eventId, { eventId, calendarId: event.calendarId, etag: id(), canMove: true, recurring: false,
+          values: { title: event.title, location: '', timeZone: timezone, recurrence: [], timing: event.kind === 'all_day'
+            ? { kind: 'all_day', start: event.startDate, end: event.endDateExclusive }
+            : { kind: 'timed', start: event.startAt, end: event.endAt } } });
+      }
+    }
+    const events: CalendarEvent[] = [...fixtureEvents.values()].filter(event => preferences.some(p => p.calendarId === event.calendarId && p.isVisible)).map(event => {
+      const p = preferences.find(p => p.calendarId === event.calendarId)!;
+      const common = { eventId: event.eventId, calendarId: event.calendarId, calendarColor: p.color, googleEventUrl: 'https://calendar.google.com', title: event.values.title || '(No title)' };
+      return event.values.timing.kind === 'all_day'
+        ? { ...common, kind: 'all_day', startDate: event.values.timing.start, endDateExclusive: event.values.timing.end }
+        : { ...common, kind: 'timed', startAt: event.values.timing.start, endAt: event.values.timing.end, startTimeZone: timezone, endTimeZone: timezone };
+    });
+    return { ...model, events };
   },
 };
 createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter initialEntries={[params.get("route") ?? "/"]}>

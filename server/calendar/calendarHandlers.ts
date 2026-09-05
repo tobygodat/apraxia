@@ -1,8 +1,10 @@
+import { eventCommandSchema } from '../../shared/calendarEventContract.js';
+import { executeEventCommand } from './calendarEventWrites.js';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { requireApplicationEnvironment, requireCalendarEnvironment, EnvironmentConfigurationError } from '../env/cloud.js';
 import { verifySupabaseSession, SessionVerificationError } from '../auth/verifySession.js';
 import { assertCalendarMutationRequest, createCalendarOAuthAttempt, createCalendarOAuthConsumeCommand,
-  getCalendarOAuthRedirectUri, parseCalendarOAuthCallback, CalendarOAuthPolicyError, CALENDAR_READ_SCOPES,
+  getCalendarOAuthRedirectUri, parseCalendarOAuthCallback, CalendarOAuthPolicyError, CALENDAR_SCOPES,
   validateGrantedCalendarScopes } from './oauthPolicy.js';
 import { CalendarHttpError, boundedFetchJson, object, readBoundedJson } from './calendarHttp.js';
 import { createCalendarStore, type StoredCalendarCredentials } from './calendarStore.js';
@@ -23,7 +25,7 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
 } = {}) {
   return async (request: Request): Promise<Response> => {
     try {
-      const expectedMethod = ['connect', 'complete', 'disconnect'].includes(action) ? 'POST' : 'GET';
+      const expectedMethod = (['connect', 'complete', 'disconnect'].includes(action) || (action === 'events' && request.method === 'POST')) ? 'POST' : 'GET';
       if (request.method !== expectedMethod) return json({ error: { code: 'invalid_request', message: 'This action is unavailable.' } }, 405);
       const environment = requireApplicationEnvironment(dependencies.environment ?? process.env);
       const fetcher = dependencies.fetch ?? fetch;
@@ -53,12 +55,15 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
         return json({ disconnected: true });
       }
       const parameters = new URL(request.url).searchParams;
-      if (action === 'events') {
+      if (action === 'events' && request.method === 'GET') {
         if (parameters.getAll('monday').length !== 1 || [...parameters.keys()].some(key => key !== 'monday')) {
           throw new CalendarHttpError('invalid_request', 400);
         }
         buildCalendarWeekWindow(parameters.get('monday'), 'UTC');
       }
+      const command = action === 'events' && request.method === 'POST'
+        ? eventCommandSchema.safeParse(await readBoundedJson(new Response(request.body), 16 * 1024, request.signal)) : null;
+      if (command && !command.success) throw new CalendarHttpError('invalid_event', 400);
       const calendar = requireCalendarEnvironment(dependencies.environment ?? process.env);
       const oauth = createGoogleOAuthTransport(calendar, request.signal, fetcher);
       const decrypt = (stored: StoredCalendarCredentials): string => {
@@ -133,7 +138,7 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
         const envelope = tokens.refreshToken ? encryptRefreshToken(tokens.refreshToken,
           { userId, connectionId: stored.connection.id, keyVersion: 1 }, calendar.GOOGLE_TOKEN_ENCRYPTION_KEY) : stored.envelope;
         usedEnvelope = envelope;
-        const saved = await store.save(userId, stored.connection.id, stored.connection.updatedAt, envelope, CALENDAR_READ_SCOPES);
+        const saved = await store.save(userId, stored.connection.id, stored.connection.updatedAt, envelope, CALENDAR_SCOPES);
         if (!saved) {
           // A concurrent refresh can succeed; a disconnect or new grant must stop this request.
           const current = await store.read(userId);
@@ -159,8 +164,9 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
         if (error instanceof CalendarProviderError && error.code === 'reconnect_required') await expireUsedGrant();
         throw error;
       });
+      if (command?.success) return json(await executeEventCommand(command.data, discovered, accessToken, request.signal, fetcher));
       const preferences = await store.syncPreferences(userId, discovered);
-      if (action === 'calendars') return json(preferences);
+      if (action === 'calendars') return json(preferences.map(item => ({ ...item, canEdit: discovered.find(source => source.calendarId === item.calendarId)?.canEdit ?? false })));
       const { response, value } = await boundedFetchJson(`${environment.SUPABASE_URL}/rest/v1/profiles?select=timezone`, {
         signal: request.signal, headers: { apikey: environment.SUPABASE_ANON_KEY,
           Authorization: request.headers.get('authorization')! },
