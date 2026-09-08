@@ -1,14 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
 import type { Profile, ProjectSummary } from "../types/domain";
+import { createHomeAppearanceService, type HomeAppearanceService } from "../features/calendar/homeAppearance";
 
 export interface WorkspaceData {
+  homeAppearance?: HomeAppearanceService;
   profile(signal: AbortSignal): Promise<Profile>;
   projects(signal: AbortSignal): Promise<ProjectSummary[]>;
 }
 
 export function createWorkspaceData(client: SupabaseClient<Database>): WorkspaceData {
   return {
+    homeAppearance: createHomeAppearanceService(client),
     async profile(signal) {
       const { data, error } = await client.from("profiles")
         .select("user_id,timezone,created_at,updated_at")

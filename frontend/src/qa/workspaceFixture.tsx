@@ -17,6 +17,7 @@ import "../index.css";
 // Nothing reads credentials, sends requests, or persists outside this page lifetime.
 if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.");
 const params = new URLSearchParams(window.location.search);
+let fixtureAppearance = { title: "", coverImage: null as string | null };
 const scenario = params.get("scenario") ?? "typical";
 const empty = scenario === "empty";
 const long = scenario === "long";
@@ -128,9 +129,9 @@ const calendarService: CalendarService = {
   async week(monday) {
     check(); const instant = (day: number, hour: number, minute = 0) => Temporal.PlainDate.from(monday).add({ days: day }).toZonedDateTime({ timeZone: timezone, plainTime: { hour, minute } }).toInstant().toString();
     const common = { calendarId: "personal", calendarColor: preferences[0].color, googleEventUrl: "https://calendar.google.com" };
-    const model = { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars: preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const })), partialErrors: [], events: empty || !preferences[0].isVisible ? [] : [
-      { ...common, kind: "all_day", eventId: "trip", title: "Studio open week", startDate: monday, endDateExclusive: addSqlDateDays(monday, 3) },
-      ...[{ day: 0, start: 9, end: 10, title: "Weekly planning" }, { day: 1, start: 10, end: 12, title: "A morning to write" }, { day: 1, start: 11, end: 12, title: "Coffee with Sam" }, { day: 3, start: 13, end: 14, title: "Lunch at the park" }, { day: 4, start: 9, end: 10, title: long ? longText : "Reading group" }].map((e, i) => ({ ...common, kind: "timed" as const, eventId: String(i), title: e.title, startAt: instant(e.day, e.start), endAt: instant(e.day, e.end), startTimeZone: timezone, endTimeZone: timezone })),
+    const model = { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars: preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const })), partialErrors: [], events: empty ? [] : [
+      { ...common, calendarId: "work", calendarColor: preferences[1].color, kind: "all_day", eventId: "trip", title: "Studio open week", startDate: monday, endDateExclusive: addSqlDateDays(monday, 3) },
+      ...[{ day: 0, start: 9, end: 10, title: "Weekly planning" }, { day: 1, start: 10, end: 12, title: "A morning to write" }, { day: 1, start: 11, end: 12, title: "Coffee with Sam" }, { day: 3, start: 13, end: 14, title: "Lunch at the park" }, { day: 4, start: 9, end: 10, title: long ? longText : "Reading group" }].map((e, i) => ({ ...common, ...(i < 2 ? { calendarId: "work", calendarColor: preferences[1].color } : {}), kind: "timed" as const, eventId: String(i), title: e.title, startAt: instant(e.day, e.start), endAt: instant(e.day, e.end), startTimeZone: timezone, endTimeZone: timezone })),
     ] };
     if (!seededWeeks.has(monday)) {
       seededWeeks.add(monday);
@@ -157,5 +158,5 @@ createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter in
   <MainWorkspace identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
     onSignOut={async () => { window.alert("Fictional QA account signed out. No real session was changed."); }}
     todoService={todoService} collectionService={collectionService} calendarService={calendarService}
-    workspaceData={{ profile: async () => profile, projects: async () => projects.map(({ id, title }) => ({ id, title })) }} />
+    workspaceData={{ homeAppearance: { async load() { return { ...fixtureAppearance }; }, async save(_userId, value) { check(); fixtureAppearance = { ...value }; return { ...value }; } }, profile: async () => profile, projects: async () => projects.map(({ id, title }) => ({ id, title })) }} />
 </MemoryRouter></StrictMode>);

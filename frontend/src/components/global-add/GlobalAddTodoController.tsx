@@ -110,8 +110,8 @@ export function GlobalAddTodoController({
     <GlobalAddTodoContext.Provider value={actions}>
       {children}
       {refreshIssueScope === scope ? (
-        <aside className="global-add-notice" aria-label="Todo added">
-          <p role="status">Todo added, but this view may be out of date. Refresh to see it.</p>
+        <aside className="global-add-notice" aria-label="Task added">
+          <p role="status">Task added, but this view may be out of date. Refresh to see it.</p>
           <button type="button" onClick={() => setRefreshIssueScope(null)}>Dismiss</button>
         </aside>
       ) : null}

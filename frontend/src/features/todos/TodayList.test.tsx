@@ -67,7 +67,6 @@ function props(overrides: Partial<TodayListProps> = {}): TodayListProps {
     onAddTodo: vi.fn(),
     onCompleteTodo: vi.fn(),
     onEditTodo: vi.fn(),
-    onRescheduleTodo: vi.fn(),
     onDeleteTodo: vi.fn(),
     onUndoDelete: vi.fn(),
     onDismissUndo: vi.fn(),
@@ -117,7 +116,7 @@ describe("TodayList", () => {
       "14:30:00",
     );
     expect(screen.getByText("Health")).toBeTruthy();
-    expect(screen.getByRole("list", { name: "Today todos" })).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Today tasks" })).toBeTruthy();
   });
 
   it("exposes completion, editing, rescheduling, deletion, and Add intents", () => {
@@ -127,19 +126,12 @@ describe("TodayList", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Call the clinic/ }));
     fireEvent.click(screen.getByRole("button", { name: "Edit Call the clinic" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "Reschedule Call the clinic" }),
-    );
-    fireEvent.click(
       screen.getByRole("button", { name: "Delete Call the clinic" }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(callbacks.onCompleteTodo).toHaveBeenCalledWith("older");
     expect(callbacks.onEditTodo).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "older" }),
-      expect.any(Function),
-    );
-    expect(callbacks.onRescheduleTodo).toHaveBeenCalledWith(
       expect.objectContaining({ id: "older" }),
       expect.any(Function),
     );
@@ -153,26 +145,13 @@ describe("TodayList", () => {
     const callbacks = props();
     render(<TodayList {...callbacks} />);
 
-    const moveFirstUp = screen.getByRole("button", {
-      name: "Move Call the clinic up",
-    }) as HTMLButtonElement;
-    const moveFirstDown = screen.getByRole("button", {
-      name: "Move Call the clinic down",
-    });
-    const moveLastDown = screen.getByRole("button", {
-      name: "Move Prepare review down",
-    }) as HTMLButtonElement;
-
-    expect(moveFirstUp.disabled).toBe(false);
-    expect(moveFirstUp.getAttribute("aria-disabled")).toBe("true");
-    expect(moveLastDown.disabled).toBe(false);
-    expect(moveLastDown.getAttribute("aria-disabled")).toBe("true");
-    fireEvent.click(moveFirstUp);
-    fireEvent.click(moveLastDown);
-    fireEvent.click(moveFirstDown);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Move Prepare review up" }),
-    );
+    const firstHandle = screen.getByRole("button", { name: "Reorder Call the clinic" });
+    const lastHandle = screen.getByRole("button", { name: "Reorder Prepare review" });
+    fireEvent.keyDown(firstHandle, { key: "ArrowUp" });
+    fireEvent.keyDown(lastHandle, { key: "ArrowDown" });
+    expect(callbacks.onMoveTodo).not.toHaveBeenCalled();
+    fireEvent.keyDown(firstHandle, { key: "ArrowDown" });
+    fireEvent.keyDown(lastHandle, { key: "ArrowUp" });
 
     expect(callbacks.onMoveTodo).toHaveBeenNthCalledWith(1, "older", "down");
     expect(callbacks.onMoveTodo).toHaveBeenNthCalledWith(2, "today", "up");
@@ -207,15 +186,15 @@ describe("TodayList", () => {
     ({ rerender } = render(<TodayList {...callbacks} />));
 
     const moveUp = screen.getByRole("button", {
-      name: "Move Second task up",
+      name: "Reorder Second task",
     });
     moveUp.focus();
-    fireEvent.click(moveUp);
+    fireEvent.keyDown(moveUp, { key: "ArrowUp" });
 
     const boundaryControl = screen.getByRole("button", {
-      name: "Move Second task up",
+      name: "Reorder Second task",
     });
-    expect(boundaryControl.getAttribute("aria-disabled")).toBe("true");
+    expect(boundaryControl.getAttribute("aria-disabled")).toBeNull();
     expect(document.activeElement).toBe(boundaryControl);
   });
 
@@ -223,12 +202,12 @@ describe("TodayList", () => {
     const callbacks = props();
     const { rerender } = render(<TodayList {...callbacks} />);
     const reschedule = screen.getByRole("button", {
-      name: "Reschedule Call the clinic",
+      name: "Edit Call the clinic",
     });
     reschedule.focus();
     fireEvent.click(reschedule);
 
-    const returnFocus = vi.mocked(callbacks.onRescheduleTodo).mock.calls[0]?.[1];
+    const returnFocus = vi.mocked(callbacks.onEditTodo).mock.calls[0]?.[1];
     rerender(
       <TodayList
         {...callbacks}
@@ -245,17 +224,17 @@ describe("TodayList", () => {
   });
 
   it.each(["cancel", "success"] as const)(
-    "returns focus to the invoking Reschedule control after %s when its row remains",
+    "returns focus to the invoking Edit control after %s when its row remains",
     (outcome) => {
       const callbacks = props();
       const { rerender } = render(<TodayList {...callbacks} />);
       const reschedule = screen.getByRole("button", {
-        name: "Reschedule Call the clinic",
+        name: "Edit Call the clinic",
       });
       reschedule.focus();
       fireEvent.click(reschedule);
 
-      const returnFocus = vi.mocked(callbacks.onRescheduleTodo).mock.calls[0]?.[1];
+      const returnFocus = vi.mocked(callbacks.onEditTodo).mock.calls[0]?.[1];
       if (outcome === "success") {
         rerender(
           <TodayList
@@ -271,7 +250,7 @@ describe("TodayList", () => {
       returnFocus?.();
 
       expect(document.activeElement).toBe(
-        screen.getByRole("button", { name: "Reschedule Call the clinic" }),
+        screen.getByRole("button", { name: "Edit Call the clinic" }),
       );
     },
   );
@@ -453,13 +432,11 @@ describe("TodayList", () => {
     fireEvent.click(remove);
     fireEvent.click(screen.getByRole("checkbox", { name: /Second task/ }));
     fireEvent.click(screen.getByRole("button", { name: "Edit Second task" }));
-    fireEvent.click(screen.getByRole("button", { name: "Reschedule Second task" }));
-    fireEvent.click(screen.getByRole("button", { name: "Move Second task down" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Reorder Second task" }), { key: "ArrowDown" });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     expect(callbacks.onDeleteTodo).not.toHaveBeenCalled();
     expect(callbacks.onCompleteTodo).toHaveBeenCalledOnce();
     expect(callbacks.onEditTodo).toHaveBeenCalledOnce();
-    expect(callbacks.onRescheduleTodo).toHaveBeenCalledOnce();
     expect(callbacks.onMoveTodo).toHaveBeenCalledOnce();
     expect(callbacks.onAddTodo).toHaveBeenCalledOnce();
   });
@@ -557,16 +534,14 @@ describe("TodayList", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Undo" }));
   });
 
-  it.each(["Edit", "Reschedule"] as const)("provides a stable, non-stealing %s return-focus callback", (action) => {
+  it.each(["Edit"] as const)("provides a stable, non-stealing %s return-focus callback", (action) => {
     const callbacks = props();
     const { rerender } = render(<TodayList {...callbacks} />);
     const source = screen.getByRole("button", { name: `${action} Call the clinic` });
     expect(source.id).not.toBe("");
     source.focus();
     fireEvent.click(source);
-    const callback = action === "Edit"
-      ? vi.mocked(callbacks.onEditTodo).mock.calls[0]?.[1]
-      : vi.mocked(callbacks.onRescheduleTodo).mock.calls[0]?.[1];
+    const callback = vi.mocked(callbacks.onEditTodo).mock.calls[0]?.[1];
     const newer = screen.getByRole("button", { name: "Add task" });
     newer.focus();
     newer.blur();
@@ -672,11 +647,11 @@ describe("TodayList", () => {
     render(<TodayList {...callbacks} />);
 
     const moveDown = screen.getByRole("button", {
-      name: "Move Only task down",
+      name: "Reorder Only task",
     });
     expect(moveDown.getAttribute("aria-disabled")).toBe("true");
     moveDown.focus();
-    fireEvent.click(moveDown);
+    fireEvent.keyDown(moveDown, { key: "ArrowDown" });
     fireEvent.click(screen.getByRole("checkbox", { name: /Only task/ }));
 
     expect(document.activeElement).toBe(moveDown);
@@ -745,7 +720,7 @@ describe("TodayList", () => {
     );
     render(<TodayList {...props({ state: controllerState(manyTodos) })} />);
 
-    const list = screen.getByRole("list", { name: "Today todos" });
+    const list = screen.getByRole("list", { name: "Today tasks" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(100);
     expect(screen.getByText("Accumulated task 100")).toBeTruthy();
   });

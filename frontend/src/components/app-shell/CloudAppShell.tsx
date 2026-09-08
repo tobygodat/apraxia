@@ -5,17 +5,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
+import { WorkspaceIcon } from "../WorkspaceIcon";
 import "./CloudAppShell.css";
 
 const PRIMARY_DESTINATIONS = [
-  { to: "/", label: "Home", end: true },
-  { to: "/todos", label: "Todos", end: false },
-  { to: "/ideas", label: "Ideas", end: false },
-  { to: "/media", label: "Media", end: false },
-  { to: "/projects", label: "Projects", end: false },
+  { to: "/", label: "Home", icon: "home", end: true },
+  { to: "/todos", label: "Tasks", icon: "todos", end: false },
+  { to: "/ideas", label: "Ideas", icon: "ideas", end: false },
+  { to: "/media", label: "Media", icon: "media", end: false },
+  { to: "/projects", label: "Projects", icon: "projects", end: false },
 ] as const;
 
 export interface CloudAppShellProps {
@@ -45,6 +46,9 @@ export function CloudAppShell({
   settingsAvailable = true,
   children,
 }: CloudAppShellProps) {
+  const { pathname } = useLocation();
+  const currentDestination = PRIMARY_DESTINATIONS.find(destination => destination.to === "/" ? pathname === "/" : pathname === destination.to || pathname.startsWith(`${destination.to}/`));
+  const pageLabel = currentDestination?.label ?? (pathname === "/settings" ? "Settings" : "Workspace");
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuId = useId();
   const accountRootRef = useRef<HTMLDivElement>(null);
@@ -139,10 +143,15 @@ export function CloudAppShell({
         Skip to main content
       </a>
 
-      <header className="cloud-shell__header">
+      <aside className="cloud-shell__sidebar" aria-label="Workspace sidebar">
         <Link to="/" className="cloud-shell__wordmark">
-          /orbitOS/
+          <WorkspaceIcon name="orbit" />
+          <span>orbitOS</span>
         </Link>
+
+        {onOpenSearch ? <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>
+          <WorkspaceIcon name="search" /><span>Search</span><kbd aria-hidden="true">Ctrl K</kbd>
+        </button> : null}
 
         <nav className="cloud-shell__nav" aria-label="Primary navigation">
           {PRIMARY_DESTINATIONS.filter((destination) => !availableDestinations || availableDestinations.includes(destination.to)).map((destination) => (
@@ -154,7 +163,8 @@ export function CloudAppShell({
                 `cloud-shell__nav-link${isActive ? " cloud-shell__nav-link--active" : ""}`
               }
             >
-              {destination.label.toLowerCase()}
+              <WorkspaceIcon name={destination.icon} />
+              <span>{destination.label.toLowerCase()}</span>
             </NavLink>
           ))}
         </nav>
@@ -163,27 +173,19 @@ export function CloudAppShell({
           className="cloud-shell__actions"
           data-account-open={accountOpen}
         >
-          {onOpenSearch ? <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>search</button> : null}
-          <button
-            className="cloud-shell__add"
-            type="button"
-            disabled={globalAddDisabled}
-            onClick={onOpenGlobalAdd}
-          >
-            + add
-          </button>
-
           <div className="cloud-shell__account" ref={accountRootRef}>
             <button
               ref={accountTriggerRef}
               className="cloud-shell__account-trigger"
               type="button"
+              aria-label="account"
               aria-expanded={accountOpen}
               aria-controls={accountOpen ? accountMenuId : undefined}
               onClick={() => setAccountOpen((open) => !open)}
             >
-              account
-              <span aria-hidden="true">{accountOpen ? "−" : "+"}</span>
+              <span className="cloud-shell__avatar" aria-hidden="true">o</span>
+              <span>Account</span>
+              <WorkspaceIcon name="down" />
             </button>
 
             {accountOpen ? (
@@ -236,11 +238,23 @@ export function CloudAppShell({
               : ""}
           </p>
         </div>
-      </header>
+      </aside>
 
-      <main id="cloud-main-content" className="cloud-shell__content" tabIndex={-1}>
-        {children === undefined ? <Outlet /> : children}
-      </main>
+      <div className="cloud-shell__body">
+        <header className="cloud-shell__header">
+          <div className="cloud-shell__breadcrumb">
+            <WorkspaceIcon name={currentDestination?.icon ?? "home"} />
+            <span>Workspace</span><span aria-hidden="true">/</span><span>{pageLabel}</span>
+          </div>
+          <button className="cloud-shell__add" type="button" disabled={globalAddDisabled} onClick={onOpenGlobalAdd} aria-label="+ add">
+            <WorkspaceIcon name="plus" /><span>Add</span>
+          </button>
+        </header>
+
+        <main id="cloud-main-content" className="cloud-shell__content" tabIndex={-1}>
+          {children === undefined ? <Outlet /> : children}
+        </main>
+      </div>
     </div>
   );
 }

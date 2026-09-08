@@ -244,7 +244,7 @@ export function TodoComposerDialog({
         submittingRef.current = false;
         setIsSubmitting(false);
         setSubmitError(
-          "We couldn’t add this todo. Your details are still here—try again.",
+          "We couldn’t add this task. Your details are still here—try again.",
         );
       }
     }
@@ -311,7 +311,7 @@ export function TodoComposerDialog({
         tabIndex={-1}
       >
         <header className="todo-dialog__header">
-          <h2 id={titleId}>Add a todo</h2>
+          <h2 id={titleId}>Add a task</h2>
           <p id={descriptionId}>Capture the task now. Add details only if they help.</p>
         </header>
 
@@ -449,7 +449,7 @@ export function TodoComposerDialog({
               className="todo-dialog__button todo-dialog__button--primary"
               type="submit"
             >
-              {isSubmitting ? "Adding…" : "Add todo"}
+              {isSubmitting ? "Adding…" : "Add task"}
             </button>
           </footer>
         </form>

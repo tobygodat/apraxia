@@ -64,7 +64,7 @@ describe("TodoComposerDialog", () => {
 
     expect(
       screen
-        .getByRole("dialog", { name: "Add a todo" })
+        .getByRole("dialog", { name: "Add a task" })
         .getAttribute("aria-modal"),
     ).toBe("true");
     expect(document.activeElement).toBe(
@@ -90,7 +90,7 @@ describe("TodoComposerDialog", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Project" }), {
       target: { value: projects[1].id },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => {
       expect(onCreate).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe("TodoComposerDialog", () => {
     fireEvent.change(screen.getByLabelText("Due time"), {
       target: { value: "14:15" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(await screen.findByText("Enter a task.")).not.toBeNull();
     expect(
@@ -193,11 +193,11 @@ describe("TodoComposerDialog", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Project" }), {
       target: { value: projects[0].id },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(
       await screen.findByText(
-        "We couldn’t add this todo. Your details are still here—try again.",
+        "We couldn’t add this task. Your details are still here—try again.",
       ),
     ).not.toBeNull();
     expect(
@@ -217,7 +217,7 @@ describe("TodoComposerDialog", () => {
     expect(screen.queryByText(/postgres|secret detail/i)).toBeNull();
     expect(
       screen
-        .getByRole("button", { name: "Add todo" })
+        .getByRole("button", { name: "Add task" })
         .getAttribute("aria-disabled"),
     ).toBe("false");
     expect(
@@ -281,7 +281,7 @@ describe("TodoComposerDialog", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
       target: { value: "Cancelable request" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(onCreate).toHaveBeenCalledOnce());
     expect(receivedSignal?.aborted).toBe(false);
@@ -310,7 +310,7 @@ describe("TodoComposerDialog", () => {
     fireEvent.click(cancel);
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
 
-    expect(screen.getByRole("dialog", { name: "Add a todo" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Add a task" })).toBeTruthy();
     expect(receivedSignal?.aborted).toBe(false);
 
     finishCreate?.();
@@ -338,7 +338,7 @@ describe("TodoComposerDialog", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
       target: { value: "Abandoned create" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     expect(onCreate).toHaveBeenCalledOnce();
 
     unmount();

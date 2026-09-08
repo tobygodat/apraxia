@@ -11,7 +11,7 @@ export type TodoMutationErrorKind =
 export function todoLoadErrorCopy(kind: "load_failed"): string {
   switch (kind) {
     case "load_failed":
-      return "Todos could not be loaded. Try again.";
+      return "Tasks could not be loaded. Try again.";
   }
 }
 
@@ -20,8 +20,8 @@ export function todoMutationErrorCopy(kind: TodoMutationErrorKind): string {
     case "completion_failed":
       return "The completion change was not saved. The prior state remains.";
     case "delete_failed":
-      return "The todo could not be deleted. Try again.";
+      return "The task could not be deleted. Try again.";
     case "update_failed":
-      return "The todo changes were not saved. Your entered details can be retried.";
+      return "The task changes were not saved. Your entered details can be retried.";
   }
 }

@@ -251,7 +251,7 @@ export function TodoEditDialog({
       abortControllerRef.current = null;
       submittingRef.current = false;
       setIsSubmitting(false);
-      setSubmitError("We couldn’t save this todo. Your details are still here—try again.");
+      setSubmitError("We couldn’t save this task. Your details are still here—try again.");
     }
   }
 
@@ -301,7 +301,7 @@ export function TodoEditDialog({
         tabIndex={-1}
       >
         <header className="todo-dialog__header">
-          <h2 id={titleId}>{mode === "reschedule" ? "Reschedule todo" : "Edit todo"}</h2>
+          <h2 id={titleId}>{mode === "reschedule" ? "Reschedule task" : "Edit task"}</h2>
           <p id={descriptionId}>{mode === "reschedule"
             ? "Change the schedule. Clear the date to move this task to Inbox."
             : "Task is required. The schedule and project are optional."}</p>
@@ -407,7 +407,7 @@ export function TodoEditDialog({
         </form>
       </div>
       <p className="todo-edit-dialog__status" id={saveStatusId} role="status" aria-live="polite">
-        {isSubmitting ? "Saving this todo. Please wait before closing the form." : ""}
+        {isSubmitting ? "Saving this task. Please wait before closing the form." : ""}
       </p>
     </div>,
     document.body,

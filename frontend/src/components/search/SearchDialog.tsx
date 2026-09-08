@@ -129,7 +129,7 @@ export function SearchDialog({ open, service, onClose, onSelect, refreshKey = 0 
     {error && <div className="search-error" role="alert"><p>{error}</p>{!selection && <button type="button" onClick={() => setRetry(value => value + 1)}>Retry search</button>}</div>}
     <div className="search-status" role="status">{selection ? "Opening record…" : loading ? "Searching…" : !query.trim() ? "Search includes completed tasks and archived projects." : !results.length && !error ? "No matches. Try another word." : previousResults ? `Previous results for “${loadedQuery}”` : `${results.length} ${results.length === 1 ? "result" : "results"}${hasMore ? " shown" : ""}`}</div>
     <ul className="search-results" aria-label="Search results">{results.map(result => <li key={`${result.recordType}:${result.recordId}`}><button type="button" disabled={Boolean(selection)} onClick={() => void select(result)}>
-      <span className="search-result-type">{result.recordType}</span><span className="search-result-content"><strong>{result.title || result.snippet.split(/\r?\n/).find(line => line.trim()) || "Untitled"}</strong>{result.snippet && <span>{result.snippet}</span>}</span>
+      <span className="search-result-type">{result.recordType === "todo" ? "task" : result.recordType}</span><span className="search-result-content"><strong>{result.title || result.snippet.split(/\r?\n/).find(line => line.trim()) || "Untitled"}</strong>{result.snippet && <span>{result.snippet}</span>}</span>
     </button></li>)}</ul>
     {hasMore && !previousResults && <button type="button" className="search-more" disabled={loading || Boolean(selection)} onClick={() => void fetchResults(loadedQuery, nextOffset)}>Load more</button>}
   </div></div>, document.body);

@@ -89,7 +89,7 @@ describe("TodoEditDialog", () => {
   it("reschedules without sending unrelated fields and retains exact stored time", async () => {
     const onSave = vi.fn<TodoEditDialogProps["onSave"]>(async () => undefined);
     render(<TodoEditDialog mode="reschedule" todo={{ ...TODO, dueTime: "14:30:00.123456" }} projects={PROJECTS} onSave={onSave} onClose={vi.fn()} />);
-    expect(screen.getByRole("dialog", { name: "Reschedule todo" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Reschedule task" })).toBeTruthy();
     expect(document.activeElement).toBe(input("Due date"));
     expect(screen.queryByLabelText("Task")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
@@ -120,7 +120,7 @@ describe("TodoEditDialog", () => {
   it("opens a named modal with the existing values and required task semantics", () => {
     render(<Harness onSave={vi.fn()} />);
     openEdit();
-    const dialog = screen.getByRole("dialog", { name: "Edit todo" });
+    const dialog = screen.getByRole("dialog", { name: "Edit task" });
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(document.activeElement).toBe(input("Task"));
     expect(input("Task").value).toBe(TODO.text);
@@ -273,7 +273,7 @@ describe("TodoEditDialog", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("alert")).toHaveProperty(
-      "textContent", "We couldn’t save this todo. Your details are still here—try again.",
+      "textContent", "We couldn’t save this task. Your details are still here—try again.",
     );
     expect(input("Task").value).toBe("  Call Sam 📞  ");
     expect(input("Due date").value).toBe("2026-09-04");
@@ -298,7 +298,7 @@ describe("TodoEditDialog", () => {
     const pendingButton = screen.getByRole("button", { name: "Saving…" });
     expect(document.activeElement).toBe(pendingButton);
     expect(pendingButton.getAttribute("aria-disabled")).toBe("true");
-    expect(screen.getByRole("status").textContent).toContain("Saving this todo");
+    expect(screen.getByRole("status").textContent).toContain("Saving this task");
     for (const label of ["Task", "Due date", "Due time"]) expect(input(label).disabled).toBe(true);
     expect((screen.getByRole("combobox", { name: "Project" }) as HTMLSelectElement).disabled).toBe(true);
     fireEvent.change(input("Task"), { target: { value: "Must not replace pending input" } });

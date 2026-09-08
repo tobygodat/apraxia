@@ -42,7 +42,7 @@ export function TodosWorkspaceContent({ service, workspaceSessionKey, refreshKey
   }, [refreshKey, controller.profile, controller.pendingTodoIds, controller.refreshWorkspace]);
   if (controller.profile) return <ReadyTodosBoard controller={controller} profile={controller.profile} />;
   return <section className="todos-board-page">
-    <header className="todos-board-toolbar"><h1>Todos</h1></header>
+    <header className="todos-board-toolbar"><h1>Tasks</h1></header>
     {controller.loadState.status === "error" ? <div className="todos-board-error" role="alert">
       <p>Couldn’t load your todos. Try again.</p><button onClick={controller.retryLoad}>Try again</button>
     </div> : <p className="todos-board-status" role="status">Loading your todos…</p>}
@@ -62,7 +62,7 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
     return (
       <CloudAppShell {...props} availableDestinations={["/todos"]} settingsAvailable={false} globalAddDisabled onOpenGlobalAdd={() => undefined}>
         <section className="todos-board-page" aria-labelledby="todos-loading-heading">
-          <header className="todos-board-toolbar"><h1 id="todos-loading-heading">Todos</h1></header>
+          <header className="todos-board-toolbar"><h1 id="todos-loading-heading">Tasks</h1></header>
           {failed ? (
             <div className="todos-board-error" role="alert">
               <p>Couldn’t load your todos. Try again.</p>

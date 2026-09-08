@@ -15,7 +15,7 @@
   --dialog-line-strong: rgba(255, 255, 255, 0.24);
   --dialog-field-line: rgba(255, 255, 255, 0.36);
   --dialog-field-line-hover: rgba(255, 255, 255, 0.52);
-  --dialog-field-background: #111114;
+  --dialog-field-background: #111111;
   --dialog-text: rgba(255, 255, 255, 0.93);
   --dialog-muted: rgba(255, 255, 255, 0.62);
   width: min(100%, 580px);
@@ -25,7 +25,7 @@
   border: 1px solid var(--dialog-line-strong);
   border-radius: 14px;
   outline: none;
-  background: #18181b;
+  background: #181818;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
   color: var(--dialog-text);
   font-family: inherit;
@@ -46,7 +46,7 @@
 
 .todo-dialog::-webkit-scrollbar-thumb,
 .todo-dialog-backdrop::-webkit-scrollbar-thumb {
-  border: 3px solid #18181b;
+  border: 3px solid #181818;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
 }
@@ -59,7 +59,7 @@
 .todo-dialog__header h2 {
   margin: 0;
   color: var(--dialog-text);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: clamp(18px, 3vw, 22px);
   font-weight: 500;
   letter-spacing: -0.025em;
@@ -97,7 +97,7 @@
 .todo-dialog__field label {
   width: fit-content;
   color: rgba(255, 255, 255, 0.72);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.025em;
@@ -126,7 +126,7 @@
 .todo-dialog__field input:hover:not(:disabled),
 .todo-dialog__field select:hover:not(:disabled) {
   border-color: var(--dialog-field-line-hover);
-  background: #141417;
+  background: #141414;
 }
 
 .todo-dialog__field input:disabled,
@@ -189,7 +189,7 @@
   padding: 9px 17px;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.025em;
@@ -211,8 +211,8 @@
 }
 
 .todo-dialog__button--primary {
-  background: #e3e3e5;
-  color: #18181b;
+  background: #f0efed;
+  color: #181818;
 }
 
 .todo-dialog__button--primary:hover:not(:disabled):not([aria-disabled="true"]) {

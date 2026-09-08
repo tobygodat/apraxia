@@ -57,6 +57,14 @@ JavaScript Date conversion loses required precision. See
 
 ## Live releases
 
+Home page names and optional covers use the account-owned `home_appearance`
+table. Apply `20260907000100_home_appearance.sql` and
+`20260908000100_home_cover_position.sql` before releasing that UI.
+Uploads are resized in the browser; only a bounded image (at most 350 KB encoded)
+is saved with the title and crop coordinates under RLS. Expanding the cover
+reveals the complete resized image. No public image bucket is used. The fixture
+keeps these preferences in memory, so it cannot prove persistence across reloads.
+
 | Environment | Database | Configuration |
 |---|---|---|
 | Development | Local Supabase | Ignored `.env.local` |

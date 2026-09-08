@@ -416,7 +416,7 @@ describe("TodosBoard", () => {
 
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.getByRole("alert").textContent).toContain(
-      "Todos could not be loaded.",
+      "Tasks could not be loaded.",
     );
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(callbacks.onRetry).toHaveBeenCalledOnce();
@@ -483,7 +483,7 @@ describe("TodosBoard", () => {
       await completion.promise;
     });
 
-    expect(screen.getByRole("dialog", { name: "Add a todo" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Add a task" })).toBeTruthy();
     expect(document.activeElement).toBe(taskField);
   });
 

@@ -1,23 +1,23 @@
 .search-backdrop { position:fixed; inset:0; z-index:100; display:grid; align-items:start; justify-items:center; overflow-y:auto; padding:9vh 24px 24px; background:rgba(5,5,7,.76); }
-.search-dialog { width:min(680px,100%); max-height:82vh; overflow:auto; padding:26px; border:1px solid #55555c; border-radius:14px; color:#ededee; background:#18181b; box-shadow:0 24px 70px rgba(0,0,0,.48); scrollbar-color:#62626c #18181b; }
+.search-dialog { width:min(680px,100%); max-height:82vh; overflow:auto; padding:26px; border:1px solid #555555; border-radius:14px; color:#f0efed; background:#181818; box-shadow:0 24px 70px rgba(0,0,0,.48); scrollbar-color:#626262 #181818; }
 .search-header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:24px; }
-.search-header h2 { margin:0; font-family:"JetBrains Mono",ui-monospace,monospace; font-size:21px; font-weight:500; letter-spacing:-.025em; }
+.search-header h2 { margin:0; font-family:"Segoe UI", system-ui, sans-serif; font-size:21px; font-weight:500; letter-spacing:-.025em; }
 .search-dialog button { cursor:pointer; font:inherit; }
-.search-header button,.search-more,.search-error button { min-height:36px; padding:7px 12px; border:1px solid #5b5b64; border-radius:7px; background:transparent; color:#dedee5; font-size:12px; }
-.search-dialog button:hover:not(:disabled) { background:#26262d; }
+.search-header button,.search-more,.search-error button { min-height:36px; padding:7px 12px; border:1px solid #5b5b5b; border-radius:7px; background:transparent; color:#f0efed; font-size:12px; }
+.search-dialog button:hover:not(:disabled) { background:#262626; }
 .search-dialog button:disabled,.search-dialog button[aria-disabled="true"] { opacity:.55; cursor:wait; }
-.search-label { display:block; margin-bottom:9px; color:#bdbdc7; font-size:12px; }
-.search-input { box-sizing:border-box; width:100%; min-height:48px; padding:11px 13px; border:1px solid #777780; border-radius:8px; background:#111114; color:#ededee; font:inherit; caret-color:#fff; }
-.search-input::placeholder { color:#a4a4af; }
-.search-dialog :focus-visible { outline:2px solid #ededee; outline-offset:3px; }
-.search-status { color:#b6b6c0; font-size:12px; line-height:1.6; margin:16px 0; overflow-wrap:anywhere; }
+.search-label { display:block; margin-bottom:9px; color:#ada9a3; font-size:12px; }
+.search-input { box-sizing:border-box; width:100%; min-height:48px; padding:11px 13px; border:1px solid #777777; border-radius:8px; background:#111111; color:#f0efed; font:inherit; caret-color:#fff; }
+.search-input::placeholder { color:#ada9a3; }
+.search-dialog :focus-visible { outline:2px solid #f0efed; outline-offset:3px; }
+.search-status { color:#ada9a3; font-size:12px; line-height:1.6; margin:16px 0; overflow-wrap:anywhere; }
 .search-results { list-style:none; padding:0; margin:0; }
-.search-results li { border-top:1px solid #38383f; }
+.search-results li { border-top:1px solid #383838; }
 .search-results button { display:flex; width:100%; min-width:0; text-align:left; align-items:baseline; gap:18px; padding:16px 4px; border:0; background:none; color:inherit; }
-.search-result-type { flex:0 0 58px; font-family:"JetBrains Mono",monospace; font-size:11px; color:#b9b9c5; }
+.search-result-type { flex:0 0 58px; font-family:"Segoe UI", system-ui, sans-serif; font-size:11px; color:#ada9a3; }
 .search-result-content { min-width:0; flex:1; }
 .search-result-content strong { display:block; overflow-wrap:anywhere; font-size:15px; line-height:1.5; font-weight:500; }
-.search-result-content>span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; margin-top:5px; font-size:13px; color:#b3b3be; line-height:1.6; }
+.search-result-content>span { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; margin-top:5px; font-size:13px; color:#ada9a3; line-height:1.6; }
 .search-more { margin-top:18px; }
 .search-error { color:#ffb4b4; font-size:13px; line-height:1.6; }
-.search-dialog ::selection { background:#51515b; color:#fff; }
+.search-dialog ::selection { background:#515151; color:#fff; }

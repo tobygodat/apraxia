@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { ProjectSummary, Todo } from "../../types/domain";
+import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { addSqlDateDays, parseSqlDate } from "./dateDomain";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
 import {
@@ -208,16 +209,18 @@ function TodoCard({
           disabled={pending}
           onClick={() => onEditTodo(todo)}
           aria-label={`Edit ${todo.text}`}
+          title="Edit task"
         >
-          Edit
+          <WorkspaceIcon name="edit" />
         </button>
         <button
           type="button"
           disabled={pending}
           onClick={() => onDeleteTodo(todo)}
           aria-label={`Delete ${todo.text}`}
+          title="Delete task"
         >
-          Delete
+          <WorkspaceIcon name="trash" />
         </button>
       </div>
     </article>
@@ -483,13 +486,13 @@ export function TodosBoard({
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
       <header className="todos-board-toolbar">
         <div>
-          <h1 id="todos-board-heading">Todos</h1>
+          <h1 id="todos-board-heading">Tasks</h1>
           <p className="todos-board-week" aria-live="polite">
             {weekRangeLabel(model.visibleWeekMonday)}
           </p>
         </div>
 
-        <nav className="todos-board-nav" aria-label="Todo week navigation">
+        <nav className="todos-board-nav" aria-label="Task week navigation">
           <button
             type="button"
             onClick={onPreviousWeek}
@@ -634,7 +637,7 @@ export function TodosBoard({
       {undoNotice ? (
         <aside
           className="todos-board-undo"
-          aria-label="Todo deletion"
+          aria-label="Task deletion"
           aria-busy={undoNotice.pending || undefined}
         >
           <div>

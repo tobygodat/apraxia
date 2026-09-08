@@ -130,7 +130,7 @@ describe("TodosWorkspace", () => {
     fireEvent.change(screen.getByLabelText("Due date"), { target: { value: "2026-09-03" } });
     fireEvent.change(screen.getByLabelText("Due time"), { target: { value: "09:30" } });
     fireEvent.change(screen.getByRole("combobox", { name: "Project" }), { target: { value: PROJECT.id } });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(await screen.findByRole("article", { name: "New draft" })).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

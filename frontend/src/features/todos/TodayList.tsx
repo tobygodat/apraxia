@@ -10,11 +10,15 @@ import { parseSqlDate } from "./dateDomain";
 import type { TodayListControllerState } from "./todayListController";
 import type { TodayDropPlacement } from "./todayListModel";
 import type { MoveDirection } from "./todayOrder";
+import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import "./TodayList.css";
 
 export type TodayListReturnFocus = () => void;
 
 export interface TodayListProps {
+  readonly heading?: string;
+  readonly day?: "Today" | "Tomorrow";
+  readonly onDayChange?: (day: "Today" | "Tomorrow") => void;
   readonly state: TodayListControllerState;
   readonly onRetry: () => void;
   readonly onAddTodo: () => void;
@@ -23,11 +27,6 @@ export interface TodayListProps {
   readonly onEditTodo: (
     todo: TodayTodo,
     returnFocus?: TodayListReturnFocus,
-  ) => void;
-  /** Call returnFocus after the reschedule surface closes. */
-  readonly onRescheduleTodo: (
-    todo: TodayTodo,
-    returnFocus: TodayListReturnFocus,
   ) => void;
   readonly onDeleteTodo: (todo: TodayTodo) => void;
   readonly onUndoDelete: () => void;
@@ -77,8 +76,8 @@ function dateAtUtcNoon(value: string): Date {
   return date;
 }
 
-function dueDateLabel(todo: TodayTodo): string {
-  const prefix = todo.isOverdue ? "Overdue" : "Due today";
+function dueDateLabel(todo: TodayTodo, day: "Today" | "Tomorrow"): string {
+  const prefix = todo.isOverdue ? "Overdue" : `Due ${day.toLowerCase()}`;
   return `${prefix} · ${dueDateFormatter.format(dateAtUtcNoon(todo.dueDate))}`;
 }
 
@@ -103,21 +102,6 @@ function PlusIcon() {
   );
 }
 
-function MoveIcon({ direction }: { readonly direction: MoveDirection }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 16 16">
-      <path
-        d={direction === "up" ? "m4.5 9.5 3.5-3 3.5 3" : "m4.5 6.5 3.5 3 3.5-3"}
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-
 function DragIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 16 20">
@@ -133,12 +117,14 @@ function DragIcon() {
 }
 
 export function TodayList({
+  heading = "Today",
+  day = "Today",
+  onDayChange,
   state,
   onRetry,
   onAddTodo,
   onCompleteTodo,
   onEditTodo,
-  onRescheduleTodo,
   onDeleteTodo,
   onUndoDelete,
   onDismissUndo,
@@ -154,6 +140,7 @@ export function TodayList({
   const { model } = state;
   const listLocked =
     state.loadStatus !== "ready" || state.pendingMutation !== null;
+  const reorderLocked = listLocked || day === "Tomorrow";
   const scrollId = `${idBase}-scroll`;
   const addTodoId = `${idBase}-add`;
   const undoControlId = `${idBase}-undo`;
@@ -261,7 +248,7 @@ export function TodayList({
     event: DragEvent<HTMLElement>,
     targetTodoId: UUID,
   ) {
-    if (listLocked || draggedTodoIdRef.current === null) return;
+    if (reorderLocked || draggedTodoIdRef.current === null) return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     const placement: TodayDropPlacement =
@@ -280,7 +267,7 @@ export function TodayList({
         ? dragTargetRef.current.placement
         : "before";
     resetDrag();
-    if (!listLocked && todoId && todoId !== targetTodoId) {
+    if (!reorderLocked && todoId && todoId !== targetTodoId) {
       onPlaceTodo(todoId, targetTodoId, placement);
     }
   }
@@ -330,9 +317,9 @@ export function TodayList({
     >
       <header className="today-list__header">
         <div>
-          <h2 id={`${idBase}-heading`}>Today</h2>
+          <h2 id={`${idBase}-heading`}>{heading}</h2>
           <p id={`${idBase}-summary`}>
-            {model.todos.length === 0
+            {day === "Tomorrow" ? `${model.todos.length} due tomorrow` : model.todos.length === 0
               ? "Tasks due today and overdue"
               : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
           </p>
@@ -349,6 +336,12 @@ export function TodayList({
           <PlusIcon />
           Add task
         </button>
+        {onDayChange && <div className="today-list__day-switch" role="group" aria-label="Task day">
+          {(["Today", "Tomorrow"] as const).map(option => <button
+            key={option} type="button" aria-pressed={day === option}
+            disabled={state.pendingMutation !== null}
+            onClick={() => onDayChange(option)}>{option}</button>)}
+        </div>}
       </header>
 
       {state.undoNotice ? (
@@ -366,7 +359,7 @@ export function TodayList({
 
       {state.loadStatus === "loading" ? (
         <p className="today-list__status" role="status">
-          Loading Today…
+          Loading {day}…
         </p>
       ) : null}
 
@@ -389,23 +382,23 @@ export function TodayList({
         className="today-list__scroll"
         id={scrollId}
         role="region"
-        aria-label="Today task list"
+        aria-label={`${day} task list`}
         tabIndex={0}
         aria-describedby={`${idBase}-summary`}
       >
         {model.todos.length === 0 && state.pendingMutation !== null ? (
           <p className="today-list__pending-empty" role="status">
-            Updating Today…
+            Updating {day}…
           </p>
         ) : model.todos.length === 0 && state.loadStatus === "ready" ? (
           <div className="today-list__empty">
-            <p>Nothing is due yet.</p>
+            <p>{day === "Tomorrow" ? "Nothing is due tomorrow." : "Nothing is due yet."}</p>
             <button type="button" onClick={onAddTodo}>
               Add a task
             </button>
           </div>
         ) : model.todos.length > 0 ? (
-          <ol className="today-list__items" aria-label="Today todos">
+          <ol className="today-list__items" aria-label={`${day} tasks`}>
             {model.todos.map((todo, index) => {
               const titleId = `${idBase}-todo-${encodeURIComponent(todo.id)}`;
               const isPending = state.pendingMutation?.todoId === todo.id;
@@ -424,9 +417,9 @@ export function TodayList({
                 <li
                   className={rowClassName}
                   key={todo.id}
-                  draggable={!listLocked}
+                  draggable={!reorderLocked}
                   onDragStart={(event) => {
-                    if (listLocked) {
+                    if (reorderLocked) {
                       event.preventDefault();
                       return;
                     }
@@ -442,9 +435,14 @@ export function TodayList({
                   onDragEnd={resetDrag}
                 >
                   <article aria-labelledby={titleId} aria-busy={isPending || undefined}>
-                    <span className="today-list-item__drag" title="Drag to reorder">
+                    {day === "Today" ? <span className="today-list-item__drag" role="button" tabIndex={0} aria-label={`Reorder ${todo.text}`} aria-disabled={listLocked || undefined} title="Drag to reorder, or use Up and Down arrow keys" onKeyDown={event => {
+                      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                      event.preventDefault();
+                      const direction = event.key === "ArrowUp" ? "up" : "down";
+                      if (!listLocked && (direction === "up" ? index > 0 : index < model.todos.length - 1)) onMoveTodo(todo.id, direction);
+                    }}>
                       <DragIcon />
-                    </span>
+                    </span> : <span aria-hidden="true" />}
 
                     <label className="today-list-item__check">
                       <input
@@ -471,7 +469,7 @@ export function TodayList({
                     <div className="today-list-item__content">
                       <p id={titleId}>{todo.text}</p>
                       <div className="today-list-item__meta">
-                        <time dateTime={todo.dueDate}>{dueDateLabel(todo)}</time>
+                        <time dateTime={todo.dueDate}>{dueDateLabel(todo, day)}</time>
                         {todo.dueTime ? (
                           <time dateTime={todo.dueTime}>
                             {dueTimeLabel(todo.dueTime)}
@@ -482,40 +480,6 @@ export function TodayList({
                     </div>
 
                     <div className="today-list-item__actions">
-                      <div
-                        className="today-list-item__move"
-                        role="group"
-                        aria-label={`Reorder ${todo.text}`}
-                      >
-                        <button
-                          type="button"
-                          aria-disabled={listLocked || index === 0 || undefined}
-                          onClick={() => {
-                            if (!listLocked && index > 0) {
-                              onMoveTodo(todo.id, "up");
-                            }
-                          }}
-                          aria-label={`Move ${todo.text} up`}
-                        >
-                          <MoveIcon direction="up" />
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          aria-disabled={
-                            listLocked || index === model.todos.length - 1 || undefined
-                          }
-                          onClick={() => {
-                            if (!listLocked && index < model.todos.length - 1) {
-                              onMoveTodo(todo.id, "down");
-                            }
-                          }}
-                          aria-label={`Move ${todo.text} down`}
-                        >
-                          <MoveIcon direction="down" />
-                          Down
-                        </button>
-                      </div>
                       <div className="today-list-item__manage">
                         <button
                           id={`${titleId}-edit`}
@@ -527,27 +491,9 @@ export function TodayList({
                             }
                           }}
                           aria-label={`Edit ${todo.text}`}
+                          title="Edit"
                         >
-                          Edit
-                        </button>
-                        <button
-                          id={`${titleId}-reschedule`}
-                          type="button"
-                          aria-disabled={listLocked || undefined}
-                          onClick={() => {
-                            if (!listLocked) {
-                              onRescheduleTodo(
-                                todo,
-                                createReturnFocus(
-                                  index,
-                                  `${titleId}-reschedule`,
-                                ),
-                              );
-                            }
-                          }}
-                          aria-label={`Reschedule ${todo.text}`}
-                        >
-                          Reschedule
+                          <WorkspaceIcon name="edit" /><span className="today-list-action-label">Edit</span>
                         </button>
                         <button
                           id={`${titleId}-delete`}
@@ -564,8 +510,9 @@ export function TodayList({
                             }
                           }}
                           aria-label={`Delete ${todo.text}`}
+                          title="Delete"
                         >
-                          Delete
+                          <WorkspaceIcon name="trash" /><span className="today-list-action-label">Delete</span>
                         </button>
                       </div>
                     </div>

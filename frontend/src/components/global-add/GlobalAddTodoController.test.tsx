@@ -107,7 +107,7 @@ describe("GlobalAddTodoController", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Project" }), {
       target: { value: PROJECTS[1].id },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(createTodo).toHaveBeenCalledOnce());
     const [input, options] = createTodo.mock.calls[0] as [
@@ -149,11 +149,11 @@ describe("GlobalAddTodoController", () => {
     fireEvent.change(screen.getByLabelText("Due date"), {
       target: { value: "2026-09-04" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(
       await screen.findByText(
-        "We couldn’t add this todo. Your details are still here—try again.",
+        "We couldn’t add this task. Your details are still here—try again.",
       ),
     ).toBeTruthy();
     expect((task as HTMLInputElement).value).toBe("  Call Sam 📞  ");
@@ -164,7 +164,7 @@ describe("GlobalAddTodoController", () => {
 
     const firstSignal = createTodo.mock.calls[0]?.[1].signal;
     expect(firstSignal?.aborted).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(createTodo).toHaveBeenCalledTimes(2));
     expect(createTodo.mock.calls[1]?.[1].signal).not.toBe(firstSignal);
@@ -219,7 +219,7 @@ describe("GlobalAddTodoController", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
       target: { value: "Pending request" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     await waitFor(() => expect(createTodo).toHaveBeenCalledOnce());
 
     expect(receivedSignal?.aborted).toBe(false);
@@ -263,7 +263,7 @@ describe("GlobalAddTodoController", () => {
       fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
         target: { value: "Private account A draft" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+      fireEvent.click(screen.getByRole("button", { name: "Add task" }));
       await waitFor(() => expect(createTodo).toHaveBeenCalledOnce());
 
       rerender(<Owner next />);
@@ -294,11 +294,11 @@ describe("GlobalAddTodoController", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
       target: { value: "Saved once" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(createTodo).toHaveBeenCalledOnce();
-    expect(screen.getByText("Todo added, but this view may be out of date. Refresh to see it.")).toBeTruthy();
+    expect(screen.getByText("Task added, but this view may be out of date. Refresh to see it.")).toBeTruthy();
     expect(document.body.textContent).not.toContain("private local cache error");
   });
 });

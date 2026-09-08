@@ -59,10 +59,10 @@ describe("Main workspace integration", () => {
     const f = fixture(); mount(f.props);
     await screen.findByText("No books or movies in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
-    fireEvent.click(screen.getByRole("button", { name: "Todo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Task" }));
     fireEvent.change(screen.getByLabelText("Task"), { target: { value: todo.text } });
-    fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
-    await screen.findByText("Todo added");
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
+    await screen.findByText("Task added");
     expect(screen.getByLabelText("Current route").textContent).toBe("/media");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(f.createTodo).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe("Main workspace integration", () => {
     mount(f.props);
     await openSearch("match");
     fireEvent.click(await screen.findByRole("button", { name: /Search match/ }));
-    await screen.findByRole("dialog", { name: kind === "todo" ? "Edit todo" : "Edit idea" });
+    await screen.findByRole("dialog", { name: kind === "todo" ? "Edit task" : "Edit idea" });
     if (kind === "todo") {
       expect(f.getTodo).toHaveBeenCalledWith(todo.id);
       expect((screen.getByLabelText("Task") as HTMLInputElement).value).toBe(todo.text);

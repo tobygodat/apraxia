@@ -56,7 +56,7 @@ export function MainWorkspace(props: MainWorkspaceProps) {
     return () => controller.abort();
   }, [props.workspaceData, revision]);
   return <GlobalAddTodoController workspaceSessionKey={props.identity.userId} service={props.todoService} projects={projects}
-    onCreated={() => { changed(); setNotice("Todo added"); return undefined; }}>
+    onCreated={() => { changed(); setNotice("Task added"); return undefined; }}>
     <WorkspaceRoutes {...props} profile={profile} profileError={profileError} retryProfile={() => setProfileRevision(v => v + 1)}
       projects={projects} projectError={projectError} revision={revision} changed={changed} notice={notice} setNotice={setNotice} />
   </GlobalAddTodoController>;
@@ -109,7 +109,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
     {profileError ? <div role="alert"><p>Couldn’t load your workspace. Your records are still saved.</p><button onClick={retryProfile}>Try again</button></div>
       : <p role="status">Loading your workspace…</p>}</section>;
   let content;
-  if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
+  if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage appearanceService={props.workspaceData.homeAppearance} todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
   else if (pathname === "/todos") content = <TodosWorkspaceContent service={props.todoService} workspaceSessionKey={props.identity.userId} refreshKey={revision} />;
   else if (pathname === "/settings") content = profile ? <SettingsPage calendarService={props.calendarService} profile={profile} onSignOut={props.onSignOut} /> : profileState;
   else if (collectionKind) content = <CollectionPage key={`${collectionKind}:${projectMatch?.[1] ?? ""}`} kind={collectionKind} service={props.collectionService} todoService={props.todoService}
@@ -122,7 +122,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
       {content}
     </CloudAppShell>
     {addOpen && <WorkspaceDialog title="Add to orbitOS" onClose={() => setAddOpen(false)}><div className="workspace-add-choices">
-      <button onClick={() => { setAddOpen(false); openTodoComposer(); }}>Todo</button>
+      <button onClick={() => { setAddOpen(false); openTodoComposer(); }}>Task</button>
       {(["idea", "media", "project"] as const).map(kind => <button key={kind} onClick={() => { setAddOpen(false); setEditor({ kind }); }}>{kind[0].toUpperCase() + kind.slice(1)}</button>)}
       <a href="https://calendar.google.com/calendar/u/0/r/eventedit" target="_blank" rel="noopener noreferrer" onClick={() => setAddOpen(false)}>Calendar event ↗</a>
     </div></WorkspaceDialog>}
@@ -130,7 +130,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
       onSaved={() => { const returnToSearch = editor.fromSearch; setEditor(null); changed(); setNotice("Saved"); if (returnToSearch) setSearchOpen(true); }}
       onClose={() => { const returnToSearch = editor.fromSearch; setEditor(null); if (returnToSearch) setSearchOpen(true); }} />}
     <TodoEditDialog todo={editingTodo} projects={projects} fallbackFocusRef={rootRef} onClose={() => { setEditingTodo(null); setSearchOpen(true); }}
-      onSave={async (id, input, options) => { await props.todoService.updateTodoDetails(id, input, options); if (alive.current) { changed(); setNotice("Todo saved"); } }} />
+      onSave={async (id, input, options) => { await props.todoService.updateTodoDetails(id, input, options); if (alive.current) { changed(); setNotice("Task saved"); } }} />
     <SearchDialog open={searchOpen} service={props.collectionService} refreshKey={revision} onClose={() => setSearchOpen(false)} onSelect={selectResult} />
     {notice && <aside className="workspace-notice"><p role="status">{notice}</p><button onClick={() => setNotice("")}>Dismiss</button></aside>}
   </div>;

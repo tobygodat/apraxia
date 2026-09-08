@@ -90,7 +90,7 @@ export class TodoMutationNotStartedError extends Error {
 
 export class TodoMutationFailedError extends Error {
   constructor() {
-    super("The todo changes were not saved. Try again.");
+    super("The task changes were not saved. Try again.");
     this.name = "TodoMutationFailedError";
   }
 }
@@ -626,7 +626,7 @@ export function useTodoWorkspaceController(
         if (restored === false) {
           publishUndo({
             ...currentUndo,
-            error: "Undo is no longer available for this todo.",
+            error: "Undo is no longer available for this task.",
           });
           return;
         }

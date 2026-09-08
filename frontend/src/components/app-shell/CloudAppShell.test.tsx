@@ -64,7 +64,7 @@ describe("CloudAppShell", () => {
 
     expect(links.map((link) => link.textContent)).toEqual([
       "home",
-      "todos",
+      "tasks",
       "ideas",
       "media",
       "projects",

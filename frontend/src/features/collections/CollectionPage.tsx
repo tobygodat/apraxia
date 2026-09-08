@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { DeleteUndoToken, Idea, MediaItem, Project, ProjectSummary, Todo } from "../../types/domain";
 import { TodoComposerDialog } from "../todos/TodoComposerDialog";
 import { TodoEditDialog } from "../todos/TodoEditDialog";
+import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import { formatTaskDate, formatTaskTime } from "../todos/taskFormatting";
+import { ideaPreview } from "./collectionPresentation";
 import type { TodoService } from "../todos/todoService";
 import { CollectionEditor } from "./CollectionEditor";
 import { ideaTitle, type CollectionKind, type CollectionRecord, type CollectionService } from "./collectionService";
@@ -159,13 +162,32 @@ export function CollectionPage(props: Props) {
     }
     function renderRow(k: CollectionKind, r: CollectionRecord) {
         const p = k === "idea" ? projects.find(p => p.id === (r as Idea).projectId) : null;
-        const preview = k === "idea" ? (r as Idea).body : k === "project" ? (r as Project).description : (r as MediaItem).creator;
-        return <li key={r.id} className="collection-row"><button className="collection-open" onClick={() => k === "project" && onOpenProject ? onOpenProject(r.id) : setEditor({ kind: k, record: r })}><strong>{titleOf(k, r)}</strong>{preview && <span className="collection-preview">{preview}</span>}<span className="collection-meta">{k === "idea" ? p?.title : k === "media" ? `${(r as MediaItem).mediaType} · ${(r as MediaItem).status.replace(/_/g, " ")}` : (r as Project).status}</span></button><button className="collection-delete" disabled={busy} aria-label={`Delete ${titleOf(k, r)}`} onClick={() => void remove(k, r.id)}>Delete</button></li>;
+        const preview = k === "idea" ? ideaPreview(r as Idea) : k === "project" ? (r as Project).description : null;
+        const metadata = k === "idea" ? p?.title : k === "media"
+            ? [(r as MediaItem).creator, (r as MediaItem).mediaType, (r as MediaItem).status.replace(/_/g, " ")].filter(Boolean).join(" · ")
+            : (r as Project).status;
+        return <li key={r.id} className="collection-row">
+          <button className="collection-open" onClick={() => k === "project" && onOpenProject ? onOpenProject(r.id) : setEditor({ kind: k, record: r })}>
+            <strong>{titleOf(k, r)}</strong>
+            {preview && <span className="collection-preview">{preview}</span>}
+            {metadata && <span className="collection-meta">{metadata}</span>}
+          </button>
+          <button className="collection-delete" disabled={busy} title="Delete" aria-label={`Delete ${titleOf(k, r)}`} onClick={() => void remove(k, r.id)}><WorkspaceIcon name="trash" /></button>
+        </li>;
     }
-    function renderTask(task: Todo) { return <div className="collection-task" key={task.id}><input type="checkbox" checked={task.completed} disabled={busy} aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.text}`} onChange={() => void complete(task)}/><button className="collection-task-text" data-completed={task.completed} onClick={() => setEditingTask(task)}>{task.text}{task.dueDate && <span className="collection-meta">{task.dueDate}{task.dueTime ? ` · ${task.dueTime.slice(0, 5)}` : ""}</span>}</button><button className="collection-delete" disabled={busy} aria-label={`Delete ${task.text}`} onClick={() => void remove("todo", task.id)}>Delete</button></div>; }
+    function renderTask(task: Todo) {
+      return <div className="collection-task" key={task.id}>
+        <label className="collection-task-check"><input type="checkbox" checked={task.completed} disabled={busy} aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.text}`} onChange={() => void complete(task)}/></label>
+        <button className="collection-task-text" data-completed={task.completed} onClick={() => setEditingTask(task)}>{task.text}
+          {task.dueDate && <span className="collection-meta"><time dateTime={task.dueDate}>{formatTaskDate(task.dueDate)}</time>{task.dueTime && <> · <time dateTime={task.dueTime}>{formatTaskTime(task.dueTime)}</time></>}</span>}
+        </button>
+        <button className="collection-row-action" title="Edit task" aria-label={`Edit ${task.text}`} onClick={() => setEditingTask(task)}><WorkspaceIcon name="edit" /></button>
+        <button className="collection-delete" disabled={busy} title="Delete task" aria-label={`Delete ${task.text}`} onClick={() => void remove("todo", task.id)}><WorkspaceIcon name="trash" /></button>
+      </div>;
+    }
     const detail = kind === "project" && Boolean(recordId);
     return <section className="collection-page">
-    {detail && <button className="collection-button" onClick={onBack}>Back to Projects</button>}
+    {detail && <button className="collection-back" onClick={onBack}><WorkspaceIcon name="left" />Back to Projects</button>}
     <header className="collection-heading"><div><h1 ref={headingRef} tabIndex={-1}>{detail ? project?.title ?? "Project" : headings[kind]}</h1><p>{detail ? project?.status : descriptions[kind]}</p></div>{detail ? project && <button className="collection-button" onClick={() => setEditor({ kind: "project", record: project })}>Edit project</button> : <button className="collection-button collection-button--primary" onClick={() => setEditor({ kind })}>Add {kind}</button>}</header>
     {!detail && kind !== "idea" && <div className="collection-filters">{kind === "media" && <label>Type<select value={mediaType} onChange={e => { setMediaType(e.target.value); setLimit(50); }}><option value="all">All types</option><option value="book">Books</option><option value="movie">Movies</option></select></label>}<label>Status<select value={status} onChange={e => { setStatus(e.target.value); setLimit(50); }}><option value="all">All statuses</option>{(kind === "project" ? ["active", "someday", "completed", "archived"] : ["saved", "in_progress", "finished"]).map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}</select></label></div>}
     {notice && <div className="collection-notice" role="status">{notice}{undo && <button className="collection-button" disabled={busy} onClick={() => void restore()}>Undo deletion</button>}</div>}

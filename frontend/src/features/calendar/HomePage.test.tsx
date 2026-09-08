@@ -5,8 +5,28 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { CalendarService } from "./calendarService";
 import type { TodoService } from "../todos/todoService";
 import { CalendarPanel, HomePage, WeekGrid } from "./HomePage";
-import type { AllDayCalendarEvent, WeekViewModel } from "../../types/domain";
+import type { AllDayCalendarEvent, CalendarEvent, WeekViewModel } from "../../types/domain";
 afterEach(cleanup);
+it("keeps Google links and editing targets intact for colored timed and all-day events", () => {
+  const events: CalendarEvent[] = [
+    { kind: "all_day", calendarId: "work", eventId: "trip", title: "Studio week", calendarColor: { background: "#c5b293", foreground: null }, googleEventUrl: "https://calendar.google.com/calendar/event?eid=trip", startDate: "2026-09-07", endDateExclusive: "2026-09-09" },
+    { kind: "timed", calendarId: "personal", eventId: "coffee", title: "Coffee", calendarColor: { background: "#91b0d7", foreground: null }, googleEventUrl: "https://calendar.google.com/calendar/event?eid=coffee", startAt: "2026-09-07T09:00:00Z", endAt: "2026-09-07T10:00:00Z", startTimeZone: null, endTimeZone: null },
+  ];
+  const week: WeekViewModel = { range: { monday: "2026-09-07", sunday: "2026-09-13" }, timezone: "UTC", visibleCalendars: [], partialErrors: [], events };
+  const now = new Date("2026-09-07T12:00:00Z");
+  const { rerender } = render(<WeekGrid week={week} now={now} />);
+  for (const event of events) {
+    const anchor = screen.getByRole("link", { name: new RegExp(event.title) });
+    expect(anchor.getAttribute("href")).toBe(event.googleEventUrl);
+    expect(anchor.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(anchor.style.getPropertyValue("--calendar-event-color")).toBe(event.calendarColor.background);
+  }
+  const onEdit = vi.fn();
+  rerender(<WeekGrid week={week} now={now} onEdit={onEdit} />);
+  fireEvent.click(screen.getByRole("button", { name: /Studio week/ }));
+  fireEvent.keyDown(screen.getByRole("button", { name: /Coffee/ }), { key: " " });
+  expect(onEdit.mock.calls).toEqual([[events[0]], [events[1]]]);
+});
 it("loads Today while Calendar status is still pending", async () => {
   const loadToday = vi.fn(async () => []);
   const calendar = { status: () => new Promise(() => { }) } as unknown as CalendarService;
@@ -20,7 +40,7 @@ it("loads Today while Calendar status is still pending", async () => {
   </MemoryRouter>);
   await waitFor(() => expect(loadToday).toHaveBeenCalled());
   expect(screen.getByText("Loading your week…")).toBeTruthy();
-  expect(screen.getByRole("heading", { name: "Today" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
 });
 it("preserves a loaded week on refresh failure, then hides it when navigating", async () => {
   const week = vi.fn(async (monday: string) => ({

@@ -34,6 +34,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      home_appearance: {
+        Row: { user_id: string; title: string; cover_image: string | null; cover_position_x: number; cover_position_y: number }
+        Insert: { user_id?: string; title?: string; cover_image?: string | null; cover_position_x?: number; cover_position_y?: number }
+        Update: { user_id?: string; title?: string; cover_image?: string | null; cover_position_x?: number; cover_position_y?: number }
+        Relationships: []
+      }
       google_calendar_connections: {
         Row: {
           connection_state: Database["public"]["Enums"]["google_calendar_connection_state"]
@@ -599,4 +605,3 @@ export const Constants = {
     },
   },
 } as const
-

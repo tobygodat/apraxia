@@ -48,7 +48,7 @@ it('keeps text edits across scope changes and confirms before discarding edited 
   expect((await screen.findByLabelText('Title') as HTMLInputElement).value).toBe('Updated title');
   expect((screen.getByLabelText('Ends') as HTMLInputElement).value).toBe('2026-09-07T10:00');
 });
-it('selects forward and backward drag ranges in 15-minute steps, with keyboard and all-day alternatives', () => {
+it('selects forward and backward drag ranges in 15-minute steps, with a keyboard alternative', () => {
   const onCreate = vi.fn();
   render(<WeekGrid week={{ timezone: 'UTC', range: { monday: slot.day, sunday: '2026-09-13' }, events: [], partialErrors: [], visibleCalendars: [] }} now={new Date('2026-09-07T12:00:00Z')} onCreate={onCreate} />);
   const column = screen.getByLabelText('Add event on 2026-09-07; press Enter for event details');
@@ -61,6 +61,5 @@ it('selects forward and backward drag ranges in 15-minute steps, with keyboard a
   }
   fireEvent.keyDown(column, { key: 'Enter' });
   expect(onCreate).toHaveBeenLastCalledWith(slot);
-  fireEvent.click(screen.getByLabelText('Add all-day event on 2026-09-07'));
-  expect(onCreate).toHaveBeenLastCalledWith({ ...slot, allDay: true });
+  expect(screen.queryByLabelText('Add all-day event on 2026-09-07')).toBeNull();
 });
