@@ -18,6 +18,7 @@ import {
 } from "./todoInput";
 import type { UpdateTodoDetailsInput } from "./todoService";
 import "./TodoEditDialog.css";
+import { withExpectedUpdatedAt } from "../../lib/writeIntent";
 
 export interface TodoEditDialogProps {
   readonly todo: Todo | null;
@@ -29,6 +30,8 @@ export interface TodoEditDialogProps {
     options: { readonly signal: AbortSignal },
   ) => Promise<void>;
   readonly onClose: () => void;
+  /** Replace a conflicted draft with the latest server row when available. */
+  readonly onReloadLatest?: () => Promise<Todo | null>;
   /** Used when saving moves the original invoking control out of the view. */
   readonly fallbackFocusRef?: RefObject<HTMLElement | null>;
 }
@@ -65,6 +68,7 @@ export function TodoEditDialog({
   projects,
   onSave,
   onClose,
+  onReloadLatest,
   fallbackFocusRef,
 }: TodoEditDialogProps) {
   const baseId = useId();
@@ -90,6 +94,7 @@ export function TodoEditDialog({
   const [retainedDueTime, setRetainedDueTime] = useState(todo?.dueTime ?? null);
   const [errors, setErrors] = useState<TodoInputErrors>(EMPTY_ERRORS);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusAfterValidation, setFocusAfterValidation] = useState<TodoInputField | null>(null);
 
@@ -109,6 +114,7 @@ export function TodoEditDialog({
     setRetainedDueTime(todo?.dueTime ?? null);
     setErrors(EMPTY_ERRORS);
     setSubmitError(null);
+    setConflict(false);
     setIsSubmitting(false);
     setFocusAfterValidation(mode === "reschedule" ? "dueDate" : "text");
     document.body.style.overflow = "hidden";
@@ -196,6 +202,7 @@ export function TodoEditDialog({
       return { ...current, fieldErrors };
     });
     setSubmitError(null);
+    setConflict(false);
   }
 
   function closeDialog() {
@@ -204,9 +211,35 @@ export function TodoEditDialog({
     onClose();
   }
 
+  async function reloadLatest() {
+    if (!onReloadLatest || submittingRef.current) {
+      if (!onReloadLatest) onClose();
+      return;
+    }
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const latest = await onReloadLatest();
+      if (!latest || latest.id !== todoId) {
+        setSubmitError("This todo is no longer available. Close and refresh the workspace.");
+        return;
+      }
+      setValues(valuesForTodo(latest));
+      setRetainedDueTime(latest.dueTime);
+      setErrors(EMPTY_ERRORS);
+      setConflict(false);
+    } catch {
+      setSubmitError("The latest todo could not be loaded. Try again.");
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submittingRef.current || todoId === null) return;
+    if (submittingRef.current || todoId === null || todo === null) return;
     const validation = validateTodoInput(values);
     if (!validation.success) {
       setErrors({ fieldErrors: validation.fieldErrors, formErrors: validation.formErrors });
@@ -220,13 +253,15 @@ export function TodoEditDialog({
     }
 
     const dueDate = validation.data.dueDate ?? null;
+    const nextDueTime = dueDate === null ? null : retainedDueTime ?? validation.data.dueTime ?? null;
     const details = mode === "reschedule" ? {} : {
       text: validation.data.text,
       projectId: validation.data.projectId ?? null,
     };
     const input: UpdateTodoDetailsInput = dueDate === null
       ? { ...details, dueDate: null, dueTime: null }
-      : { ...details, dueDate, dueTime: retainedDueTime ?? validation.data.dueTime ?? null };
+      : { ...details, dueDate, dueTime: nextDueTime };
+    const versionedInput = withExpectedUpdatedAt(input, todo.updatedAt);
     const requestGeneration = ++requestGenerationRef.current;
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -238,20 +273,25 @@ export function TodoEditDialog({
     setErrors(EMPTY_ERRORS);
     setFocusAfterValidation(null);
     setSubmitError(null);
+    setConflict(false);
 
     try {
-      await onSave(todoId, input, { signal: controller.signal });
+      await onSave(todoId, versionedInput, { signal: controller.signal });
       if (requestGeneration !== requestGenerationRef.current || controller.signal.aborted) return;
       abortControllerRef.current = null;
       submittingRef.current = false;
       setIsSubmitting(false);
       closeDialog();
-    } catch {
+    } catch (error) {
       if (requestGeneration !== requestGenerationRef.current || controller.signal.aborted) return;
       abortControllerRef.current = null;
       submittingRef.current = false;
       setIsSubmitting(false);
-      setSubmitError("We couldn’t save this todo. Your details are still here—try again.");
+      const isConflict = error && typeof error === "object" && "code" in error && error.code === "todo_conflict";
+      setConflict(Boolean(isConflict));
+      setSubmitError(isConflict
+        ? "This todo changed in another tab. Your details are still here. Reload the latest version before replacing them."
+        : "We couldn’t save this todo. Your details are still here—try again.");
     }
   }
 
@@ -404,6 +444,7 @@ export function TodoEditDialog({
               {isSubmitting ? "Saving…" : "Save changes"}
             </button>
           </footer>
+          {conflict ? <button type="button" className="todo-dialog__button" disabled={isSubmitting} onClick={() => { if (window.confirm("Replace your draft with the latest saved version?")) void reloadLatest(); }}>Reload latest</button> : null}
         </form>
       </div>
       <p className="todo-edit-dialog__status" id={saveStatusId} role="status" aria-live="polite">

@@ -130,7 +130,8 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
       onSaved={() => { const returnToSearch = editor.fromSearch; setEditor(null); changed(); setNotice("Saved"); if (returnToSearch) setSearchOpen(true); }}
       onClose={() => { const returnToSearch = editor.fromSearch; setEditor(null); if (returnToSearch) setSearchOpen(true); }} />}
     <TodoEditDialog todo={editingTodo} projects={projects} fallbackFocusRef={rootRef} onClose={() => { setEditingTodo(null); setSearchOpen(true); }}
-      onSave={async (id, input, options) => { await props.todoService.updateTodoDetails(id, input, options); if (alive.current) { changed(); setNotice("Todo saved"); } }} />
+      onSave={async (id, input, options) => { await props.todoService.updateTodoDetails(id, input, options); if (alive.current) { changed(); setNotice("Todo saved"); } }}
+      onReloadLatest={async () => props.collectionService.getTodo(editingTodo?.id ?? "")} />
     <SearchDialog open={searchOpen} service={props.collectionService} refreshKey={revision} onClose={() => setSearchOpen(false)} onSelect={selectResult} />
     {notice && <aside className="workspace-notice"><p role="status">{notice}</p><button onClick={() => setNotice("")}>Dismiss</button></aside>}
   </div>;

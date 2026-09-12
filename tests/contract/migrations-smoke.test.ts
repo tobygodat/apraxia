@@ -1350,12 +1350,12 @@ describe("cloud migrations", () => {
           `select id from public.todos where text = 'B unlinked todo'`,
         );
         expect(unlinkedTodo.rows).toHaveLength(1);
-        await expect(
-          database.query(
-            `insert into public.todos (id, text)
-             values ('b0000000-0000-4000-8000-000000000007', 'Forbidden explicit id')`,
-          ),
-        ).rejects.toMatchObject({ code: "42501" });
+        const explicitTodo = await database.query<{ id: string }>(
+          `insert into public.todos (id, text)
+           values ('b0000000-0000-4000-8000-000000000007', 'Explicit id retry')
+           returning id`,
+        );
+        expect(explicitTodo.rows[0]?.id).toBe("b0000000-0000-4000-8000-000000000007");
 
         const projectIdValue = projectId as string;
         const linkedTodoId = linkedTodo.rows[0]?.id as string;

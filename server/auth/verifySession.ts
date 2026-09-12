@@ -133,9 +133,10 @@ function verifiedProjection(value: unknown): VerifiedSession {
 export async function verifySupabaseSession(
   request: Request,
   configuration: Pick<ApplicationEnvironment, "SUPABASE_URL" | "SUPABASE_ANON_KEY">,
-  options: { fetch?: typeof fetch; timeoutMs?: number } = {},
+  options: { fetch?: typeof fetch; timeoutMs?: number; signal?: AbortSignal } = {},
 ): Promise<VerifiedSession> {
-  if (request.signal.aborted) throw cancelled();
+  const parentSignal = options.signal ?? request.signal;
+  if (parentSignal.aborted) throw cancelled();
   let response: Response | undefined;
   const scope = new AbortController();
   const abort = () => scope.abort();
@@ -155,8 +156,8 @@ export async function verifySupabaseSession(
       !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DEADLINE_MS) throw unavailable();
 
     const endpoint = `${origin}/auth/v1/user`;
-    request.signal.addEventListener("abort", abort, { once: true });
-    if (request.signal.aborted) abort();
+    parentSignal.addEventListener("abort", abort, { once: true });
+    if (parentSignal.aborted) abort();
     deadline = setTimeout(abort, timeoutMs);
     const transport = options.fetch ?? globalThis.fetch;
     const pendingResponse = Promise.resolve().then(() => {
@@ -179,12 +180,12 @@ export async function verifySupabaseSession(
     checkActive(scope.signal);
     return verifiedProjection(user);
   } catch (error) {
-    if (request.signal.aborted) throw cancelled();
+    if (parentSignal.aborted) throw cancelled();
     if (error instanceof SessionVerificationError) throw new SessionVerificationError(error.code);
     throw unavailable();
   } finally {
     if (deadline !== undefined) clearTimeout(deadline);
-    request.signal.removeEventListener("abort", abort);
+    parentSignal.removeEventListener("abort", abort);
     if (response instanceof Response) discardResponse(response);
   }
 }

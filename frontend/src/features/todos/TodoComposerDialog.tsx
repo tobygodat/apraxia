@@ -16,6 +16,7 @@ import {
   validateTodoInput,
 } from "./todoInput";
 import "./TodoComposerDialog.css";
+import { newDraftId, withDraftId } from "../../lib/writeIntent";
 
 export interface TodoComposerDialogProps {
   open: boolean;
@@ -71,6 +72,7 @@ export function TodoComposerDialog({
   const submittingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestGenerationRef = useRef(0);
+  const draftIdRef = useRef(newDraftId());
   const [values, setValues] = useState<TodoInputValues>({
     text: "",
     dueDate: initialDueDate ?? "",
@@ -99,6 +101,7 @@ export function TodoComposerDialog({
     const previousOverflow = document.body.style.overflow;
 
     requestGenerationRef.current += 1;
+    draftIdRef.current = newDraftId();
     submittingRef.current = false;
     setIsSubmitting(false);
     setValues({
@@ -230,7 +233,7 @@ export function TodoComposerDialog({
     setSubmitError(null);
 
     try {
-      await onCreate(validation.data, { signal: abortController.signal });
+      await onCreate(withDraftId(validation.data, draftIdRef.current), { signal: abortController.signal });
 
       if (requestGeneration === requestGenerationRef.current) {
         abortControllerRef.current = null;

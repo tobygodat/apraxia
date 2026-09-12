@@ -22,6 +22,7 @@ import { createCollectionService } from "../features/collections/collectionServi
 import { createCalendarService } from "../features/calendar/calendarService";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { registerUserStateResetter } from "../auth/userState";
+import { DeletionStoreProvider } from "./deletionStore";
 
 function AuthFrame({
   eyebrow,
@@ -206,34 +207,20 @@ function CloudWorkspace({ identity, service, client }: {
   const collectionService = useMemo(() => cacheNavigationService(createCollectionService(client), cache, "collections",
     ["listProjects", "listIdeas", "listMedia", "getProject", "getIdea", "getMedia", "getTodo", "projectTodos"],
     ["saveProject", "saveIdea", "saveMedia", "softDelete", "restore"]), [client, cache]);
-  const calendarService = useMemo(() => ({ ...cacheNavigationService(createCalendarService(client), cache, "calendar",
-    ["status", "calendars", "week"], ["connect", "disconnect", "setVisibility"]), invalidate: cache.invalidate }), [client, cache]);
+  // Calendar maintains its own account-scoped week cache. Wrapping it in the
+  // route cache made stale weeks indistinguishable from fresh ones and caused
+  // focus invalidation to discard the currently displayed week.
+  const calendarService = useMemo(() => createCalendarService(client, identity.userId), [client, identity.userId]);
   const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
   useEffect(() => {
     const unregister = registerUserStateResetter(cache.clear, { phase: "cancel" });
-    const refresh = () => cache.invalidate();
-    window.addEventListener("focus", refresh);
-    return () => { unregister(); window.removeEventListener("focus", refresh); cache.clear(); };
+    return () => { unregister(); cache.clear(); };
   }, [cache]);
-  useEffect(() => {
-    if (location.pathname === "/calendar/callback") { cache.clear(); return; }
-    const controller = new AbortController();
-    const signal = controller.signal;
-    // Let the current route start its requests before warming other destinations.
-    const timer = window.setTimeout(() => {
-      void Promise.allSettled([
-        todoService.loadWorkspace({ signal }),
-        collectionService.listProjects({ status: "active", mediaType: "all", offset: 0, signal }),
-        collectionService.listIdeas({ status: "all", mediaType: "all", offset: 0, signal }),
-        collectionService.listMedia({ status: "all", mediaType: "all", offset: 0, signal }),
-      ]);
-    }, 100);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [cache, todoService, collectionService, location.pathname === "/calendar/callback"]);
+  useEffect(() => { if (location.pathname === "/calendar/callback") cache.clear(); }, [cache, location.pathname]);
   const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
   if (location.pathname === "/calendar/callback") return <CalendarCallback client={client} userId={identity.userId} />;
-  return <MainWorkspace identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
-    todoService={todoService} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} />;
+  return <DeletionStoreProvider><MainWorkspace identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
+    todoService={todoService} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} /></DeletionStoreProvider>;
 }
 export function ConfiguredCloudApp({
   client,

@@ -6,7 +6,8 @@ export type TodoLoadState =
 export type TodoMutationErrorKind =
   | "completion_failed"
   | "delete_failed"
-  | "update_failed";
+  | "update_failed"
+  | "conflict";
 
 export function todoLoadErrorCopy(kind: "load_failed"): string {
   switch (kind) {
@@ -23,5 +24,7 @@ export function todoMutationErrorCopy(kind: TodoMutationErrorKind): string {
       return "The todo could not be deleted. Try again.";
     case "update_failed":
       return "The todo changes were not saved. Your entered details can be retried.";
+    case "conflict":
+      return "This todo changed in another tab. Reload the latest version before saving.";
   }
 }

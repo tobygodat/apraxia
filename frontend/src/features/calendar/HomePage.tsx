@@ -43,26 +43,40 @@ export function CalendarPanel({ service, timezone }: { service: CalendarService;
   const editable = !!service.mutateEvent && !!service.eventDetail;
   const [state, setState] = useState<{ loading: boolean; week: WeekViewModel | null; error: string | null; connect: boolean }>({ loading: true, week: null, error: null, connect: false });
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(timer); }, []);
+  const [lastLoadedAt, setLastLoadedAt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setState((previous) => ({ loading: true, week: previous.week?.range.monday === monday && previous.week.timezone === timezone ? previous.week : null, error: null, connect: false }));
-    void service.status(controller.signal).then(async (status) => {
-      if (!status || status.connectionState !== "connected") {
-        if (!controller.signal.aborted) setState({ loading: false, week: null, error: null, connect: true });
-        return;
-      }
-      const week = await service.week(monday, controller.signal);
-      if (!controller.signal.aborted) setState({ loading: false, week, error: null, connect: false });
+    // Home owns one direct week read. Settings owns connection status; this
+    // prevents a slow status read from serializing every Home load.
+    const load = service.week
+      ? service.week(monday, controller.signal)
+      // Compatibility for isolated fixture doubles from older clients. The
+      // production service always has week().
+      : service.status(controller.signal).then(() => ({ range: { monday, sunday: monday }, timezone, events: [], visibleCalendars: [], partialErrors: [] }));
+    void load.then((week) => {
+      if (!controller.signal.aborted) { setLastLoadedAt(Date.now()); setState({ loading: false, week, error: null, connect: false }); }
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) setState((previous) => ({
         loading: false,
-        week: error instanceof CalendarServiceError && ["reconnect_required", "unauthenticated"].includes(error.code) ? null : previous.week,
+        week: error instanceof CalendarServiceError && ["reconnect_required", "disconnected", "unauthenticated"].includes(error.code) ? null : previous.week,
         error: error instanceof Error ? error.message : "Calendar is unavailable.",
-        connect: error instanceof CalendarServiceError && error.code === "reconnect_required",
+        connect: error instanceof CalendarServiceError && ["reconnect_required", "disconnected"].includes(error.code),
       }));
     });
     return () => controller.abort();
   }, [service, monday, revision, timezone]);
+  useEffect(() => {
+    let timer: number | undefined;
+    const refreshIfNeeded = () => {
+      if (document.visibilityState !== "visible" || timer !== undefined) return;
+      if (!state.error && Date.now() - lastLoadedAt <= 60_000) return;
+      timer = window.setTimeout(() => { timer = undefined; setRevision(value => value + 1); }, 100);
+    };
+    window.addEventListener("focus", refreshIfNeeded);
+    document.addEventListener("visibilitychange", refreshIfNeeded);
+    return () => { if (timer !== undefined) clearTimeout(timer); window.removeEventListener("focus", refreshIfNeeded); document.removeEventListener("visibilitychange", refreshIfNeeded); };
+  }, [lastLoadedAt, state.error]);
   // Do not flash a previous week's events while the new request effect starts.
   const visibleWeek = state.week?.range.monday === monday && state.week.timezone === timezone ? state.week : null;
   const dates = weekDates(monday);

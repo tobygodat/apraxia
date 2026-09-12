@@ -28,6 +28,8 @@ import {
   readTodoWorkspaceSnapshot,
   todoMatchesDetails,
 } from "./todoWorkspaceValidation";
+import { TodoConflictError } from "./supabaseTodoService";
+import type { DeletionStore } from "../../apps/deletionStore";
 
 export type TodoWorkspaceLoadState = TodoLoadState;
 
@@ -59,6 +61,7 @@ export interface TodoWorkspaceController {
   readonly undoNotice: TodoWorkspaceUndoNotice | null;
   readonly retryLoad: () => void;
   readonly refreshWorkspace: () => Promise<void>;
+  readonly getTodo: (todoId: UUID) => Todo | null;
   /** Reconcile one persisted create response without reloading the workspace. */
   readonly acceptCreatedTodo: (todo: Todo) => boolean;
   /** Returns false when the row is absent or already has a mutation in flight. */
@@ -112,6 +115,7 @@ export function useTodoWorkspaceController(
    * ownership; the provider must still derive ownership from its session.
    */
   workspaceSessionKey: string,
+  deletionStore?: DeletionStore | null,
 ): TodoWorkspaceController {
   const [loadGeneration, setLoadGeneration] = useState(0);
   const [loadState, setLoadState] = useState<TodoWorkspaceLoadState>({
@@ -215,6 +219,9 @@ export function useTodoWorkspaceController(
       }
     } finally { controllersRef.current.delete(controller); }
   }, [isCurrentScope, publishTodos, service]);
+
+  const getTodo = useCallback((todoId: UUID): Todo | null =>
+    todosRef.current.find((todo) => todo.id === todoId) ?? null, []);
 
   useLayoutEffect(() => {
     const generation = ++activeGenerationRef.current;
@@ -481,6 +488,10 @@ export function useTodoWorkspaceController(
           !controller.signal.aborted &&
           !isAbortError(error)
         ) {
+          if (error instanceof TodoConflictError || (error && typeof error === "object" && "code" in error && error.code === "todo_conflict")) {
+            setMutationError("conflict");
+            throw error;
+          }
           setMutationError("update_failed");
           throw new TodoMutationFailedError();
         }
@@ -507,10 +518,9 @@ export function useTodoWorkspaceController(
 
   const deleteTodo = useCallback(
     (todoId: UUID): boolean => {
-      // A single visible Undo token is deliberate. Serialize from delete start
-      // through Undo/dismiss so tokens cannot overwrite each other or race a
-      // restore that has already committed remotely.
-      if (deleteInFlightRef.current || undoRef.current !== null) return false;
+      // Only the remote delete itself is serialized. Once its token is safely
+      // returned, another delete gets an independent restore token.
+      if (deleteInFlightRef.current || (!deletionStore && undoRef.current !== null)) return false;
       const todo = beginTodoMutation(todoId);
       if (!todo) return false;
       deleteInFlightRef.current = true;
@@ -542,13 +552,33 @@ export function useTodoWorkspaceController(
           publishTodos(
             todosRef.current.filter((candidate) => candidate.id !== todoId),
           );
-          publishUndo({
-            todo,
-            originalIndex,
-            token,
-            pending: false,
-            error: null,
-          });
+          if (deletionStore) {
+            deletionStore.add(
+              { kind: "todo", id: todo.id, label: `${todo.text.trim() || "Todo"} deleted`, token },
+              async () => {
+                const restored = await service.restoreTodo(todo.id, token, { signal: new AbortController().signal });
+                if (restored !== true) return false;
+                if (!isCurrentScope()) return true;
+                const nextTodos = [...todosRef.current];
+                if (!nextTodos.some((candidate) => candidate.id === todo.id)) {
+                  nextTodos.splice(Math.min(originalIndex, nextTodos.length), 0, todo);
+                  publishTodos(nextTodos);
+                }
+                if (undoRef.current?.todo.id === todo.id && undoRef.current.token === token) {
+                  publishUndo(null);
+                }
+                return true;
+              },
+            );
+          } else {
+            publishUndo({
+              todo,
+              originalIndex,
+              token,
+              pending: false,
+              error: null,
+            });
+          }
           settle(todoId, "delete", "succeeded");
         } catch (error: unknown) {
           if (
@@ -582,6 +612,7 @@ export function useTodoWorkspaceController(
       isCurrentScope,
       publishTodos,
       publishUndo,
+      deletionStore,
       service,
       settle,
     ],
@@ -698,6 +729,7 @@ export function useTodoWorkspaceController(
     undoNotice: scopeMatches ? undoNotice : null,
     retryLoad,
     refreshWorkspace,
+    getTodo,
     acceptCreatedTodo,
     setCompleted,
     updateDetails,

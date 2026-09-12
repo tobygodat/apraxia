@@ -11,6 +11,7 @@ import type { TodoService } from "./todoService";
 import { TodosBoard } from "./TodosBoard";
 import { useLocalToday } from "./useLocalToday";
 import { type TodoWorkspaceController, useTodoWorkspaceController } from "./useTodoWorkspaceController";
+import { useDeletionStore } from "../../apps/deletionStore";
 
 export interface TodosWorkspaceProps extends Pick<
   CloudAppShellProps,
@@ -33,7 +34,8 @@ export function TodosWorkspace(props: TodosWorkspaceProps) {
 export function TodosWorkspaceContent({ service, workspaceSessionKey, refreshKey }: {
   service: TodoService; workspaceSessionKey: string; refreshKey: number;
 }) {
-  const controller = useTodoWorkspaceController(service, workspaceSessionKey);
+  const deletionStore = useDeletionStore();
+  const controller = useTodoWorkspaceController(service, workspaceSessionKey, deletionStore);
   const applied = useRef(refreshKey);
   useEffect(() => {
     if (applied.current === refreshKey || !controller.profile || controller.pendingTodoIds.size > 0) return;
@@ -50,7 +52,8 @@ export function TodosWorkspaceContent({ service, workspaceSessionKey, refreshKey
 }
 
 function TodosWorkspaceSession(props: TodosWorkspaceProps) {
-  const controller = useTodoWorkspaceController(props.service, props.workspaceSessionKey);
+  const deletionStore = useDeletionStore();
+  const controller = useTodoWorkspaceController(props.service, props.workspaceSessionKey, deletionStore);
   const profile = controller.profile;
   const ready = controller.loadState.status === "idle" &&
     profile !== null && profile.userId === props.identity.userId;
@@ -139,6 +142,10 @@ function ReadyTodosBoard({
         onClose={() => setEditingTodo(null)}
         onSave={async (todoId, input, options) => {
           await controller.updateDetails(todoId, input, options);
+        }}
+        onReloadLatest={async () => {
+          await controller.refreshWorkspace();
+          return controller.getTodo(editingTodo?.id ?? "");
         }}
       />
     </div>

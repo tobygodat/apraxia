@@ -13,6 +13,7 @@ import {
 import type { MoveDirection } from "./todayOrder";
 import type { TodoRequestOptions, TodoService, UpdateTodoDetailsInput } from "./todoService";
 import { isDeleteUndoToken, readTodoResponse, todoMatchesDetails } from "./todoWorkspaceValidation";
+import type { DeletionStore } from "../../apps/deletionStore";
 
 export type TodayListLoadStatus = "idle" | "loading" | "ready" | "error";
 export type TodayListMutationKind =
@@ -175,7 +176,11 @@ export class TodayListController {
   private readonly recentCreates = new Map<string, { readonly sequence: number; readonly todo: Todo }>();
   private readonly seenIds = new Set<string>();
 
-  constructor(private readonly service: TodoService, localDate: LocalDate) {
+  constructor(
+    private readonly service: TodoService,
+    localDate: LocalDate,
+    private readonly deletionStore?: DeletionStore | null,
+  ) {
     this.localDate = asSqlDate(localDate);
     this.confirmedModel = buildTodayListModel([], this.localDate);
     this.state = {
@@ -504,7 +509,7 @@ export class TodayListController {
     this.performUpdate(todoId, { dueDate }, "reschedule");
 
   readonly deleteTodo = async (todoId: UUID): Promise<boolean> => {
-    if (this.undo) return false;
+    if (!this.deletionStore && this.undo) return false;
     const todo = this.state.model.todos.find((row) => sameId(row.id, todoId));
     if (!todo) return false;
     const mutation = this.beginMutation("delete", todo.id);
@@ -516,18 +521,40 @@ export class TodayListController {
       ), mutation.signal);
       if (!this.isCurrentMutation(mutation.revision)) return false;
       if (!isDeleteUndoToken(token)) throw new RangeError("Invalid Undo token.");
-      this.undo = { todo, token, stage: "deleted" };
       const model = removeTodo(this.confirmedModel, todo.id);
       this.confirm(model);
+      if (this.deletionStore) {
+        this.deletionStore.add(
+          { kind: "todo", id: todo.id, label: `${todoLabel(todo)} deleted`, token },
+          () => this.restoreDeletedRecord(todo, token),
+        );
+      } else {
+        this.undo = { todo, token, stage: "deleted" };
+      }
       this.finishMutation({
         model,
-        undoNotice: { todoId: todo.id, todoText: todo.text, pending: false, error: null },
+        undoNotice: this.deletionStore ? null : { todoId: todo.id, todoText: todo.text, pending: false, error: null },
         announcement: `${todoLabel(todo)} deleted. Undo is available.`,
       });
       return true;
     } catch {
       return this.failMutation(mutation.revision, mutation.signal, DELETE_ERROR);
     }
+  };
+
+  private readonly restoreDeletedRecord = async (todo: Todo, token: DeleteUndoToken): Promise<boolean> => {
+    if (!this.active || this.state.pendingMutation) return false;
+    const restored = await this.service.restoreTodo(todo.id, token, { signal: new AbortController().signal });
+    if (restored !== true) return false;
+    if (!this.active) return true;
+    const model = replaceTodo(this.confirmedModel, todo, this.localDate);
+    this.confirm(model);
+    this.replace({ model, mutationError: null, announcement: `${todoLabel(todo)} restored.` });
+    if (this.undo?.todo.id === todo.id && this.undo.token === token) {
+      this.undo = null;
+      this.replace({ undoNotice: null });
+    }
+    return true;
   };
 
   readonly undoDelete = async (): Promise<boolean> => {
@@ -609,14 +636,15 @@ export interface TodayListControllerBinding {
 /** Account changes replace the controller; local midnight preserves its Undo. */
 export function useTodayListController(
   service: TodoService, localDate: LocalDate, accountScopeKey: string,
+  deletionStore?: DeletionStore | null,
 ): TodayListControllerBinding {
   if (!accountScopeKey || accountScopeKey !== accountScopeKey.trim()) {
     throw new RangeError("Today requires an authenticated account scope.");
   }
   const controller = useMemo(
-    () => new TodayListController(service, localDate),
+    () => new TodayListController(service, localDate, deletionStore),
     // Lifecycle key only: never passed to a provider as a user ID.
-    [accountScopeKey, service],
+    [accountScopeKey, deletionStore, service],
   );
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   // Abort an old account before the new commit can expose retained callbacks.

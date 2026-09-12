@@ -16,3 +16,19 @@
 .workspace-dialog :focus-visible, .workspace-notice :focus-visible, .workspace-page :focus-visible { outline: 2px solid #e5e5ed; outline-offset: 3px; }
 .workspace-project-warning { margin: 0; padding: 10px 24px; color: #c8c8d1; background: #242428; font-size: 13px; }
 .workspace-project-warning button { color: inherit; background: transparent; border: 0; text-decoration: underline; }
+.deletion-tray {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  max-width: min(34rem, calc(100vw - 2rem));
+  padding: .65rem .8rem;
+  border: 1px solid var(--line, #d6d9e2);
+  border-radius: .75rem;
+  background: var(--surface, #fff);
+  box-shadow: 0 8px 28px #0002;
+}
+.deletion-tray summary { cursor: pointer; font-weight: 650; }
+.deletion-tray ul { display: grid; gap: .45rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+.deletion-tray li { display: grid; grid-template-columns: minmax(8rem, 1fr) auto auto; gap: .4rem; align-items: center; }
+.deletion-tray li > [role="alert"] { grid-column: 1 / -1; color: #9a321e; font-size: .8rem; }

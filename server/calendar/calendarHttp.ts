@@ -3,6 +3,7 @@ export class CalendarHttpError extends Error {
   constructor(readonly code: string, readonly status = 502) {
     super(code === 'reconnect_required' ? 'Reconnect Google Calendar to continue.' :
       code === 'invalid_request' ? 'Calendar request could not be verified. Try again.' :
+      code === 'calendar_timeout' ? 'Calendar took too long to respond. Try again.' :
       'Calendar is temporarily unavailable. Try again.');
   }
 }

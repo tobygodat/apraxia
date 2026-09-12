@@ -8,6 +8,7 @@ import { TodoEditDialog } from "./TodoEditDialog";
 import type { TodoService } from "./todoService";
 import { useLocalToday } from "./useLocalToday";
 import "./TodayPanel.css";
+import { useDeletionStore } from "../../apps/deletionStore";
 
 export interface TodayPanelProps {
   readonly service: TodoService;
@@ -32,7 +33,8 @@ export function TodayPanel(props: TodayPanelProps) {
 
 function TodayPanelSession({ service, workspaceSessionKey, profile, projects, refreshKey }: TodayPanelProps) {
   const localDate = useLocalToday(profile.timezone);
-  const { state, controller } = useTodayListController(service, localDate, workspaceSessionKey);
+  const deletionStore = useDeletionStore();
+  const { state, controller } = useTodayListController(service, localDate, workspaceSessionKey, deletionStore);
   const focusRef = useRef<HTMLDivElement>(null);
   const activeController = useRef<TodayListController | null>(controller);
   const [composerScope, setComposerScope] = useState<TodayListController | null>(null);
@@ -113,6 +115,10 @@ function TodayPanelSession({ service, workspaceSessionKey, profile, projects, re
           if (!await controller.updateDetails(id, input, options)) {
             throw new Error("The todo update was not confirmed.");
           }
+        }}
+        onReloadLatest={async () => {
+          await controller.load();
+          return controller.getSnapshot().model.todos.find((todo) => todo.id === visibleEdit?.todo.id) ?? null;
         }}
       />
     </div>

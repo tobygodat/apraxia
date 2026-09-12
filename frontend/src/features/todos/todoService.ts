@@ -12,6 +12,8 @@ import type {
 
 export interface TodoRequestOptions {
   readonly signal: AbortSignal;
+  /** Internal optimistic-concurrency metadata; never an ownership input. */
+  readonly expectedUpdatedAt?: string;
 }
 
 export interface TodoWorkspaceSnapshot {

@@ -343,6 +343,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      list_collection_page: {
+        Args: {
+          p_cursor?: string
+          p_limit?: number
+          p_media_type?: string
+          p_project_id?: string
+          p_record_type: Database["public"]["Enums"]["orbitos_record_type"]
+          p_snapshot_token?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       begin_calendar_oauth_attempt: {
         Args: {
           p_code_verifier: string
