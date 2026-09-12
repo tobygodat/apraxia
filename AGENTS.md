@@ -8,8 +8,7 @@
   defaults and complete authorized work; ask only when missing information would
   materially change the result. Explicit user decisions supersede repo defaults.
 - Preserve unrelated changes. Report the outcome, checks run, and any remaining
-  blocker concisely. Keep this file focused on actionable guidance, not features
-  or implementation details already discoverable in code.
+  blocker concisely.
 
 ## Repository constraints
 
@@ -20,9 +19,6 @@
 - Browser CRUD uses the authenticated session and RLS. Google credentials and
   service-role keys stay server-only; never commit credentials or personal data.
 - Preserve date-only due dates, unchanged overdue dates, and atomic Today ordering.
-  Calendar is read-only unless requested otherwise and must load independently
-  of Today. Keep the product manual and desktop-first; add automation only when
-  requested.
 - Use `supabase/migrations/` for schema changes. Hosted changes are forward-only:
   inspect existing data and preserve backups. Reset/rewind commands are local-only.
 
@@ -31,13 +27,7 @@
 - Run commands from the repository root. Use `npm run dev` for the full local app
   or `npm run dev:web` for frontend work. Setup and release: `docs/CLOUD_DEVELOPMENT.md`.
   Calendar configuration and security: `docs/CALENDAR.md`. Status: `README.md`.
-- Whenever a change is complete and ready to test, ensure `npm run dev:web` is
-  running, check the affected flow in `http://localhost:5173/qa/workspace.html`,
-  and open that local test workspace in the browser panel for the user. Use
-  relevant fixture scenarios (for example, `?scenario=empty`) as needed. These
-  fixtures use fictional data and require no cloud configuration; do not open
-  the unconfigured `/` route as the test entry point. State any behavior the
-  fixtures cannot verify.
+- For changes affecting frontend behavior or appearance, run `npm run dev:web`, check the affected flow at `http://localhost:5173/qa/workspace.html`, and open it in the browser panel. Fixtures use fictional data and require no cloud configuration. Report relevant limits of fixture verification.
 - Run `npm run verify` for cloud code changes. For schema changes, also run
   `npm run db:verify` locally and regenerate types with `npm run db:types`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
