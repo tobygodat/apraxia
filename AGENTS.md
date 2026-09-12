@@ -2,6 +2,8 @@
 
 ## Working style
 
+- Implement only the requested scope. Do not add unrequested features, fields,
+  or options. Suggest optional additions and wait for approval before adding them.
 - Keep changes minimal and consistent with the existing app. Prefer reasonable
   defaults and complete authorized work; ask only when missing information would
   materially change the result. Explicit user decisions supersede repo defaults.
