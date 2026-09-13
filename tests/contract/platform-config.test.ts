@@ -108,3 +108,12 @@ describe("browser/server environment boundary", () => {
     }
   });
 });
+
+it('allows restricted Google embeds to identify the app origin without revealing paths or queries', async () => {
+  const config = JSON.parse(await readFile(path.join(repositoryRoot, 'vercel.json'), 'utf8'));
+  const globalHeaders = config.headers.find((entry: { source: string }) => entry.source === '/(.*)').headers;
+  expect(globalHeaders).toContainEqual({ key: 'Referrer-Policy', value: 'strict-origin' });
+  const html = await readFile(path.join(repositoryRoot, 'frontend/index.html'), 'utf8');
+  expect(html).toContain('<meta name="referrer" content="strict-origin"');
+  expect(html).not.toContain('name="referrer" content="no-referrer"');
+});
