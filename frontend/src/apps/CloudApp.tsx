@@ -17,6 +17,8 @@ import type { TodoService } from "../features/todos/todoService";
 import { createSupabaseTodoService } from "../features/todos/supabaseTodoService";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 import { createWorkspaceData } from "./workspaceData";
+import { DriveCallback } from './DriveCallback';
+import { createDriveService } from '../features/classes/driveService';
 import { CalendarCallback } from "./CalendarCallback";
 import { createCollectionService } from "../features/collections/collectionService";
 import { createCalendarService } from "../features/calendar/calendarService";
@@ -200,11 +202,13 @@ function CloudWorkspace({ identity, service, client }: {
   const location = useLocation();
   const collectionService = useMemo(() => createCollectionService(client), [client]);
   const calendarService = useMemo(() => createCalendarService(client), [client]);
+  const driveService = useMemo(() => createDriveService(client), [client]);
   const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
+  if (location.pathname === "/drive/callback") return <DriveCallback client={client} userId={identity.userId} />;
   const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
   if (location.pathname === "/calendar/callback") return <CalendarCallback client={client} userId={identity.userId} />;
   return <WorkspaceRuntime identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
-    todoService={service} collectionService={collectionService} calendarService={calendarService} workspaceData={workspaceData} />;
+    todoService={service} collectionService={collectionService} calendarService={calendarService} driveService={driveService} workspaceData={workspaceData} />;
 }
 export function ConfiguredCloudApp({
   client,

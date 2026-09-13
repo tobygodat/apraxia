@@ -16,7 +16,7 @@
       ]
     },
     {
-      "source": "/calendar/callback",
+      "source": "/(calendar|drive)/callback",
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     }
   ],

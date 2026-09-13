@@ -1,3 +1,5 @@
+import type { DriveService } from '../features/classes/driveService';
+import { createFixturePdf } from './fixturePdf';
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -19,6 +21,18 @@ const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "realistic";
 const empty = scenario === "empty";
 const long = scenario === "long" || scenario === "dense";
+let driveConnected = params.get('drive') !== 'disconnected';
+const driveService: DriveService = {
+  status: async () => ({ connectionState: driveConnected ? 'connected' : 'disconnected' }),
+  connect: async () => { throw new Error('Google consent is unavailable in the fictional fixture.'); },
+  disconnect: async () => { driveConnected = false; },
+  files: async folder => {
+    if (params.get('drive') === 'error') throw new Error('Google Drive could not load. Try again.');
+    return { files: folder === 'root' ? [{ id: 'math-notes', name: 'MATH3012 notes', folder: true, modifiedTime: null, size: null }] :
+      [{ id: 'lecture-one', name: 'Lecture 1 - Counting.pdf', folder: false, modifiedTime: null, size: '1024' }], nextPage: null };
+  },
+  pdf: async () => createFixturePdf(),
+};
 const now = new Date().toISOString();
 const timezone = "America/New_York";
 const today = localToday(timezone);
@@ -143,7 +157,7 @@ function FixtureTools() {
 createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter initialEntries={[params.get("route") ?? "/"]}>
   <WorkspaceRuntime identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
     onSignOut={async () => { window.alert("Fictional QA account signed out. No real session was changed."); }}
-    todoService={runtimeTodos} collectionService={runtimeCollections} calendarService={calendarService}
+    todoService={runtimeTodos} collectionService={runtimeCollections} calendarService={calendarService} driveService={driveService}
     workspaceData={runtimeData} />
   <FixtureTools />
 </MemoryRouter></StrictMode>);

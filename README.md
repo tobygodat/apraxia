@@ -44,6 +44,11 @@ Google sync, OAuth, or hosted configuration. See the
 
 ## Verification record
 
+Drive notes are implemented for Classes with separate consent, folder selection,
+and streamed PDF reading. Hosted setup and live verification are pending; see
+[Drive setup](docs/DRIVE.md).
+
+
 All planned feature slices are implemented and deployed. On 2026-09-04,
 `npm run verify` passed 1,635 tests; local database checks passed 176 pgTAP
 assertions. Live checks covered Google app sign-in/out, persisted collection
