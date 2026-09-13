@@ -71,7 +71,7 @@ describe("fixed read-only Google Calendar requests", () => {
     expect(url.pathname).toBe("/calendar/v3/calendars/team%40example.test/events");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       timeMin: "2026-09-07T04:00:00Z", timeMax: "2026-09-14T04:00:00Z", timeZone: ZONE,
-      maxResults: "250", singleEvents: "true", showDeleted: "false", orderBy: "startTime", fields: CALENDAR_EVENT_FIELDS,
+      maxResults: "250", singleEvents: "true", showDeleted: "false", orderBy: "startTime", fields: CALENDAR_EVENT_FIELDS, eventLabelVersion: "1",
     });
     expect(init).toEqual({
       method: "GET", headers: { Accept: "application/json", Authorization: `Bearer ${TOKEN}` },
@@ -154,7 +154,7 @@ describe("fresh calendar list metadata", () => {
     const read = transport(fetch);
     const calendars = await read.listCalendars(options());
     expect(calendars.map((value) => value.timeZone)).toEqual([ZONE, "", ""]);
-    const week = await loadCalendarWeek({ monday: "2026-09-07", timezone: ZONE, calendars }, read.fetchEventPage, options());
+    const week = await loadCalendarWeek({ sunday: "2026-09-06", timezone: ZONE, calendars }, read.fetchEventPage, options());
     expect(week.events).toHaveLength(1);
     expect(week.partialErrors.map((error) => error.calendarId)).toEqual(["missing", "invalid"]);
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -196,13 +196,13 @@ describe("fresh calendar list metadata", () => {
 describe("bounded response handling", () => {
   it("projects only normalizer fields even when Google returns extra sensitive data", async () => {
     const value = event("instance1", {
-      recurringEventId: "master", description: PRIVATE, attendees: [{ email: PRIVATE }],
+      recurringEventId: "master", location: "Hall 204", description: PRIVATE, attendees: [{ email: PRIVATE }],
       start: { dateTime: "2026-09-08T09:00:00-04:00", description: PRIVATE },
     });
     const fetch = fakeFetch(async () => response({ items: [value], description: PRIVATE, nextPageToken: "next" }));
     const result = await transport(fetch).fetchEventPage(request(), options());
     expect(result).toEqual({ nextPageToken: "next", items: [{
-      id: "instance1", status: "confirmed", summary: "A meeting", htmlLink: value.htmlLink, recurringEventId: "master",
+      id: "instance1", status: "confirmed", summary: "A meeting", location: "Hall 204", htmlLink: value.htmlLink, recurringEventId: "master",
       start: { dateTime: "2026-09-08T09:00:00-04:00" }, end: value.end,
     }] });
     expect(JSON.stringify(result)).not.toContain(PRIVATE);
@@ -305,7 +305,7 @@ describe("bounded response handling", () => {
   it("fits the loader pagination port and discards failed later pages", async () => {
     const fetch = fakeFetch().mockResolvedValueOnce(response({ items: [event()], nextPageToken: "next" }))
       .mockResolvedValueOnce(response({ error: PRIVATE }, 503));
-    const result = await loadCalendarWeek({ monday: "2026-09-07", timezone: ZONE, calendars: [{
+    const result = await loadCalendarWeek({ sunday: "2026-09-06", timezone: ZONE, calendars: [{
       calendarId: "team", displayName: "Team", timeZone: ZONE, isVisible: true, canEdit: false,
       color: { background: null, foreground: null },
     }] }, transport(fetch).fetchEventPage, options());
@@ -424,6 +424,57 @@ describe("timeouts and cancellation", () => {
 });
 
 describe("Google event color overrides", () => {
+  it("uses exact label fills, isolates calendars, and reuses each palette across pages", async () => {
+    const fetch = fakeFetch(async input => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/events')) return response({ items: [
+        event('class', { eventLabelId: 'basil', colorId: '10' }),
+        event('work', { eventLabelId: 'cherry' }),
+        event('unknown', { eventLabelId: 'unknown', colorId: '10' }),
+        event('unsafe', { eventLabelId: 'unsafe' }),
+      ] });
+      expect(url.searchParams.get('fields')).toBe('labelProperties(eventLabels(id,backgroundColor))');
+      return response({ labelProperties: { eventLabels: [
+        { id: 'basil', backgroundColor: url.pathname.includes('other') ? '#123456' : '#0b8043', name: PRIVATE },
+        { id: 'cherry', backgroundColor: '#d81b60' },
+        { id: 'unsafe', backgroundColor: 'url(private)' },
+        null,
+      ] }, description: PRIVATE });
+    });
+    const reader = transport(fetch);
+    const page = await reader.fetchEventPage(request(), options()) as { items: unknown[] };
+    await reader.fetchEventPage(request({ pageToken: 'next' }), options());
+    const other = await reader.fetchEventPage(request({ calendarId: 'other@example.test' }), options()) as { items: unknown[] };
+    expect(fetch.mock.calls.filter(([input]) => !new URL(String(input)).pathname.endsWith('/events'))).toHaveLength(2);
+    const metadata = { calendarId: 'work', displayName: 'Work', color: { background: '#336699', foreground: '#ffffff' }, isVisible: true as const };
+    const normalized = page.items.map(item => normalizeGoogleEvent(item, metadata));
+    expect(normalized[0]).toMatchObject({ status: 'event', event: { calendarColor: { background: '#0b8043' } } });
+    expect(normalized[1]).toMatchObject({ status: 'event', event: { calendarColor: { background: '#d81b60' } } });
+    for (const result of normalized.slice(2)) expect(result).toMatchObject({ status: 'event', event: { calendarColor: metadata.color } });
+    expect(normalizeGoogleEvent(other.items[0], metadata)).toMatchObject({ status: 'event', event: { calendarColor: { background: '#123456' } } });
+    expect(JSON.stringify(page)).not.toContain(PRIVATE);
+    expect(JSON.stringify(page)).not.toContain('eventLabelId');
+  });
+
+  it.each([{}, { labelProperties: { eventLabels: 'invalid' } }, { labelProperties: { eventLabels: Array(201).fill({ id: 'basil', backgroundColor: '#0b8043' }) } }])('tolerates missing or malformed label palettes', async body => {
+    const fetch = fakeFetch(async input => new URL(String(input)).pathname.endsWith('/events')
+      ? response({ items: [event('class', { eventLabelId: 'basil' })] }) : response(body));
+    const page = await transport(fetch).fetchEventPage(request(), options()) as { items: unknown[] };
+    expect(page.items).toEqual([event('class')]);
+  });
+
+  it.each([403, 503])('keeps events when optional label metadata returns %s', async status => {
+    const fetch = fakeFetch(async input => new URL(String(input)).pathname.endsWith('/events')
+      ? response({ items: [event('class', { eventLabelId: 'basil' })] }) : response({}, status));
+    expect(await transport(fetch).fetchEventPage(request(), options())).toEqual({ items: [event('class')] });
+  });
+
+  it('propagates revoked grants while resolving label colors', async () => {
+    const fetch = fakeFetch(async input => new URL(String(input)).pathname.endsWith('/events')
+      ? response({ items: [event('class', { eventLabelId: 'basil' })] }) : response({}, 401));
+    await expect(transport(fetch).fetchEventPage(request(), options())).rejects.toMatchObject({ code: 'reconnect_required' });
+  });
+
   it("resolves overrides from one request-local palette and falls back for unknown colors", async () => {
     const fetch = fakeFetch(async input => String(input).includes("/colors?")
       ? response({ event: { "9": { background: "#5484ed", foreground: "#1d1d1d" }, "bad": { background: "url(private)" } } })

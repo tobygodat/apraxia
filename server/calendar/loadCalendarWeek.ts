@@ -15,7 +15,7 @@ export const CALENDAR_CONCURRENCY = 3;
 export const CALENDAR_LOAD_TIMEOUT_MS = 20_000;
 /** Request only display data; descriptions and attendee data are not needed. */
 export const CALENDAR_EVENT_FIELDS =
-  "nextPageToken,items(id,status,summary,colorId,htmlLink,start(date,dateTime,timeZone),end(date,dateTime,timeZone),recurrence,recurringEventId)";
+  "nextPageToken,items(id,status,summary,location,colorId,eventLabelId,htmlLink,start(date,dateTime,timeZone),end(date,dateTime,timeZone),recurrence,recurringEventId)";
 
 export type CalendarSelection = Pick<
   CalendarPreference, "calendarId" | "displayName" | "color" | "isVisible"
@@ -91,7 +91,7 @@ interface CalendarToLoad {
   readonly sourceWindow: CalendarWeekWindow | null;
 }
 
-function visibleSelections(values: readonly CalendarSelection[], monday: unknown): CalendarToLoad[] {
+function visibleSelections(values: readonly CalendarSelection[], sunday: unknown): CalendarToLoad[] {
   if (!Array.isArray(values)) throw new CalendarWeekRequestError();
   const ids = new Set<string>();
   const result: CalendarToLoad[] = [];
@@ -110,7 +110,7 @@ function visibleSelections(values: readonly CalendarSelection[], monday: unknown
     ids.add(value.calendarId);
     if (!value.isVisible) continue;
     let sourceWindow: CalendarWeekWindow | null = null;
-    try { sourceWindow = buildCalendarWeekWindow(monday, value.timeZone); }
+    try { sourceWindow = buildCalendarWeekWindow(sunday, value.timeZone); }
     catch { /* Invalid upstream metadata fails this calendar, never its peers. */ }
     result.push({
       metadata: {
@@ -143,7 +143,7 @@ function readPage(value: unknown): { items: readonly unknown[]; nextPageToken?: 
 
 function overlapsWeek(event: CalendarEvent, window: CalendarWeekWindow): boolean {
   if (event.kind === "all_day") {
-    return event.startDate < window.endDateExclusive && event.endDateExclusive > window.range.monday;
+    return event.startDate < window.endDateExclusive && event.endDateExclusive > window.range.sunday;
   }
   return Temporal.Instant.compare(event.startAt, window.timeMax) < 0 &&
     Temporal.Instant.compare(event.endAt, window.timeMin) > 0;
@@ -184,7 +184,7 @@ async function collectCalendar(
   let pageToken: string | undefined;
   let invalidEvents = false;
   // Google uses the source calendar's timezone to filter all-day dates. The
-  // union prevents date-line calendars from losing a Monday/Sunday record;
+  // union prevents date-line calendars from losing a Sunday/Saturday record;
   // overlapsWeek still limits the returned model to the selected display week.
   const timeMin = Temporal.Instant.compare(window.timeMin, sourceWindow.timeMin) < 0 ?
     window.timeMin : sourceWindow.timeMin;
@@ -239,7 +239,7 @@ async function collectCalendar(
  */
 export async function loadCalendarWeek(
   input: {
-    readonly monday: unknown;
+    readonly sunday: unknown;
     readonly timezone: unknown;
     readonly calendars: readonly CalendarSelection[];
   },
@@ -247,8 +247,8 @@ export async function loadCalendarWeek(
   options: { readonly signal: AbortSignal },
 ): Promise<WeekViewModel> {
   checkActive(options.signal);
-  const window = buildCalendarWeekWindow(input.monday, input.timezone);
-  const selections = visibleSelections(input.calendars, input.monday);
+  const window = buildCalendarWeekWindow(input.sunday, input.timezone);
+  const selections = visibleSelections(input.calendars, input.sunday);
   const scope = new AbortController();
   const cancel = () => scope.abort();
   options.signal.addEventListener("abort", cancel, { once: true });

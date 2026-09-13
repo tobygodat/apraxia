@@ -257,7 +257,7 @@ describe('Calendar endpoint session and callback boundary', () => {
         htmlLink: 'https://www.google.com/calendar/event?eid=event-1', start: { date: '2026-09-03' }, end: { date: '2026-09-04' } }] });
       throw new Error('Unexpected fixture request');
     });
-    const response = await createCalendarHandler('events', { environment, fetch: fetcher })(request('events?monday=2026-08-31'));
+    const response = await createCalendarHandler('events', { environment, fetch: fetcher })(request('events?sunday=2026-08-30'));
     expect(response.status).toBe(200);
     const value = await response.json() as { events: { title: string }[]; partialErrors: { calendarId: string }[]; timezone: string };
     expect(value.events).toMatchObject([{ title: 'Lunch' }]);

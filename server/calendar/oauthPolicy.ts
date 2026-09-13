@@ -6,6 +6,7 @@ import type { VerifiedSession } from "../auth/verifySession.js";
 export const CALENDAR_SCOPES = Object.freeze([
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.calendars.readonly",
 ] as const);
 export const CALENDAR_OAUTH_TTL_MS = 10 * 60 * 1000;
 const AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";

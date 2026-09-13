@@ -8,6 +8,14 @@ import type { CalendarService } from './calendarService';
 afterEach(cleanup);
 const event: CalendarEvent = { kind: 'timed', eventId: 'event', calendarId: 'work', title: 'A long event title that must remain readable', calendarColor: { background: '#008000', foreground: null }, googleEventUrl: 'https://calendar.google.com/calendar/event?eid=event', startAt: '2026-09-07T09:00:00Z', endAt: '2026-09-07T10:00:00Z', startTimeZone: 'UTC', endTimeZone: 'UTC' };
 const detail = { eventId: 'event', calendarId: 'work', etag: 'v1', recurring: true, canMove: true, values: { title: event.title, location: 'Skiles 268', timeZone: 'UTC', recurrence: [], timing: { kind: 'timed' as const, start: event.startAt, end: event.endAt } } };
+it('keeps the location from the week available when extra details cannot load', async () => {
+  const service = { eventDetail: vi.fn().mockRejectedValue(new Error('offline')) } as unknown as CalendarService;
+  render(<EventPreview event={{ ...event, location: 'Hall 204' }} anchor={document.body} timezone="UTC" service={service} onClose={vi.fn()} />);
+  expect(screen.getByText('Hall 204')).toBeTruthy();
+  await screen.findByText('Extra details could not load.');
+  expect(screen.getByText('Hall 204')).toBeTruthy();
+});
+
 it('loads details and exposes editing only after writable permission is known', async () => {
   const onEdit = vi.fn();
   const service = { eventDetail: vi.fn(async () => detail), calendars: async () => [{ calendarId: 'work', canEdit: true }] } as unknown as CalendarService;

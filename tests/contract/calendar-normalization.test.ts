@@ -33,6 +33,18 @@ function allDay(overrides: Record<string, unknown> = {}) {
 }
 
 describe("Google event normalization", () => {
+  it("includes a bounded plain-text location for event cards", () => {
+    expect(normalizeGoogleEvent(timed({ location: "  Hall 204  " }), calendar)).toMatchObject({ status: "event", event: { location: "Hall 204" } });
+    const result = normalizeGoogleEvent(timed({ location: "x".repeat(5000) }), calendar);
+    expect(result.status === "event" && result.event.location?.length).toBe(4096);
+  });
+
+  it.each([undefined, null, "", "  ", 4, { private: "unrelated-data" }])("omits unusable optional location %j without dropping the event", location => {
+    const result = normalizeGoogleEvent(timed({ location }), calendar);
+    expect(result.status).toBe("event");
+    expect(result.status === "event" && result.event.location).toBeUndefined();
+  });
+
   it("projects only the shared timed fields and trusted calendar identity/color", () => {
     expect(normalizeGoogleEvent(timed({
       calendarId: "untrusted-calendar",

@@ -149,7 +149,7 @@ export function normalizeGoogleEvent(
     ) {
       return invalid;
     }
-    // The read transport resolves colorId through Google's event palette.
+    // The read transport resolves label colors (or the legacy event palette).
     const eventColor = isRecord(raw.resolvedEventColor) && typeof raw.resolvedEventColor.background === "string" &&
       /^#[\da-f]{6}$/i.test(raw.resolvedEventColor.background) ? raw.resolvedEventColor.background : null;
     const base = {
@@ -159,6 +159,8 @@ export function normalizeGoogleEvent(
         typeof raw.summary === "string" && raw.summary.trim() !== ""
           ? raw.summary
           : "(No title)",
+      ...(typeof raw.location === "string" && raw.location.trim() !== ""
+        ? { location: raw.location.trim().slice(0, 4096) } : {}),
       calendarColor: {
         background: eventColor ?? calendar.color.background,
         foreground: eventColor ? null : calendar.color.foreground,

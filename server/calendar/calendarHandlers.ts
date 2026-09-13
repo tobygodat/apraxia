@@ -56,10 +56,10 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
       }
       const parameters = new URL(request.url).searchParams;
       if (action === 'events' && request.method === 'GET') {
-        if (parameters.getAll('monday').length !== 1 || [...parameters.keys()].some(key => key !== 'monday')) {
+        if (parameters.getAll('sunday').length !== 1 || [...parameters.keys()].some(key => key !== 'sunday')) {
           throw new CalendarHttpError('invalid_request', 400);
         }
-        buildCalendarWeekWindow(parameters.get('monday'), 'UTC');
+        buildCalendarWeekWindow(parameters.get('sunday'), 'UTC');
       }
       const command = action === 'events' && request.method === 'POST'
         ? eventCommandSchema.safeParse(await readBoundedJson(new Response(request.body), 16 * 1024, request.signal)) : null;
@@ -174,9 +174,9 @@ export function createCalendarHandler(action: CalendarAction, dependencies: {
       if (!response.ok || !Array.isArray(value) || value.length !== 1 || !object(value[0]) || typeof value[0].timezone !== 'string') {
         throw new CalendarHttpError('calendar_unavailable');
       }
-      buildCalendarWeekWindow(parameters.get('monday'), value[0].timezone);
+      buildCalendarWeekWindow(parameters.get('sunday'), value[0].timezone);
       const byId = new Map(preferences.map(preference => [preference.calendarId, preference]));
-      const model = await loadCalendarWeek({ monday: parameters.get('monday'), timezone: value[0].timezone,
+      const model = await loadCalendarWeek({ sunday: parameters.get('sunday'), timezone: value[0].timezone,
         calendars: discovered.map(item => ({ ...item, isVisible: byId.get(item.calendarId)?.isVisible ?? true })) },
       transport.fetchEventPage, { signal: request.signal });
       if (model.partialErrors.some(error => error.code === 'reconnect_required')) await expireUsedGrant();

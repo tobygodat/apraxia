@@ -64,6 +64,7 @@ export function EventPreview({ event, anchor, timezone, service, calendarName, o
   const timed = (value: string) => new Intl.DateTimeFormat('en', { timeZone: timezone, weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
   const endTime = (value: string) => new Intl.DateTimeFormat('en', { timeZone: timezone, hour: 'numeric', minute: '2-digit' }).format(new Date(value));
   const sameDay = event.kind === 'timed' && Temporal.Instant.from(event.startAt).toZonedDateTimeISO(timezone).toPlainDate().equals(Temporal.Instant.from(event.endAt).toZonedDateTimeISO(timezone).toPlainDate());
+  const location = detail ? detail.values.location : event.location;
   let url: string | undefined;
   try { if (new URL(event.googleEventUrl).protocol === 'https:') url = event.googleEventUrl; } catch { /* No unsafe external links. */ }
   return createPortal(<div ref={panel} role="dialog" aria-label="Event details" tabIndex={-1} className="event-preview" style={position}>
@@ -78,7 +79,7 @@ export function EventPreview({ event, anchor, timezone, service, calendarName, o
     <p>{event.kind === 'timed' ? `${timed(event.startAt)} – ${sameDay ? endTime(event.endAt) : timed(event.endAt)}` : `${date(event.startDate)}${event.endDateExclusive === Temporal.PlainDate.from(event.startDate).add({ days: 1 }).toString() ? '' : ` – ${date(Temporal.PlainDate.from(event.endDateExclusive).subtract({ days: 1 }).toString())}`} · All day`}</p>
     {event.kind === 'timed' && <p className="event-preview-secondary">{timezone.replace(/_/g, ' ')}</p>}
     {detail?.recurring && <p>Repeating event</p>}
-    {detail?.values.location && <p className="event-preview-location">{detail.values.location}</p>}
+    {location && <p className="event-preview-location">{location}</p>}
     {calendarName && <p className="event-preview-calendar"><WorkspaceIcon name="calendar" />{calendarName}</p>}
     {loading && <p className="event-preview-secondary" role="status">Loading details…</p>}
     {error && <p role="status">{error} <button onClick={() => setRevision(value => value + 1)}>Retry</button></p>}

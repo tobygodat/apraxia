@@ -12,7 +12,7 @@ export interface CalendarService {
   invalidate?(): void;
   status(signal?: AbortSignal): Promise<GoogleCalendarConnectionStatus | null>;
   calendars(signal?: AbortSignal): Promise<CalendarPreference[]>;
-  week(monday: string, signal?: AbortSignal): Promise<WeekViewModel>;
+  week(sunday: string, signal?: AbortSignal): Promise<WeekViewModel>;
   connect(): Promise<string>;
   disconnect(): Promise<void>;
   setVisibility(id: string, visible: boolean): Promise<void>;
@@ -58,7 +58,7 @@ export function createCalendarService(client: SupabaseClient<Database>): Calenda
     mutateEvent: (command) => request("events", "POST", undefined, command),
     status: (signal) => request("status", "GET", signal),
     calendars: (signal) => request("calendars", "GET", signal),
-    week: (monday, signal) => request(`events?monday=${encodeURIComponent(monday)}`, "GET", signal),
+    week: (sunday, signal) => request(`events?sunday=${encodeURIComponent(sunday)}`, "GET", signal),
     connect: async () => (await request<{ authorizationUrl: string }>("connect", "POST")).authorizationUrl,
     disconnect: async () => { await request("disconnect", "POST"); },
     setVisibility: async (id, visible) => {

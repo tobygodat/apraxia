@@ -171,11 +171,14 @@ function stringFields(value: Record<string, unknown>, names: readonly string[]):
 }
 
 /** Retain only normalization inputs, even if Google ignores the fields mask. */
-function projectEvent(raw: unknown, palette: Record<string, unknown> = {}): unknown {
+function projectEvent(raw: unknown, palette: Record<string, unknown> = {}, labels: ReadonlyMap<string, string> = new Map()): unknown {
   if (!record(raw)) return null;
-  const result = stringFields(raw, ["id", "status", "summary", "htmlLink", "recurringEventId"]);
+  const result = stringFields(raw, ["id", "status", "summary", "location", "htmlLink", "recurringEventId"]);
+  const labelColor = typeof raw.eventLabelId === "string" ? labels.get(raw.eventLabelId) : undefined;
   const color = typeof raw.colorId === "string" && Object.hasOwn(palette, raw.colorId) ? palette[raw.colorId] : undefined;
-  if (record(color) && typeof color.background === "string" && /^#[\da-f]{6}$/i.test(color.background)) {
+  if (labelColor) {
+    result.resolvedEventColor = { background: labelColor, foreground: null };
+  } else if (!raw.eventLabelId && record(color) && typeof color.background === "string" && /^#[\da-f]{6}$/i.test(color.background)) {
     result.resolvedEventColor = { background: color.background, foreground: null };
   }
   for (const boundary of ["start", "end"]) {
@@ -186,6 +189,19 @@ function projectEvent(raw: unknown, palette: Record<string, unknown> = {}): unkn
   // Only presence is needed to reject an unexpanded recurrence master.
   if (raw.recurrence !== undefined) result.recurrence = [];
   return result;
+}
+
+/** Labels belong to each calendar; retain only bounded IDs and safe display colors. */
+function projectLabels(value: unknown): ReadonlyMap<string, string> {
+  const labels = record(value) && record(value.labelProperties) ? value.labelProperties.eventLabels : undefined;
+  const colors = new Map<string, string>();
+  if (!Array.isArray(labels) || labels.length > 200) return colors;
+  for (const label of labels) {
+    if (record(label) && identifier(label.id) && typeof label.backgroundColor === "string" && /^#[\da-f]{6}$/i.test(label.backgroundColor)) {
+      colors.set(label.id, label.backgroundColor);
+    }
+  }
+  return colors;
 }
 
 function projectCalendar(raw: unknown): CalendarSelection {
@@ -228,7 +244,7 @@ function eventUrl(request: CalendarEventPageRequest): URL {
   url.search = new URLSearchParams({
     timeMin: request.timeMin, timeMax: request.timeMax, timeZone: request.timeZone,
     maxResults: String(CALENDAR_PAGE_SIZE), singleEvents: "true", showDeleted: "false",
-    orderBy: "startTime", fields: CALENDAR_EVENT_FIELDS,
+    orderBy: "startTime", fields: CALENDAR_EVENT_FIELDS, eventLabelVersion: "1",
     ...(request.pageToken === undefined ? {} : { pageToken: request.pageToken }),
   }).toString();
   return url;
@@ -278,13 +294,29 @@ export function createGoogleCalendarReadTransport(options: {
     },
   );
   let eventPalette: Promise<Record<string, unknown>> | undefined;
+  // Request-local only: label IDs and colors must never cross accounts/calendars.
+  const labelPalettes = new Map<string, Promise<ReadonlyMap<string, string>>>();
   return {
     fetchEventPage: async (request, { signal }) => {
       checkActive(signal);
       try {
         const page = readPage(await get(eventUrl(request), signal));
+        let labels: ReadonlyMap<string, string> = new Map();
+        if (page.items.some(item => record(item) && typeof item.eventLabelId === "string" && item.eventLabelId !== "")) {
+          let pending = labelPalettes.get(request.calendarId);
+          if (!pending) {
+            const url = new URL(`${API_ROOT}calendars/${encodeURIComponent(request.calendarId)}`);
+            url.searchParams.set("fields", "labelProperties(eventLabels(id,backgroundColor))");
+            pending = get(url, signal).then(projectLabels);
+            labelPalettes.set(request.calendarId, pending);
+          }
+          try { labels = await awaitActive(pending, signal); }
+          catch (error) {
+            if (signal.aborted || (error instanceof CalendarProviderError && error.code === "reconnect_required")) throw error;
+          }
+        }
         let palette: Record<string, unknown> = {};
-        if (page.items.some(item => record(item) && typeof item.colorId === "string")) {
+        if (page.items.some(item => record(item) && !item.eventLabelId && typeof item.colorId === "string")) {
           eventPalette ??= get(new URL(`${API_ROOT}colors?fields=event`), signal).then(value =>
             record(value) && record(value.event) ? value.event : {});
           try { palette = await awaitActive(eventPalette, signal); }
@@ -293,7 +325,7 @@ export function createGoogleCalendarReadTransport(options: {
             if (signal.aborted || (error instanceof CalendarProviderError && error.code === "reconnect_required")) throw error;
           }
         }
-        return { ...page, items: page.items.map(item => projectEvent(item, palette)) };
+        return { ...page, items: page.items.map(item => projectEvent(item, palette, labels)) };
       } catch (error) {
         if (signal.aborted) throw cancelled();
         if (error instanceof CalendarProviderError) {

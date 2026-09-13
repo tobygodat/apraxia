@@ -13,7 +13,7 @@ export interface CalendarWeekWindow {
 /** Never retain or echo date/timezone input or a parser's diagnostic message. */
 export class CalendarWeekRequestError extends Error {
   constructor() {
-    super("Choose a valid Monday and named timezone.");
+    super("Choose a valid Sunday and named timezone.");
     this.name = "CalendarWeekRequestError";
   }
 }
@@ -26,18 +26,18 @@ function hasSupportedYear(year: number): boolean {
 }
 
 /** Derive an exclusive civil-week window, never a fixed 168-hour duration. */
-export function buildCalendarWeekWindow(monday: unknown, timezone: unknown): CalendarWeekWindow {
+export function buildCalendarWeekWindow(sunday: unknown, timezone: unknown): CalendarWeekWindow {
   try {
     if (
-      typeof monday !== "string" || monday.length !== 10 || !DATE_PATTERN.test(monday) ||
+      typeof sunday !== "string" || sunday.length !== 10 || !DATE_PATTERN.test(sunday) ||
       typeof timezone !== "string" || timezone.length > 255 ||
       timezone !== timezone.trim() || !NAMED_ZONE_PATTERN.test(timezone)
     ) {
       throw new CalendarWeekRequestError();
     }
 
-    const firstDay = Temporal.PlainDate.from(monday, { overflow: "reject" });
-    if (!hasSupportedYear(firstDay.year) || firstDay.dayOfWeek !== 1) {
+    const firstDay = Temporal.PlainDate.from(sunday, { overflow: "reject" });
+    if (!hasSupportedYear(firstDay.year) || firstDay.dayOfWeek !== 7) {
       throw new CalendarWeekRequestError();
     }
     const lastDay = firstDay.add({ days: 6 });
@@ -59,7 +59,7 @@ export function buildCalendarWeekWindow(monday: unknown, timezone: unknown): Cal
     }
 
     return {
-      range: { monday: firstDay.toString(), sunday: lastDay.toString() },
+      range: { sunday: firstDay.toString(), saturday: lastDay.toString() },
       timezone,
       timeMin: start.toString(),
       timeMax: end.toString(),

@@ -60,6 +60,7 @@ interface CalendarEventBase {
   eventId: string;
   calendarId: string;
   title: string;
+  location?: string;
   calendarColor: CalendarColor;
   googleEventUrl: string;
 }
@@ -103,10 +104,10 @@ export interface CalendarPartialError {
   retryable: boolean;
 }
 
-/** A complete, inclusive Monday-through-Sunday date range. */
+/** A complete, inclusive Sunday-through-Saturday date range. */
 export interface CalendarWeekRange {
-  monday: LocalDate;
   sunday: LocalDate;
+  saturday: LocalDate;
 }
 
 /** The single browser contract returned by the read-only week endpoint. */

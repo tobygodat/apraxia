@@ -10,7 +10,7 @@ import {
 type Selection = Pick<CalendarPreference, "calendarId" | "displayName" | "color" | "isVisible"> & {
   readonly timeZone: string;
 };
-const MONDAY = "2026-09-07";
+const SUNDAY = "2026-09-06";
 const TIMEZONE = "America/New_York";
 const PRIVATE_ERROR = "private upstream bearer token and event body";
 
@@ -26,14 +26,14 @@ function timedEvent(eventId = "event1", extra: Record<string, unknown> = {}) {
   return {
     id: eventId, status: "confirmed", summary: `Event ${eventId}`,
     htmlLink: "https://www.google.com/calendar/event?eid=ZXZlbnQx",
-    start: { dateTime: "2026-09-08T09:00:00-04:00", timeZone: TIMEZONE },
-    end: { dateTime: "2026-09-08T10:00:00-04:00", timeZone: TIMEZONE },
+    start: { dateTime: "2026-09-07T09:00:00-04:00", timeZone: TIMEZONE },
+    end: { dateTime: "2026-09-07T10:00:00-04:00", timeZone: TIMEZONE },
     ...extra,
   };
 }
 
 function input(calendars: readonly Selection[] = [calendar()]) {
-  return { monday: MONDAY, timezone: TIMEZONE, calendars };
+  return { sunday: SUNDAY, timezone: TIMEZONE, calendars };
 }
 
 function deferred<T>() {
@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("Calendar week loader request boundary", () => {
-  it("requests only the selected local Monday-Sunday window and read-only event fields", async () => {
+  it("requests only the selected local Sunday-Saturday window and read-only event fields", async () => {
     const fetch = fetcher(async () => ({ items: [timedEvent()] }));
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -65,8 +65,8 @@ describe("Calendar week loader request boundary", () => {
       maxResults: 250, singleEvents: true, showDeleted: false, orderBy: "startTime",
       fields: expect.any(String),
     });
-    expect(new Date(request.timeMin).toISOString()).toBe("2026-09-07T04:00:00.000Z");
-    expect(new Date(request.timeMax).toISOString()).toBe("2026-09-14T04:00:00.000Z");
+    expect(new Date(request.timeMin).toISOString()).toBe("2026-09-06T04:00:00.000Z");
+    expect(new Date(request.timeMax).toISOString()).toBe("2026-09-13T04:00:00.000Z");
     expect(Object.keys(request).sort()).toEqual([
       "calendarId", "fields", "maxResults", "orderBy", "showDeleted",
       "singleEvents", "timeMax", "timeMin", "timeZone",
@@ -77,12 +77,12 @@ describe("Calendar week loader request boundary", () => {
     }
     expect(request.fields).not.toMatch(/description|attendees|attachments|access_token|user_id/i);
     expect(requestOptions).toEqual({ signal: expect.any(AbortSignal) });
-    expect(result.range).toEqual({ monday: MONDAY, sunday: "2026-09-13" });
+    expect(result.range).toEqual({ sunday: SUNDAY, saturday: "2026-09-12" });
     expect(result.timezone).toBe(TIMEZONE);
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({
       eventId: "event1", calendarId: "focus@example.test", kind: "timed",
-      startAt: "2026-09-08T09:00:00-04:00", endAt: "2026-09-08T10:00:00-04:00",
+      startAt: "2026-09-07T09:00:00-04:00", endAt: "2026-09-07T10:00:00-04:00",
     });
     expect(result.partialErrors).toEqual([]);
   });
@@ -117,7 +117,7 @@ describe("Calendar week loader request boundary", () => {
   });
 
   it.each([
-    { monday: "2026-09-08" }, { monday: "2026-02-30" }, { monday: null },
+    { sunday: "2026-09-07" }, { sunday: "2026-02-30" }, { sunday: null },
     { timezone: "Not/A_Timezone" }, { timezone: null },
   ])("rejects an invalid week request before fetching: %j", async (invalid) => {
     const fetch = fetcher();
@@ -172,18 +172,18 @@ describe("Calendar week loader request boundary", () => {
   it.each([
     {
       profileZone: "Etc/GMT+12", sourceZone: "Pacific/Kiritimati",
-      paddingStart: "2026-09-07T01:00:00+14:00", paddingEnd: "2026-09-07T02:00:00+14:00",
+      paddingStart: "2026-09-06T01:00:00+14:00", paddingEnd: "2026-09-06T02:00:00+14:00",
     },
     {
       profileZone: "Pacific/Kiritimati", sourceZone: "Etc/GMT+12",
-      paddingStart: "2026-09-13T22:00:00-12:00", paddingEnd: "2026-09-13T23:00:00-12:00",
+      paddingStart: "2026-09-12T22:00:00-12:00", paddingEnd: "2026-09-12T23:00:00-12:00",
     },
   ])("covers both calendar weeks across the date line but filters timed padding: $profileZone / $sourceZone", async ({
     profileZone, sourceZone, paddingStart, paddingEnd,
   }) => {
     const fetch = fetcher(async () => ({ items: [
-      timedEvent("event1", { start: { date: "2026-09-07" }, end: { date: "2026-09-08" } }),
-      timedEvent("event2", { start: { date: "2026-09-13" }, end: { date: "2026-09-14" } }),
+      timedEvent("event1", { start: { date: "2026-09-06" }, end: { date: "2026-09-07" } }),
+      timedEvent("event2", { start: { date: "2026-09-12" }, end: { date: "2026-09-13" } }),
       timedEvent("event3", {
         start: { dateTime: paddingStart, timeZone: sourceZone },
         end: { dateTime: paddingEnd, timeZone: sourceZone },
@@ -193,13 +193,13 @@ describe("Calendar week loader request boundary", () => {
       ...input([calendar(undefined, { timeZone: sourceZone })]), timezone: profileZone,
     }, fetch, options());
     const request = fetch.mock.calls[0]![0];
-    expect(new Date(request.timeMin).toISOString()).toBe("2026-09-06T10:00:00.000Z");
-    expect(new Date(request.timeMax).toISOString()).toBe("2026-09-14T12:00:00.000Z");
+    expect(new Date(request.timeMin).toISOString()).toBe("2026-09-05T10:00:00.000Z");
+    expect(new Date(request.timeMax).toISOString()).toBe("2026-09-13T12:00:00.000Z");
     expect(request.timeZone).toBe(profileZone);
     expect(result.events.map((event) => event.eventId)).toEqual(["event1", "event2"]);
     expect(result.events).toEqual([
-      expect.objectContaining({ kind: "all_day", startDate: "2026-09-07", endDateExclusive: "2026-09-08" }),
-      expect.objectContaining({ kind: "all_day", startDate: "2026-09-13", endDateExclusive: "2026-09-14" }),
+      expect.objectContaining({ kind: "all_day", startDate: "2026-09-06", endDateExclusive: "2026-09-07" }),
+      expect.objectContaining({ kind: "all_day", startDate: "2026-09-12", endDateExclusive: "2026-09-13" }),
     ]);
     expect(result.partialErrors).toEqual([]);
   });
@@ -208,27 +208,27 @@ describe("Calendar week loader request boundary", () => {
 describe("Calendar week loader paging and isolation", () => {
   it("uses both zones across different DST schedules and preserves boundary-spanning events", async () => {
     const fetch = fetcher(async () => ({ items: [
-      timedEvent("spanning", { start: { date: "2026-03-22" }, end: { date: "2026-03-24" } }),
-      timedEvent("nextweek", { start: { date: "2026-03-30" }, end: { date: "2026-03-31" } }),
+      timedEvent("spanning", { start: { date: "2026-03-21" }, end: { date: "2026-03-23" } }),
+      timedEvent("nextweek", { start: { date: "2026-03-29" }, end: { date: "2026-03-30" } }),
       timedEvent("endsatstart", {
-        start: { dateTime: "2026-03-23T03:00:00Z" }, end: { dateTime: "2026-03-23T04:00:00Z" },
+        start: { dateTime: "2026-03-22T03:00:00Z" }, end: { dateTime: "2026-03-22T04:00:00Z" },
       }),
       timedEvent("overlap", {
-        start: { dateTime: "2026-03-23T03:59:00Z" }, end: { dateTime: "2026-03-23T04:01:00Z" },
+        start: { dateTime: "2026-03-22T03:59:00Z" }, end: { dateTime: "2026-03-22T04:01:00Z" },
       }),
       timedEvent("startsatend", {
-        start: { dateTime: "2026-03-30T04:00:00Z" }, end: { dateTime: "2026-03-30T05:00:00Z" },
+        start: { dateTime: "2026-03-29T04:00:00Z" }, end: { dateTime: "2026-03-29T05:00:00Z" },
       }),
     ] }));
     const result = await loadCalendarWeek({
-      monday: "2026-03-23", timezone: "America/New_York",
+      sunday: "2026-03-22", timezone: "America/New_York",
       calendars: [calendar(undefined, { timeZone: "Europe/London" })],
     }, fetch, options());
     expect(fetch.mock.calls[0]![0]).toMatchObject({
-      timeMin: "2026-03-23T00:00:00Z", timeMax: "2026-03-30T04:00:00Z",
+      timeMin: "2026-03-22T00:00:00Z", timeMax: "2026-03-29T04:00:00Z",
     });
     expect(result.events.map((event) => event.eventId)).toEqual(["spanning", "overlap"]);
-    expect(result.events[0]).toMatchObject({ startDate: "2026-03-22", endDateExclusive: "2026-03-24" });
+    expect(result.events[0]).toMatchObject({ startDate: "2026-03-21", endDateExclusive: "2026-03-23" });
     expect(result.partialErrors).toEqual([]);
   });
 
@@ -250,12 +250,12 @@ describe("Calendar week loader paging and isolation", () => {
     const fetch = fetcher()
       .mockResolvedValueOnce({ items: [timedEvent("event1")], nextPageToken: "next" })
       .mockResolvedValueOnce({ items: [timedEvent("event2", {
-        start: { date: "2026-09-09" }, end: { date: "2026-09-11" },
+        start: { date: "2026-09-08" }, end: { date: "2026-09-10" },
       })] });
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(result.events).toHaveLength(2);
     expect(result.events[1]).toMatchObject({
-      kind: "all_day", startDate: "2026-09-09", endDateExclusive: "2026-09-11",
+      kind: "all_day", startDate: "2026-09-08", endDateExclusive: "2026-09-10",
     });
     expect(result.partialErrors).toEqual([]);
   });

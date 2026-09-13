@@ -45,9 +45,9 @@ describe("shared domain contracts", () => {
     expectTypeOf(timedEvent).not.toHaveProperty("startDate");
   });
 
-  it("models one inclusive Monday-through-Sunday week with partial results", () => {
+  it("models one inclusive Sunday-through-Saturday week with partial results", () => {
     const week = {
-      range: { monday: "2026-09-07", sunday: "2026-09-13" },
+      range: { sunday: "2026-09-06", saturday: "2026-09-12" },
       timezone: "America/New_York",
       events: [],
       visibleCalendars: [
@@ -70,8 +70,8 @@ describe("shared domain contracts", () => {
     } satisfies WeekViewModel;
 
     expect(week.range).toEqual({
-      monday: "2026-09-07",
-      sunday: "2026-09-13",
+      sunday: "2026-09-06",
+      saturday: "2026-09-12",
     });
     expect(week.visibleCalendars[0]?.isVisible).toBe(true);
     expect(week.partialErrors).toHaveLength(1);

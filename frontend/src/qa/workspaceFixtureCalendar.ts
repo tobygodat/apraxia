@@ -38,18 +38,34 @@ export function createFixtureCalendar({ scenario, timezone, storage, storageKey 
       throw new CalendarServiceError("You do not have permission to make this change on that calendar.", "calendar_readonly");
     }
   }
-  function seed(monday: string) {
-    if (state.seededWeeks.includes(monday)) return;
+  function seed(sunday: string) {
+    if (state.seededWeeks.includes(sunday)) return;
     const events: StoredEvent[] = [];
-    const instant = (day: number, minute: number) => Temporal.PlainDate.from(monday).add({ days: day })
+    const instant = (day: number, minute: number) => Temporal.PlainDate.from(sunday).add({ days: (day + 1) % 7 })
       .toZonedDateTime({ timeZone: timezone, plainTime: { hour: Math.floor(minute / 60), minute: minute % 60 } }).toInstant().toString();
     const add = (key: string, calendarId: string, title: string, timing: EventDetail["values"]["timing"], color: string | null = null, recurring = false) => events.push({
-      color, detail: { calendarId, eventId: `${monday}-${key}`, etag: `"seed-${monday}-${key}"`, recurring, canMove: !recurring,
+      color, detail: { calendarId, eventId: `${sunday}-${key}`, etag: `"seed-${sunday}-${key}"`, recurring, canMove: !recurring,
         values: { title, timing, timeZone: timezone, location: "Fictional campus · Room 204", recurrence: recurring ? ["RRULE:FREQ=WEEKLY"] : [] } },
     });
     const timed = (key: string, day: number, start: number, end: number, title: string, calendarId = "work", color: string | null = null, recurring = false) =>
       add(key, calendarId, title, { kind: "timed", start: instant(day, start), end: instant(day, end) }, color, recurring);
-    if (scenario !== "empty") {
+    if (scenario === "calendar") {
+      add("open-day", "personal", "Campus open day and welcome activities", { kind: "all_day", start: addSqlDateDays(sunday, 1), end: addSqlDateDays(sunday, 2) });
+      timed("math", 0, 570, 645, "MATH 2100 — Introduction to Discrete Mathematics", "work", "#0b8043");
+      timed("work-mon", 0, 660, 840, "Work", "work", "#d81b60");
+      timed("physics-tue", 1, 570, 645, "PHYS 1200 — Mechanics and Motion", "work", "#0b8043");
+      timed("workshop", 1, 660, 710, "MATH 2100 — Discrete Mathematics (Workshop)", "work", "#0b8043");
+      timed("check-in", 1, 720, 735, "Check-in", "personal", "#039be5");
+      timed("design", 2, 600, 675, "Design seminar and project discussion", "work", "#8e24aa");
+      timed("office", 2, 630, 690, "Office hours", "work", "#e4c441");
+      timed("physics-thu", 3, 570, 645, "PHYS 1200 — Mechanics and Motion", "work", "#0b8043");
+      timed("work-thu", 3, 660, 840, "Work", "work", "#d81b60");
+      for (const event of events) {
+        event.detail.values.location = event.detail.eventId.endsWith("math") ? "Science Hall 204"
+          : event.detail.eventId.endsWith("workshop") ? "Learning Center"
+          : event.detail.eventId.endsWith("check-in") ? "Library" : "";
+      }
+    } else if (scenario !== "empty") {
       // Expanded instances, as returned by the real week endpoint. Deliberately
       // mix calendar fills with per-event overrides from the same calendar.
       timed("lecture", 0, 540, 590, "Differential equations — methods, examples, and discussion", "work", null, true);
@@ -68,15 +84,15 @@ export function createFixtureCalendar({ scenario, timezone, storage, storageKey 
       timed("early", 3, 450, 495, "Early appointment crossing 8 AM", "personal");
       timed("hidden", 0, 720, 780, "Only shown when the hidden calendar is enabled", "hidden");
       add("overnight", "personal", "Late travel across midnight", { kind: "timed", start: instant(4, 1410), end: instant(5, 540) });
-      add("all-day", "work", "Project week — multi-day event with a long title", { kind: "all_day", start: monday, end: addSqlDateDays(monday, 4) }, "#b39ddb");
-      add("all-day-overlap", "shared", "Shared deadline", { kind: "all_day", start: addSqlDateDays(monday, 1), end: addSqlDateDays(monday, 3) });
-      add("week-boundary", "personal", "Trip continuing from Sunday", { kind: "all_day", start: addSqlDateDays(monday, -1), end: addSqlDateDays(monday, 1) }, "#f6bf26");
+      add("all-day", "work", "Project week — multi-day event with a long title", { kind: "all_day", start: addSqlDateDays(sunday, 1), end: addSqlDateDays(sunday, 5) }, "#b39ddb");
+      add("all-day-overlap", "shared", "Shared deadline", { kind: "all_day", start: addSqlDateDays(sunday, 2), end: addSqlDateDays(sunday, 4) });
+      add("week-boundary", "personal", "Trip continuing from Saturday", { kind: "all_day", start: addSqlDateDays(sunday, -1), end: addSqlDateDays(sunday, 1) }, "#f6bf26");
       if (scenario === "dense") for (let day = 0; day < 7; day++) for (let i = 0; i < 8; i++) {
         timed(`dense-${day}-${i}`, day, 720 + i * 25, 765 + i * 25,
           `Overlapping session ${i + 1}: review notes, examples, and next steps`, i % 2 ? "personal" : "work", i % 3 ? "#8e24aa" : "#f6bf26");
       }
     }
-    commit({ ...state, events: [...state.events, ...events], seededWeeks: [...state.seededWeeks, monday] });
+    commit({ ...state, events: [...state.events, ...events], seededWeeks: [...state.seededWeeks, sunday] });
   }
   return {
     async status(signal) { check(signal); return state.connected ? { id: "fixture-connection", googleAccountId: null, displayEmail: "alex@example.invalid",
@@ -85,11 +101,11 @@ export function createFixtureCalendar({ scenario, timezone, storage, storageKey 
     async setVisibility(id, isVisible) { check(); commit({ ...state, preferences: state.preferences.map(p => p.id === id ? { ...p, isVisible } : p) }); },
     async disconnect() { check(); commit({ ...state, connected: false }); },
     async connect() { check(); commit({ ...state, connected: true }); return "/qa/workspace.html?route=/settings&scenario=" + encodeURIComponent(scenario); },
-    async week(monday, signal) {
-      check(signal); seed(monday);
+    async week(sunday, signal) {
+      check(signal); seed(sunday);
       const visibleCalendars = state.preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const }));
-      const endDate = addSqlDateDays(monday, 7);
-      const start = Temporal.PlainDate.from(monday).toZonedDateTime(timezone).toInstant();
+      const endDate = addSqlDateDays(sunday, 7);
+      const start = Temporal.PlainDate.from(sunday).toZonedDateTime(timezone).toInstant();
       const end = Temporal.PlainDate.from(endDate).toZonedDateTime(timezone).toInstant();
       const events: CalendarEvent[] = [];
       for (const { detail, color } of state.events) {
@@ -98,7 +114,7 @@ export function createFixtureCalendar({ scenario, timezone, storage, storageKey 
         const timing = detail.values.timing;
         // Reuse the production normalization boundary, including per-event color
         // overrides, untitled events, exclusive dates, and source timezones.
-        const normalized = normalizeGoogleEvent({ id: detail.eventId, summary: detail.values.title,
+        const normalized = normalizeGoogleEvent({ id: detail.eventId, summary: detail.values.title, location: detail.values.location,
           htmlLink: `https://calendar.google.com/calendar/event?eid=${encodeURIComponent(detail.eventId)}`,
           ...(color ? { resolvedEventColor: { background: color } } : {}),
           ...(detail.recurring ? { recurringEventId: "fixture-series" } : {}),
@@ -107,10 +123,10 @@ export function createFixtureCalendar({ scenario, timezone, storage, storageKey 
         }, calendar);
         if (normalized.status !== "event") throw new Error("Invalid QA event seed.");
         const event = normalized.event;
-        if (event.kind === "all_day" ? event.startDate < endDate && event.endDateExclusive > monday
+        if (event.kind === "all_day" ? event.startDate < endDate && event.endDateExclusive > sunday
           : Temporal.Instant.compare(event.startAt, end) < 0 && Temporal.Instant.compare(event.endAt, start) > 0) events.push(event);
       }
-      return { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars, events, partialErrors: [] };
+      return { range: { sunday, saturday: addSqlDateDays(sunday, 6) }, timezone, visibleCalendars, events, partialErrors: [] };
     },
     async eventDetail(calendarId, eventId, _scope, signal) {
       check(signal);

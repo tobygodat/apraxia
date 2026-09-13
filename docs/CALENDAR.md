@@ -63,8 +63,12 @@ weekday, monthly-by-date, and yearly schedules support intervals and optional
 end dates/counts. Existing custom rules are preserved unless explicitly changed.
 Google expands repeat instances when the week reloads.
 
-The separate OAuth grant requests `calendar.events` and
-`calendar.calendarlist.readonly` under `https://www.googleapis.com/auth/`.
+The separate OAuth grant requests `calendar.events`,
+`calendar.calendarlist.readonly`, and `calendar.calendars.readonly` under
+`https://www.googleapis.com/auth/`. The metadata read permission resolves Google's
+per-calendar event label colors; existing two-scope connections need a one-time
+reconnect after this update. Add the metadata scope to the Google OAuth consent
+configuration before releasing. No additional write permission is requested.
 Server writes require the verified session, expected origin, and fresh Google
 writer/owner access. Read-only calendars remain viewable. No migration is needed.
 
@@ -84,6 +88,28 @@ verify Google OAuth, permissions, notifications, or persistence. Live Google
 verification remains required after deployment and renewed consent.
 
 ## Reads and contracts
+
+The calendar runs Sunday through Saturday, including navigation, all-day spans,
+and the `events?sunday=YYYY-MM-DD` read window. The response range contains
+inclusive `sunday` and `saturday` dates in the profile timezone.
+The week grid includes all 24 hours at 30 pixels per hour. On load and when
+pressing Today it scrolls toward the current profile-local time, clamped at the
+end of the day. Clock updates and refreshes preserve manual scrolling. A colored
+time label and line identify the current time. Event text clips at the right edge
+without wrapping or ellipses: roomy cards show title, time range, and optional
+location; medium cards combine start time and location below the title; the
+shortest cards combine title, start time, and location on one line. Short events
+reserve one readable row, and overlap lanes account for that minimum footprint.
+Week reads include bounded plain-text locations so cards need no per-event fetch.
+
+Event reads opt into `eventLabelVersion=1` and resolve `eventLabelId` against
+`Calendars.get` label colors. Only label IDs and background colors are requested;
+names and unrelated metadata are discarded. Palettes are cached only within the
+current request and calendar. Missing or unavailable color metadata falls back
+to the calendar color without dropping events; revoked grants still reconnect.
+Legacy `colorId` responses retain the Colors endpoint fallback.
+References: [Google event labels](https://developers.google.com/workspace/calendar/api/guides/labels)
+and [calendar metadata permissions](https://developers.google.com/workspace/calendar/api/v3/reference/calendars/get).
 
 Keep `CalendarEvent` and `WeekViewModel` as the shared contracts. Week bounds
 use civil dates and named timezones, including DST; all-day ends are exclusive.

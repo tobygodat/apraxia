@@ -27,6 +27,7 @@ const SECRET = "private-provider-code-or-token";
 const REQUIRED_SCOPES = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.calendars.readonly",
 ];
 
 function callback(params: Record<string, string> = { state: STATE, code: CODE }, base = REDIRECT_URI) {
@@ -136,7 +137,7 @@ describe("Calendar mutation request CSRF policy", () => {
 });
 
 describe("Calendar OAuth attempt creation", () => {
-  it("requests exactly the two Calendar read scopes and the explicit offline consent flow", () => {
+  it("requests event access and read-only calendar metadata with explicit offline consent", () => {
     const result = createCalendarOAuthAttempt(SESSION, CONFIG, NOW);
     const url = new URL(result.authorizationUrl);
     expect(`${url.origin}${url.pathname}`).toBe("https://accounts.google.com/o/oauth2/v2/auth");
@@ -350,13 +351,14 @@ describe("Calendar OAuth consume-command projection", () => {
 describe("Calendar granted-scope validation", () => {
   it.each([
     REQUIRED_SCOPES.join(" "), [...REQUIRED_SCOPES].reverse().join(" "),
-    ` \t${REQUIRED_SCOPES[0]}\n${REQUIRED_SCOPES[1]}  `,
-  ])("accepts only the exact two required scopes with whitespace delimiters", (value) => {
+    ` \t${REQUIRED_SCOPES[0]}\n${REQUIRED_SCOPES[1]} ${REQUIRED_SCOPES[2]}  `,
+  ])("accepts only the exact three required scopes with whitespace delimiters", (value) => {
     expect(validateGrantedCalendarScopes(value)).toEqual(REQUIRED_SCOPES);
   });
 
   it.each([
     undefined, null, [], REQUIRED_SCOPES, {}, "", " ", REQUIRED_SCOPES[0], REQUIRED_SCOPES[1],
+    ...REQUIRED_SCOPES.map((_, index) => REQUIRED_SCOPES.filter((__, other) => index !== other).join(" ")),
     `${REQUIRED_SCOPES.join(" ")} openid`, `${REQUIRED_SCOPES.join(" ")} email`,
     `${REQUIRED_SCOPES.join(" ")} profile`, `${REQUIRED_SCOPES.join(" ")} https://www.googleapis.com/auth/calendar`,
     `${REQUIRED_SCOPES.join(" ")} https://www.googleapis.com/auth/calendar.events`,

@@ -72,10 +72,10 @@ it('keeps text edits across scope changes and confirms before discarding edited 
 });
 it('selects forward and backward drag ranges in 15-minute steps, with a keyboard alternative', () => {
   const onCreate = vi.fn();
-  render(<WeekGrid week={{ timezone: 'UTC', range: { monday: slot.day, sunday: '2026-09-13' }, events: [], partialErrors: [], visibleCalendars: [] }} now={new Date('2026-09-07T12:00:00Z')} onCreate={onCreate} />);
+  render(<WeekGrid week={{ timezone: 'UTC', range: { sunday: '2026-09-06', saturday: '2026-09-12' }, events: [], partialErrors: [], visibleCalendars: [] }} now={new Date('2026-09-07T12:00:00Z')} onCreate={onCreate} />);
   const column = screen.getByLabelText('Add event on 2026-09-07; press Enter for event details');
   column.setPointerCapture = vi.fn(); column.releasePointerCapture = vi.fn();
-  for (const [start, end] of [[30, 75], [75, 30]]) {
+  for (const [start, end] of [[270, 315], [315, 270]]) {
     fireEvent.pointerDown(column, { button: 0, pointerId: 1, clientY: start });
     fireEvent.pointerMove(column, { pointerId: 1, clientY: end });
     fireEvent.pointerUp(column, { pointerId: 1, clientY: end });

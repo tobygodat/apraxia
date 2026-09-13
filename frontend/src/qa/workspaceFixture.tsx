@@ -100,7 +100,7 @@ const collectionService: CollectionService = {
     return rows.slice(offset, offset + 40).map(r => ({ ...r, totalCount: rows.length }));
   },
 };
-const storagePrefix = `orbitos:qa:workspace:v2:${scenario}:${today}`;
+const storagePrefix = `orbitos:qa:workspace:v3:${scenario}:${today}`;
 const calendarKey = `${storagePrefix}:calendar`;
 const appearanceKey = `${storagePrefix}:appearance`;
 const storage = {
@@ -133,7 +133,7 @@ function FixtureTools() {
     <label>Scenario <select value={scenario} onChange={event => {
       const url = new URL(window.location.href); url.searchParams.set("scenario", event.target.value); window.location.assign(url);
     }}>
-      {["realistic", "typical", "empty", "dense", "long", "portrait", "slow", "error", "disconnected"].map(value => <option key={value}>{value}</option>)}
+      {["realistic", "calendar", "typical", "empty", "dense", "long", "portrait", "slow", "error", "disconnected"].map(value => <option key={value}>{value}</option>)}
     </select></label>
     <p>Calendar edits and page appearance survive reload in this tab. Tasks and collections reset on reload. No Google or database connection.</p>
     <p>Check event colors, overlap, adjacent 15-minute events, clipped titles and times, then expand/collapse the cover. Use Customize page to try your own image.</p>
