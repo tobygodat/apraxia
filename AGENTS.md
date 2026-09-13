@@ -27,7 +27,8 @@
 - Run commands from the repository root. Use `npm run dev` for the full local app
   or `npm run dev:web` for frontend work. Setup and release: `docs/CLOUD_DEVELOPMENT.md`.
   Calendar configuration and security: `docs/CALENDAR.md`. Status: `README.md`.
-- For changes affecting frontend behavior or appearance, run `npm run dev:web`, check the affected flow at `http://localhost:5173/qa/workspace.html`, and open it in the browser panel. Fixtures use fictional data and require no cloud configuration. Report relevant limits of fixture verification.
+- For frontend changes, run `npm run dev:web`, check the affected flow at `http://localhost:5173/qa/workspace.html`, and open it in the browser panel. Start with `realistic`; calendar/appearance work also needs dense, portrait-cover, and no-cover (`typical`) checks, including reload. Use a free port if another checkout occupies 5173.
+- Fixtures use fictional data and cannot prove Google sync or database persistence. Before deploying data/provider-dependent changes, check the normal authenticated app with the intended data/configuration and report anything unverified. See `docs/CLOUD_DEVELOPMENT.md` for the pre-deployment workflow.
 - Run `npm run verify` for cloud code changes. For schema changes, also run
   `npm run db:verify` locally and regenerate types with `npm run db:types`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
