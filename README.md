@@ -44,8 +44,9 @@ Google sync, OAuth, or hosted configuration. See the
 
 ## Verification record
 
-Drive notes are implemented for Classes with separate consent, folder selection,
-and streamed PDF reading. Hosted setup and live verification are pending; see
+Drive notes are implemented for Classes with separate consent, native Google
+Picker PDF and folder navigation, and streamed PDF reading. Hosted setup and
+live verification are pending; see
 [Drive setup](docs/DRIVE.md).
 
 
