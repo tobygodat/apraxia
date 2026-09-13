@@ -10,7 +10,7 @@ import { createDriveStore, type StoredDriveCredentials } from './driveStore.js';
 import { createGoogleOAuthTransport } from './googleOAuthTransport.js';
 import { encryptRefreshToken, decryptRefreshToken, TokenEncryptionError } from '../calendar/tokenEncryption.js';
 
-export type DriveAction = 'connect' | 'callback' | 'complete' | 'disconnect' | 'status' | 'files' | 'pdf';
+export type DriveAction = 'connect' | 'callback' | 'complete' | 'disconnect' | 'status' | 'files' | 'pdf' | 'picker';
 const HEADERS = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff' };
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: HEADERS });
@@ -21,7 +21,7 @@ export function createDriveHandler(action: DriveAction, dependencies: {
 } = {}) {
   return async (request: Request): Promise<Response> => {
     try {
-      const expectedMethod = (['connect', 'complete', 'disconnect'].includes(action)) ? 'POST' : 'GET';
+      const expectedMethod = (['connect', 'complete', 'disconnect', 'picker'].includes(action)) ? 'POST' : 'GET';
       if (request.method !== expectedMethod) return json({ error: { code: 'invalid_request', message: 'This action is unavailable.' } }, 405);
       const environment = requireApplicationEnvironment(dependencies.environment ?? process.env);
       const fetcher = dependencies.fetch ?? fetch;
@@ -116,6 +116,17 @@ export function createDriveHandler(action: DriveAction, dependencies: {
           throw new CalendarHttpError('reconnect_required', 409);
         }
         throw error;
+      }
+      if (action === 'picker') {
+        const config = dependencies.environment ?? process.env;
+        const developerKey = config.GOOGLE_PICKER_API_KEY?.trim();
+        const appId = config.GOOGLE_PICKER_APP_ID?.trim();
+        if (!developerKey || !appId || !/^\d+$/.test(appId)) {
+          return json({ error: { code: 'not_configured', message: 'Google Picker setup is not finished yet.' } }, 503);
+        }
+        // Explicit Google Picker handoff: temporary access only, never the refresh
+        // token, encryption key, or client secret. No browser persistence.
+        return json({ accessToken, developerKey, appId });
       }
       return await serveDriveFiles(action, request, accessToken, fetcher, HEADERS).catch(async (error: unknown) => {
         if (error instanceof CalendarHttpError && error.code === 'reconnect_required') {

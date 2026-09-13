@@ -86,6 +86,7 @@ function CourseNotes({ course, userId, driveService }: { course: Course; userId:
     } catch { setError("Full screen isn’t available in this browser. Try opening the workspace in another browser."); }
   }
   return <>
+    {driveService && <DriveNotes userId={userId} courseId={course.id} service={driveService} onPreview={setPreview} />}
     <div className={`classes-notes-layout${preview ? " classes-notes-layout--reading" : ""}`}>
       <section ref={reader} className="classes-reader" aria-label={`${course.name} notes reader`}>
         <input ref={fileInput} className="cloud-shell__sr-only" type="file" accept="application/pdf,.pdf" tabIndex={-1} aria-label="Choose PDF" onChange={event => {
@@ -106,6 +107,6 @@ function CourseNotes({ course, userId, driveService }: { course: Course; userId:
         {preview ? <Suspense fallback={<p role="status">Loading PDF reader…</p>}><PdfReader file={preview} showTools={showTools} /></Suspense> : <div className="classes-reader-empty"><h2>{driveService ? "Choose a PDF to read" : "No notes yet"}</h2><button onClick={() => fileInput.current?.click()}>Preview a PDF</button><p>Choose a PDF from your device. Previews aren’t uploaded or saved.</p></div>}
       </section>
     </div>
-    {driveService && <DriveNotes userId={userId} courseId={course.id} service={driveService} onPreview={setPreview} />}
+
   </>;
 }

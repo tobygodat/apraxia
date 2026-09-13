@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@types/google.picker": "^0.0.52",
     "@types/node": "^22.18.1",
     "cross-env": "^10.0.0",
     "supabase": "^2.116.0",
