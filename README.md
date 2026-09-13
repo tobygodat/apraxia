@@ -9,23 +9,21 @@ Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The person
 
 ## Development
 
-Use Node.js 22 and a running Docker-compatible runtime:
+For routine development, use Node.js 22; Docker is not required:
 
 ```powershell
 npm ci
-Copy-Item .env.cloud.example .env.local
-npm run db:start
-npm run db:status
-npm run dev
+npm run dev:web
 ```
 
-Populate the ignored `.env.local` from local Supabase status. See
-[cloud development](docs/CLOUD_DEVELOPMENT.md) for setup, release, and database
+GitHub Actions runs app and database checks on pull requests and pushes to `main`.
+Its database job uses a temporary Supabase instance on the runner. See
+[cloud development](docs/CLOUD_DEVELOPMENT.md) for CI, optional full-stack local setup, release, and database
 checks, and [Calendar](docs/CALENDAR.md) for provider configuration and security.
 
 Run `npm run verify` for type checks, tests, the production build, and the
-browser secret scan. Database changes also need local `npm run db:verify` and
-regenerated types via `npm run db:types`.
+browser secret scan. CI validates database changes and provides regenerated types
+in its `database-types` artifact. Both CI jobs must pass before release.
 
 For UI checks, run `npm run dev:web` and open
 [/qa/workspace.html](http://localhost:5173/qa/workspace.html).

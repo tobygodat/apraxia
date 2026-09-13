@@ -29,8 +29,11 @@
   Calendar configuration and security: `docs/CALENDAR.md`. Status: `README.md`.
 - For frontend changes, run `npm run dev:web`, check the affected flow at `http://localhost:5173/qa/workspace.html`, and open it in the browser panel. Start with `realistic`; calendar/appearance work also needs dense, portrait-cover, and no-cover (`typical`) checks, including reload. Use a free port if another checkout occupies 5173.
 - Fixtures use fictional data and cannot prove Google sync or database persistence. Before deploying data/provider-dependent changes, check the normal authenticated app with the intended data/configuration and report anything unverified. See `docs/CLOUD_DEVELOPMENT.md` for the pre-deployment workflow.
-- Run `npm run verify` for cloud code changes. For schema changes, also run
-  `npm run db:verify` locally and regenerate types with `npm run db:types`.
+- GitHub Actions runs `App checks` and `Database checks`; require both before
+  release. Run `npm run verify` locally for cloud changes. Schema validation and
+  type generation run in CI; download its `database-types` artifact when updating
+  the checked-in types. Local Docker is optional for backend debugging, not a
+  prerequisite for ordinary work. See `docs/CLOUD_DEVELOPMENT.md`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
   need a consistency and diff check. Once required checks pass, repeat or broaden
   testing only for new changes, failures, or unresolved concerns.

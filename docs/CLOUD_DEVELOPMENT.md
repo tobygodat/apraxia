@@ -1,10 +1,57 @@
 # Cloud development
 
 Use the root Node workspace: React/Vite, Vercel Functions, and Supabase.
-Prerequisites: Node.js 22 (`.nvmrc`), Docker (WSL 2 on Windows), and Vercel/Supabase
-account access when linking hosted projects.
+Routine frontend development needs Node.js 22 (`.nvmrc`). GitHub Actions runs
+database checks in a disposable Supabase instance on its own runner. Local Docker
+is optional for full-stack debugging; the deployed app never depends on it.
 
-## Local setup
+## Daily development without Docker
+
+```powershell
+npm ci
+npm run dev:web
+```
+
+Open `http://localhost:5173/qa/workspace.html` to check fictional UI flows.
+Run `npm run verify` locally for types, unit/contract tests, build, and the browser
+secret scan. Open a pull request to run the complete CI suite.
+
+## GitHub Actions
+
+`.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual
+dispatch from the repository's **Actions → CI → Run workflow** page (once the
+workflow exists on the default branch).
+
+- **App checks** runs `npm ci` and `npm run verify` on Node.js 22.
+- **Database checks** starts Supabase on GitHub's Linux runner, applies and lints
+  migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
+  concurrency and the authenticated Data API, then generates database types and
+  typechecks the app against them. It stops the temporary instance afterward.
+
+The workflow needs no repository secrets, production credentials, or separate
+hosted Supabase project. The CLI version comes from the lockfile. CI performs no
+deployment or hosted migration. Vercel retains its existing build verification;
+this workflow alone does not make Vercel wait for the database job.
+
+After publishing the workflow, open its first run under **Actions** and confirm
+both jobs are green. In the repository's branch protection/ruleset settings,
+require pull requests and the status checks **App checks** and **Database checks**
+for `main` if those controls are available for this repository. This prevents
+merging failed checks; direct pushes must also be restricted to enforce the gate.
+
+When a migration changes the schema, download **database-types** from the
+successful run's **Artifacts** section, extract `database.ts`, and replace
+`frontend/src/types/database.ts` with it. Review and commit that file, then let CI
+run again. Artifacts are retained for seven days. CI checks against fresh types
+but does not commit them or enforce a byte-for-byte match with the saved file.
+
+This uses [GitHub's Node workflow](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)
+and [Supabase's CI testing workflow](https://supabase.com/docs/guides/deployment/ci/testing).
+
+## Optional full-stack local setup
+
+Install a Docker-compatible runtime (Docker Desktop with WSL 2 on Windows).
+Vercel/Supabase account access is needed when linking hosted projects.
 
 ```powershell
 npm ci
@@ -20,7 +67,10 @@ The local app normally uses `http://127.0.0.1:3000`; `/api/health` should identi
 `orbitos-cloud` and `vercel-function`. `npm run dev:web` runs Vite alone for
 fictional UI fixtures; see the root README.
 
-## Checks
+## Optional local database checks
+
+CI runs these checks automatically. Use the database commands below locally only
+when reproducing a backend issue with disposable local Supabase running.
 
 ```powershell
 npm run verify
