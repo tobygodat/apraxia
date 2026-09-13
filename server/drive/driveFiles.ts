@@ -8,6 +8,13 @@ const validId = (id: string) => /^[A-Za-z0-9_-]{1,256}$/.test(id);
 export async function serveDriveFiles(action: string, request: Request, accessToken: string,
   fetcher: typeof fetch, headers: Record<string, string>): Promise<Response> {
   const query = new URL(request.url).searchParams;
+  // Vercel includes the dynamic route segment in the query string.
+  // Accept only one matching value; keep rejecting unrelated query parameters.
+  const routeActions = query.getAll('action');
+  if (routeActions.length > 1 || (routeActions.length === 1 && routeActions[0] !== action)) {
+    throw new CalendarHttpError('invalid_request', 400);
+  }
+  query.delete('action');
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(120_000)]);
   const init = { signal, headers: { Authorization: `Bearer ${accessToken}` } };
   async function metadata(url: URL) {
