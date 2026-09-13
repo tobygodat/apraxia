@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
 import { WorkspaceIcon } from "../WorkspaceIcon";
@@ -47,9 +47,6 @@ export function CloudAppShell({
   settingsAvailable = true,
   children,
 }: CloudAppShellProps) {
-  const { pathname } = useLocation();
-  const currentDestination = PRIMARY_DESTINATIONS.find(destination => destination.to === "/" ? pathname === "/" : pathname === destination.to || pathname.startsWith(`${destination.to}/`));
-  const pageLabel = currentDestination?.label ?? (pathname === "/settings" ? "Settings" : "Workspace");
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuId = useId();
   const accountRootRef = useRef<HTMLDivElement>(null);
@@ -145,10 +142,15 @@ export function CloudAppShell({
       </a>
 
       <aside className="cloud-shell__sidebar" aria-label="Workspace sidebar">
-        <Link to="/" className="cloud-shell__wordmark">
-          <WorkspaceIcon name="orbit" />
-          <span>orbitOS</span>
-        </Link>
+        <div className="cloud-shell__brand-row">
+          <Link to="/" className="cloud-shell__wordmark">
+            <WorkspaceIcon name="orbit" />
+            <span>orbitOS</span>
+          </Link>
+          <button className="cloud-shell__add" type="button" disabled={globalAddDisabled} onClick={onOpenGlobalAdd} aria-label="+ add" title="Add">
+            <WorkspaceIcon name="plus" />
+          </button>
+        </div>
 
         {onOpenSearch ? <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>
           <WorkspaceIcon name="search" /><span>Search</span><kbd aria-hidden="true">Ctrl K</kbd>
@@ -242,16 +244,6 @@ export function CloudAppShell({
       </aside>
 
       <div className="cloud-shell__body">
-        <header className="cloud-shell__header">
-          <div className="cloud-shell__breadcrumb">
-            <WorkspaceIcon name={currentDestination?.icon ?? "home"} />
-            <span>Workspace</span><span aria-hidden="true">/</span><span>{pageLabel}</span>
-          </div>
-          <button className="cloud-shell__add" type="button" disabled={globalAddDisabled} onClick={onOpenGlobalAdd} aria-label="+ add">
-            <WorkspaceIcon name="plus" /><span>Add</span>
-          </button>
-        </header>
-
         <main id="cloud-main-content" className="cloud-shell__content" tabIndex={-1}>
           {children === undefined ? <Outlet /> : children}
         </main>
