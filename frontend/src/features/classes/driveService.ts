@@ -8,6 +8,7 @@ export interface DriveService {
   connect(signal?: AbortSignal): Promise<string>;
   disconnect(signal?: AbortSignal): Promise<void>;
   files(folder: string, page?: string, signal?: AbortSignal): Promise<DrivePage>;
+  pickPdf(signal?: AbortSignal, parent?: string): Promise<DriveFile | null>;
   pdf(file: DriveFile, signal?: AbortSignal): Promise<File>;
 }
 export function createDriveService(client: SupabaseClient<Database>): DriveService {
@@ -34,6 +35,14 @@ export function createDriveService(client: SupabaseClient<Database>): DriveServi
     connect: async signal => (await (await request('connect', 'POST', signal)).json()).authorizationUrl,
     disconnect: async signal => { await request('disconnect', 'POST', signal); },
     files: async (folder, page, signal) => (await request(`files?${new URLSearchParams({ folder, ...(page ? { page } : {}) })}`, 'GET', signal)).json(),
+    pickPdf: async (signal, parent) => {
+      const { pickGooglePdf } = await import('./googlePicker');
+      const grant = await (await request('picker', 'POST', signal)).json();
+      if (typeof grant.accessToken !== 'string' || typeof grant.developerKey !== 'string' || typeof grant.appId !== 'string') {
+        throw new Error('Google’s file picker is not configured yet.');
+      }
+      return pickGooglePdf(grant, signal, parent);
+    },
     pdf: async (file, signal) => new File([await (await request(`pdf?id=${encodeURIComponent(file.id)}`, 'GET', signal)).blob()], file.name, { type: 'application/pdf' }),
   };
 }

@@ -31,6 +31,7 @@ const driveService: DriveService = {
     return { files: folder === 'root' ? [{ id: 'math-notes', name: 'MATH3012 notes', folder: true, modifiedTime: null, size: null }] :
       [{ id: 'lecture-one', name: 'Lecture 1 - Counting.pdf', folder: false, modifiedTime: null, size: '1024' }], nextPage: null };
   },
+  pickPdf: async () => ({ id: 'lecture-one', name: 'Lecture 1 - Counting.pdf', folder: false, modifiedTime: null, size: null }),
   pdf: async () => createFixturePdf(),
 };
 const now = new Date().toISOString();

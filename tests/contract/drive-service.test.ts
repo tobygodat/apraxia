@@ -219,3 +219,34 @@ describe('Google OAuth transport', () => {
       .rejects.toThrow('Drive authorization could not be verified');
   });
 });
+
+ describe('Google Picker grant', () => {
+  it('returns only a temporary access token and public picker configuration', async () => {
+    const fetcher = vi.fn<typeof fetch>(async url => {
+      if (String(url).endsWith('/auth/v1/user')) return Response.json({ id: userId, role: 'authenticated', is_anonymous: false });
+      if (String(url).endsWith('/read_drive_credentials')) return Response.json(stored());
+      if (String(url).endsWith('/token')) return Response.json(tokens);
+      return Response.json(true);
+    });
+    const response = await createDriveHandler('picker', { environment: { ...environment, GOOGLE_PICKER_API_KEY: 'public-picker-key', GOOGLE_PICKER_APP_ID: '123456' }, fetch: fetcher })(request('picker', {}));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(await response.json()).toEqual({ accessToken: 'access-token', developerKey: 'public-picker-key', appId: '123456' });
+  });
+  it('rejects a cross-origin picker grant before contacting Auth', async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    const response = await createDriveHandler('picker', { environment, fetch: fetcher })(new Request(`${environment.APP_URL}/api/drive/picker`, {
+      method: 'POST', headers: { Origin: 'https://evil.example.test', Authorization: 'Bearer session-token' },
+    }));
+    expect(response.status).toBe(400);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it('requires authentication for picker grants', async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    const response = await createDriveHandler('picker', { environment, fetch: fetcher })(new Request(`${environment.APP_URL}/api/drive/picker`, {
+      method: 'POST', headers: { Origin: environment.APP_URL, 'Content-Type': 'application/json' },
+    }));
+    expect(response.status).toBe(401);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+ });

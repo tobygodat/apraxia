@@ -1,67 +1,66 @@
 # Google Drive notes
 
-Classes can connect Google Drive, browse My Drive folders, remember a folder per
-class, and open its PDF backups in the existing reader. Folder choices remain
-browser/account-local, like Classes. Only direct folder children are listed;
-choose a nested folder to read its notes. Lists support pagination and explicit
-refresh. No background synchronization or Drive writes run.
+Classes uses Google's native Picker for PDF search, thumbnails, and folder
+navigation. **Open from Drive** opens the popup; selecting a PDF loads it in the
+existing notes reader. Cancel keeps the current document. Previously saved class
+folders are used as the initial location. No background sync or Drive writes run.
 
 ## Deployment setup
 
 1. Apply `supabase/migrations/20260913000100_google_drive.sql` after inspecting
    the hosted database and preserving a backup, following `CLOUD_DEVELOPMENT.md`.
-   This adds separate Drive connection, private credential, and OAuth tables.
-2. Enable Google Drive API in the project containing the existing Google OAuth
-   web client. Register the exact redirect
-   `https://orbitos-virid.vercel.app/api/drive/callback` alongside Calendar's
-   existing redirect. For local full-stack work use the configured `APP_URL`
-   followed by `/api/drive/callback`.
-3. The server reuses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
-   `GOOGLE_TOKEN_ENCRYPTION_KEY`; no browser Google credential is required.
-   Request consent for `https://www.googleapis.com/auth/drive.readonly`.
-   This scope permits viewing/downloading all Drive files; the app exposes only
-   folder and PDF browsing. Google documents its classification and requirements
-   in [Drive scopes](https://developers.google.com/workspace/drive/api/guides/api-specific-auth).
-4. Deploy to the existing app, open a class, select **Connect Google Drive**, and
-   complete Google consent. App sign-in and Calendar consent do not grant Drive
-   access. Select the class's Goodnotes backup folder with **Use this folder**.
+2. Enable Google Drive API and Google Picker API in the existing OAuth project.
+   Register `https://orbitos-virid.vercel.app/api/drive/callback` alongside the
+   Calendar redirect. Local full-stack work uses `APP_URL` plus that path.
+3. Keep `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
+   `GOOGLE_TOKEN_ENCRYPTION_KEY` on the server. Request the existing
+   `https://www.googleapis.com/auth/drive.readonly` scope.
+4. Create a browser API key restricted to **Google Picker API** and these website
+   referrers: `https://orbitos-virid.vercel.app/*` and `https://docs.google.com/*`.
+   Set server environment `GOOGLE_PICKER_API_KEY` to that key and
+   `GOOGLE_PICKER_APP_ID` to the Google Cloud project number. For local provider
+   testing, explicitly allow the local origin too. See
+   [Google's Picker setup](https://developers.google.com/workspace/drive/picker/guides/web-picker).
+5. Deploy to the existing app. Open a class, connect Drive if needed, then select
+   **Open from Drive**. Existing Drive consent works with the Picker; Calendar
+   consent alone does not grant Drive access.
 
 ## Security and recovery
 
-Every request verifies the Supabase session server-side. Mutations require the
-configured origin. Owner-bound, one-use OAuth state and PKCE are consumed before
-code exchange. Refresh tokens are encrypted with the existing AES-GCM envelope
-and stored in Drive's private table. Browser roles cannot invoke credential RPCs
-or access the new tables. Conditional credential writes prevent late refreshes
-from reconnecting a disconnected account.
+Every endpoint verifies the Supabase session. Mutations and the POST Picker grant
+require the configured origin. Owner-bound, one-use OAuth state and PKCE precede
+code exchange. Refresh tokens remain encrypted in Drive's private table, with
+conditional writes preventing a late refresh from reconnecting a disconnected
+account. Browser roles cannot invoke credential RPCs or access the tables.
 
-A reconnect must return a fresh refresh token; an omitted token does not silently
-reuse another Google account's previous credentials. Start consent again if
-Google omits it. Disconnect deletes Drive credentials and pending attempts; it
-does not revoke the shared Google client grant, which could affect Calendar.
-Revoking the app in Google, or disconnecting Calendar through its existing
-revocation flow, may require reconnecting Drive too.
+Google's native Picker requires a temporary read-only access token in browser
+memory. The authenticated `/api/drive/picker` response returns only that token,
+the public restricted API key, and project number, with private/no-store headers.
+Neither the token nor the grant is persisted in browser storage. Refresh tokens,
+client secrets, and encryption keys remain server-only. The SDK loads lazily
+from Google's API domain; CSP permits the Picker's Google frames.
 
-PDFs are checked for their MIME type and download permission before being
-streamed through the authenticated server endpoint. Refresh/access tokens never
-enter the browser. Responses are private/no-store. The server does not buffer the
-whole PDF, avoiding the buffered Vercel response-size limit; see
-[Vercel's streaming guidance](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).
-Downloads have a two-minute deadline. The browser still loads the PDF into memory
-for the existing reader; very large documents remain subject to device memory and
-network speed. **Open in Drive** is available alongside each PDF.
+A reconnect must return a fresh refresh token. Disconnect deletes Drive's stored
+credentials and pending attempts, without revoking the shared Google client grant
+that Calendar also uses. Revoking the app in Google, or Calendar's existing
+revocation flow, may require reconnecting Drive. A previously issued temporary
+access token expires independently of local disconnect.
+
+PDF MIME type and download permission are checked by the authenticated server
+before streaming. Responses are private/no-store. The server avoids buffering the
+whole PDF to avoid Vercel's buffered response limit. Downloads have a two-minute
+deadline; the browser's reader still holds the document in memory.
 
 ## Verification
 
-Run `npm run verify` locally. GitHub Actions runs the full database suite and
-generates types; see [the CI workflow](CLOUD_DEVELOPMENT.md#github-actions).
-The embedded PostgreSQL tests exercise credential isolation, one-time state, and
-stale writes. The transport tests check narrow file projections, pagination,
-permission failures, and streaming a response over 4.5 MB.
+Run `npm run verify`. GitHub Actions runs the database suite and type generation.
+Contract tests cover the Picker grant's session/origin boundary and response
+fields. UI tests cover selection, cancellation, retry, and stale class requests.
+Existing transport tests cover pagination, permissions, and streaming over 4.5 MB.
 
 The fictional workspace is `/qa/workspace.html?route=/classes/math3012`.
-Add `&drive=disconnected` or `&drive=error` for recovery states. It exercises
-folder selection, persistence, and the real PDF reader without contacting Google.
-It does not establish production OAuth, streaming, or provider permissions.
-After deployment, verify consent, a real PDF larger than 4.5 MB, updated backups
-after Refresh and reopening, pagination, revoked access, and disconnect.
+Add `&drive=disconnected` or `&drive=error` for recovery states. Its Picker stub
+simulates selecting a fixture PDF; it does not render Google's popup or establish
+production OAuth, API-key restrictions, CSP, streaming, or provider permissions.
+After deployment, test the real Picker, cancel with an existing document, open a
+PDF, reopen an updated backup, and test disconnect/reconnect.
