@@ -54,7 +54,7 @@ function renderShell({
 }
 
 describe("CloudAppShell", () => {
-  it("renders exactly the five canonical primary destinations and marks the active route", () => {
+  it("renders the primary destinations and marks the active route", () => {
     renderShell({ route: "/ideas" });
 
     const primaryNavigation = screen.getByRole("navigation", {
@@ -68,6 +68,7 @@ describe("CloudAppShell", () => {
       "ideas",
       "media",
       "projects",
+      "classes",
     ]);
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/",
@@ -75,6 +76,7 @@ describe("CloudAppShell", () => {
       "/ideas",
       "/media",
       "/projects",
+      "/classes",
     ]);
     expect(
       within(primaryNavigation).getByRole("link", { name: "ideas" }).getAttribute(

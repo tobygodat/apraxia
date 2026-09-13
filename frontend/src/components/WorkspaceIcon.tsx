@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
 const icons = {
+  maximize: <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />,
+  minimize: <path d="M3 8h5V3m8 0v5h5M8 21v-5H3m13 5v-5h5" />,
+  classes: <><path d="m2 8 10-5 10 5-10 5Z M6 10v7q6 5 12 0v-7M22 8v8" /></>,
   orbit: <><circle cx="12" cy="12" r="8" /><ellipse cx="12" cy="12" rx="4" ry="11" transform="rotate(45 12 12)" /><circle cx="12" cy="12" r="1" /></>,
   home: <path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7" />,
   todos: <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="m8 12 3 3 5-6" /></>,

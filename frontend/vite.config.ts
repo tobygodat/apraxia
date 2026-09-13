@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { pdfAssets } from "./pdfAssets.ts";
 
 import { resolveRuntimeMode } from "./src/config/runtime.ts";
 
@@ -19,7 +20,7 @@ export function createViteConfig(environment: ViteEnvironment) {
   const requestedPort = Number.parseInt(environment.PORT ?? "", 10);
 
   return {
-    plugins: [react()],
+    plugins: [react(), pdfAssets()],
     server: {
       port: Number.isNaN(requestedPort) ? 5173 : requestedPort,
       strictPort: true,

@@ -18,6 +18,7 @@ import type { CollectionKind, CollectionRecord, CollectionService } from "../fea
 import type { WorkspaceData } from "./workspaceData";
 import { WorkspaceDialog } from "./WorkspaceDialog";
 import "./workspace.css";
+import { ClassesPage } from "../features/classes/ClassesPage";
 
 export interface MainWorkspaceProps {
   identity: AuthIdentity;
@@ -111,6 +112,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
   let content;
   if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage appearanceService={props.workspaceData.homeAppearance} todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
   else if (pathname === "/todos") content = <TodosWorkspaceContent service={props.todoService} workspaceSessionKey={props.identity.userId} refreshKey={revision} />;
+  else if (pathname === "/classes" || /^\/classes\/[^/]+$/.test(pathname)) content = <ClassesPage key={props.identity.userId} userId={props.identity.userId} courseId={pathname.split("/")[2]} />;
   else if (pathname === "/settings") content = profile ? <SettingsPage calendarService={props.calendarService} profile={profile} onSignOut={props.onSignOut} /> : profileState;
   else if (collectionKind) content = <CollectionPage key={`${collectionKind}:${projectMatch?.[1] ?? ""}`} kind={collectionKind} service={props.collectionService} todoService={props.todoService}
     projects={projects} refreshKey={revision} onChanged={changed} recordId={projectMatch?.[1]} onOpenProject={id => navigate(`/projects/${encodeURIComponent(id)}`)} onBack={() => navigate("/projects")} />;
