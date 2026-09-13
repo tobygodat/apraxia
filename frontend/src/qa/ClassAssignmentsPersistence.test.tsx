@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { ClassAssignments } from "./ClassAssignments";
-import { createFixtureAssignments } from "../../qa/ClassAssignmentsMock";
-import type { Assignment, AssignmentService } from "./assignmentService";
+import { ClassAssignments } from "../features/classes/ClassAssignments";
+import { createFixtureAssignments } from "./ClassAssignmentsMock";
+import type { Assignment, AssignmentService } from "../features/classes/assignmentService";
 afterEach(cleanup);
 async function mount(service: AssignmentService) {
   let view!: ReturnType<typeof render>;
