@@ -34,12 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      home_appearance: {
-        Row: { user_id: string; title: string; cover_image: string | null; cover_position_x: number; cover_position_y: number }
-        Insert: { user_id?: string; title?: string; cover_image?: string | null; cover_position_x?: number; cover_position_y?: number }
-        Update: { user_id?: string; title?: string; cover_image?: string | null; cover_position_x?: number; cover_position_y?: number }
-        Relationships: []
-      }
       google_calendar_connections: {
         Row: {
           connection_state: Database["public"]["Enums"]["google_calendar_connection_state"]
@@ -111,6 +105,66 @@ export type Database = {
           is_visible?: boolean
           last_seen_at?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_drive_connections: {
+        Row: {
+          connection_state: Database["public"]["Enums"]["google_calendar_connection_state"]
+          created_at: string
+          display_email: string | null
+          google_account_id: string | null
+          granted_scopes: string[]
+          id: string
+          last_successful_refresh_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_state?: Database["public"]["Enums"]["google_calendar_connection_state"]
+          created_at?: string
+          display_email?: string | null
+          google_account_id?: string | null
+          granted_scopes?: string[]
+          id?: string
+          last_successful_refresh_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_state?: Database["public"]["Enums"]["google_calendar_connection_state"]
+          created_at?: string
+          display_email?: string | null
+          google_account_id?: string | null
+          granted_scopes?: string[]
+          id?: string
+          last_successful_refresh_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      home_appearance: {
+        Row: {
+          cover_image: string | null
+          cover_position_x: number
+          cover_position_y: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          cover_image?: string | null
+          cover_position_x?: number
+          cover_position_y?: number
+          title?: string
+          user_id?: string
+        }
+        Update: {
+          cover_image?: string | null
+          cover_position_x?: number
+          cover_position_y?: number
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -368,7 +422,34 @@ export type Database = {
         }
         Returns: Json
       }
+      begin_drive_oauth_attempt: {
+        Args: {
+          p_code_verifier: string
+          p_expires_at: string
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
+      begin_drive_oauth_transaction: {
+        Args: {
+          p_expires_at: string
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
       clear_calendar_credentials: {
+        Args: {
+          p_expected_updated_at?: string
+          p_state: Database["public"]["Enums"]["google_calendar_connection_state"]
+          p_verified_user_id: string
+        }
+        Returns: boolean
+      }
+      clear_drive_credentials: {
         Args: {
           p_expected_updated_at?: string
           p_state: Database["public"]["Enums"]["google_calendar_connection_state"]
@@ -392,6 +473,22 @@ export type Database = {
         }
         Returns: Json
       }
+      consume_drive_oauth_attempt: {
+        Args: {
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
+      consume_drive_oauth_transaction: {
+        Args: {
+          p_redirect_uri: string
+          p_state_hash: string
+          p_verified_user_id: string
+        }
+        Returns: Json
+      }
       get_today_todos_page: {
         Args: {
           p_limit?: number
@@ -402,6 +499,10 @@ export type Database = {
         Returns: Json
       }
       read_calendar_credentials: {
+        Args: { p_verified_user_id: string }
+        Returns: Json
+      }
+      read_drive_credentials: {
         Args: { p_verified_user_id: string }
         Returns: Json
       }
@@ -418,6 +519,17 @@ export type Database = {
         Returns: boolean
       }
       save_calendar_credentials: {
+        Args: {
+          p_connection_id: string
+          p_envelope: string
+          p_expected_updated_at: string
+          p_key_version: number
+          p_scopes: string[]
+          p_verified_user_id: string
+        }
+        Returns: boolean
+      }
+      save_drive_credentials: {
         Args: {
           p_connection_id: string
           p_envelope: string
