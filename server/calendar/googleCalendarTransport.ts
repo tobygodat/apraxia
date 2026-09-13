@@ -171,9 +171,13 @@ function stringFields(value: Record<string, unknown>, names: readonly string[]):
 }
 
 /** Retain only normalization inputs, even if Google ignores the fields mask. */
-function projectEvent(raw: unknown): unknown {
+function projectEvent(raw: unknown, palette: Record<string, unknown> = {}): unknown {
   if (!record(raw)) return null;
   const result = stringFields(raw, ["id", "status", "summary", "htmlLink", "recurringEventId"]);
+  const color = typeof raw.colorId === "string" && Object.hasOwn(palette, raw.colorId) ? palette[raw.colorId] : undefined;
+  if (record(color) && typeof color.background === "string" && /^#[\da-f]{6}$/i.test(color.background)) {
+    result.resolvedEventColor = { background: color.background, foreground: null };
+  }
   for (const boundary of ["start", "end"]) {
     if (raw[boundary] !== undefined) {
       result[boundary] = record(raw[boundary]) ? stringFields(raw[boundary], ["date", "dateTime", "timeZone"]) : null;
@@ -273,12 +277,23 @@ export function createGoogleCalendarReadTransport(options: {
       }
     },
   );
+  let eventPalette: Promise<Record<string, unknown>> | undefined;
   return {
     fetchEventPage: async (request, { signal }) => {
       checkActive(signal);
       try {
         const page = readPage(await get(eventUrl(request), signal));
-        return { ...page, items: page.items.map(projectEvent) };
+        let palette: Record<string, unknown> = {};
+        if (page.items.some(item => record(item) && typeof item.colorId === "string")) {
+          eventPalette ??= get(new URL(`${API_ROOT}colors?fields=event`), signal).then(value =>
+            record(value) && record(value.event) ? value.event : {});
+          try { palette = await awaitActive(eventPalette, signal); }
+          catch (error) {
+            // Color metadata is optional; keep events available on a palette failure.
+            if (signal.aborted || (error instanceof CalendarProviderError && error.code === "reconnect_required")) throw error;
+          }
+        }
+        return { ...page, items: page.items.map(item => projectEvent(item, palette)) };
       } catch (error) {
         if (signal.aborted) throw cancelled();
         if (error instanceof CalendarProviderError) {

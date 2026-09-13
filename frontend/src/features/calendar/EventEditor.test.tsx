@@ -12,6 +12,28 @@ const slot = { day: '2026-09-07', startMinute: 540, endMinute: 600 };
 const detail: EventDetail = { eventId: 'event', calendarId: 'personal', etag: 'v1', recurring: true, canMove: true,
   values: { title: 'Planning', location: 'Library', timeZone: 'UTC', recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO,WE'], timing: { kind: 'timed', start: '2026-09-07T09:00:00Z', end: '2026-09-07T10:00:00Z' } } };
 const preferences = [{ id: 'personal', calendarId: 'personal', displayName: 'Personal', isVisible: true, canEdit: true }];
+it('protects dirty drafts on Close and Escape, retaining edits until explicitly discarded', async () => {
+  const onClose = vi.fn();
+  render(<MemoryRouter><EventEditor service={{ calendars: async () => preferences } as unknown as CalendarService} timezone="UTC" slot={slot} onClose={onClose} onSaved={vi.fn()} /></MemoryRouter>);
+  const title = await screen.findByLabelText('Title');
+  fireEvent.change(title, { target: { value: 'Keep this draft' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(onClose).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+  expect((title as HTMLInputElement).value).toBe('Keep this draft');
+  fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: false, cancelable: true }));
+  expect(onClose).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+it('closes an unchanged draft without prompting after default calendar selection', async () => {
+  const onClose = vi.fn();
+  render(<MemoryRouter><EventEditor service={{ calendars: async () => preferences } as unknown as CalendarService} timezone="UTC" slot={slot} onClose={onClose} onSaved={vi.fn()} /></MemoryRouter>);
+  await screen.findByLabelText('Title');
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText('Discard your unsaved changes?')).toBeNull();
+});
 it('retains input after a failed save and reuses the same draft id on retry', async () => {
   const mutateEvent = vi.fn().mockRejectedValueOnce(new Error('Could not save')).mockResolvedValue({ saved: true });
   const onSaved = vi.fn();
@@ -53,7 +75,7 @@ it('selects forward and backward drag ranges in 15-minute steps, with a keyboard
   render(<WeekGrid week={{ timezone: 'UTC', range: { monday: slot.day, sunday: '2026-09-13' }, events: [], partialErrors: [], visibleCalendars: [] }} now={new Date('2026-09-07T12:00:00Z')} onCreate={onCreate} />);
   const column = screen.getByLabelText('Add event on 2026-09-07; press Enter for event details');
   column.setPointerCapture = vi.fn(); column.releasePointerCapture = vi.fn();
-  for (const [start, end] of [[540, 630], [630, 540]]) {
+  for (const [start, end] of [[30, 75], [75, 30]]) {
     fireEvent.pointerDown(column, { button: 0, pointerId: 1, clientY: start });
     fireEvent.pointerMove(column, { pointerId: 1, clientY: end });
     fireEvent.pointerUp(column, { pointerId: 1, clientY: end });

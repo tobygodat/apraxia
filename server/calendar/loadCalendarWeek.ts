@@ -15,7 +15,7 @@ export const CALENDAR_CONCURRENCY = 3;
 export const CALENDAR_LOAD_TIMEOUT_MS = 20_000;
 /** Request only display data; descriptions and attendee data are not needed. */
 export const CALENDAR_EVENT_FIELDS =
-  "nextPageToken,items(id,status,summary,htmlLink,start(date,dateTime,timeZone),end(date,dateTime,timeZone),recurrence,recurringEventId)";
+  "nextPageToken,items(id,status,summary,colorId,htmlLink,start(date,dateTime,timeZone),end(date,dateTime,timeZone),recurrence,recurringEventId)";
 
 export type CalendarSelection = Pick<
   CalendarPreference, "calendarId" | "displayName" | "color" | "isVisible"

@@ -13,16 +13,16 @@ export function calendarAccent(calendarId: string, color: CalendarColor): string
   return FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
 }
 
-function tint(color: string, amount: number): string {
-  return `#${[1, 3, 5].map(index => Math.round(25 + (Number.parseInt(color.slice(index, index + 2), 16) - 25) * amount).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** Dark tints preserve legibility even for white, yellow, or black source colors. */
+/** Preserve Google fills and choose the higher-contrast text color. */
 export function calendarEventStyle(calendarId: string, color: CalendarColor): CSSProperties {
   const accent = calendarAccent(calendarId, color);
+  const linear = [1, 3, 5].map(index => Number.parseInt(accent.slice(index, index + 2), 16) / 255)
+    .map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+  const luminance = linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
   return {
     "--calendar-event-color": accent,
-    "--calendar-event-bg": tint(accent, .22),
-    "--calendar-event-hover": tint(accent, .32),
+    "--calendar-event-bg": accent,
+    "--calendar-event-hover": accent,
+    "--calendar-event-text": luminance > .179 ? "#000000" : "#ffffff",
   } as CSSProperties;
 }

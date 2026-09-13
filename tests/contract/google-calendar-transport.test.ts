@@ -10,6 +10,8 @@ import {
   GOOGLE_CALENDAR_MAX_PAGE_TOKEN_LENGTH, GOOGLE_CALENDAR_REQUEST_TIMEOUT_MS,
 } from "../../server/calendar/googleCalendarTransport";
 
+import { normalizeGoogleEvent } from "../../server/calendar/normalizeGoogleEvent";
+
 const TOKEN = "fake_request_local_access_token";
 const PRIVATE = "private provider description or credential";
 const ZONE = "America/New_York";
@@ -418,5 +420,27 @@ describe("timeouts and cancellation", () => {
     expect(error).toMatchObject({ code: "calendar_unavailable", message: "Calendar could not be loaded." });
     expect(error).not.toHaveProperty("cause");
     expect(error).not.toBe(unsafe);
+  });
+});
+
+describe("Google event color overrides", () => {
+  it("resolves overrides from one request-local palette and falls back for unknown colors", async () => {
+    const fetch = fakeFetch(async input => String(input).includes("/colors?")
+      ? response({ event: { "9": { background: "#5484ed", foreground: "#1d1d1d" }, "bad": { background: "url(private)" } } })
+      : response({ items: [event("override", { colorId: "9" }), event("default"), event("unknown", { colorId: "99" }), event("bad", { colorId: "bad" })] }));
+    const reader = transport(fetch);
+    const page = await reader.fetchEventPage(request(), options()) as { items: unknown[] };
+    await reader.fetchEventPage(request({ pageToken: "next" }), options());
+    expect(fetch.mock.calls.filter(([input]) => String(input).includes("/colors?")).length).toBe(1);
+    const metadata = { calendarId: "work", displayName: "Work", color: { background: "#336699", foreground: "#ffffff" }, isVisible: true as const };
+    const normalized = page.items.map(item => normalizeGoogleEvent(item, metadata));
+    expect(normalized[0]).toMatchObject({ status: "event", event: { calendarColor: { background: "#5484ed" } } });
+    for (const result of normalized.slice(1)) expect(result).toMatchObject({ status: "event", event: { calendarColor: metadata.color } });
+  });
+
+  it("keeps events available if optional palette metadata is unavailable", async () => {
+    const fetch = fakeFetch(async input => String(input).includes("/colors?") ? response({}, 503) : response({ items: [event("override", { colorId: "9" })] }));
+    const page = await transport(fetch).fetchEventPage(request(), options()) as { items: unknown[] };
+    expect(page.items).toEqual([event("override")]);
   });
 });

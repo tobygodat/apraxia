@@ -15,6 +15,16 @@ export function EventEditor({ service, timezone, slot, event, onClose, onSaved }
   const textEdits = useRef<Partial<Pick<EventInput, 'title' | 'location'>>>({});
   const [createId] = useState(() => crypto.randomUUID().replace(/-/g, ''));
   const [input, setInput] = useState(() => newEventInput(slot, timezone));
+  const baseline = useRef(input);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const keepEditing = useRef<HTMLButtonElement>(null);
+  const dirty = JSON.stringify(input) !== JSON.stringify(baseline.current);
+  const requestClose = () => {
+    if (pending.current) return;
+    if (dirty) setConfirmClose(true);
+    else onClose();
+  };
+  useEffect(() => { if (confirmClose) keepEditing.current?.focus(); }, [confirmClose]);
   const [calendars, setCalendars] = useState<CalendarPreference[]>([]);
   const [detail, setDetail] = useState<EventDetail | null>(null);
   const [scope, setScope] = useState<'instance' | 'series'>('instance');
@@ -38,7 +48,11 @@ export function EventEditor({ service, timezone, slot, event, onClose, onSaved }
       .then(([records, loaded]) => {
         if (controller.signal.aborted) return;
         setCalendars(records); setDetail(loaded);
-        setInput(previous => loaded ? { ...detailInput(loaded), ...textEdits.current } : { ...previous, calendarId: previous.calendarId || records.find(item => item.canEdit && item.isVisible)?.calendarId || records.find(item => item.canEdit)?.calendarId || '' });
+        setInput(previous => {
+          const calendarId = previous.calendarId || records.find(item => item.canEdit && item.isVisible)?.calendarId || records.find(item => item.canEdit)?.calendarId || '';
+          baseline.current = loaded ? detailInput(loaded) : { ...baseline.current, calendarId };
+          return loaded ? { ...baseline.current, ...textEdits.current } : { ...previous, calendarId };
+        });
       }).catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Event could not load.'); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -69,9 +83,14 @@ export function EventEditor({ service, timezone, slot, event, onClose, onSaved }
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Event could not be saved.'); }
     finally { pending.current = false; setBusy(false); }
   }
-  return createPortal(<dialog ref={dialog} className="event-editor" aria-labelledby="event-editor-title" onCancel={e => { e.preventDefault(); if (!pending.current) onClose(); }}>
+  return createPortal(<dialog ref={dialog} className="event-editor" aria-labelledby="event-editor-title" onCancel={e => { e.preventDefault(); requestClose(); }}>
     <form onSubmit={e => { e.preventDefault(); void submit(false); }}>
-      <header><h2 id="event-editor-title">{event ? 'Edit event' : 'New event'}</h2><button type="button" onClick={onClose} disabled={busy}>Close</button></header>
+      <header><h2 id="event-editor-title">{event ? 'Edit event' : 'New event'}</h2><button type="button" onClick={requestClose} disabled={busy}>Close</button></header>
+      {confirmClose && <div className="event-discard-confirm" role="alert">
+        <p>Discard your unsaved changes?</p>
+        <div><button ref={keepEditing} type="button" onClick={() => { setConfirmClose(false); dialog.current?.querySelector<HTMLInputElement>('input')?.focus(); }}>Keep editing</button>
+          <button type="button" onClick={onClose}>Discard changes</button></div>
+      </div>}
       {loading && <p role="status">Loading event details…</p>}
       {error && <div role="alert"><p>{error}</p>{!detail && event && <button type="button" onClick={() => setRevision(value => value + 1)} disabled={busy}>Retry loading</button>}<Link to="/settings" onClick={onClose}>Calendar settings</Link></div>}
       {!loading && (!event || detail) && <>

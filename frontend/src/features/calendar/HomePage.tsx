@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Temporal } from "@js-temporal/polyfill";
 import { Link } from "react-router-dom";
 import type { CalendarEvent, Profile, ProjectSummary, WeekViewModel } from "../../types/domain";
@@ -8,12 +8,16 @@ import { addSqlDateDays, localToday, startOfWeekMonday } from "../todos/dateDoma
 import { CalendarServiceError, type CalendarService } from "./calendarService";
 import { layoutAllDayEvents, layoutTimedEvents, wallMinute, weekDates } from "./eventLayout";
 import { EventEditor } from "./EventEditor";
+import { EventPreview } from "./EventPreview";
 import type { CalendarSlot } from "./eventInput";
 import { HomeHeader } from "./HomeHeader";
 import type { HomeAppearanceService } from "./homeAppearance";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
-import { calendarAccent, calendarEventStyle } from "./calendarColors";
+import { calendarEventStyle } from "./calendarColors";
 import "./calendar.css";
+
+const PIXELS_PER_MINUTE = 0.5;
+const DAY_START_MINUTE = 8 * 60;
 
 export interface HomePageProps {
   appearanceService?: HomeAppearanceService;
@@ -74,25 +78,17 @@ export function CalendarPanel({ service, timezone }: { service: CalendarService;
   // Do not flash a previous week's events while the new request effect starts.
   const visibleWeek = state.week?.range.monday === monday && state.week.timezone === timezone ? state.week : null;
   const dates = weekDates(monday);
-  const label = Temporal.PlainDate.from(monday).toLocaleString("en", { month: "long", day: "numeric" });
-  const last = Temporal.PlainDate.from(dates[6]).toLocaleString("en", { month: "short", day: "numeric", year: "numeric" });
+  const label = Temporal.PlainDate.from(dates.includes(today) ? today : dates[3]).toLocaleString("en", { month: "long", year: "numeric" });
   return <section className="calendar-panel" aria-label="Weekly calendar">
 
-    <header className="calendar-header">
-      <div>
-        <h2>
-          {`${label} – ${last}`}
-        </h2>
-      </div>
-
-      <div className="calendar-controls">
-        {editable && <button className="calendar-add" disabled={!visibleWeek || state.loading} onClick={() => setEditor({ slot: { day: dates.includes(today) ? today : monday, startMinute: 540, endMinute: 600 } })}><WorkspaceIcon name="plus" />Add event</button>}
+    <header className="calendar-header calendar-toolbar">
+      <div className="calendar-toolbar-month">
         <button className="calendar-icon-button" aria-label="Previous week" title="Previous week" onClick={() => setMonday(addSqlDateDays(monday, -7))}><WorkspaceIcon name="left" /></button>
+        <h2 className="calendar-toolbar-title"><span>{label.slice(0, label.lastIndexOf(" "))}</span>{" "}<span className="calendar-toolbar-year">{label.slice(label.lastIndexOf(" ") + 1)}</span></h2>
+        <button className="calendar-icon-button" aria-label="Next week" title="Next week" onClick={() => setMonday(addSqlDateDays(monday, 7))}><WorkspaceIcon name="right" /></button></div>
+      <div className="calendar-toolbar-actions">
         <button onClick={() => setMonday(startOfWeekMonday(today))}>Today</button>
-        <button className="calendar-icon-button" aria-label="Next week" title="Next week" onClick={() => setMonday(addSqlDateDays(monday, 7))}><WorkspaceIcon name="right" /></button>
-        <button className="calendar-icon-button" aria-label="Refresh" title="Refresh calendar" onClick={() => { service.invalidate?.(); setRevision((value) => value + 1); }} disabled={state.loading}><WorkspaceIcon name="refresh" /></button>
-      </div>
-
+        <button className="calendar-icon-button" aria-label="Refresh" title="Refresh calendar" onClick={() => { service.invalidate?.(); setRevision((value) => value + 1); }} disabled={state.loading}><WorkspaceIcon name="refresh" /></button>{editable && <button className="calendar-add" disabled={!visibleWeek || state.loading} onClick={() => setEditor({ slot: { day: dates.includes(today) ? today : monday, startMinute: 540, endMinute: 600 } })}><WorkspaceIcon name="plus" />Add event</button>}</div>
     </header>
 
     {notice && <p className="calendar-warning" role="status">{notice}</p>}
@@ -118,15 +114,6 @@ export function CalendarPanel({ service, timezone }: { service: CalendarService;
     </div>}
 
     {visibleWeek && <>
-      <div className="calendar-subheader">
-        <ul className="calendar-legend" aria-label="Visible calendars">
-          {visibleWeek.visibleCalendars.map(calendar => <li key={calendar.calendarId}>
-            <span className="calendar-swatch" style={{ backgroundColor: calendarAccent(calendar.calendarId, calendar.color) }} aria-hidden="true" />
-            <span title={calendar.displayName}>{calendar.displayName}</span>
-          </li>)}
-        </ul>
-        <span className="calendar-view-label">Week</span>
-      </div>
       {!!visibleWeek.partialErrors.length && <div className="calendar-warning" role="status">
         {visibleWeek.partialErrors.map((error) => <p key={error.calendarId}>
           {`${error.calendarDisplayName}: ${error.userMessage}`}
@@ -135,26 +122,30 @@ export function CalendarPanel({ service, timezone }: { service: CalendarService;
       {visibleWeek.events.length === 0 && <p className="calendar-empty">
         {visibleWeek.visibleCalendars.length ? "No events this week." : <>No calendars are visible. <Link to="/settings">Choose calendars</Link></>}
       </p>}
-      <WeekGrid key={monday} week={visibleWeek} now={now} onCreate={editable ? slot => setEditor({ slot }) : undefined} onEdit={editable ? event => setEditor({ event, slot: { day: monday, startMinute: 540, endMinute: 600 } }) : undefined} />
+      <WeekGrid key={monday} week={visibleWeek} now={now} service={service} onCreate={editable ? slot => setEditor({ slot }) : undefined} onEdit={editable ? event => setEditor({ event, slot: { day: monday, startMinute: 540, endMinute: 600 } }) : undefined} />
     </>}
     <footer className="calendar-footer"><WorkspaceIcon name="clock" /><span>{timezone.replace(/_/g, " ")}</span></footer>
   </section>;
 }
-export function WeekGrid({ week, now, onCreate, onEdit }: { week: WeekViewModel; now: Date; onCreate?: (slot: CalendarSlot) => void; onEdit?: (event: CalendarEvent) => void }) {
+export function WeekGrid({ week, now, service, onCreate, onEdit }: { week: WeekViewModel; now: Date; service?: CalendarService; onCreate?: (slot: CalendarSlot) => void; onEdit?: (event: CalendarEvent) => void }) {
+  const [preview, setPreview] = useState<{ event: CalendarEvent; anchor: HTMLElement } | null>(null);
+  const closePreview = useCallback(() => setPreview(null), []);
   const [selection, setSelection] = useState<{ day: string; anchor: number; minute: number } | null>(null);
   const drag = useRef<{ day: string; anchor: number; minute: number } | null>(null);
-  const minuteAt = (element: HTMLElement, y: number) => Math.max(0, Math.min(1425, Math.floor((y - element.getBoundingClientRect().top) / 15) * 15));
+  const minuteAt = (element: HTMLElement, y: number) => Math.max(DAY_START_MINUTE, Math.min(1425, DAY_START_MINUTE + Math.floor((y - element.getBoundingClientRect().top) / PIXELS_PER_MINUTE / 15) * 15));
   const clearSelection = () => { drag.current = null; setSelection(null); };
   const scroll = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (scroll.current) scroll.current.scrollTop = 8 * 60 - 8; }, []);
+  useEffect(() => { if (scroll.current) scroll.current.scrollTop = 0; }, []);
   const days = weekDates(week.range.monday);
   const segments = layoutTimedEvents(week.events, week.range.monday, week.timezone);
   const allDaySegments = layoutAllDayEvents(week.events, week.range.monday);
   const today = localToday(week.timezone, now);
   const currentMinute = wallMinute(Temporal.Instant.from(now.toISOString()), week.timezone);
   const time = (at: string) => new Intl.DateTimeFormat("en", { timeZone: week.timezone, hour: "numeric", minute: "2-digit" }).format(new Date(at));
-  const link = (url: string) => { try { const parsed = new URL(url); return parsed.protocol === "https:" ? url : undefined; } catch { return undefined; } };
-  return <div className="week-grid">
+  return <div className="week-grid" style={{ "--calendar-hour-height": `${60 * PIXELS_PER_MINUTE}px` } as CSSProperties}>
+    {preview && <EventPreview key={`${preview.event.calendarId}/${preview.event.eventId}`} {...preview} timezone={week.timezone} service={service}
+      calendarName={week.visibleCalendars.find(calendar => calendar.calendarId === preview.event.calendarId)?.displayName}
+      onClose={closePreview} onEdit={onEdit ? event => { closePreview(); onEdit(event); } : undefined} />}
 
     <div className="week-head">
       <span />
@@ -173,20 +164,16 @@ export function WeekGrid({ week, now, onCreate, onEdit }: { week: WeekViewModel;
     {(allDaySegments.length > 0) && <div className="week-all-day">
       <span>All day</span>
       <div className="week-days week-all-day-lanes">
-          {allDaySegments.map(({ event, startColumn, endColumn, lane }) => <a
+          {allDaySegments.map(({ event, startColumn, endColumn, lane }) => <button type="button"
             className="calendar-event calendar-event--all-day"
             key={`${event.calendarId}/${event.eventId}`}
-            role={onEdit ? "button" : undefined}
-            onClick={e => { if (onEdit) { e.preventDefault(); onEdit(event); } }}
-            onKeyDown={e => { if (onEdit && e.key === ' ') { e.preventDefault(); onEdit(event); } }}
-            href={link(event.googleEventUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={e => setPreview({ event, anchor: e.currentTarget })}
+            aria-haspopup="dialog"
             style={{ ...calendarEventStyle(event.calendarId, event.calendarColor), gridColumn: `${startColumn + 1} / ${endColumn + 1}`, gridRow: lane + 1 }}
             aria-label={`${event.title}, all day, ${event.startDate} through ${addSqlDateDays(event.endDateExclusive, -1)}`}
             title={event.title}>
             {event.title}
-          </a>)}
+          </button>)}
       </div>
     </div>}
 
@@ -194,10 +181,10 @@ export function WeekGrid({ week, now, onCreate, onEdit }: { week: WeekViewModel;
       className="week-scroll"
       ref={scroll}
       tabIndex={0}
-      aria-label="24-hour calendar grid">
+      aria-label="Calendar grid from 8 AM to midnight">
       <div className="week-hours">
         <div className="week-time-labels">
-          {Array.from({ length: 24 }, (_, hour) => <span key={hour} style={{ top: hour * 60 }}>
+          {Array.from({ length: 16 }, (_, index) => index + 8).map(hour => <span key={hour} style={{ top: (hour * 60 - DAY_START_MINUTE) * PIXELS_PER_MINUTE }}>
             {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
           </span>)}
         </div>
@@ -227,29 +214,25 @@ export function WeekGrid({ week, now, onCreate, onEdit }: { week: WeekViewModel;
             onPointerCancel={clearSelection} onLostPointerCapture={clearSelection}
             tabIndex={onCreate ? 0 : undefined} aria-label={onCreate ? `Add event on ${day}; press Enter for event details` : undefined}
             onKeyDown={e => { if (e.target !== e.currentTarget) return; if (e.key === 'Escape') clearSelection(); if (onCreate && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onCreate({ day, startMinute: 540, endMinute: 600 }); } }}>
-            {selection?.day === day && <div className="calendar-selection" style={{ top: Math.min(selection.anchor, selection.minute), height: Math.abs(selection.anchor - selection.minute) + 15 }}>New event</div>}
-            {segments.filter((segment) => segment.day === day).map((segment) => <a
+            {selection?.day === day && <div className="calendar-selection" style={{ top: (Math.min(selection.anchor, selection.minute) - DAY_START_MINUTE) * PIXELS_PER_MINUTE, height: (Math.abs(selection.anchor - selection.minute) + 15) * PIXELS_PER_MINUTE }}>New event</div>}
+            {segments.filter((segment) => segment.day === day && segment.end > DAY_START_MINUTE).map((segment) => <button type="button"
               key={`${segment.event.calendarId}/${segment.event.eventId}`}
-              className="calendar-event calendar-event--timed"
-              role={onEdit ? "button" : undefined}
-              onClick={e => { if (onEdit) { e.preventDefault(); onEdit(segment.event); } }}
-              onKeyDown={e => { if (onEdit && e.key === ' ') { e.preventDefault(); onEdit(segment.event); } }}
-              href={link(segment.event.googleEventUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
+              className={`calendar-event calendar-event--timed${segment.end - segment.start < 90 ? " calendar-event--compact" : ""}`}
+              onClick={e => setPreview({ event: segment.event, anchor: e.currentTarget })}
+              aria-haspopup="dialog"
               aria-label={`${segment.event.title}, ${time(segment.event.startAt)}–${time(segment.event.endAt)}`}
               title={`${segment.event.title}, ${time(segment.event.startAt)}–${time(segment.event.endAt)}`}
-              style={{ ...calendarEventStyle(segment.event.calendarId, segment.event.calendarColor), top: segment.start, height: segment.end - segment.start, left: `${segment.column / segment.columns * 100}%`, width: `${100 / segment.columns}%` }}>
+              style={{ ...calendarEventStyle(segment.event.calendarId, segment.event.calendarColor), top: (Math.max(segment.start, DAY_START_MINUTE) - DAY_START_MINUTE) * PIXELS_PER_MINUTE, height: (segment.end - Math.max(segment.start, DAY_START_MINUTE)) * PIXELS_PER_MINUTE, left: `${segment.column / segment.columns * 100}%`, width: `${100 / segment.columns}%` }}>
               <strong>
                 {segment.event.title}
               </strong>
               <span>
                 {time(segment.event.startAt).replace(":00", "")}
               </span>
-            </a>)}
-            {day === today && <div
+            </button>)}
+            {day === today && currentMinute >= DAY_START_MINUTE && <div
               className="week-now"
-              style={{ top: currentMinute }}
+              style={{ top: (currentMinute - DAY_START_MINUTE) * PIXELS_PER_MINUTE }}
               aria-label={`Current time: ${time(now.toISOString())}`} />}
           </div>)}
         </div>
