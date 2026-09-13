@@ -1,5 +1,6 @@
 import type { DriveService } from '../features/classes/driveService';
 import { createFixturePdf } from './fixturePdf';
+import { ClassAssignmentsMock } from "./ClassAssignmentsMock";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -159,6 +160,6 @@ createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter in
   <WorkspaceRuntime identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
     onSignOut={async () => { window.alert("Fictional QA account signed out. No real session was changed."); }}
     todoService={runtimeTodos} collectionService={runtimeCollections} calendarService={calendarService} driveService={driveService}
-    workspaceData={runtimeData} />
+    workspaceData={runtimeData} classAssignments={<ClassAssignmentsMock empty={scenario === "empty"} />} />
   <FixtureTools />
 </MemoryRouter></StrictMode>);

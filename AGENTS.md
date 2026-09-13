@@ -12,6 +12,13 @@
 
 ## Repository constraints
 
+- For design work, continue using the invoked skill throughout follow-ups and
+  revisions. Honor the saved Impeccable build-path preference. Build code-first
+  mockups inside the existing app's local QA workspace using fictional data and
+  existing components. Do not switch to standalone HTML or inline visualizations
+  unless explicitly requested. Before editing, state the target route and preview
+  location.
+
 - Develop locally and release to the existing personal Vercel/Supabase app;
   no separate Preview environment or commercial launch process.
 - Use the cloud implementation for new work. Preserve legacy Python source and
