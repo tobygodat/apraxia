@@ -52,3 +52,10 @@
 .classes-reader > header .classes-reader-tools { width: 32px; height: 36px; padding: 8px; }
 .classes-reader-tools .workspace-icon { width: 14px; height: 14px; }
 .classes-reader-tools[aria-expanded="true"] .workspace-icon { transform: rotate(180deg); }
+
+.classes-drive-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.classes-drive-files { list-style: none; padding: 0; margin: 16px 0; }
+.classes-drive-files li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--cloud-shell-line); }
+.classes-drive-files button { text-align: left; overflow-wrap: anywhere; min-width: 0; }
+.classes-drive-files a { flex-shrink: 0; font-size: 12px; }
+.classes-page button:disabled { opacity: .5; cursor: wait; }
