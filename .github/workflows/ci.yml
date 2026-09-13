@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+
+  database:
+    name: Database checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # npm ci installs the CLI version in package-lock.json. Docker runs only
+      # on this temporary GitHub runner; no hosted project is linked.
+      - name: Start disposable Supabase
+        run: npm run db:start
+      - name: Apply migrations, lint, and test database
+        run: npm run db:verify
+      - name: Verify migration rewind and reapply
+        run: npm run db:rewind:verify
+      - name: Verify OAuth concurrency
+        run: npm run db:test:oauth-concurrency
+      - name: Verify authenticated Data API
+        run: npm run db:test:todos-http
+      - name: Generate database types
+        run: npm run db:types
+      - name: Check app against generated schema
+        run: npm run typecheck
+      - name: Upload generated database types
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: database-types
+          path: frontend/src/types/database.ts
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop disposable Supabase
+        if: always()
+        run: npx supabase stop --no-backup

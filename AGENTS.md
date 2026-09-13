@@ -28,8 +28,11 @@
   or `npm run dev:web` for frontend work. Setup and release: `docs/CLOUD_DEVELOPMENT.md`.
   Calendar configuration and security: `docs/CALENDAR.md`. Status: `README.md`.
 - For changes affecting frontend behavior or appearance, run `npm run dev:web`, check the affected flow at `http://localhost:5173/qa/workspace.html`, and open it in the browser panel. Fixtures use fictional data and require no cloud configuration. Report relevant limits of fixture verification.
-- Run `npm run verify` for cloud code changes. For schema changes, also run
-  `npm run db:verify` locally and regenerate types with `npm run db:types`.
+- GitHub Actions runs `App checks` and `Database checks`; require both before
+  release. Run `npm run verify` locally for cloud changes. Schema validation and
+  type generation run in CI; download its `database-types` artifact when updating
+  the checked-in types. Local Docker is optional for backend debugging, not a
+  prerequisite for ordinary work. See `docs/CLOUD_DEVELOPMENT.md`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
   need a consistency and diff check. Once required checks pass, repeat or broaden
   testing only for new changes, failures, or unresolved concerns.
