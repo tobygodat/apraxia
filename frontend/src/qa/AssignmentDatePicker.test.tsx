@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { afterEach, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { AssignmentDatePicker } from "./AssignmentDatePicker";
+import { AssignmentDatePicker } from "../features/classes/AssignmentDatePicker";
 
 afterEach(cleanup);
 function Example({ initial = "2026-09-13" }: { initial?: string }) {

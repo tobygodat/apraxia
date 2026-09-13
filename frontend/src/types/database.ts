@@ -34,6 +34,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_assignments: {
+        Row: {
+          assignment_type: string
+          completed: boolean
+          course_id: string
+          due_date: string | null
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assignment_type?: string
+          completed?: boolean
+          course_id: string
+          due_date?: string | null
+          id?: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          assignment_type?: string
+          completed?: boolean
+          course_id?: string
+          due_date?: string | null
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_connections: {
         Row: {
           connection_state: Database["public"]["Enums"]["google_calendar_connection_state"]

@@ -1,7 +1,7 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { WorkspaceIcon } from "../components/WorkspaceIcon";
-import { addSqlDateDays, localToday } from "../features/todos/dateDomain";
+import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import { addSqlDateDays, localToday } from "../todos/dateDomain";
 import "./assignmentDatePicker.css";
 
 const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -16,9 +16,9 @@ function shiftMonth(value: string, offset: number) {
   return date.toISOString().slice(0, 10);
 }
 
-/** Date-only picker for the local assignment prototype. */
-export function AssignmentDatePicker({ value, label, disabled, buttonRef, onChange, onKeyDown }: {
-  value: string; label: string; disabled?: boolean;
+/** Date-only picker for the assignments. */
+export function AssignmentDatePicker({ value, label, disabled, busy, buttonRef, onChange, onKeyDown, today = localToday(Intl.DateTimeFormat().resolvedOptions().timeZone) }: {
+  value: string; label: string; disabled?: boolean; busy?: boolean; today?: string;
   buttonRef?(node: HTMLButtonElement | null): void;
   onChange(value: string): void;
   onKeyDown?(event: KeyboardEvent<HTMLButtonElement>): void;
@@ -39,21 +39,21 @@ export function AssignmentDatePicker({ value, label, disabled, buttonRef, onChan
   return <>
     <button type="button" ref={node => { anchor.current = node; buttonRef?.(node); }}
       className="assignment-cell assignment-date-trigger" aria-label={label} aria-haspopup="dialog"
-      aria-expanded={open} aria-controls={open ? dialogId : undefined} disabled={disabled}
-      onClick={() => setOpen(previous => !previous)} onKeyDown={event => {
+      aria-expanded={open} aria-controls={open ? dialogId : undefined} disabled={disabled} aria-disabled={busy || disabled}
+      onClick={() => { if (!busy) setOpen(previous => !previous); }} onKeyDown={event => {
+        if (busy) return;
         if (event.key === "ArrowDown") { event.preventDefault(); setOpen(true); }
         else onKeyDown?.(event);
       }}>{formatAssignmentDate(value)}</button>
-    {open && createPortal(<DateCalendar id={dialogId} value={value} anchor={anchor.current!}
+    {open && createPortal(<DateCalendar today={today} id={dialogId} value={value} anchor={anchor.current!}
       onClose={close} onChange={date => { onChange(date); close(); }} />, document.body)}
   </>;
 }
 
-function DateCalendar({ id, value, anchor, onChange, onClose }: {
-  id: string; value: string; anchor: HTMLButtonElement;
+function DateCalendar({ id, value, anchor, onChange, onClose, today }: {
+  id: string; value: string; anchor: HTMLButtonElement; today: string;
   onChange(value: string): void; onClose(): void;
 }) {
-  const today = localToday("America/New_York");
   const [month, setMonth] = useState(monthStart(value || today));
   const [focused, setFocused] = useState(value || today);
   const panel = useRef<HTMLDivElement>(null);

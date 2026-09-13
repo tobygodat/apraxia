@@ -1,6 +1,6 @@
 import type { DriveService } from '../features/classes/driveService';
 import { createFixturePdf } from './fixturePdf';
-import { ClassAssignmentsMock } from "./ClassAssignmentsMock";
+import { createFixtureAssignments } from "./ClassAssignmentsMock";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -128,6 +128,7 @@ const delay = scenario === "slow" ? 1500 : 180;
 const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? createFixtureCover(scenario === "portrait") : null;
 const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
 const workspaceData = {
+  assignments: delayedFixtureService(createFixtureAssignments(empty), delay),
   homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
   profile: async () => profile,
   projects: async () => projects.map(({ id, title }) => ({ id, title })),
@@ -160,6 +161,6 @@ createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter in
   <WorkspaceRuntime identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
     onSignOut={async () => { window.alert("Fictional QA account signed out. No real session was changed."); }}
     todoService={runtimeTodos} collectionService={runtimeCollections} calendarService={calendarService} driveService={driveService}
-    workspaceData={runtimeData} classAssignments={<ClassAssignmentsMock empty={scenario === "empty"} />} />
+    workspaceData={runtimeData} />
   <FixtureTools />
 </MemoryRouter></StrictMode>);

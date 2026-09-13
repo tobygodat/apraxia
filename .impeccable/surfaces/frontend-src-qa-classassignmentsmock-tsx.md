@@ -2,7 +2,7 @@
 version: 1
 slug: "frontend-src-qa-classassignmentsmock-tsx"
 primary_target: "frontend/src/qa/ClassAssignmentsMock.tsx"
-related_targets: ["frontend/src/qa/classAssignmentsMock.css", "frontend/src/qa/AssignmentDatePicker.tsx", "frontend/src/qa/assignmentDatePicker.css", "frontend/src/qa/AssignmentTypePicker.tsx", "frontend/src/qa/assignmentTypePicker.css", "frontend/src/features/classes/ClassesPage.tsx"]
+related_targets: ["frontend/src/features/classes/classAssignments.css", "frontend/src/features/classes/AssignmentDatePicker.tsx", "frontend/src/features/classes/assignmentDatePicker.css", "frontend/src/features/classes/AssignmentTypePicker.tsx", "frontend/src/features/classes/assignmentTypePicker.css", "frontend/src/features/classes/ClassesPage.tsx"]
 ---
 
 # Class assignments and notes
@@ -11,15 +11,15 @@ Accepted design, finalized 2026-09-13. Mode: Operate.
 
 ## Scope
 
-This is a code-first design prototype inside the existing local QA workspace.
-The preview route is `/qa/workspace.html?scenario=realistic&route=%2Fclasses%2Fmath3012`,
-served on port 5299 during this design session. Use the same route on the active
-Vite port in a new session. The user's preferred browser is Chrome.
+The approved table now runs in the authenticated Classes page at `/classes/:id`.
+Its shared implementation is `frontend/src/features/classes/ClassAssignments.tsx`.
+The QA route is `/qa/workspace.html?scenario=realistic&route=%2Fclasses%2Fmath3012`
+on the active Vite port (normally 5173).
 
-Assignment data is fictional, held in component state, and resets on reload or
-class navigation. The authenticated app does not render this prototype unless
-the optional assignment content is explicitly supplied. Persistence, database
-schema, and production release are separate implementation work.
+Live assignments are saved in Supabase with account-level RLS and the existing
+course ID. Class names and IDs retain their existing browser-local storage.
+The QA service uses fictional data, retains changes during class navigation,
+and resets on reload; it does not establish cloud persistence.
 
 ## Layout and visual contract
 

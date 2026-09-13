@@ -3,7 +3,10 @@ import type { Database } from "../types/database";
 import type { Profile, ProjectSummary } from "../types/domain";
 import { createHomeAppearanceService, type HomeAppearanceService } from "../features/calendar/homeAppearance";
 
+import { createAssignmentService, type AssignmentService } from "../features/classes/assignmentService";
+
 export interface WorkspaceData {
+  assignments?: AssignmentService;
   homeAppearance?: HomeAppearanceService;
   profile(signal: AbortSignal): Promise<Profile>;
   projects(signal: AbortSignal): Promise<ProjectSummary[]>;
@@ -11,6 +14,7 @@ export interface WorkspaceData {
 
 export function createWorkspaceData(client: SupabaseClient<Database>): WorkspaceData {
   return {
+    assignments: createAssignmentService(client),
     homeAppearance: createHomeAppearanceService(client),
     async profile(signal) {
       const { data, error } = await client.from("profiles")

@@ -62,8 +62,8 @@ it("handles unknown course links", () => {
   expect(screen.getByRole("link", { name: "All classes" }).getAttribute("href")).toBe("/classes");
 });
 
-it("keeps mockup notes compact until a local PDF is chosen, including invalid-file recovery", async () => {
-  render(<MemoryRouter><ClassesPage userId="user-a" courseId="math3012" assignments={<section>Assignments</section>} /></MemoryRouter>);
+it("keeps assignment notes compact until a local PDF is chosen, including invalid-file recovery", async () => {
+  render(<MemoryRouter><ClassesPage userId="user-a" courseId="math3012" assignmentService={{ list: async () => [], create: async (_u, _c, item) => item, update: async () => { throw new Error("Unused"); } }} /></MemoryRouter>);
   expect(screen.queryByRole("region", { name: "MATH3012 notes reader" })).toBeNull();
   expect(screen.getByRole("button", { name: "From device" })).toBeTruthy();
   fireEvent.change(screen.getByLabelText("Choose PDF"), { target: { files: [new File(["text"], "Notes.txt", { type: "text/plain" })] } });

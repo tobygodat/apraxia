@@ -1,10 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import { DriveNotes } from './DriveNotes';
 import type { DriveService } from './driveService';
 import "./classes.css";
+
+import { ClassAssignments } from "./ClassAssignments";
+import type { AssignmentService } from "./assignmentService";
 
 const PdfReader = lazy(() => import("./PdfReader"));
 
@@ -20,7 +23,7 @@ function readCourses(userId: string): Course[] {
   return stored.map(c => ({ id: c.id, name: typeof c.code === "string" ? c.code : c.name }));
 }
 
-export function ClassesPage({ userId, courseId, driveService, assignments }: { userId: string; courseId?: string; driveService?: DriveService; assignments?: ReactNode }) {
+export function ClassesPage({ userId, courseId, driveService, assignmentService, timezone }: { userId: string; courseId?: string; driveService?: DriveService; assignmentService?: AssignmentService; timezone?: string }) {
   const [loaded] = useState(() => { try { return { courses: readCourses(userId), error: "" }; } catch { return { courses: initialCourses, error: "Saved classes couldn’t be read. Reload to try again; changes won’t be saved until storage is available." }; } });
   const [courses, setCourses] = useState(loaded.courses);
   const [error, setError] = useState(loaded.error);
@@ -50,8 +53,8 @@ export function ClassesPage({ userId, courseId, driveService, assignments }: { u
       <header className="classes-heading"><div><h1>{course ? course.name : "Classes"}</h1></div>
         <button onClick={() => { setError(loaded.error); setEditing(course ?? "new"); }}><WorkspaceIcon name={course ? "edit" : "plus"} />{course ? "Edit class" : "Add class"}</button>
       </header>
-      {course ? <div key={course.id} className="classes-course-content">{assignments}{assignments && <h2>Notes</h2>}<CourseNotes course={course} userId={userId} driveService={driveService} compact={!!assignments} /></div> : <>
-        <div className="classes-list">{courses.map(c => <Link key={c.id} to={`/classes/${c.id}`} className="classes-row"><WorkspaceIcon name="classes" /><div><h2>{c.name}</h2><p>Open notes</p></div><WorkspaceIcon name="right" /></Link>)}</div>
+      {course ? <div key={course.id} className="classes-course-content">{assignmentService && <><ClassAssignments userId={userId} courseId={course.id} service={assignmentService} timezone={timezone} /><h2>Notes</h2></>}<CourseNotes course={course} userId={userId} driveService={driveService} compact={!!assignmentService} /></div> : <>
+        <div className="classes-list">{courses.map(c => <Link key={c.id} to={`/classes/${c.id}`} className="classes-row"><WorkspaceIcon name="classes" /><div><h2>{c.name}</h2><p>Open class</p></div><WorkspaceIcon name="right" /></Link>)}</div>
         <p className="classes-local-note">Classes are saved in this browser only.</p>
       </>}
     </>}
