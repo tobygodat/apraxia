@@ -27,11 +27,20 @@ in its `database-types` artifact. Both CI jobs must pass before release.
 
 For UI checks, run `npm run dev:web` and open
 [/qa/workspace.html](http://localhost:5173/qa/workspace.html).
-Use `?route=/ideas` (or `/`, `/todos`, `/projects`, `/media`, `/settings`) and
-`&scenario=typical|empty|error|long|disconnected` to inspect fictional data.
+Use `?route=/ideas` (or `/`, `/todos`, `/projects`, `/media`, `/classes`, `/settings`).
+The default `realistic` scenario includes event-specific colors, overlapping and
+adjacent events, short events, long titles, and a saved cover with an off-center
+crop. The QA menu switches to `typical` (no cover), `empty`, `dense`, `long`,
+`portrait`, `slow`, `error`, or `disconnected` without changing the app layout.
+It shares the authenticated app's navigation cache, preload, and invalidation.
+Calendar edits/visibility and page appearance survive reload in this tab; the
+menu resets them. Tasks and collections still reset on reload. QA storage is
+separate from account storage; no real data or credentials are loaded.
 The standalone Todo and Today fixtures remain at `/qa/todos-workspace.html`
 and `/qa/today-panel.html`; these use `?scenario=empty|dense|error`.
-Fixtures reset on reload and do not verify persistence or provider access.
+Standalone fixtures reset on reload. Fixtures do not verify database persistence,
+Google sync, OAuth, or hosted configuration. See the
+[pre-deployment checks](docs/CLOUD_DEVELOPMENT.md#pre-deployment-ui-checks).
 
 ## Verification record
 

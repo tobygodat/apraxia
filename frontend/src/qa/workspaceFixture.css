@@ -1,0 +1,6 @@
+.workspace-qa-tools { position: fixed; z-index: 90; right: 12px; bottom: 12px; max-width: min(340px, calc(100vw - 24px)); padding: 8px 12px; border: 1px solid #696052; border-radius: 6px; background: #24211e; color: #eee1cb; font: 12px/1.5 system-ui, sans-serif; box-shadow: 0 4px 16px #0004; }
+.workspace-qa-tools summary { cursor: pointer; }
+.workspace-qa-tools p { margin: 10px 0; }
+.workspace-qa-tools label { display: flex; gap: 12px; align-items: center; }
+.workspace-qa-tools select, .workspace-qa-tools button { font: inherit; color: inherit; border: 1px solid #696052; background: #302c27; border-radius: 3px; padding: 5px 8px; }
+.workspace-qa-tools :focus-visible { outline: 2px solid #eee1cb; outline-offset: 3px; }

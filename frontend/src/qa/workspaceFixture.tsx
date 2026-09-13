@@ -1,26 +1,24 @@
-import type { EventDetail } from "../../../shared/calendarEventContract";
-import type { CalendarEvent } from "../types/domain";
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter } from "react-router-dom";
-import { Temporal } from "@js-temporal/polyfill";
-import { MainWorkspace } from "../apps/MainWorkspace";
+import { MemoryRouter, useLocation } from "react-router-dom";
+import { WorkspaceRuntime } from "../apps/WorkspaceRuntime";
+import { createFixtureCalendar } from "./workspaceFixtureCalendar";
+import { createFixtureAppearance, createFixtureCover, delayedFixtureService } from "./workspaceFixtureSupport";
+import "./workspaceFixture.css";
 import type { TodoService } from "../features/todos/todoService";
-import type { CalendarService } from "../features/calendar/calendarService";
 import type { CollectionKind, CollectionService, ListOptions } from "../features/collections/collectionService";
 import { addSqlDateDays, localToday } from "../features/todos/dateDomain";
 import { sortTodayTodos } from "../features/todos/todayOrder";
-import type { CalendarPreference, DeleteUndoToken, Idea, MediaItem, Project, SearchResult, TodayTodo, Todo } from "../types/domain";
+import type { DeleteUndoToken, Idea, MediaItem, Project, SearchResult, TodayTodo, Todo } from "../types/domain";
 import "../index.css";
 
 // Separate Vite development entry. All identities and records below are fictional.
-// Nothing reads credentials, sends requests, or persists outside this page lifetime.
+// Calendar and appearance use isolated tab storage; no credentials or network requests.
 if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.");
 const params = new URLSearchParams(window.location.search);
-let fixtureAppearance = { title: "", coverImage: null as string | null };
-const scenario = params.get("scenario") ?? "typical";
+const scenario = params.get("scenario") ?? "realistic";
 const empty = scenario === "empty";
-const long = scenario === "long";
+const long = scenario === "long" || scenario === "dense";
 const now = new Date().toISOString();
 const timezone = "America/New_York";
 const today = localToday(timezone);
@@ -102,61 +100,50 @@ const collectionService: CollectionService = {
     return rows.slice(offset, offset + 40).map(r => ({ ...r, totalCount: rows.length }));
   },
 };
-let connected = scenario !== "disconnected";
-let preferences: CalendarPreference[] = [{ ...base(), calendarId: "personal", displayName: long ? longText : "Personal", color: { background: "#91b0d7", foreground: "#ffffff" }, isVisible: true, canEdit: true, lastSeenAt: now }, { ...base(), calendarId: "work", displayName: "Work", color: { background: "#c5b293", foreground: "#ffffff" }, isVisible: true, canEdit: true, lastSeenAt: now }];
-const fixtureEvents = new Map<string, EventDetail>();
-const seededWeeks = new Set<string>();
-const calendarService: CalendarService = {
-  async eventDetail(calendarId, eventId) {
-    check(); const detail = fixtureEvents.get(eventId);
-    if (!detail || detail.calendarId !== calendarId) throw new Error('Event not found.');
-    return structuredClone(detail);
-  },
-  async mutateEvent(command) {
-    check();
-    if (command.action === 'delete') fixtureEvents.delete(command.eventId);
-    else {
-      const current = fixtureEvents.get(command.eventId);
-      const recurrence = command.values.recurrence ?? current?.values.recurrence ?? [];
-      fixtureEvents.set(command.eventId, { eventId: command.eventId, calendarId: command.action === 'create' ? command.calendarId : command.destinationCalendarId,
-        etag: id(), recurring: recurrence.length > 0, canMove: true, values: { ...command.values, recurrence } });
-    }
-    return { saved: true };
-  },
-  async status() { check(); return connected ? { ...base(), googleAccountId: null, displayEmail: "alex@example.invalid", connectionState: "connected", grantedScopes: [], lastSuccessfulRefreshAt: now } : null; },
-  async calendars() { return preferences; }, async setVisibility(rowId, isVisible) { preferences = preferences.map(p => p.id === rowId ? { ...p, isVisible } : p); },
-  async disconnect() { connected = false; }, async connect() { connected = true; return window.location.href; },
-  async week(monday) {
-    check(); const instant = (day: number, hour: number, minute = 0) => Temporal.PlainDate.from(monday).add({ days: day }).toZonedDateTime({ timeZone: timezone, plainTime: { hour, minute } }).toInstant().toString();
-    const common = { calendarId: "personal", calendarColor: preferences[0].color, googleEventUrl: "https://calendar.google.com" };
-    const model = { range: { monday, sunday: addSqlDateDays(monday, 6) }, timezone, visibleCalendars: preferences.filter(p => p.isVisible).map(p => ({ ...p, isVisible: true as const })), partialErrors: [], events: empty ? [] : [
-      { ...common, calendarId: "work", calendarColor: preferences[1].color, kind: "all_day", eventId: "trip", title: "Studio open week", startDate: monday, endDateExclusive: addSqlDateDays(monday, 3) },
-      ...[{ day: 0, start: 9, end: 10, title: "Weekly planning" }, { day: 1, start: 10, end: 12, title: "A morning to write" }, { day: 1, start: 11, end: 12, title: "Coffee with Sam" }, { day: 3, start: 13, end: 14, title: "Lunch at the park" }, { day: 4, start: 9, end: 10, title: long ? longText : "Reading group" }].map((e, i) => ({ ...common, ...(i < 2 ? { calendarId: "work", calendarColor: preferences[1].color } : {}), kind: "timed" as const, eventId: String(i), title: e.title, startAt: instant(e.day, e.start), endAt: instant(e.day, e.end), startTimeZone: timezone, endTimeZone: timezone })),
-    ] };
-    if (!seededWeeks.has(monday)) {
-      seededWeeks.add(monday);
-      for (const original of model.events) {
-        const event = original as CalendarEvent;
-        const eventId = monday + event.eventId;
-        fixtureEvents.set(eventId, { eventId, calendarId: event.calendarId, etag: id(), canMove: true, recurring: false,
-          values: { title: event.title, location: '', timeZone: timezone, recurrence: [], timing: event.kind === 'all_day'
-            ? { kind: 'all_day', start: event.startDate, end: event.endDateExclusive }
-            : { kind: 'timed', start: event.startAt, end: event.endAt } } });
-      }
-    }
-    const events: CalendarEvent[] = [...fixtureEvents.values()].filter(event => preferences.some(p => p.calendarId === event.calendarId && p.isVisible)).map(event => {
-      const p = preferences.find(p => p.calendarId === event.calendarId)!;
-      const common = { eventId: event.eventId, calendarId: event.calendarId, calendarColor: p.color, googleEventUrl: 'https://calendar.google.com', title: event.values.title || '(No title)' };
-      return event.values.timing.kind === 'all_day'
-        ? { ...common, kind: 'all_day', startDate: event.values.timing.start, endDateExclusive: event.values.timing.end }
-        : { ...common, kind: 'timed', startAt: event.values.timing.start, endAt: event.values.timing.end, startTimeZone: timezone, endTimeZone: timezone };
-    });
-    return { ...model, events };
-  },
+const storagePrefix = `orbitos:qa:workspace:v2:${scenario}:${today}`;
+const calendarKey = `${storagePrefix}:calendar`;
+const appearanceKey = `${storagePrefix}:appearance`;
+const storage = {
+  getItem: (key: string) => window.sessionStorage.getItem(key),
+  setItem: (key: string, value: string) => window.sessionStorage.setItem(key, value),
+  removeItem: (key: string) => window.sessionStorage.removeItem(key),
 };
+const delay = scenario === "slow" ? 1500 : 180;
+const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? createFixtureCover(scenario === "portrait") : null;
+const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
+const workspaceData = {
+  homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
+  profile: async () => profile,
+  projects: async () => projects.map(({ id, title }) => ({ id, title })),
+};
+const runtimeTodos = delayedFixtureService(todoService, delay);
+const runtimeCollections = delayedFixtureService(collectionService, delay);
+const runtimeData = delayedFixtureService(workspaceData, delay);
+
+function FixtureTools() {
+  const location = useLocation();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("route", location.pathname);
+    window.history.replaceState(null, "", url);
+  }, [location.pathname]);
+  return <details className="workspace-qa-tools">
+    <summary>QA · {scenario}</summary>
+    <p>Fictional data · production layout and navigation cache.</p>
+    <label>Scenario <select value={scenario} onChange={event => {
+      const url = new URL(window.location.href); url.searchParams.set("scenario", event.target.value); window.location.assign(url);
+    }}>
+      {["realistic", "typical", "empty", "dense", "long", "portrait", "slow", "error", "disconnected"].map(value => <option key={value}>{value}</option>)}
+    </select></label>
+    <p>Calendar edits and page appearance survive reload in this tab. Tasks and collections reset on reload. No Google or database connection.</p>
+    <p>Check event colors, overlap, adjacent 15-minute events, clipped titles and times, then expand/collapse the cover. Use Customize page to try your own image.</p>
+    <button onClick={() => { storage.removeItem(calendarKey); storage.removeItem(appearanceKey); window.location.reload(); }}>Reset calendar and cover</button>
+  </details>;
+}
 createRoot(document.getElementById("root")!).render(<StrictMode><MemoryRouter initialEntries={[params.get("route") ?? "/"]}>
-  <MainWorkspace identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
+  <WorkspaceRuntime identity={{ userId, email: "alex@example.invalid", expiresAt: null }} signOutStatus="idle"
     onSignOut={async () => { window.alert("Fictional QA account signed out. No real session was changed."); }}
-    todoService={todoService} collectionService={collectionService} calendarService={calendarService}
-    workspaceData={{ homeAppearance: { async load() { return { ...fixtureAppearance }; }, async save(_userId, value) { check(); fixtureAppearance = { ...value }; return { ...value }; } }, profile: async () => profile, projects: async () => projects.map(({ id, title }) => ({ id, title })) }} />
+    todoService={runtimeTodos} collectionService={runtimeCollections} calendarService={calendarService}
+    workspaceData={runtimeData} />
+  <FixtureTools />
 </MemoryRouter></StrictMode>);

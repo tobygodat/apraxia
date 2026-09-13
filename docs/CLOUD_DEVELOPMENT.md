@@ -105,6 +105,39 @@ Schema changes belong in `supabase/migrations/`; regenerate types with
 JavaScript Date conversion loses required precision. See
 [Today data protocol](TODAY_DATA_PROTOCOL.md) for pagination and atomic ordering.
 
+## Pre-deployment UI checks
+
+Use `/qa/workspace.html` with the default `realistic` scenario first. Its calendar
+uses the production event normalizer and the same page, cache, preload, and
+invalidation as the authenticated app. It includes event-specific colors on the
+same calendar, three-way overlaps, adjacent 15-minute events, 5–120-minute events,
+long/untitled events, multiple all-day lanes, midnight crossings, and hidden and
+read-only calendars. `dense` adds a crowded week; `portrait` changes the cover's
+aspect ratio; `slow` delays each service call by 1.5 seconds. Other scenarios use
+a 180 ms delay. `typical` has no cover; `empty` has no tasks or events.
+
+For calendar/appearance changes, inspect the realistic, dense, portrait, and
+no-cover cases at the actual desktop window size and a smaller desktop window.
+Check colors, adjacent/overlapping events, visible times and truncation, event
+details, cover expand/collapse and crop, navigation away/back, and reload. Use
+Customize page to test a chosen local image through the real upload preparation
+and crop UI. Calendar changes and appearance persist in isolated session storage
+per scenario/day/tab; Reset calendar and cover restores the seed. Tasks and
+collections remain in-memory, and Classes retains its existing browser storage
+under the fictional user. None of this proves cloud persistence.
+
+Fixture checks are insufficient evidence for data/provider-dependent changes.
+Before deploying those changes, also check the normal authenticated app with
+the intended account's data and cover using the local full stack. `npm run dev`
+starts local Supabase; when intentionally testing the existing hosted account,
+run `npx vercel dev` with the matching ignored browser/server configuration and
+local `APP_URL`/allowed auth redirects (see Calendar setup). That mode reads and
+writes the configured account's actual data. Vite alone does not serve Calendar
+API routes. Do not infer provider success from fixtures or a frontend build.
+Record which authenticated flows were exercised; if unavailable, state that
+they remain unverified before release. Recurring-series writes intentionally
+report unsupported in QA rather than pretending to verify Google's behavior.
+
 ## Live releases
 
 Home page names and optional covers use the account-owned `home_appearance`
@@ -112,8 +145,9 @@ table. Apply `20260907000100_home_appearance.sql` and
 `20260908000100_home_cover_position.sql` before releasing that UI.
 Uploads are resized in the browser; only a bounded image (at most 350 KB encoded)
 is saved with the title and crop coordinates under RLS. Expanding the cover
-reveals the complete resized image. No public image bucket is used. The fixture
-keeps these preferences in memory, so it cannot prove persistence across reloads.
+reveals the complete resized image. No public image bucket is used. The workspace
+fixture keeps these preferences in isolated tab storage, so reload checks cover
+the UI but cannot prove Supabase persistence.
 
 | Environment | Database | Configuration |
 |---|---|---|
