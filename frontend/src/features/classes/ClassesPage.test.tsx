@@ -61,3 +61,15 @@ it("handles unknown course links", () => {
   mount("missing"); expect(screen.getByRole("heading", { name: "Class not found" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "All classes" }).getAttribute("href")).toBe("/classes");
 });
+
+it("keeps mockup notes compact until a local PDF is chosen, including invalid-file recovery", async () => {
+  render(<MemoryRouter><ClassesPage userId="user-a" courseId="math3012" assignments={<section>Assignments</section>} /></MemoryRouter>);
+  expect(screen.queryByRole("region", { name: "MATH3012 notes reader" })).toBeNull();
+  expect(screen.getByRole("button", { name: "From device" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Choose PDF"), { target: { files: [new File(["text"], "Notes.txt", { type: "text/plain" })] } });
+  expect(screen.getByRole("alert").textContent).toContain("Choose a PDF");
+  fireEvent.change(screen.getByLabelText("Choose PDF"), { target: { files: [new File(["%PDF-1.4"], "Lecture.pdf", { type: "application/pdf" })] } });
+  await waitFor(() => expect(screen.getByTestId("reader")).toBeTruthy());
+  expect(screen.getByRole("region", { name: "MATH3012 notes reader" })).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
+});

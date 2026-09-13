@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { WorkspaceIcon } from '../../components/WorkspaceIcon';
 import type { DriveService } from './driveService';
 import './drivePicker.css';
-export function DriveNotes({ userId, courseId, service, onPreview }: {
-  userId: string; courseId: string; service: DriveService; onPreview(file: File | null): void;
+export function DriveNotes({ userId, courseId, service, onPreview, onChooseLocal }: {
+  userId: string; courseId: string; service: DriveService; onPreview(file: File | null): void; onChooseLocal?(): void;
 }) {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState('Checking Drive…');
@@ -52,6 +52,7 @@ export function DriveNotes({ userId, courseId, service, onPreview }: {
       <WorkspaceIcon name="projects" /><strong>Google Drive</strong>
       <span className="drive-source-state" role="status">{busy || (connected ? 'Connected' : 'Read your PDF backups')}</span>
       <button className="drive-open-button" disabled={!!busy} onClick={connected ? browse : connect}>{connected ? 'Open from Drive' : 'Connect Drive'}<WorkspaceIcon name="right" /></button>
+      {onChooseLocal && <button className="drive-local-button" onClick={() => { pending.current?.abort(); pending.current = null; setBusy(''); setError(''); onChooseLocal(); }}>From device</button>}
       {connected && <details className="drive-menu"><summary aria-label="Drive connection options" title="Drive connection options"><WorkspaceIcon name="down" /></summary><div>
         <button disabled={!!busy} onClick={() => void run('Disconnecting…', async signal => {
           await service.disconnect(signal);

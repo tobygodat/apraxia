@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
@@ -20,7 +20,7 @@ function readCourses(userId: string): Course[] {
   return stored.map(c => ({ id: c.id, name: typeof c.code === "string" ? c.code : c.name }));
 }
 
-export function ClassesPage({ userId, courseId, driveService }: { userId: string; courseId?: string; driveService?: DriveService }) {
+export function ClassesPage({ userId, courseId, driveService, assignments }: { userId: string; courseId?: string; driveService?: DriveService; assignments?: ReactNode }) {
   const [loaded] = useState(() => { try { return { courses: readCourses(userId), error: "" }; } catch { return { courses: initialCourses, error: "Saved classes couldn’t be read. Reload to try again; changes won’t be saved until storage is available." }; } });
   const [courses, setCourses] = useState(loaded.courses);
   const [error, setError] = useState(loaded.error);
@@ -50,7 +50,7 @@ export function ClassesPage({ userId, courseId, driveService }: { userId: string
       <header className="classes-heading"><div><h1>{course ? course.name : "Classes"}</h1></div>
         <button onClick={() => { setError(loaded.error); setEditing(course ?? "new"); }}><WorkspaceIcon name={course ? "edit" : "plus"} />{course ? "Edit class" : "Add class"}</button>
       </header>
-      {course ? <CourseNotes key={course.id} course={course} userId={userId} driveService={driveService} /> : <>
+      {course ? <div key={course.id} className="classes-course-content">{assignments}{assignments && <h2>Notes</h2>}<CourseNotes course={course} userId={userId} driveService={driveService} compact={!!assignments} /></div> : <>
         <div className="classes-list">{courses.map(c => <Link key={c.id} to={`/classes/${c.id}`} className="classes-row"><WorkspaceIcon name="classes" /><div><h2>{c.name}</h2><p>Open notes</p></div><WorkspaceIcon name="right" /></Link>)}</div>
         <p className="classes-local-note">Classes are saved in this browser only.</p>
       </>}
@@ -66,7 +66,7 @@ export function ClassesPage({ userId, courseId, driveService }: { userId: string
   </section>;
 }
 
-function CourseNotes({ course, userId, driveService }: { course: Course; userId: string; driveService?: DriveService }) {
+function CourseNotes({ course, userId, driveService, compact = false }: { course: Course; userId: string; driveService?: DriveService; compact?: boolean }) {
   const [preview, setPreview] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
@@ -86,15 +86,17 @@ function CourseNotes({ course, userId, driveService }: { course: Course; userId:
     } catch { setError("Full screen isn’t available in this browser. Try opening the workspace in another browser."); }
   }
   return <>
-    {driveService && <DriveNotes userId={userId} courseId={course.id} service={driveService} onPreview={setPreview} />}
-    <div className={`classes-notes-layout${preview ? " classes-notes-layout--reading" : ""}`}>
+    <input ref={fileInput} className="cloud-shell__sr-only" type="file" accept="application/pdf,.pdf" tabIndex={-1} aria-label="Choose PDF" onChange={event => {
+      const file = event.target.files?.[0]; event.target.value = "";
+      if (!file) return;
+      if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setError("Choose a PDF exported from Goodnotes."); return; }
+      setError(""); setShowTools(false); setPreview(file);
+    }} />
+    {!driveService && compact && !preview && <div className="classes-compact-source"><p>Open a PDF to start reading.</p><button onClick={() => fileInput.current?.click()}>From device</button></div>}
+    {compact && !preview && error && <p role="alert">{error}</p>}
+    {driveService && <DriveNotes userId={userId} courseId={course.id} service={driveService} onPreview={setPreview} onChooseLocal={compact ? () => fileInput.current?.click() : undefined} />}
+    {(!compact || preview) && <div className={`classes-notes-layout${preview ? " classes-notes-layout--reading" : ""}`}>
       <section ref={reader} className="classes-reader" aria-label={`${course.name} notes reader`}>
-        <input ref={fileInput} className="cloud-shell__sr-only" type="file" accept="application/pdf,.pdf" tabIndex={-1} aria-label="Choose PDF" onChange={event => {
-          const file = event.target.files?.[0]; event.target.value = "";
-          if (!file) return;
-          if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) { setError("Choose a PDF exported from Goodnotes."); return; }
-          setError(""); setShowTools(false); setPreview(file);
-        }} />
         {preview && <header><span title={preview.name}>{preview.name}</span><div>
           <button className="classes-reader-tools" type="button" onClick={() => setShowTools(value => !value)} aria-label={showTools ? "Hide PDF toolbar" : "Show PDF toolbar"} aria-expanded={showTools} title={`${showTools ? "Hide" : "Show"} PDF toolbar`}>
             <WorkspaceIcon name="down" />
@@ -106,7 +108,7 @@ function CourseNotes({ course, userId, driveService }: { course: Course; userId:
         {error && <p role="alert">{error}</p>}
         {preview ? <Suspense fallback={<p role="status">Loading PDF reader…</p>}><PdfReader file={preview} showTools={showTools} /></Suspense> : <div className="classes-reader-empty"><h2>{driveService ? "Choose a PDF to read" : "No notes yet"}</h2><button onClick={() => fileInput.current?.click()}>Preview a PDF</button><p>Choose a PDF from your device. Previews aren’t uploaded or saved.</p></div>}
       </section>
-    </div>
+    </div>}
 
   </>;
 }

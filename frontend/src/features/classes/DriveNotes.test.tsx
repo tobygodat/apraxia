@@ -43,3 +43,17 @@ it('aborts selection when the class unmounts',async()=>{
   view.unmount(); finish(note); await Promise.resolve();
   expect(drive.pdf).not.toHaveBeenCalled(); expect(preview).not.toHaveBeenCalled();
 });
+it('cancels a pending Drive selection when switching to the local source', async () => {
+  const drive=service(); const chooseLocal=vi.fn(); const preview=vi.fn();
+  let finish!:(value:typeof note)=>void;
+  vi.mocked(drive.pickPdf).mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  render(<DriveNotes userId="owner" courseId="math" service={drive} onPreview={preview} onChooseLocal={chooseLocal} />);
+  fireEvent.click(await screen.findByRole('button',{name:'Open from Drive'}));
+  fireEvent.click(screen.getByRole('button',{name:'From device'}));
+  expect(chooseLocal).toHaveBeenCalledOnce();
+  expect(vi.mocked(drive.pickPdf).mock.calls[0][0]?.aborted).toBe(true);
+  finish(note);
+  await Promise.resolve();
+  expect(drive.pdf).not.toHaveBeenCalled();
+  expect(preview).not.toHaveBeenCalled();
+});
