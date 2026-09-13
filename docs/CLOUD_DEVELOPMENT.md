@@ -140,6 +140,14 @@ report unsupported in QA rather than pretending to verify Google's behavior.
 
 ## Live releases
 
+Class assignments require `20260913000200_class_assignments.sql` before releasing
+the UI. It adds account-owned rows under RLS without modifying existing data.
+Assignments save independently of Tasks; names, date-only due dates, types,
+completion, and Undo persist. Classes themselves retain their existing
+browser-local IDs and names. The QA fixture uses the production table with a
+fictional service; assignments survive navigation but reset on reload.
+
+
 Home page names and optional covers use the account-owned `home_appearance`
 table. Apply `20260907000100_home_appearance.sql` and
 `20260908000100_home_cover_position.sql` before releasing that UI.

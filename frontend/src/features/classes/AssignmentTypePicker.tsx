@@ -4,9 +4,9 @@ import "./assignmentTypePicker.css";
 
 const types = ["Homework", "Quiz", "Reading", "Exam", "Other", ""];
 
-/** Inline type choice for the assignment prototype, including unsaved rows. */
-export function AssignmentTypePicker({ value, label, disabled, buttonRef, onChange, onKeyDown }: {
-  value: string; label: string; disabled?: boolean;
+/** Inline type choice for the assignment table, including unsaved rows. */
+export function AssignmentTypePicker({ value, label, disabled, busy, buttonRef, onChange, onKeyDown }: {
+  value: string; label: string; disabled?: boolean; busy?: boolean;
   buttonRef?(node: HTMLButtonElement | null): void;
   onChange(value: string): void;
   onKeyDown?(event: KeyboardEvent<HTMLButtonElement>): void;
@@ -21,9 +21,10 @@ export function AssignmentTypePicker({ value, label, disabled, buttonRef, onChan
   }
   return <>
     <button type="button" className="assignment-cell assignment-type-cell" aria-label={label}
-      ref={node => { anchor.current = node; buttonRef?.(node); }} disabled={disabled}
+      ref={node => { anchor.current = node; buttonRef?.(node); }} disabled={disabled} aria-disabled={busy || disabled}
       aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined}
-      onClick={() => setOpen(previous => !previous)} onKeyDown={event => {
+      onClick={() => { if (!busy) setOpen(previous => !previous); }} onKeyDown={event => {
+        if (busy) return;
         if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setOpen(true); }
         else onKeyDown?.(event);
       }}>

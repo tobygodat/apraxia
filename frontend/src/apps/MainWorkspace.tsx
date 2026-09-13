@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { AuthIdentity } from "../auth/authPort";
 import type { SignOutStatus } from "../auth/AuthProvider";
@@ -23,7 +23,6 @@ import { ClassesPage } from "../features/classes/ClassesPage";
 
 export interface MainWorkspaceProps {
   identity: AuthIdentity;
-  classAssignments?: ReactNode;
   signOutStatus: SignOutStatus;
   onSignOut(): Promise<void>;
   todoService: TodoService;
@@ -115,7 +114,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
   let content;
   if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage appearanceService={props.workspaceData.homeAppearance} todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
   else if (pathname === "/todos") content = <TodosWorkspaceContent service={props.todoService} workspaceSessionKey={props.identity.userId} refreshKey={revision} />;
-  else if (pathname === "/classes" || /^\/classes\/[^/]+$/.test(pathname)) content = <ClassesPage key={props.identity.userId} userId={props.identity.userId} courseId={pathname.split("/")[2]} driveService={props.driveService} assignments={props.classAssignments} />;
+  else if (pathname === "/classes" || /^\/classes\/[^/]+$/.test(pathname)) content = <ClassesPage key={props.identity.userId} userId={props.identity.userId} courseId={pathname.split("/")[2]} driveService={props.driveService} assignmentService={props.workspaceData.assignments} timezone={profile?.timezone} />;
   else if (pathname === "/settings") content = profile ? <SettingsPage calendarService={props.calendarService} profile={profile} onSignOut={props.onSignOut} /> : profileState;
   else if (collectionKind) content = <CollectionPage key={`${collectionKind}:${projectMatch?.[1] ?? ""}`} kind={collectionKind} service={props.collectionService} todoService={props.todoService}
     projects={projects} refreshKey={revision} onChanged={changed} recordId={projectMatch?.[1]} onOpenProject={id => navigate(`/projects/${encodeURIComponent(id)}`)} onBack={() => navigate("/projects")} />;
