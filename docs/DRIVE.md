@@ -38,7 +38,10 @@ memory. The authenticated `/api/drive/picker` response returns only that token,
 the public restricted API key, and project number, with private/no-store headers.
 Neither the token nor the grant is persisted in browser storage. Refresh tokens,
 client secrets, and encryption keys remain server-only. The SDK loads lazily
-from Google's API domain; CSP permits the Picker's Google frames.
+from Google's API domain; CSP permits the Picker's Google frames. The app uses a
+`strict-origin` referrer policy so Google can validate the restricted key without
+receiving page paths or query strings. Both the HTTP header and HTML meta policy
+must agree; `no-referrer` causes Google to reject the restricted key.
 
 A reconnect must return a fresh refresh token. Disconnect deletes Drive's stored
 credentials and pending attempts, without revoking the shared Google client grant
