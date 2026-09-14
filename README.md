@@ -10,9 +10,9 @@ All, Projects, Classes, and Unassigned filter the board. Shared add/edit forms
 allow one project or class per task, with assignment type available only for
 classes. Incomplete past-due tasks join
 Today with their original due dates shown in red; stored dates stay unchanged.
-Completed historical tasks remain on their original dates. The aggregation UI
-depends on the pending coordinated migration/UI release described in
-[the release checklist](docs/TASK_AGGREGATION_RELEASE.md); this is not a deployment claim.
+Completed historical tasks remain on their original dates. The coordinated
+migration and UI release completed on 2026-09-14; see
+[the release record](docs/TASK_AGGREGATION_RELEASE.md).
 
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).

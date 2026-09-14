@@ -142,7 +142,7 @@ report unsupported in QA rather than pretending to verify Google's behavior.
 
 Class assignments require `20260913000200_class_assignments.sql` before releasing
 the UI. It adds account-owned rows under RLS without modifying existing data.
-The pending task aggregation release additionally requires
+Task aggregation additionally requires
 `20260914000100_assignment_todos.sql` coordinated with the matching UI. Assignments
 then share `todos` with Tasks and Home; the legacy table remains a read-only backup.
 Do not deploy the new Classes adapter before that migration. Follow

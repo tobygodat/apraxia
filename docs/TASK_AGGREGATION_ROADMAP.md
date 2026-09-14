@@ -4,9 +4,9 @@ Goal: the Tasks page (`/todos`) becomes the single list of everything with a
 due date, whether it was entered on the Tasks page, inside a project, or inside
 a class. Overdue work no longer has its own section; it simply shows under Today.
 
-Status: Phase 0 and Phases 1–2 are implemented through `59342b8`; Phase 3 is
-implemented locally on the same branch. Hosted migration and deployment remain
-pending. Phase 4 is deferred and requires an explicit request. See
+Status: Phases 0–3 are implemented and the coordinated hosted migration and
+production deployment completed on 2026-09-14. Authenticated live persistence
+and isolation checks passed. Phase 4 is deferred and requires an explicit request. See
 [TASK_AGGREGATION_RELEASE.md](TASK_AGGREGATION_RELEASE.md).
 
 ## Baseline before implementation

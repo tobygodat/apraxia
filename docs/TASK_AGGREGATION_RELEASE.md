@@ -19,7 +19,7 @@ Today includes class ID, name and assignment type in its existing complete-row
 snapshot hash. The inline Classes adapter uses todo CRUD/completion and exact
 soft-delete Undo tokens. Assignment changes invalidate navigation caches.
 
-## Release steps (not performed during preparation)
+## Release checklist (completed below; not performed during preparation)
 
 1. Require successful **App checks** and **Database checks** on the release head.
    Save the generated `database-types` artifact into the checked-in types and
@@ -99,7 +99,7 @@ remain release dependencies.
   at `59342b8`; Phase 3 was uncommitted at the original handoff; see the release continuation below.
 
 
-## Release continuation (2026-09-14)
+## Initial release continuation (2026-09-14)
 
 The release continuation is authorized to commit, push, run CI, and perform the
 coordinated hosted migration and UI deployment. The preparation-only restriction
@@ -112,7 +112,7 @@ invalidation, migration, and retained QA evidence. No additional UI changes were
 needed. The bounded local verify run passed all 1,991 tests, typechecks, build,
 and browser bundle checks. Required CI must pass on the pushed release head.
 
-Hosted work is currently blocked by missing account access: Vercel CLI reports
+At the initial continuation, hosted work was blocked by missing account access: Vercel CLI reports
 logged out, and Supabase CLI reports `LegacyPlatformAuthRequiredError`. Windows
 browser control also cannot initialize from this WSL checkout (`sandboxCwd is
 not a local file URI`). Authenticate the CLIs in WSL to resume hosted inspection
@@ -137,3 +137,42 @@ QA fixtures excluded by `.vercelignore`. Those tests now live in
 source boundary. The live domain and database were untouched by that failure.
 Require both CI checks on the updated release head before the coordinated
 forward migration and domain promotion.
+
+
+## Completed production release (2026-09-14)
+
+The production app at `https://orbitos-virid.vercel.app` was promoted to the
+matching aggregation UI after an atomic forward transaction applied
+`20260913000300`, `20260913000400`, and `20260914000100`. The production build
+and both CI checks passed on runtime commit `4a1aa0e`; generated database types
+matched the checked-in file. PR #17 tracks integration and final release notes.
+
+The transaction locked the source tables, checked them against the private
+backup, rejected ID collisions, applied the migrations and history records,
+and verified the copy before committing. The retained legacy assignment is
+unchanged. All 19 original todos, including dates and Today ranks, are unchanged;
+there are now 20 todos. The copied assignment retains its ID, owner, class,
+text, original date, type, and completion, with no synthetic due time.
+
+Private before/after exports and the guarded SQL are retained under
+`$HOME/.local/state/orbitos/backups/20260914-task-aggregation/`, outside Git.
+The initial backup SHA-256 is
+`a611659829cddfe6b641dc1e6524ab9959ecc359fcc98b9232ae869b6f74b7c9`.
+
+Live automated Chromium used two temporary authenticated accounts against the
+normal production app and hosted database. Checks passed for:
+
+- Class creation/rename and class-choice refresh; inline assignment creation.
+- All/Projects/Classes/Unassigned filters, week navigation, and reload.
+- Optional time add/remove, preserved original overdue date, Classes completion
+  and Tasks reopening, and mutually exclusive parent switching.
+- Home context and reload, Global Add, project-composer transfer, and search editing.
+- Classes soft deletion/Undo after reload and atomic Today ordering after reload.
+- Cross-account reads/writes denied, one-parent constraint enforced, and legacy
+  browser writes rejected. No browser page errors occurred.
+
+Both temporary accounts and their test rows were removed. A final comparison
+confirmed unchanged original todos and legacy backup rows. This verifies hosted
+persistence with test accounts and the preservation of existing personal rows;
+it does not claim a new Google-provider authorization or sync check. Phase 4
+cleanup was not performed, and `class_assignments` remains a read-only backup.
