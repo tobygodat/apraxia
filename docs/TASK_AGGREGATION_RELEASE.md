@@ -120,3 +120,20 @@ and backup; authenticated application verification additionally needs an app
 session. No hosted migration, backup export, or deployment has been performed
 by this continuation. Keep `main` unchanged until the coordinated release can
 proceed. The legacy `class_assignments` table remains retained.
+
+
+### Account access restored and deployment packaging fix
+
+Both CLIs are authenticated. Hosted inspection found one legacy assignment and
+19 todos with zero ID collisions. Migration history stops at
+`20260913000200`: the existing class/notes and private PDF migrations
+(`20260913000300`, `20260913000400`) must run before aggregation. A private
+backup of all legacy assignments and todos, per-owner/class counts, migration
+history, and bucket configuration is retained outside the repository.
+
+The first staged production build failed because two Classes tests imported
+QA fixtures excluded by `.vercelignore`. Those tests now live in
+`frontend/src/qa/`, preserving local/CI coverage while respecting the deployment
+source boundary. The live domain and database were untouched by that failure.
+Require both CI checks on the updated release head before the coordinated
+forward migration and domain promotion.

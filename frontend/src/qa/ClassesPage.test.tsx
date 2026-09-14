@@ -2,9 +2,9 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { ClassesPage } from './ClassesPage';
-import { createClassPersistenceFixture } from '../../qa/classPersistenceFixture';
-vi.mock('./PdfReader', () => ({ default: ({ file, showTools }: { file: File; showTools: boolean }) => <div data-testid="reader">{file.name}{showTools && <span>PDF toolbar</span>}</div> }));
+import { ClassesPage } from '../features/classes/ClassesPage';
+import { createClassPersistenceFixture } from './classPersistenceFixture';
+vi.mock('../features/classes/PdfReader', () => ({ default: ({ file, showTools }: { file: File; showTools: boolean }) => <div data-testid="reader">{file.name}{showTools && <span>PDF toolbar</span>}</div> }));
 afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); });
 const mount = (data = createClassPersistenceFixture(), courseId?: string, userId = 'user-a') => render(<MemoryRouter><ClassesPage userId={userId} courseId={courseId} classService={data.classes} noteService={data.notes} /></MemoryRouter>);
 it('saves added classes through the service, survives remount, and isolates accounts without writing browser storage', async () => {
@@ -61,7 +61,7 @@ it('starts a new account empty rather than creating a default class', async () =
   expect(await screen.findByText('No classes yet. Add a class to save assignments and notes.')).toBeTruthy();
 });
 it('uses todo-backed assignments in the class detail while retaining the inline editor', async () => {
-  const { createFixtureAssignments } = await import('../../qa/ClassAssignmentsMock');
+  const { createFixtureAssignments } = await import('./ClassAssignmentsMock');
   const data = createClassPersistenceFixture();
   const assignments = createFixtureAssignments();
   render(<MemoryRouter><ClassesPage userId="user-a" courseId="math3012" classService={data.classes} noteService={data.notes} assignmentService={assignments} /></MemoryRouter>);
