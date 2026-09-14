@@ -1,7 +1,11 @@
 -- Private immutable PDF objects. Reserve a note first so interrupted uploads
 -- always have an account-owned recovery record, rather than orphaned bytes.
 insert into storage.buckets(id, name, public, file_size_limit, allowed_mime_types)
-  values ('class-pdfs', 'class-pdfs', false, 52428800, array['application/pdf']);
+  values ('class-pdfs', 'class-pdfs', false, 52428800, array['application/pdf'])
+  -- Local migration rewind preserves Storage buckets. Reapply the private
+  -- configuration without deleting any existing objects.
+  on conflict (id) do update set public = false,
+    file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 create policy class_pdf_read on storage.objects for select to authenticated using (
   bucket_id = 'class-pdfs' and exists (
     select 1 from public.class_notes n where n.user_id = (select auth.uid()) and n.object_path = storage.objects.name

@@ -21,7 +21,10 @@ it('recovers existing assignments, imports without overwrites, and enforces note
     for (const name of names.filter(n => n < '20260913000300')) await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'));
     await db.query('insert into auth.users(id) values ($1),($2)', [alice, bob]);
     await db.query("insert into class_assignments(user_id,course_id,title,due_date) values ($1,'math3012','Existing','2020-03-08'),($2,'math3012','Other account',null)", [alice, bob]);
+    // Supabase rewind retains buckets while recreating application tables.
+    await db.exec("insert into storage.buckets(id,name,public) values ('class-pdfs','class-pdfs',true)");
     for (const name of names.filter(n => n >= '20260913000300')) await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'));
+    expect((await db.query("select public,file_size_limit::int as size from storage.buckets where id='class-pdfs'")).rows).toEqual([{ public: false, size: 52428800 }]);
     expect((await db.query('select name from classes')).rows).toEqual([{ name: null }, { name: null }]);
     await db.exec(`set role authenticated; set request.jwt.claim.sub = '${alice}'`);
     const importRows = (rows: unknown) => db.query('select import_classes($1::jsonb)', [JSON.stringify(rows)]);
