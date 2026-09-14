@@ -5,6 +5,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { localToday } from "../todos/dateDomain";
 import "./classAssignments.css";
 
+import type { DeleteUndoToken } from "../../types/domain";
 import type { Assignment, AssignmentPatch, AssignmentService } from "./assignmentService";
 type Field = "title" | "due" | "type";
 const fields: Field[] = ["title", "due", "type"];
@@ -57,9 +58,9 @@ function AssignmentEditorRow({ item, field, isNew, onSave, onCancel, today }: {
     <td><span className="assignment-draft-marker" aria-hidden="true" /></td>
     {fields.map(current => {
       const label = isNew ? ({ title: "New assignment", due: "New due date", type: "New type" }[current]) : `Edit ${current} for ${item.title}`;
-      if (current === "due") return <td key={current}><AssignmentDatePicker today={today} value={draft.due} label={label}
+      if (current === "due") return <td key={current}><AssignmentDatePicker today={today} value={draft.due} dueTime={draft.dueTime} onTimeChange={dueTime => setDraft(previous => ({ ...previous, dueTime }))} label={label}
         disabled={saving} buttonRef={node => { if (node) controls.current.due = node; }}
-        onChange={due => setDraft(previous => ({ ...previous, due }))}
+        onChange={due => setDraft(previous => ({ ...previous, due, ...(!due && { dueTime: "" }) }))}
         onKeyDown={event => keyDown(event, "due")} /></td>;
       if (current === "type") return <td key={current}><AssignmentTypePicker value={draft.type} label={label}
         disabled={saving} buttonRef={node => { if (node) controls.current.type = node; }}
@@ -86,6 +87,7 @@ function AssignmentEditorRow({ item, field, isNew, onSave, onCancel, today }: {
         {error?.field === current && <span id={errorId} className="assignment-field-error" role="alert">{error.message}</span>}
       </td>;
     })}
+    <td />
   </tr>;
 }
 
@@ -116,6 +118,7 @@ function AssignmentSession({ userId, courseId, service, timezone }: { userId: st
   }, [userId, courseId, service, revision]);
   const [editing, setEditing] = useState<{ item: Assignment; field: Field; isNew: boolean } | null>(null);
   const [undo, setUndo] = useState<Assignment | null>(null);
+  const [deletedUndo, setDeletedUndo] = useState<{ item: Assignment; token: DeleteUndoToken } | null>(null);
   const [notice, setNotice] = useState("");
   const addButton = useRef<HTMLButtonElement>(null);
   const cells = useRef(new Map<string, HTMLButtonElement>());
@@ -152,6 +155,7 @@ function AssignmentSession({ userId, courseId, service, timezone }: { userId: st
       // Only send edited fields, so another device’s completion/date is preserved.
       const patch: AssignmentPatch = {};
       for (const field of fields) if (original?.[field] !== item[field]) patch[field] = item[field];
+      if (original?.dueTime !== item.dueTime) { patch.dueTime = item.dueTime ?? ""; patch.due = item.due; }
       const saved = editing?.isNew ? await service.create(userId, courseId, item, signal)
         : Object.keys(patch).length ? await service.update(userId, courseId, item.id, patch, signal) : item;
       if (signal.aborted) return;
@@ -159,6 +163,28 @@ function AssignmentSession({ userId, courseId, service, timezone }: { userId: st
       focusAfterRender.current = focus ? `${item.id}:${focus}` : null;
       setEditing(null);
       setNotice(`${saved.title} saved.`);
+    } finally { busy.current = false; if (!signal.aborted) setPending(false); }
+  }
+  async function remove(item: Assignment) {
+    if (busy.current || !session.current || session.current.signal.aborted) return;
+    const signal = session.current.signal;
+    busy.current = true; setPending(true); setFailure(null);
+    try {
+      const token = await service.remove(userId, courseId, item.id, signal);
+      if (!signal.aborted) { setItems(rows => rows.filter(row => row.id !== item.id)); setUndo(null); setDeletedUndo({ item, token }); focusAfterRender.current = "add"; }
+    } catch (error) {
+      if (!signal.aborted) setFailure({ message: error instanceof Error ? error.message : "Couldn’t delete assignment.", retry: () => { void remove(item); } });
+    } finally { busy.current = false; if (!signal.aborted) setPending(false); }
+  }
+  async function restoreDeleted() {
+    if (!deletedUndo || busy.current || !session.current || session.current.signal.aborted) return;
+    const signal = session.current.signal;
+    busy.current = true; setPending(true); setFailure(null);
+    try {
+      if (!await service.restore(userId, courseId, deletedUndo.item.id, deletedUndo.token, signal)) throw new Error("Couldn’t restore assignment. It may have changed; try again.");
+      if (!signal.aborted) { setDeletedUndo(null); setRevision(value => value + 1); setNotice("Assignment restored."); }
+    } catch (error) {
+      if (!signal.aborted) setFailure({ message: error instanceof Error ? error.message : "Couldn’t restore assignment.", retry: () => { void restoreDeleted(); } });
     } finally { busy.current = false; if (!signal.aborted) setPending(false); }
   }
   function cancel() {
@@ -177,13 +203,13 @@ function AssignmentSession({ userId, courseId, service, timezone }: { userId: st
     {failure && <p role="alert">{failure.message} <button disabled={pending} onClick={failure.retry}>Try again</button></p>}
     <div className="assignment-table-wrap" aria-busy={pending}><table><thead><tr>
       <th scope="col"><span className="cloud-shell__sr-only">Done</span></th>
-      <th scope="col">Name</th><th scope="col">Date</th><th scope="col">Type</th>
+      <th scope="col">Name</th><th scope="col">Date</th><th scope="col">Type</th><th scope="col"><span className="cloud-shell__sr-only">Actions</span></th>
     </tr></thead><tbody>
       {editing?.isNew && editor}
       {ordered.map(item => editing?.item.id === item.id ? editor : <tr key={item.id} className={item.done ? "assignment-done" : ""}>
-        <td><input type="checkbox" checked={item.done} aria-disabled={!!editing || pending} aria-label={`Mark ${item.title} ${item.done ? "unfinished" : "done"}`} onChange={() => { if (editing) return; void update(item.id, { done: !item.done }, () => setUndo(item)); }} /></td>
+        <td><input type="checkbox" checked={item.done} aria-disabled={!!editing || pending} aria-label={`Mark ${item.title} ${item.done ? "unfinished" : "done"}`} onChange={() => { if (editing) return; void update(item.id, { done: !item.done }, () => { setDeletedUndo(null); setUndo(item); }); }} /></td>
         {fields.map(field => <td key={field} className={field === "due" && !item.done && item.due && item.due < today ? "assignment-overdue" : ""}>
-          {field === "due" ? <AssignmentDatePicker today={today} value={item.due} label={`Edit due for ${item.title}`}
+          {field === "due" ? <AssignmentDatePicker today={today} value={item.due} dueTime={item.dueTime} onTimeChange={dueTime => { void update(item.id, { due: item.due, dueTime }); }} label={`Edit due for ${item.title}`}
             disabled={!!editing || loading || !!loadError} busy={pending} buttonRef={node => { const key = `${item.id}:due`; if (node) cells.current.set(key, node); else cells.current.delete(key); }}
             onChange={due => { void update(item.id, { due }); }} />
             : field === "type" ? <AssignmentTypePicker value={item.type} label={`Edit type for ${item.title}`}
@@ -195,11 +221,13 @@ function AssignmentSession({ userId, courseId, service, timezone }: { userId: st
               {item.title}
             </button>}
         </td>)}
+        <td><button className="assignment-cell" disabled={pending || !!editing} aria-label={`Delete ${item.title}`} onClick={() => { void remove(item); }}>Delete</button></td>
       </tr>)}
-      {!loading && !loadError && !items.length && !editing && <tr><td colSpan={4} className="assignment-empty">No assignments yet. Add your first assignment above.</td></tr>}
+      {!loading && !loadError && !items.length && !editing && <tr><td colSpan={5} className="assignment-empty">No assignments yet. Add your first assignment above.</td></tr>}
     </tbody></table></div>
     {editing && <p className="assignment-edit-hint">Tab to move · Enter to save · Esc to cancel</p>}
     <span className="cloud-shell__sr-only" role="status">{notice}</span>
+    {deletedUndo && <p className="assignment-undo" role="status">Assignment deleted. <button disabled={pending || !!editing} onClick={() => { void restoreDeleted(); }}>Undo</button></p>}
     {undo && <p className="assignment-undo" role="status">Assignment {undo.done ? "reopened" : "completed"}. <button disabled={pending || !!editing} onClick={() => { void update(undo.id, { done: undo.done }, () => setUndo(null)); }}>Undo</button></p>}
   </section>;
 }

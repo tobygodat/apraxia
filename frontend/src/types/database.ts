@@ -450,6 +450,8 @@ export type Database = {
       }
       todos: {
         Row: {
+          class_id: string | null
+          assignment_type: string
           completed: boolean
           completed_at: string | null
           created_at: string
@@ -467,6 +469,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          class_id?: string | null
+          assignment_type?: string
           completed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -484,6 +488,8 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          class_id?: string | null
+          assignment_type?: string
           completed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -501,6 +507,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "todos_class_owner"
+            columns: ["user_id", "class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "todos_project_same_owner"
             columns: ["user_id", "project_id"]

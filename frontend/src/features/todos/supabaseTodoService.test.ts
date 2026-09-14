@@ -32,7 +32,7 @@ describe("Supabase Todo boundary", () => {
     expect(todo.dueTime).toBe(row.due_time);
     const request = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(request[1].body))).toEqual({ text: row.text,
-      due_date: row.due_date, due_time: row.due_time, project_id: null });
+      due_date: row.due_date, due_time: row.due_time, project_id: null, class_id: null, assignment_type: "" });
   });
 
   it("passes an exact Undo token and preserves a false restore result", async () => {

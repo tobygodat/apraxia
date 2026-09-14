@@ -13,7 +13,7 @@ it("persists assignments with account isolation, immutable ownership, date-only 
       grant usage on schema auth to anon, authenticated, service_role;
       grant execute on function auth.uid() to anon, authenticated, service_role;`);
     await db.exec(storageHarnessSql);
-    for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith(".sql")).sort()) {
+    for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith(".sql") && name < "20260914000100").sort()) {
       await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
     }
     const alice = "11111111-1111-4111-8111-111111111111";

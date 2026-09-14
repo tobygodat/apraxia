@@ -1357,7 +1357,7 @@ describe("cloud migrations", () => {
         expect(unlinkedTodo.rows).toHaveLength(1);
         await expect(
           database.query(
-            `insert into public.todos (id, text)
+            `insert into public.todos (user_id, text)
              values ('b0000000-0000-4000-8000-000000000007', 'Forbidden explicit id')`,
           ),
         ).rejects.toMatchObject({ code: "42501" });

@@ -12,6 +12,8 @@ import type {
 
 export interface TodoRequestOptions {
   readonly signal: AbortSignal;
+  /** Scope Classes requests without changing ordinary task/project behavior. */
+  readonly classId?: string;
 }
 
 export interface TodoWorkspaceSnapshot {
@@ -61,9 +63,7 @@ type TodoScheduleUpdate =
  * A details update must name a field and cannot create a time-without-date
  * state at the provider boundary.
  */
-export type UpdateTodoDetailsInput =
-  | TodoTextOrProjectUpdate
-  | TodoScheduleUpdate;
+export type UpdateTodoDetailsInput = (TodoTextOrProjectUpdate | TodoScheduleUpdate | { readonly assignmentType: string; readonly text?: string; readonly projectId?: never; readonly dueDate?: never; readonly dueTime?: never }) & { readonly assignmentType?: string };
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;

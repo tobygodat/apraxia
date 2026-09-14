@@ -31,7 +31,7 @@ export interface CollectionService {
 const project = (r: Tables<"projects">): Project => ({ id: r.id, title: r.title, description: r.description, status: r.status, createdAt: r.created_at, updatedAt: r.updated_at });
 const idea = (r: Tables<"ideas">): Idea => ({ id: r.id, title: r.title, body: r.body, projectId: r.project_id, createdAt: r.created_at, updatedAt: r.updated_at });
 const media = (r: Tables<"media">): MediaItem => ({ id: r.id, title: r.title, mediaType: r.media_type, creator: r.creator, releaseYear: r.release_year, status: r.status, rating: r.rating, notes: r.notes, createdAt: r.created_at, updatedAt: r.updated_at });
-const todo = (r: Tables<"todos">): Todo => ({ id: r.id, text: r.text, completed: r.completed, completedAt: r.completed_at, dueDate: r.due_date, dueTime: r.due_time, projectId: r.project_id, todayRank: r.today_rank, createdAt: r.created_at, updatedAt: r.updated_at });
+const todo = (r: Tables<"todos">): Todo => ({ id: r.id, text: r.text, completed: r.completed, completedAt: r.completed_at, dueDate: r.due_date, dueTime: r.due_time, projectId: r.project_id, classId: r.class_id, className: null, assignmentType: r.assignment_type, todayRank: r.today_rank, createdAt: r.created_at, updatedAt: r.updated_at });
 function data<T>(response: {
     data: T | null;
     error: unknown;

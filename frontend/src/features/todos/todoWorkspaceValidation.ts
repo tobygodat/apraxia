@@ -107,6 +107,11 @@ export function readTodoResponse(value: unknown): Todo | null {
     (value.dueTime !== null && canonicalLocalTime(value.dueTime) === null) ||
     (value.dueDate === null && value.dueTime !== null) ||
     (value.projectId !== null && !isUuid(value.projectId)) ||
+    (value.classId != null && (!isNonemptyText(value.classId) || value.projectId !== null)) ||
+    (value.className != null && typeof value.className !== "string") ||
+    (value.assignmentType !== undefined &&
+      (!["", "Homework", "Quiz", "Reading", "Exam", "Other"].includes(value.assignmentType as string) ||
+       (value.assignmentType !== "" && value.classId == null))) ||
     (value.todayRank !== null &&
       (typeof value.todayRank !== "number" ||
         !Number.isSafeInteger(value.todayRank) ||
@@ -124,6 +129,9 @@ export function readTodoResponse(value: unknown): Todo | null {
     dueDate: value.dueDate as string | null,
     dueTime: value.dueTime as string | null,
     projectId: value.projectId as string | null,
+    ...(value.classId !== undefined && { classId: value.classId as string | null }),
+    ...(value.className !== undefined && { className: value.className as string | null }),
+    ...(value.assignmentType !== undefined && { assignmentType: value.assignmentType as string }),
     todayRank: value.todayRank as number | null,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,

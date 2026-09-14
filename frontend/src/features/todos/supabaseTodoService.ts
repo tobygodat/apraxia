@@ -7,10 +7,10 @@ import type { TodoRequestOptions, TodoService } from "./todoService";
 import { isDeleteUndoToken, readTodoResponse, readTodoWorkspaceSnapshot } from "./todoWorkspaceValidation";
 
 const PAGE_SIZE = 200;
-const TODO_FIELDS = "id,text,completed,completed_at,due_date,due_time,project_id,today_rank,created_at,updated_at";
+const TODO_FIELDS = "id,text,completed,completed_at,due_date,due_time,project_id,class_id,assignment_type,classes(name),today_rank,created_at,updated_at";
 type TodoRow = Pick<Tables<"todos">,
   "id" | "text" | "completed" | "completed_at" | "due_date" | "due_time" |
-  "project_id" | "today_rank" | "created_at" | "updated_at">;
+  "project_id" | "class_id" | "assignment_type" | "today_rank" | "created_at" | "updated_at"> & { classes?: { name: string | null } | null };
 
 function failed(): never { throw new Error("Couldn’t load or save your todos. Try again."); }
 
@@ -29,6 +29,7 @@ function mapTodo(row: TodoRow): Todo {
   const todo = readTodoResponse({
     id: row.id, text: row.text, completed: row.completed, completedAt: row.completed_at,
     dueDate: row.due_date, dueTime: row.due_time, projectId: row.project_id,
+    classId: row.class_id, className: row.classes?.name ?? null, assignmentType: row.assignment_type,
     todayRank: row.today_rank, createdAt: row.created_at, updatedAt: row.updated_at,
   });
   return todo ?? failed();
@@ -72,6 +73,7 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
         collectRows((afterId) => {
           const query = client.from("todos").select(TODO_FIELDS, { count: "exact" })
             .is("deleted_at", null).order("id").limit(PAGE_SIZE).abortSignal(signal);
+          if (options.classId !== undefined) query.eq("class_id", options.classId);
           return afterId === null ? query : query.gt("id", afterId);
         }, options),
       ]);
@@ -83,28 +85,43 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
       }) ?? failed();
     },
     async createTodo(input, options) {
-      const response = await client.from("todos").insert({
+      const values = {
+        ...(input.id !== undefined && { id: input.id }),
         text: input.text, due_date: input.dueDate ?? null,
         due_time: input.dueTime ?? null, project_id: input.projectId ?? null,
-      }).select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
+        class_id: input.classId ?? null, assignment_type: input.assignmentType ?? "",
+      };
+      if (input.id !== undefined) {
+        const write = await client.from("todos").upsert(values, { onConflict: "id", ignoreDuplicates: true })
+          .abortSignal(requestSignal(options));
+        if (write.error) failed();
+        const query = client.from("todos").select(TODO_FIELDS).eq("id", input.id).is("deleted_at", null);
+        if (options.classId !== undefined) query.eq("class_id", options.classId);
+        return mapTodo(result(await query.abortSignal(requestSignal(options)).single(), options));
+      }
+      const response = await client.from("todos").insert(values).select(TODO_FIELDS)
+        .abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
     async updateTodoDetails(id, input, options) {
       const update: Database["public"]["Tables"]["todos"]["Update"] = {};
+      if (input.assignmentType !== undefined) update.assignment_type = input.assignmentType;
       if (input.text !== undefined) update.text = input.text;
       if (input.projectId !== undefined) update.project_id = input.projectId;
       if (input.dueDate !== undefined) update.due_date = input.dueDate;
       if (input.dueTime !== undefined) update.due_time = input.dueTime;
       if (input.dueDate === null) update.due_time = null;
       if (Object.keys(update).length === 0) failed();
-      const response = await client.from("todos").update(update).eq("id", id)
-        .is("deleted_at", null).select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
+      const query = client.from("todos").update(update).eq("id", id).is("deleted_at", null);
+      if (options.classId !== undefined) query.eq("class_id", options.classId);
+      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
     async setTodoCompleted(id, completed, options) {
       // The database trigger owns completed_at and resets stale Today ranks.
-      const response = await client.from("todos").update({ completed }).eq("id", id)
-        .is("deleted_at", null).select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
+      const query = client.from("todos").update({ completed }).eq("id", id).is("deleted_at", null);
+      if (options.classId !== undefined) query.eq("class_id", options.classId);
+      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
     async softDeleteTodo(id, options) {

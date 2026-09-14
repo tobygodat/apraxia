@@ -36,7 +36,7 @@ it('recovers existing assignments, imports without overwrites, and enforces note
     expect((await db.query("select id from classes where id='rolled-back'")).rows).toEqual([]);
     expect((await db.query('select title,due_date::text from class_assignments')).rows).toEqual([{ title: 'Existing', due_date: '2020-03-08' }]);
     await expect(db.exec("insert into classes(id,name) values ('blank',null)")).rejects.toThrow(/row-level security/);
-    await expect(db.exec("insert into class_assignments(course_id,title) values ('missing','No parent')")).rejects.toThrow(/foreign key/);
+    await expect(db.exec("insert into todos(class_id,text) values ('missing','No parent')")).rejects.toThrow(/foreign key/);
     await expect(db.query("insert into classes(user_id,id,name) values ($1,'forged','Forged')", [bob])).rejects.toThrow(/row-level security/);
     await db.query("insert into class_notes(id,course_id,name,source,byte_size,content_sha256) values ($1,'math3012','Lecture.pdf','upload',10,repeat('a',64))", [note]);
     await expect(db.query('select finish_class_pdf($1)', [note])).rejects.toThrow(/incomplete/);

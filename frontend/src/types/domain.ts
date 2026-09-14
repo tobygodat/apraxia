@@ -147,6 +147,9 @@ export interface Todo {
   completedAt: Timestamp | null;
   dueDate: LocalDate | null;
   dueTime: LocalTime | null;
+  classId?: string | null;
+  className?: string | null;
+  assignmentType?: string;
   projectId: UUID | null;
   todayRank: number | null;
   createdAt: Timestamp;
@@ -182,6 +185,10 @@ export interface NewProjectInput {
 }
 
 interface NewTodoInputBase {
+  /** Stable draft identity makes assignment retries idempotent. */
+  id?: UUID;
+  classId?: string | null;
+  assignmentType?: string;
   text: string;
   projectId?: UUID | null;
 }
@@ -219,6 +226,9 @@ export interface TodayTodo {
   dueTime: LocalTime | null;
   projectId: UUID | null;
   projectTitle: string | null;
+  classId?: string | null;
+  className?: string | null;
+  assignmentType?: string;
   todayRank: number | null;
   isOverdue: boolean;
   isManuallyOrdered: boolean;

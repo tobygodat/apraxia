@@ -75,6 +75,7 @@ function readWireTodo(value: unknown, localDate: LocalDate): TodayTodo {
   const todo = readTodoResponse({
     id: value.id, text: value.text, completed: false, completedAt: null,
     dueDate: value.due_date, dueTime: value.due_time,
+    classId: value.class_id, className: value.class_name, assignmentType: value.assignment_type,
     projectId: value.project_id, todayRank: value.today_rank,
     createdAt: value.created_at, updatedAt: value.updated_at,
   });

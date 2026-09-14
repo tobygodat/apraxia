@@ -1,7 +1,8 @@
 import { createClassPersistenceFixture } from './classPersistenceFixture';
 import type { DriveService } from '../features/classes/driveService';
 import { createFixturePdf } from './fixturePdf';
-import { createFixtureAssignments } from "./ClassAssignmentsMock";
+import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
+import { createTodoAssignmentService } from "../features/classes/assignmentService";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -56,6 +57,7 @@ const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): T
   completed: false, completedAt: null, projectId: null, todayRank: null, ...extra,
 });
 let todos: Todo[] = empty ? [] : [
+  ...fixtureAssignmentTodos(),
   // Open past-due tasks join Today; the completed task stays on its original date.
   task("Return the library books", -3), task("Send the venue confirmation", -1),
   task("Renew the library card", -8, { completed: true, completedAt: now }),
@@ -90,9 +92,9 @@ function currentToday(date: string): TodayTodo[] {
   })));
 }
 const todoService: TodoService = {
-  async loadWorkspace() { check(); return { profile, projects, todos: [...todos] }; },
+  async loadWorkspace(options) { check(); return { profile, projects, todos: todos.filter(todo => !options.classId || todo.classId === options.classId) }; },
   async loadToday(date) { check(); return currentToday(date); },
-  async createTodo(input) { check(); const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; todos.push(row); return row; },
+  async createTodo(input) { check(); const existing = todos.find(todo => todo.id === input.id); if (existing) return existing; const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; todos.push(row); return row; },
   async updateTodoDetails(rowId, input) { check(); return save(todos, { ...find(todos, rowId), ...input }); },
   async setTodoCompleted(rowId, completed) { check(); return save(todos, { ...find(todos, rowId), completed, completedAt: completed ? now : null }); },
   async softDeleteTodo(rowId) { check(); deleted.set(rowId, find(todos, rowId)); todos = todos.filter(t => t.id !== rowId); return token; },
@@ -135,7 +137,7 @@ const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? cr
 const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
 const workspaceData = {
   ...createClassPersistenceFixture(empty),
-  assignments: delayedFixtureService(createFixtureAssignments(empty), delay),
+  assignments: delayedFixtureService(createTodoAssignmentService(todoService), delay),
   homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
   profile: async () => profile,
   projects: async () => projects.map(({ id, title }) => ({ id, title })),

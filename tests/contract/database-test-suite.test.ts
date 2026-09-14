@@ -40,6 +40,7 @@ describe("pgTAP database suite", () => {
       "090_home_appearance.test.sql",
       "100_class_assignments.test.sql",
       "110_classes_notes.test.sql",
+      "120_assignment_todos.test.sql",
     ]);
 
     for (const name of testNames) {
