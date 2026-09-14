@@ -62,15 +62,7 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "class_assignments_class_owner"
-            columns: ["user_id", "course_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["user_id", "id"]
-          },
-        ]
+        Relationships: []
       }
       class_notes: {
         Row: {
@@ -450,8 +442,8 @@ export type Database = {
       }
       todos: {
         Row: {
-          class_id: string | null
           assignment_type: string
+          class_id: string | null
           completed: boolean
           completed_at: string | null
           created_at: string
@@ -469,8 +461,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          class_id?: string | null
           assignment_type?: string
+          class_id?: string | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -488,8 +480,8 @@ export type Database = {
           user_id?: string
         }
         Update: {
-          class_id?: string | null
           assignment_type?: string
+          class_id?: string | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
