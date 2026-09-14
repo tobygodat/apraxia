@@ -135,6 +135,11 @@ export interface Project {
   updatedAt: Timestamp;
 }
 
+export interface ClassSummary {
+  readonly id: string;
+  readonly name: string | null;
+}
+
 export interface ProjectSummary {
   id: UUID;
   title: string;

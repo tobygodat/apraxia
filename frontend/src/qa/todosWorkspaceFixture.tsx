@@ -91,7 +91,7 @@ const service: TodoService = {
     await prepareLoad(signal);
     return {
       profile,
-      projects: [project], todos: [...todos],
+      classes: [], projects: [project], todos: [...todos],
     };
   },
   async createTodo(input, { signal }) {

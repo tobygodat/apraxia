@@ -455,7 +455,7 @@ export class TodayListController {
     }
     const keys = Object.keys(input);
     const patch = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
-    if (!keys.length || keys.some((key) => !["text", "projectId", "dueDate", "dueTime"].includes(key)) ||
+    if (!keys.length || keys.some((key) => !["text", "projectId", "classId", "assignmentType", "dueDate", "dueTime"].includes(key)) ||
       !Object.keys(patch).length ||
       (patch.dueDate === null && patch.dueTime !== null) ||
       (typeof patch.dueTime === "string" && typeof patch.dueDate !== "string")) {

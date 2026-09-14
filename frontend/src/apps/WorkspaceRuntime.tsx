@@ -14,6 +14,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
   const calendarService = useMemo(() => ({ ...cacheNavigationService(props.calendarService, cache, "calendar",
     ["status", "calendars", "week"], ["connect", "disconnect", "setVisibility"]), invalidate: cache.invalidate }), [props.calendarService, cache]);
   const workspaceData = useMemo(() => ({ ...props.workspaceData,
+    classes: props.workspaceData.classes ? cacheNavigationService(props.workspaceData.classes, cache, "classes", [], ["create", "rename", "importLegacy"]) : undefined,
     assignments: props.workspaceData.assignments ? cacheNavigationService(props.workspaceData.assignments, cache, "assignments", [],
       ["create", "update", "remove", "restore"]) : undefined,
   }), [props.workspaceData, cache]);

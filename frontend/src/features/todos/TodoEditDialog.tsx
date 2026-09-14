@@ -1,3 +1,5 @@
+import { changeTodoField } from "./todoParent";
+import { TodoClassFields } from "./TodoClassFields";
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -9,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import type { ProjectSummary, Todo } from "../../types/domain";
+import type { ClassSummary, ProjectSummary, Todo } from "../../types/domain";
 import {
   type TodoInputErrors,
   type TodoInputField,
@@ -23,6 +25,7 @@ export interface TodoEditDialogProps {
   readonly todo: Todo | null;
   readonly mode?: "edit" | "reschedule";
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   readonly onSave: (
     todoId: string,
     input: UpdateTodoDetailsInput,
@@ -51,6 +54,8 @@ function valuesForTodo(todo: Todo | null): TodoInputValues {
     // exact value is retained separately until the user edits this field.
     dueTime: todo?.dueTime?.replace(PRECISE_TIME_PATTERN, "$1") ?? "",
     projectId: todo?.projectId ?? "",
+    classId: todo?.classId ?? "",
+    assignmentType: todo?.assignmentType ?? "",
   };
 }
 
@@ -63,6 +68,7 @@ export function TodoEditDialog({
   todo,
   mode = "edit",
   projects,
+  classes = [],
   onSave,
   onClose,
   fallbackFocusRef,
@@ -77,6 +83,8 @@ export function TodoEditDialog({
   const textRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
+  const classRef = useRef<HTMLSelectElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
   const projectRef = useRef<HTMLSelectElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
@@ -158,6 +166,8 @@ export function TodoEditDialog({
       dueDate: dateRef,
       dueTime: timeRef,
       projectId: projectRef,
+      classId: classRef,
+      assignmentType: typeRef,
     };
     refs[focusAfterValidation].current?.focus();
     setFocusAfterValidation(null);
@@ -186,8 +196,7 @@ export function TodoEditDialog({
       setRetainedDueTime(null);
     }
     setValues((current) => ({
-      ...current,
-      [field]: value,
+      ...changeTodoField(current, field, value),
       ...(field === "dueDate" && value === "" ? { dueTime: "" } : {}),
     }));
     setErrors((current) => {
@@ -212,7 +221,7 @@ export function TodoEditDialog({
       setErrors({ fieldErrors: validation.fieldErrors, formErrors: validation.formErrors });
       setSubmitError(null);
       setFocusAfterValidation(
-        (["text", "dueDate", "dueTime", "projectId"] as const).find(
+        (["text", "dueDate", "dueTime", "projectId", "classId", "assignmentType"] as const).find(
           (field) => validation.fieldErrors[field]?.length,
         ) ?? null,
       );
@@ -223,6 +232,7 @@ export function TodoEditDialog({
     const details = mode === "reschedule" ? {} : {
       text: validation.data.text,
       projectId: validation.data.projectId ?? null,
+      ...((todo?.classId || values.classId) ? { classId: validation.data.classId ?? null, assignmentType: validation.data.assignmentType ?? "" } : {}),
     };
     const input: UpdateTodoDetailsInput = dueDate === null
       ? { ...details, dueDate: null, dueTime: null }
@@ -304,7 +314,7 @@ export function TodoEditDialog({
           <h2 id={titleId}>{mode === "reschedule" ? "Reschedule task" : "Edit task"}</h2>
           <p id={descriptionId}>{mode === "reschedule"
             ? "Change the schedule. Clear the date to move this task to Inbox."
-            : "Task is required. The schedule and project are optional."}</p>
+            : "Task is required. The schedule, project, and class are optional."}</p>
         </header>
         <form className="todo-dialog__form" noValidate onSubmit={handleSubmit}>
           {mode === "reschedule" ? <p className="todo-edit-dialog__task">{values.text}</p> : <div className="todo-dialog__field">
@@ -379,6 +389,7 @@ export function TodoEditDialog({
             </select>
             {renderFieldError("projectId")}
           </div> : null}
+          {mode === "edit" && <TodoClassFields baseId={baseId} classes={classes} values={values} disabled={isSubmitting} onChange={updateValue} classRef={classRef} typeRef={typeRef} errors={errors} />}
           {errors.formErrors.length > 0 ? (
             <p className="todo-dialog__submit-error" role="alert">Review the form and try again.</p>
           ) : null}

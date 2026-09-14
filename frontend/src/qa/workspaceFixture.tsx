@@ -91,11 +91,16 @@ function currentToday(date: string): TodayTodo[] {
     isManuallyOrdered: t.todayRank !== null, projectTitle: projects.find(p => p.id === t.projectId)?.title ?? null,
   })));
 }
+const classFixture = createClassPersistenceFixture(empty);
+async function withClassName<T extends Todo>(todo: T): Promise<T> {
+  const classes = await classFixture.classes.list(userId, new AbortController().signal);
+  return { ...todo, className: classes.find(course => course.id === todo.classId)?.name ?? null };
+}
 const todoService: TodoService = {
-  async loadWorkspace(options) { check(); return { profile, projects, todos: todos.filter(todo => !options.classId || todo.classId === options.classId) }; },
-  async loadToday(date) { check(); return currentToday(date); },
-  async createTodo(input) { check(); const existing = todos.find(todo => todo.id === input.id); if (existing) return existing; const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; todos.push(row); return row; },
-  async updateTodoDetails(rowId, input) { check(); return save(todos, { ...find(todos, rowId), ...input }); },
+  async loadWorkspace(options) { check(); return { profile, classes: await classFixture.classes.list(userId, options.signal), projects, todos: await Promise.all(todos.filter(todo => !options.classId || todo.classId === options.classId).map(withClassName)) }; },
+  async loadToday(date) { check(); return Promise.all(currentToday(date).map(withClassName)); },
+  async createTodo(input) { check(); const existing = todos.find(todo => todo.id === input.id); if (existing) return existing; const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; const saved = await withClassName(row); todos.push(saved); return saved; },
+  async updateTodoDetails(rowId, input) { check(); return save(todos, await withClassName({ ...find(todos, rowId), ...input })); },
   async setTodoCompleted(rowId, completed) { check(); return save(todos, { ...find(todos, rowId), completed, completedAt: completed ? now : null }); },
   async softDeleteTodo(rowId) { check(); deleted.set(rowId, find(todos, rowId)); todos = todos.filter(t => t.id !== rowId); return token; },
   async restoreTodo(rowId) { const row = deleted.get(rowId) as Todo; if (!row) return false; todos.push(row); deleted.delete(rowId); return true; },
@@ -136,7 +141,7 @@ const delay = scenario === "slow" ? 1500 : 180;
 const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? createFixtureCover(scenario === "portrait") : null;
 const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
 const workspaceData = {
-  ...createClassPersistenceFixture(empty),
+  ...classFixture,
   assignments: delayedFixtureService(createTodoAssignmentService(todoService), delay),
   homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
   profile: async () => profile,

@@ -728,3 +728,15 @@ describe("TodosBoard", () => {
     expect(document.activeElement).toBe(undo);
   });
 });
+
+it("filters all sources across Inbox and date columns and labels source chips", () => {
+  const rows = [TODO, { ...TODO, id: "project", text: "Project task", projectId: "p" }, { ...TODO, id: "class", text: "Worksheet", classId: "math", className: "Math", assignmentType: "Quiz", dueDate: "2026-09-01" }, { ...TODO, id: "inbox", text: "Reading", classId: "math", className: "Math", assignmentType: "Reading", dueDate: null, dueTime: null }];
+  render(<TodosBoard {...props({ projects: [{ id: "p", title: "Studio" }], model: buildTodoBoardModel(rows, "2026-08-31", "2026-09-02") })} />);
+  expect(screen.getByText("Math · Quiz").className).toBe("todo-source-chip");
+  expect(screen.getByText("Studio").className).toBe("todo-source-chip");
+  for (const [source, visible] of [["Classes", ["Worksheet", "Reading"]], ["Projects", ["Project task"]], ["Unassigned", [TODO.text]], ["All", rows.map(row => row.text)]] as const) {
+    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: source } });
+    for (const row of rows) expect(Boolean(screen.queryByText(row.text, { exact: true }))).toBe((visible as readonly string[]).includes(row.text));
+  }
+  expect(screen.getByText("Due Sep 1").className).toContain("--past");
+});

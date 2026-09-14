@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { DeleteUndoToken, Idea, MediaItem, Project, ProjectSummary, Todo } from "../../types/domain";
+import type { DeleteUndoToken, Idea, MediaItem, Project, ClassSummary, ProjectSummary, Todo } from "../../types/domain";
 import { TodoComposerDialog } from "../todos/TodoComposerDialog";
 import { TodoEditDialog } from "../todos/TodoEditDialog";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -14,6 +14,7 @@ interface Props {
     service: CollectionService;
     todoService: TodoService;
     projects: readonly ProjectSummary[];
+  classes?: readonly ClassSummary[];
     refreshKey?: number;
     onChanged: () => void;
     recordId?: string;
@@ -24,7 +25,7 @@ const headings = { project: "Projects", idea: "Ideas", media: "Media" };
 const descriptions = { project: "Outcomes, with their tasks and thoughts in one place.", idea: "A place for thoughts you want to keep.", media: "Books and movies to return to." };
 const titleOf = (kind: CollectionKind, r: CollectionRecord) => kind === "idea" ? ideaTitle(r as Idea) : r.title || "Untitled";
 export function CollectionPage(props: Props) {
-    const { kind, service, todoService, projects, refreshKey = 0, onChanged, recordId, onOpenProject, onBack } = props;
+    const { kind, service, todoService, projects, classes = [], refreshKey = 0, onChanged, recordId, onOpenProject, onBack } = props;
     const [rows, setRows] = useState<CollectionRecord[]>([]);
     const [status, setStatus] = useState(kind === "project" ? "active" : "all");
     const [mediaType, setMediaType] = useState("all");
@@ -199,7 +200,7 @@ export function CollectionPage(props: Props) {
       <section className="collection-section"><header><h2>Ideas</h2><button className="collection-button" onClick={() => setEditor({ kind: "idea", projectId: project.id })}>Add idea</button></header><ul className="collection-list">{ideas.map(i => renderRow("idea", i))}</ul>{!loading && !ideas.length && <p className="collection-empty">No ideas here yet. Keep supporting thoughts with this project.</p>}{moreIdeas && <button className="collection-button" disabled={loading} onClick={() => setIdeaLimit(v => v + 50)}>Load more ideas</button>}</section>
     </> : <><ul className="collection-list">{rows.map(r => renderRow(kind, r))}</ul>{!loading && !error && !rows.length && <div className="collection-empty"><p>{kind === "project" ? "No projects in this view." : kind === "media" ? "No books or movies in this view." : "No ideas yet. Keep your first thought here."}</p><button className="collection-button" onClick={() => setEditor({ kind })}>Add {kind}</button></div>}{more && <button className="collection-button" disabled={loading} onClick={() => setLimit(v => v + 50)}>Load more</button>}</>}
     {editor && <CollectionEditor key={`${editor.kind}-${editor.record?.id ?? "new"}`} {...editor} service={service} projects={projects} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setNotice("Saved."); changed(); }}/>}
-    {composer && <TodoComposerDialog open initialProjectId={recordId} projects={projects} onClose={() => setComposer(false)} onCreate={async (input, options) => { await todoService.createTodo(input, options); changed(); }}/>}
-    <TodoEditDialog todo={editingTask} projects={projects} onClose={() => setEditingTask(null)} onSave={async (id, input, options) => { await todoService.updateTodoDetails(id, input, options); changed(); }}/>
+    {composer && <TodoComposerDialog open initialProjectId={recordId} projects={projects} classes={classes} onClose={() => setComposer(false)} onCreate={async (input, options) => { await todoService.createTodo(input, options); changed(); }}/>}
+    <TodoEditDialog todo={editingTask} projects={projects} classes={classes} onClose={() => setEditingTask(null)} onSave={async (id, input, options) => { await todoService.updateTodoDetails(id, input, options); changed(); }}/>
   </section>;
 }

@@ -29,7 +29,7 @@ export function createFixtureAssignments(empty = false): AssignmentService {
   const now = new Date().toISOString();
   function find(id: string) { const row = rows.find(row => row.id === id); if (!row) throw new Error("Assignment not found."); return row; }
   const todos: TodoService = {
-    async loadWorkspace() { return { profile: { userId: "qa", timezone: "America/New_York", createdAt: now, updatedAt: now }, projects: [], todos: rows.map(row => ({ ...row })) }; },
+    async loadWorkspace() { return { profile: { userId: "qa", timezone: "America/New_York", createdAt: now, updatedAt: now }, classes: [], projects: [], todos: rows.map(row => ({ ...row })) }; },
     async createTodo(input) {
       const existing = rows.find(row => row.id === input.id); if (existing) return { ...existing };
       const row: Todo = { id: input.id!, text: input.text, classId: input.classId, assignmentType: input.assignmentType, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, completed: false, completedAt: null, projectId: null, todayRank: null, createdAt: now, updatedAt: now };

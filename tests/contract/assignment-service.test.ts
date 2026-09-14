@@ -8,7 +8,9 @@ const now = "2026-09-14T12:00:00.123456Z";
 const row = { id, text: "Worksheet", class_id: "math3012", classes: { name: "Math" }, assignment_type: "Homework", due_date: "2020-03-08", due_time: null, completed: false, completed_at: null, project_id: null, today_rank: null, created_at: now, updated_at: now };
 const profile = { user_id: owner, timezone: "America/New_York", created_at: now, updated_at: now };
 function setup(responses: unknown[]) {
-  const fetch = vi.fn(async (url: RequestInfo | URL) => { const isProfile = new URL(String(url)).pathname.endsWith("/profiles");
+  const fetch = vi.fn(async (url: RequestInfo | URL) => { const pathname = new URL(String(url)).pathname;
+    if (pathname.endsWith("/classes")) return new Response(JSON.stringify([{ id: "math3012", name: "Math" }]), { headers: { "Content-Type": "application/json", "Content-Range": "0-0/1" } });
+    const isProfile = pathname.endsWith("/profiles");
     const index = responses.findIndex(value => isProfile === (!!value && !Array.isArray(value) && typeof value === "object" && "user_id" in value));
     const body = responses.splice(index < 0 ? 0 : index, 1)[0]; return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json", "Content-Range": `0-${Array.isArray(body) ? body.length - 1 : 0}/${Array.isArray(body) ? body.length : 1}` } }); });
   const client = createClient<Database>("https://assignments.example.test", "public-test-key", { global: { fetch }, auth: { persistSession: false, autoRefreshToken: false } });
@@ -19,13 +21,13 @@ const request = (fetch: ReturnType<typeof setup>["fetch"], index = 0) => fetch.m
 it("paginates todo assignments with a class filter and active-row scope", async () => {
   const { service, fetch } = setup([profile, [], Array.from({ length: 200 }, (_, i) => ({ ...row, id: `33333333-3333-4333-8333-${String(i).padStart(12, '0')}` })), [{ ...row, id: "33333333-3333-4333-8333-000000000200" }]]);
   expect(await service.list(owner, "math3012", signal())).toHaveLength(201);
-  for (const index of [1, 3]) {
+  for (const index of [1, 4]) {
     const url = new URL(request(fetch, index)[0]);
     expect(url.pathname).toBe("/rest/v1/todos");
     expect(url.searchParams.get("class_id")).toBe("eq.math3012");
     expect(url.searchParams.get("deleted_at")).toBe("is.null");
   }
-  expect(new URL(request(fetch, 3)[0]).searchParams.get("id")).toBe("gt.33333333-3333-4333-8333-000000000199");
+  expect(new URL(request(fetch, 4)[0]).searchParams.get("id")).toBe("gt.33333333-3333-4333-8333-000000000199");
 });
 it("sends only edited fields and preserves original date-only dates", async () => {
   const { service, fetch } = setup([{ ...row, text: "Renamed" }]);
@@ -51,7 +53,7 @@ it("soft deletes through the existing RPC and preserves the exact Undo token", a
   const token = await service.remove(owner, "math3012", id, signal());
   expect(token).toBe(now);
   expect(await service.restore(owner, "math3012", id, token, signal())).toBe(true);
-  expect(JSON.parse(String(request(fetch, 4)[1].body))).toEqual({ p_record_type: "todo", p_record_id: id, p_deleted_at: now });
+  expect(JSON.parse(String(request(fetch, 5)[1].body))).toEqual({ p_record_type: "todo", p_record_id: id, p_deleted_at: now });
 });
 it("rejects wrong account snapshots, invalid dates, types and time without date", async () => {
   const { service } = setup([{ ...profile, user_id: "22222222-2222-4222-8222-222222222222" }, [], [row]]);

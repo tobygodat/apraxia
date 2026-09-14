@@ -40,7 +40,7 @@ const INBOX: Todo = {
 };
 const PROJECT = { id: "44444444-4444-4444-8444-444444444444", title: "Launch" };
 const TOKEN = "2026-09-03T19:00:00.123456Z" as DeleteUndoToken;
-const SNAPSHOT: TodoWorkspaceSnapshot = { profile: PROFILE, projects: [PROJECT], todos: [TODO, INBOX] };
+const SNAPSHOT: TodoWorkspaceSnapshot = { profile: PROFILE, classes: [], projects: [PROJECT], todos: [TODO, INBOX] };
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

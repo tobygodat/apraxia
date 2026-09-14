@@ -63,7 +63,7 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
   return {
     async loadWorkspace(options) {
       const signal = requestSignal(options);
-      const [profileResponse, projects, todos] = await Promise.all([
+      const [profileResponse, projects, todos, classes] = await Promise.all([
         client.from("profiles").select("user_id,timezone,created_at,updated_at").abortSignal(signal).single(),
         collectRows((afterId) => {
           const query = client.from("projects").select("id,title", { count: "exact" })
@@ -76,12 +76,17 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
           if (options.classId !== undefined) query.eq("class_id", options.classId);
           return afterId === null ? query : query.gt("id", afterId);
         }, options),
+        collectRows((afterId) => {
+          const query = client.from("classes").select("id,name", { count: "exact" })
+            .order("id").limit(PAGE_SIZE).abortSignal(signal);
+          return afterId === null ? query : query.gt("id", afterId);
+        }, options),
       ]);
       const profile = result(profileResponse, options);
       return readTodoWorkspaceSnapshot({
         profile: { userId: profile.user_id, timezone: profile.timezone,
           createdAt: profile.created_at, updatedAt: profile.updated_at },
-        projects, todos: todos.map(mapTodo),
+        projects, classes, todos: todos.map(mapTodo),
       }) ?? failed();
     },
     async createTodo(input, options) {
@@ -107,6 +112,7 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
       const update: Database["public"]["Tables"]["todos"]["Update"] = {};
       if (input.assignmentType !== undefined) update.assignment_type = input.assignmentType;
       if (input.text !== undefined) update.text = input.text;
+      if (input.classId !== undefined) update.class_id = input.classId;
       if (input.projectId !== undefined) update.project_id = input.projectId;
       if (input.dueDate !== undefined) update.due_date = input.dueDate;
       if (input.dueTime !== undefined) update.due_time = input.dueTime;

@@ -1,3 +1,4 @@
+import { TodoSourceChip } from "./TodoSourceChip";
 import {
   useId,
   useLayoutEffect,
@@ -473,7 +474,7 @@ export function TodayList({
                             {dueTimeLabel(todo.dueTime)}
                           </time>
                         ) : null}
-                        {todo.projectTitle ? <span>{todo.projectTitle}</span> : null}
+                        <TodoSourceChip todo={todo} projectTitle={todo.projectTitle} />
                       </div>
                     </div>
 

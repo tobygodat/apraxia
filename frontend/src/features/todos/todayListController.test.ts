@@ -716,3 +716,13 @@ describe("useTodayListController", () => {
     await act(async () => { expect(await result.current.controller.completeTodo(A)).toBe(true); });
   });
 });
+
+it("updates class context in Today, checks the saved parent and rolls back an incorrect response", async () => {
+  const { service, controller } = await ready();
+  const input = { text: "Worksheet", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: DATE, dueTime: null };
+  expect(await controller.updateDetails(A, input)).toBe(true);
+  expect(controller.getSnapshot().model.todos.find(row => row.id === A)).toMatchObject(input);
+  service.updateTodoDetails.mockResolvedValueOnce(todo(A, input));
+  expect(await controller.updateDetails(A, { ...input, classId: "art" })).toBe(false);
+  expect(controller.getSnapshot().model.todos.find(row => row.id === A)?.classId).toBe("math");
+});

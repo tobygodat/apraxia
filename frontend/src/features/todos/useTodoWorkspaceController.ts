@@ -10,6 +10,7 @@ import type {
   DeleteUndoToken,
   Profile,
   ProjectSummary,
+  ClassSummary,
   Todo,
   UUID,
 } from "../../types/domain";
@@ -52,6 +53,7 @@ export interface TodoWorkspaceController {
   readonly loadState: TodoWorkspaceLoadState;
   readonly profile: Profile | null;
   readonly projects: readonly ProjectSummary[];
+  readonly classes: readonly ClassSummary[];
   readonly todos: readonly Todo[];
   readonly pendingTodoIds: ReadonlySet<UUID>;
   readonly mutationResult: TodoWorkspaceMutationResult | null;
@@ -118,6 +120,7 @@ export function useTodoWorkspaceController(
     status: "loading",
   });
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [classes, setClasses] = useState<readonly ClassSummary[]>([]);
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
   const [todos, setTodos] = useState<readonly Todo[]>([]);
   const [pendingTodoIds, setPendingTodoIds] = useState<ReadonlySet<UUID>>(
@@ -207,6 +210,7 @@ export function useTodoWorkspaceController(
       if (!snapshot) throw new Error("Invalid workspace response.");
       setProfile(snapshot.profile);
       setProjects(snapshot.projects);
+      setClasses(snapshot.classes);
       publishTodos(snapshot.todos);
       setLoadState({ status: "idle" });
     } catch {
@@ -254,6 +258,7 @@ export function useTodoWorkspaceController(
         readyRef.current = true;
         setProfile(snapshot.profile);
         setProjects(snapshot.projects);
+        setClasses(snapshot.classes);
         publishTodos(snapshot.todos);
         setLoadState({ status: "idle" });
       } catch (error: unknown) {
@@ -691,6 +696,7 @@ export function useTodoWorkspaceController(
     loadState: scopeMatches ? loadState : { status: "loading" },
     profile: scopeMatches ? profile : null,
     projects: scopeMatches ? projects : [],
+    classes: scopeMatches ? classes : [],
     todos: scopeMatches ? todos : [],
     pendingTodoIds: scopeMatches ? pendingTodoIds : new Set(),
     mutationResult: scopeMatches ? mutationResult : null,

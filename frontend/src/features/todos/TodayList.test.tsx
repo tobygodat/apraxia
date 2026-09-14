@@ -728,3 +728,9 @@ describe("TodayList", () => {
     expect(screen.getByText("Accumulated task 100")).toBeTruthy();
   });
 });
+
+it("shows class and assignment type alongside the original red past-due date", () => {
+  render(<TodayList {...props({ state: controllerState([todo("assignment", { classId: "math", className: "Math", assignmentType: "Homework", dueDate: "2026-08-25", isOverdue: true })]) })} />);
+  expect(screen.getByText("Math · Homework").className).toBe("todo-source-chip");
+  expect(screen.getByText("Math · Homework").closest("li")?.className).toContain("overdue");
+});

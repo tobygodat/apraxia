@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import type { Profile, ProjectSummary, Todo } from "../../types/domain";
+import type { Profile, ClassSummary, ProjectSummary, Todo } from "../../types/domain";
 import { TodayList } from "./TodayList";
 import { type TodayListController, useTodayListController } from "./todayListController";
 import { TodoComposerDialog } from "./TodoComposerDialog";
@@ -18,6 +18,7 @@ export interface TodayPanelProps {
   readonly workspaceSessionKey: string;
   readonly profile: Profile;
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   /** Change after an external write, such as the shell's global Add action. */
   readonly refreshKey?: string | number;
 }
@@ -33,7 +34,7 @@ export function TodayPanel(props: TodayPanelProps) {
   return <TodayPanelSession key={props.workspaceSessionKey} {...props} />;
 }
 
-function TodayPanelSession({ service, workspaceSessionKey, profile, projects, refreshKey, heading, allowTomorrow = false }: TodayPanelProps) {
+function TodayPanelSession({ service, workspaceSessionKey, profile, projects, classes = [], refreshKey, heading, allowTomorrow = false }: TodayPanelProps) {
   const today = useLocalToday(profile.timezone);
   const [day, setDay] = useState<"Today" | "Tomorrow">("Today");
   const selectedDay = allowTomorrow ? day : "Today";
@@ -98,6 +99,7 @@ function TodayPanelSession({ service, workspaceSessionKey, profile, projects, re
       ...state.model,
       todos: visibleTodos.map((todo) => ({
         ...todo,
+        className: todo.classId ? classes.find(course => course.id === todo.classId)?.name ?? todo.className : null,
         projectTitle: todo.projectId === null ? null : projectTitles.get(todo.projectId) ?? todo.projectTitle,
       })),
     },
@@ -123,7 +125,7 @@ function TodayPanelSession({ service, workspaceSessionKey, profile, projects, re
       <TodoComposerDialog
         open={composerScope === controller}
         initialDueDate={localDate}
-        projects={projects}
+        projects={projects} classes={classes}
         onClose={() => setComposerScope(null)}
         onCreate={async (input, options) => {
           const saved = await service.createTodo(input, options);
@@ -138,7 +140,7 @@ function TodayPanelSession({ service, workspaceSessionKey, profile, projects, re
       <TodoEditDialog
         todo={visibleEdit?.todo ?? null}
         mode={visibleEdit?.mode ?? "edit"}
-        projects={projects}
+        projects={projects} classes={classes}
         fallbackFocusRef={focusRef}
         onClose={() => setEditIntent(null)}
         onSave={async (id, input, options) => {

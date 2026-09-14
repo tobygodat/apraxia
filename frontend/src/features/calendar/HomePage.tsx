@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Temporal } from "@js-temporal/polyfill";
 import { Link } from "react-router-dom";
-import type { CalendarEvent, Profile, ProjectSummary, WeekViewModel } from "../../types/domain";
+import type { CalendarEvent, Profile, ClassSummary, ProjectSummary, WeekViewModel } from "../../types/domain";
 import { TodayPanel } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday } from "../todos/dateDomain";
@@ -26,10 +26,11 @@ export interface HomePageProps {
   calendarService: CalendarService;
   profile: Profile;
   projects: readonly ProjectSummary[];
+  classes?: readonly ClassSummary[];
   workspaceSessionKey: string;
   refreshKey?: string | number;
 }
-export function HomePage({ todoService, calendarService, profile, projects, workspaceSessionKey, refreshKey, appearanceService }: HomePageProps) {
+export function HomePage({ todoService, calendarService, profile, projects, classes = [], workspaceSessionKey, refreshKey, appearanceService }: HomePageProps) {
   const page = useRef<HTMLDivElement>(null);
   return <div className="home-page" ref={page}>
     <HomeHeader service={appearanceService} userId={profile.userId} scrollRef={page} />
@@ -40,7 +41,7 @@ export function HomePage({ todoService, calendarService, profile, projects, work
         allowTomorrow
         service={todoService}
         profile={profile}
-        projects={projects}
+        projects={projects} classes={classes}
         workspaceSessionKey={workspaceSessionKey}
         refreshKey={refreshKey} />
     </div>

@@ -8,6 +8,8 @@ export interface TodoInputValues {
   dueDate?: string | null;
   dueTime?: string | null;
   projectId?: string | null;
+  classId?: string | null;
+  assignmentType?: string;
 }
 
 export type TodoInputField = keyof TodoInputValues;
@@ -59,12 +61,16 @@ export const todoInputSchema = z
     text: z.string({ error: "Enter a task." }).trim().min(1, "Enter a task."),
     dueDate: optionalFormValue(localDateSchema),
     dueTime: optionalFormValue(localTimeSchema),
+    classId: optionalFormValue(z.string().trim().min(1).max(120)),
+    assignmentType: z.enum(["", "Homework", "Quiz", "Reading", "Exam", "Other"]).default(""),
     projectId: optionalFormValue(
       z.string().uuid("Choose a valid project."),
     ),
   })
   .strict()
   .superRefine((value, context) => {
+    if (value.projectId && value.classId) context.addIssue({ code: "custom", path: ["classId"], message: "Choose a project or a class, not both." });
+    if (value.assignmentType && !value.classId) context.addIssue({ code: "custom", path: ["assignmentType"], message: "Choose a class before an assignment type." });
     if (value.dueTime !== null && value.dueDate === null) {
       context.addIssue({
         code: "custom",
@@ -77,6 +83,7 @@ export const todoInputSchema = z
     const base = {
       text: value.text,
       projectId: value.projectId,
+      ...(value.classId ? { classId: value.classId, assignmentType: value.assignmentType } : {}),
     };
 
     return value.dueDate === null
@@ -95,7 +102,7 @@ function collectErrors(error: z.ZodError): TodoInputErrors {
       field === "text" ||
       field === "dueDate" ||
       field === "dueTime" ||
-      field === "projectId"
+      field === "projectId" || field === "classId" || field === "assignmentType"
     ) {
       (fieldErrors[field] ??= []).push(issue.message);
     } else {

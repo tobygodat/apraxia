@@ -1,3 +1,5 @@
+import { changeTodoField } from "./todoParent";
+import { TodoClassFields } from "./TodoClassFields";
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -8,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import type { NewTodoInput, ProjectSummary } from "../../types/domain";
+import type { ClassSummary, NewTodoInput, ProjectSummary } from "../../types/domain";
 import {
   type TodoInputErrors,
   type TodoInputField,
@@ -22,6 +24,7 @@ export interface TodoComposerDialogProps {
   initialDueDate?: string | null;
   initialProjectId?: string | null;
   projects: readonly ProjectSummary[];
+  classes?: readonly ClassSummary[];
   onCreate: (
     input: NewTodoInput,
     /**
@@ -56,6 +59,7 @@ export function TodoComposerDialog({
   initialDueDate = null,
   initialProjectId = null,
   projects,
+  classes = [],
   onCreate,
   onClose,
 }: TodoComposerDialogProps) {
@@ -67,6 +71,8 @@ export function TodoComposerDialog({
   const textRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
+  const classRef = useRef<HTMLSelectElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
   const projectRef = useRef<HTMLSelectElement>(null);
   const submittingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -76,6 +82,8 @@ export function TodoComposerDialog({
     dueDate: initialDueDate ?? "",
     dueTime: "",
     projectId: initialProjectId ?? "",
+    classId: "",
+    assignmentType: "",
   });
   const [errors, setErrors] = useState<TodoInputErrors>(EMPTY_ERRORS);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -106,6 +114,8 @@ export function TodoComposerDialog({
       dueDate: initialDueDate ?? "",
       dueTime: "",
       projectId: initialProjectId ?? "",
+      classId: "",
+      assignmentType: "",
     });
     setErrors(EMPTY_ERRORS);
     setSubmitError(null);
@@ -163,7 +173,7 @@ export function TodoComposerDialog({
   }
 
   function updateValue(field: TodoInputField, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => changeTodoField(current, field, value));
     // dueTime's cross-field error becomes stale as soon as dueDate changes.
     clearFieldErrors(field === "dueDate" ? [field, "dueTime"] : [field]);
     setSubmitError(null);
@@ -188,6 +198,8 @@ export function TodoComposerDialog({
       dueDate: dateRef,
       dueTime: timeRef,
       projectId: projectRef,
+      classId: classRef,
+      assignmentType: typeRef,
     };
 
     refs[field].current?.focus();
@@ -210,7 +222,7 @@ export function TodoComposerDialog({
       setSubmitError(null);
 
       const firstInvalidField = (
-        ["text", "dueDate", "dueTime", "projectId"] as const
+        ["text", "dueDate", "dueTime", "projectId", "classId", "assignmentType"] as const
       ).find((field) => validation.fieldErrors[field]?.length);
 
       if (firstInvalidField) {
@@ -417,6 +429,8 @@ export function TodoComposerDialog({
               </p>
             )}
           </div>
+
+          <TodoClassFields baseId={baseId} classes={classes} values={values} disabled={isSubmitting} onChange={updateValue} classRef={classRef} typeRef={typeRef} errors={errors} />
 
           {errors.formErrors.length > 0 && (
             <p className="todo-dialog__submit-error" role="alert">

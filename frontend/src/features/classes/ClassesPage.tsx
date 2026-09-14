@@ -14,9 +14,9 @@ import { readLegacyClasses, type Course, type ClassService } from './classServic
 import { SavedClassNotes } from './SavedClassNotes';
 import type { NoteService } from './noteService';
 
-export function ClassesPage({ userId, courseId, driveService, assignmentService, classService, noteService, timezone }: {
+export function ClassesPage({ userId, courseId, driveService, assignmentService, classService, noteService, timezone, onClassesChanged }: {
   userId: string; courseId?: string; driveService?: DriveService; assignmentService?: AssignmentService;
-  classService?: ClassService; noteService?: NoteService; timezone?: string;
+  classService?: ClassService; noteService?: NoteService; timezone?: string; onClassesChanged?: () => void;
 }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -57,6 +57,7 @@ export function ClassesPage({ userId, courseId, driveService, assignmentService,
         ? await classService.create(userId, { id: editing.course.id, name }, controller.signal)
         : await classService.rename(userId, editing.course, name, controller.signal);
       if (controller.signal.aborted) return;
+      onClassesChanged?.();
       setCourses(rows => [...rows.filter(c => c.id !== saved.id), saved]); setEditing(null); navigate(`/classes/${saved.id}`);
     } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Couldn’t save this class. Try again.'); }
     finally { if (pending.current === controller) { pending.current = null; setSaving(false); } }
