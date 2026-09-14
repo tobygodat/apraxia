@@ -24,9 +24,10 @@ it('streams a PDF larger than 4.5 MB without waiting for the full download', asy
   let upstream!: ReadableStreamDefaultController<Uint8Array>;
   const stream = new ReadableStream<Uint8Array>({ start(controller) { upstream = controller; } });
   const fetcher = vi.fn<typeof fetch>(async url => String(url).includes('alt=media') ? new Response(stream) :
-    Response.json({ mimeType: 'application/pdf', size: '8000000', capabilities: { canDownload: true } }));
+    Response.json({ name: 'Renamed lecture.pdf', mimeType: 'application/pdf', size: '8000000', capabilities: { canDownload: true } }));
   const response = await serveDriveFiles('pdf', request('pdf?id=note-1&action=pdf'), 'secret', fetcher, headers);
   expect(response.headers.get('content-type')).toBe('application/pdf');
+  expect(decodeURIComponent(response.headers.get('x-orbitos-file-name')!)).toBe('Renamed lecture.pdf');
   expect(response.headers.get('cache-control')).toContain('no-store');
   const reader = response.body!.getReader();
   upstream.enqueue(new TextEncoder().encode('%PDF-1.7'));

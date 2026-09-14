@@ -59,3 +59,14 @@
 .classes-drive-files button { text-align: left; overflow-wrap: anywhere; min-width: 0; }
 .classes-drive-files a { flex-shrink: 0; font-size: 12px; }
 .classes-page button:disabled { opacity: .5; cursor: wait; }
+
+.classes-note-hint, .classes-saved-notes small { color: var(--cloud-shell-muted); font-size: 12px; }
+.classes-saved-notes { list-style: none; padding: 0; margin: 16px 0 24px; border-top: 1px solid var(--cloud-shell-line); }
+.classes-saved-notes li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--cloud-shell-line); }
+.classes-saved-notes li > div { min-width: 0; }
+.classes-saved-notes li > div:first-child { flex: 1; overflow-wrap: anywhere; }
+.classes-saved-notes button { text-align: start; white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+.classes-saved-notes small { display: block; margin-block-start: 4px; }
+.classes-saved-notes button[aria-pressed="true"] { background: var(--cloud-shell-surface); }
+.classes-note-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.classes-note-error { margin-block: 12px; }

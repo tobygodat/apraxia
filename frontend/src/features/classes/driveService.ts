@@ -43,6 +43,11 @@ export function createDriveService(client: SupabaseClient<Database>): DriveServi
       }
       return pickGooglePdf(grant, signal, parent);
     },
-    pdf: async (file, signal) => new File([await (await request(`pdf?id=${encodeURIComponent(file.id)}`, 'GET', signal)).blob()], file.name, { type: 'application/pdf' }),
+    pdf: async (file, signal) => {
+      const response = await request(`pdf?id=${encodeURIComponent(file.id)}`, 'GET', signal);
+      let name = file.name;
+      try { name = decodeURIComponent(response.headers.get('X-Orbitos-File-Name') ?? '') || name; } catch { /* Preserve the saved display name if the header is invalid. */ }
+      return new File([await response.blob()], name, { type: 'application/pdf' });
+    },
   };
 }

@@ -1,3 +1,4 @@
+import { storageHarnessSql } from "../helpers/storageHarness";
 import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { expect, it } from "vitest";
@@ -11,6 +12,7 @@ it("persists assignments with account isolation, immutable ownership, date-only 
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       grant usage on schema auth to anon, authenticated, service_role;
       grant execute on function auth.uid() to anon, authenticated, service_role;`);
+    await db.exec(storageHarnessSql);
     for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith(".sql")).sort()) {
       await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
     }
@@ -19,6 +21,7 @@ it("persists assignments with account isolation, immutable ownership, date-only 
     const id = "33333333-3333-4333-8333-333333333333";
     await db.query("insert into auth.users(id) values ($1), ($2)", [alice, bob]);
     await db.exec(`set role authenticated; set request.jwt.claim.sub = '${alice}'`);
+    await db.exec("insert into classes(id,name) values ('math3012','MATH3012'),('other-class','Other class')");
     const insert = () => db.query("insert into class_assignments(id,course_id,title,due_date,assignment_type) values ($1,'math3012','Problem set','2020-03-08','Homework') on conflict(id) do nothing", [id]);
     await insert(); await insert();
     await db.exec("insert into class_assignments(course_id,title) values ('other-class','Reading')");

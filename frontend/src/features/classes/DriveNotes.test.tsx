@@ -10,13 +10,13 @@ function service(): DriveService {
     disconnect: vi.fn(async () => undefined), files: vi.fn(async () => ({ files: [], nextPage: null })),
     pickPdf: vi.fn(async () => note), pdf: vi.fn(async () => new File(['%PDF-1.7'], note.name, { type: 'application/pdf' })) };
 }
-it('opens the native picker and downloads only the selected PDF, preserving an existing folder preference', async () => {
+it('opens the native picker and downloads only the selected PDF, ignoring the retired browser folder preference', async () => {
   localStorage.setItem('orbitos:drive-folder:v1:owner:math', JSON.stringify({ id: 'saved-folder', name: 'Notes' }));
   const drive=service(); const preview=vi.fn();
   render(<DriveNotes userId="owner" courseId="math" service={drive} onPreview={preview} />);
   fireEvent.click(await screen.findByRole('button',{name:'Open from Drive'}));
   await waitFor(() => expect(preview).toHaveBeenCalledWith(expect.any(File)));
-  expect(drive.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal),'saved-folder');
+  expect(drive.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal));
   expect(drive.files).not.toHaveBeenCalled();
   expect(drive.pdf).toHaveBeenCalledWith(note,expect.any(AbortSignal));
 });

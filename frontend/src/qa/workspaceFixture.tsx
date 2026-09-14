@@ -1,3 +1,4 @@
+import { createClassPersistenceFixture } from './classPersistenceFixture';
 import type { DriveService } from '../features/classes/driveService';
 import { createFixturePdf } from './fixturePdf';
 import { createFixtureAssignments } from "./ClassAssignmentsMock";
@@ -128,6 +129,7 @@ const delay = scenario === "slow" ? 1500 : 180;
 const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? createFixtureCover(scenario === "portrait") : null;
 const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
 const workspaceData = {
+  ...createClassPersistenceFixture(empty),
   assignments: delayedFixtureService(createFixtureAssignments(empty), delay),
   homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
   profile: async () => profile,

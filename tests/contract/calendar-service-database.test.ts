@@ -1,3 +1,4 @@
+import { storageHarnessSql } from "../helpers/storageHarness";
 import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +18,7 @@ describe('Calendar private service storage', () => {
         grant usage on schema auth to anon, authenticated, service_role;
         grant execute on function auth.uid() to anon, authenticated, service_role;
       `);
+      await db.exec(storageHarnessSql);
       const migrations = (await readdir('supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
       for (const name of migrations) await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'));
       const owner = '11111111-1111-4111-8111-111111111111';

@@ -123,8 +123,8 @@ details, cover expand/collapse and crop, navigation away/back, and reload. Use
 Customize page to test a chosen local image through the real upload preparation
 and crop UI. Calendar changes and appearance persist in isolated session storage
 per scenario/day/tab; Reset calendar and cover restores the seed. Tasks and
-collections remain in-memory, and Classes retains its existing browser storage
-under the fictional user. None of this proves cloud persistence.
+collections remain in-memory. Classes, notes, and assignments use fictional
+services that retain changes across navigation and reset on reload. None of this proves cloud persistence.
 
 Fixture checks are insufficient evidence for data/provider-dependent changes.
 Before deploying those changes, also check the normal authenticated app with
@@ -143,9 +143,16 @@ report unsupported in QA rather than pretending to verify Google's behavior.
 Class assignments require `20260913000200_class_assignments.sql` before releasing
 the UI. It adds account-owned rows under RLS without modifying existing data.
 Assignments save independently of Tasks; names, date-only due dates, types,
-completion, and Undo persist. Classes themselves retain their existing
-browser-local IDs and names. The QA fixture uses the production table with a
-fictional service; assignments survive navigation but reset on reload.
+completion, and Undo persist. Classes and notes additionally require
+`20260913000300_classes_and_notes.sql` and
+`20260913000400_class_pdf_storage.sql`. The first preserves existing assignments
+and recovers parent classes before enforcing account/class foreign keys. The
+second creates private PDF storage. Device uploads are permanent, with a 50 MiB
+limit and recoverable pending records; Drive notes store file references.
+Browser class data is imported without overwriting established cloud names and
+is retained unchanged as a recovery copy. See [Classes data model](CLASSES_DATA_MODEL.md).
+The QA fixture uses fictional services; changes survive navigation but reset on
+reload and cannot prove database or file persistence.
 
 
 Home page names and optional covers use the account-owned `home_appearance`
