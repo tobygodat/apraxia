@@ -30,6 +30,12 @@ This trades extra database work for consistency without a new persisted
 snapshot table. Profile that cost if actual list size or latency warrants it; an indexed
 revision scheme can replace the fingerprint if measurements justify it.
 
+Past-due tasks appear under Today with their original due dates in red, using
+the RPC's `is_overdue` flag. There is no separate Overdue section or count.
+Stored due dates and the wire contract are unchanged. Ordering remains saved
+manual rank first, then original due date, due time (nulls last), creation time,
+and ID. Unranked older tasks therefore precede unranked tasks due today.
+
 ## Atomic order protocol
 
 `public.reorder_today_todos` still receives the complete desired UUID order and

@@ -128,7 +128,6 @@ function formatDateHeading(value: string, today: string): string {
 
 function columnLabel(column: TodoBoardColumn, today: string): string {
   if (column.kind === "inbox") return "Inbox";
-  if (column.kind === "overdue") return "Overdue";
   return formatDateHeading(column.date!, today);
 }
 
@@ -191,7 +190,7 @@ function TodoCard({
         {showDueDate || todo.dueTime || projectTitle ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
-              <time dateTime={todo.dueDate}>
+              <time className="todos-board-card__due--past" dateTime={todo.dueDate}>
                 Due {weekRangeFormatter.format(dateAtUtcNoon(todo.dueDate))}
               </time>
             ) : null}
@@ -582,7 +581,7 @@ export function TodosBoard({
                           ? (projectTitles.get(todo.projectId) ?? null)
                           : null
                       }
-                      showDueDate={column.kind === "overdue"}
+                      showDueDate={!todo.completed && todo.dueDate !== null && todo.dueDate < model.today}
                       titleId={`${todoControlId(todo.id)}-title`}
                       onToggleComplete={(selectedTodo) => {
                         const started = onToggleComplete(selectedTodo);

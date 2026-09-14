@@ -105,12 +105,15 @@ function CompletionFocusHarness() {
 }
 
 describe("TodayList", () => {
-  it("renders overdue and due-today rows with explicit non-color status", () => {
+  it("renders original past-due dates without an Overdue prefix or count", () => {
     render(<TodayList {...props()} />);
 
     expect(screen.getByRole("heading", { name: "Today" })).toBeTruthy();
-    expect(screen.getByText("1 overdue · 1 due today")).toBeTruthy();
-    expect(screen.getByText(/Overdue ·/)).toBeTruthy();
+    expect(screen.queryByText(/overdue/i)).toBeNull();
+    const pastDate = screen.getByText("Tue, Aug 25");
+    expect(pastDate.getAttribute("datetime")).toBe("2026-08-25");
+    expect(pastDate.closest(".today-list-item--overdue")).toBeTruthy();
+    expect(screen.getByText(/Due today ·/).closest(".today-list-item--overdue")).toBeNull();
     expect(screen.getByText(/Due today ·/)).toBeTruthy();
     expect(screen.getByText("2:30 PM").getAttribute("datetime")).toBe(
       "14:30:00",

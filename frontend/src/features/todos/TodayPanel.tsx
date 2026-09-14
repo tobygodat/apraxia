@@ -96,8 +96,6 @@ function TodayPanelSession({ service, workspaceSessionKey, profile, projects, re
       .replace(/ (out of|no longer in) Today\.$/, ` $1 ${selectedDay}.`) },
     model: {
       ...state.model,
-      overdueCount: selectedDay === "Tomorrow" ? 0 : state.model.overdueCount,
-      dueTodayCount: selectedDay === "Tomorrow" ? visibleTodos.length : state.model.dueTodayCount,
       todos: visibleTodos.map((todo) => ({
         ...todo,
         projectTitle: todo.projectId === null ? null : projectTitles.get(todo.projectId) ?? todo.projectTitle,

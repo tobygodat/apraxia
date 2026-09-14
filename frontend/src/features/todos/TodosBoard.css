@@ -144,8 +144,8 @@
   border-top-color: rgba(240, 239, 237, 0.45);
 }
 
-.todos-board-column--overdue {
-  border-top-color: rgba(255, 154, 154, 0.5);
+.todos-board-card__due--past {
+  color: #ddb1a4;
 }
 
 .todos-board-column__header {

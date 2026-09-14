@@ -1,14 +1,13 @@
 import type { Todo } from "../../types/domain";
 import {
   asSqlDate,
-  classifyTodoDueDate,
   compareSqlDates,
   startOfWeekMonday,
   type SqlDate,
   visibleTodoWeekDates,
 } from "./dateDomain";
 
-export type TodoBoardColumnKind = "inbox" | "overdue" | "date";
+export type TodoBoardColumnKind = "inbox" | "date";
 
 export interface TodoBoardColumn {
   readonly key: string;
@@ -43,8 +42,8 @@ function assertUniqueTodoIds(todos: readonly Todo[]): void {
 
 /**
  * Build the complete Todos workspace without interpreting date-only values as
- * JavaScript instants. Open overdue tasks live in the dedicated Overdue column
- * and are intentionally not duplicated in a navigated historical date column.
+ * JavaScript instants. Open past-due tasks join Today without changing their
+ * dates. Completed historical tasks remain in their original date columns.
  */
 export function buildTodoBoardModel(
   todos: readonly Todo[],
@@ -59,13 +58,6 @@ export function buildTodoBoardModel(
   const isCurrentWeek = validMonday === startOfWeekMonday(validToday);
 
   const inbox = todos.filter((todo) => todo.dueDate === null);
-  const overdue = todos.filter(
-    (todo) =>
-      !todo.completed &&
-      todo.dueDate !== null &&
-      classifyTodoDueDate(todo.dueDate, validToday) === "overdue",
-  );
-
   const columns: TodoBoardColumn[] = [
     {
       key: "inbox",
@@ -74,27 +66,21 @@ export function buildTodoBoardModel(
       canAdd: true,
       todos: inbox,
     },
-    {
-      key: "overdue",
-      kind: "overdue",
-      date: null,
-      canAdd: false,
-      todos: [...overdue].sort((left, right) =>
-        compareSqlDates(left.dueDate!, right.dueDate!),
-      ),
-    },
     ...dates.map<TodoBoardColumn>((date) => ({
       key: date,
       kind: "date",
       date,
       canAdd: true,
       todos: todos.filter((todo) => {
-        if (todo.dueDate !== date) return false;
+        if (todo.dueDate === null) return false;
+        if (isCurrentWeek && date === validToday && !todo.completed) {
+          return compareSqlDates(todo.dueDate, validToday) <= 0;
+        }
 
-        // An incomplete past-due task belongs to Overdue. Completed historical
-        // tasks remain visible when the user deliberately navigates that week.
-        return todo.completed || compareSqlDates(date, validToday) >= 0;
-      }),
+        // Incomplete historical tasks appear only under Today.
+        return todo.dueDate === date &&
+          (todo.completed || compareSqlDates(date, validToday) >= 0);
+      }).sort((left, right) => compareSqlDates(left.dueDate!, right.dueDate!)),
     })),
   ];
 

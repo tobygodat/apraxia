@@ -115,7 +115,7 @@ describe("TodayListController reads and ordering", () => {
       todo(A, { dueDate: "2026-08-30" }), todo(B, { todayRank: 1024 }),
     ]);
     expect(ids(controller)).toEqual([B, A]);
-    expect(controller.getSnapshot().model.overdueCount).toBe(1);
+    expect(controller.getSnapshot().model.todos.filter(todo => todo.isOverdue)).toHaveLength(1);
     expect(service.loadToday).toHaveBeenCalledWith(DATE, { signal: expect.any(AbortSignal) });
   });
 

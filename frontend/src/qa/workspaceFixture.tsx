@@ -56,7 +56,12 @@ const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): T
   completed: false, completedAt: null, projectId: null, todayRank: null, ...extra,
 });
 let todos: Todo[] = empty ? [] : [
+  // Open past-due tasks join Today; the completed task stays on its original date.
   task("Return the library books", -3), task("Send the venue confirmation", -1),
+  task("Renew the library card", -8, { completed: true, completedAt: now }),
+  ...(scenario === "dense" ? Array.from({ length: 12 }, (_, index) =>
+    task(`Review reading note ${index + 1}`, -(index + 1)),
+  ) : []),
   task(long ? longText : "Compare the lighting options", 0, { projectId }),
   task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
   task("Ask Sam about the reading group", null), task("Measure the shelves", 2, { projectId }),

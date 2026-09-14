@@ -4,6 +4,10 @@ A private, manual-entry workspace for Todos, Projects, Ideas, and Media.
 Home pairs an editable Monday–Sunday Google Calendar with Today. Built with
 React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
+Todos groups tasks into Inbox and date columns. Incomplete past-due tasks join
+Today with their original due dates shown in red; stored dates stay unchanged.
+Completed historical tasks remain on their original dates.
+
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).
 

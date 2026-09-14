@@ -104,7 +104,7 @@ describe("TodosWorkspace", () => {
 
     await act(async () => loading.resolve(SNAPSHOT));
     expect(screen.getByRole("heading", { name: /Thursday, Sep 3.*Today/ })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Overdue" })).getByText(TODO.text)).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: /· Today$/ })).getByText(TODO.text)).toBeTruthy();
     expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(false);
   });
 

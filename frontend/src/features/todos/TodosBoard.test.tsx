@@ -294,12 +294,13 @@ function PendingAdjacentHarness() {
 }
 
 describe("TodosBoard", () => {
-  it("renders Inbox, Overdue, and the current-week remainder without filler copy", () => {
+  it("renders Inbox, Today, and the current-week remainder without filler copy", () => {
     render(<TodosBoard {...props()} />);
 
     expect(screen.getByRole("heading", { name: "Inbox" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Overdue" })).toBeTruthy();
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(7);
+    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
+    expect(screen.getByRole("heading", { name: /· Today$/ })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(6);
     expect(screen.queryByText(/no tasks planned/i)).toBeNull();
     expect(screen.queryByText("Workspace")).toBeNull();
     expect(screen.getByText("1 task")).toBeTruthy();
@@ -387,7 +388,9 @@ describe("TodosBoard", () => {
       }),
     ).toBeTruthy();
     const dueDate = document.querySelector('time[datetime="2026-09-01"]');
-    expect(dueDate?.textContent).toContain("Due");
+    expect(dueDate?.textContent).toContain("Sep 1");
+    expect(dueDate?.classList.contains("todos-board-card__due--past")).toBe(true);
+    expect(within(screen.getByRole("region", { name: /· Today$/ })).getByText(TODO.text)).toBeTruthy();
     expect(screen.getByText("Launch")).toBeTruthy();
   });
 
@@ -493,7 +496,7 @@ describe("TodosBoard", () => {
     const source = screen.getByRole("button", { name: `Delete ${TODO.text}` });
     source.focus();
     fireEvent.click(source);
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Overdue" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: /Add task to .*Today$/ }));
 
     const external = screen.getByRole("textbox", { name: "Another workspace control" });
     external.focus();
@@ -639,7 +642,7 @@ describe("TodosBoard", () => {
     fireEvent.click(deleteButton);
 
     expect(document.activeElement).toBe(
-      screen.getByRole("heading", { name: "Overdue" }),
+      screen.getByRole("button", { name: /Add task to .*Today$/ }),
     );
   });
 
