@@ -48,7 +48,7 @@ const SECOND_TODO: Todo = {
 
 const SNAPSHOT: TodoWorkspaceSnapshot = {
   profile: PROFILE,
-  projects: [],
+  classes: [], projects: [],
   todos: [TODO],
 };
 

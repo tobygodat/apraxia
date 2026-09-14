@@ -1,3 +1,4 @@
+import { TodoSourceChip } from "./TodoSourceChip";
 import {
   useId,
   useLayoutEffect,
@@ -77,8 +78,8 @@ function dateAtUtcNoon(value: string): Date {
 }
 
 function dueDateLabel(todo: TodayTodo, day: "Today" | "Tomorrow"): string {
-  const prefix = todo.isOverdue ? "Overdue" : `Due ${day.toLowerCase()}`;
-  return `${prefix} · ${dueDateFormatter.format(dateAtUtcNoon(todo.dueDate))}`;
+  const date = dueDateFormatter.format(dateAtUtcNoon(todo.dueDate));
+  return todo.isOverdue ? date : `Due ${day.toLowerCase()} · ${date}`;
 }
 
 function dueTimeLabel(value: string): string {
@@ -318,11 +319,9 @@ export function TodayList({
       <header className="today-list__header">
         <div>
           <h2 id={`${idBase}-heading`}>{heading}</h2>
-          <p id={`${idBase}-summary`}>
-            {day === "Tomorrow" ? `${model.todos.length} due tomorrow` : model.todos.length === 0
-              ? "Tasks due today and overdue"
-              : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
-          </p>
+          {day === "Tomorrow" ? (
+            <p id={`${idBase}-summary`}>{model.todos.length} due tomorrow</p>
+          ) : null}
         </div>
         <button
           className="today-list__add"
@@ -384,7 +383,7 @@ export function TodayList({
         role="region"
         aria-label={`${day} task list`}
         tabIndex={0}
-        aria-describedby={`${idBase}-summary`}
+        aria-describedby={day === "Tomorrow" ? `${idBase}-summary` : undefined}
       >
         {model.todos.length === 0 && state.pendingMutation !== null ? (
           <p className="today-list__pending-empty" role="status">
@@ -475,7 +474,7 @@ export function TodayList({
                             {dueTimeLabel(todo.dueTime)}
                           </time>
                         ) : null}
-                        {todo.projectTitle ? <span>{todo.projectTitle}</span> : null}
+                        <TodoSourceChip todo={todo} projectTitle={todo.projectTitle} />
                       </div>
                     </div>
 

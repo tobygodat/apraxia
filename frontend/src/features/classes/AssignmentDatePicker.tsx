@@ -16,8 +16,9 @@ function shiftMonth(value: string, offset: number) {
   return date.toISOString().slice(0, 10);
 }
 
-/** Date-only picker for the assignments. */
-export function AssignmentDatePicker({ value, label, disabled, busy, buttonRef, onChange, onKeyDown, today = localToday(Intl.DateTimeFormat().resolvedOptions().timeZone) }: {
+/** Dates remain date-only unless the user explicitly adds a time. */
+export function AssignmentDatePicker({ dueTime = "", onTimeChange, value, label, disabled, busy, buttonRef, onChange, onKeyDown, today = localToday(Intl.DateTimeFormat().resolvedOptions().timeZone) }: {
+  dueTime?: string; onTimeChange?(value: string): void;
   value: string; label: string; disabled?: boolean; busy?: boolean; today?: string;
   buttonRef?(node: HTMLButtonElement | null): void;
   onChange(value: string): void;
@@ -44,16 +45,18 @@ export function AssignmentDatePicker({ value, label, disabled, busy, buttonRef, 
         if (busy) return;
         if (event.key === "ArrowDown") { event.preventDefault(); setOpen(true); }
         else onKeyDown?.(event);
-      }}>{formatAssignmentDate(value)}</button>
-    {open && createPortal(<DateCalendar today={today} id={dialogId} value={value} anchor={anchor.current!}
+      }}>{formatAssignmentDate(value)}{dueTime ? ` · ${dueTime.slice(0, 5)}` : ""}</button>
+    {open && createPortal(<DateCalendar dueTime={dueTime} onTimeChange={onTimeChange ? time => { onTimeChange(time); close(); } : undefined} today={today} id={dialogId} value={value} anchor={anchor.current!}
       onClose={close} onChange={date => { onChange(date); close(); }} />, document.body)}
   </>;
 }
 
-function DateCalendar({ id, value, anchor, onChange, onClose, today }: {
+function DateCalendar({ dueTime, onTimeChange, id, value, anchor, onChange, onClose, today }: {
+  dueTime: string; onTimeChange?(value: string): void;
   id: string; value: string; anchor: HTMLButtonElement; today: string;
   onChange(value: string): void; onClose(): void;
 }) {
+  const [time, setTime] = useState(dueTime.slice(0, 5));
   const [month, setMonth] = useState(monthStart(value || today));
   const [focused, setFocused] = useState(value || today);
   const panel = useRef<HTMLDivElement>(null);
@@ -120,7 +123,7 @@ function DateCalendar({ id, value, anchor, onChange, onClose, today }: {
       event.stopPropagation();
       if (event.key === "Escape") { event.preventDefault(); onClose(); }
       if (event.key === "Tab") {
-        const buttons = [...panel.current!.querySelectorAll<HTMLButtonElement>("button:not([tabindex='-1']):not(:disabled)")];
+        const buttons = [...panel.current!.querySelectorAll<HTMLElement>("button:not([tabindex='-1']):not(:disabled), input:not(:disabled)")];
         const first = buttons[0], last = buttons[buttons.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
         if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
@@ -143,6 +146,11 @@ function DateCalendar({ id, value, anchor, onChange, onClose, today }: {
         {dateObject(date).getUTCDate()}
       </button>)}
     </div>
+    {onTimeChange && <div className="assignment-calendar-time">
+      <label>Time (optional)<input type="time" value={time} disabled={!value} onChange={event => setTime(event.target.value)} /></label>
+      <button type="button" disabled={!value} onClick={() => onTimeChange(time)}>Apply time</button>
+      {!value && <span>Choose a date first.</span>}
+    </div>}
     <div className="assignment-calendar-footer"><button type="button" disabled={!value} onClick={() => onChange("")}>Clear date</button></div>
   </div>;
 }

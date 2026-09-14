@@ -155,3 +155,10 @@ describe("todoInputSchema", () => {
     );
   });
 });
+
+it("rejects two parents and assignment types without a class", () => {
+  expect(validateTodoInput({ text: "Task", projectId: "87d45aa9-0012-4fea-8ee5-e394cb159bf7", classId: "math" }).success).toBe(false);
+  expect(validateTodoInput({ text: "Task", assignmentType: "Quiz" }).success).toBe(false);
+  expect(validateTodoInput({ text: "Task", classId: "math", assignmentType: "Unknown" }).success).toBe(false);
+  expect(todoInputSchema.parse({ text: "Quiz", classId: "math", assignmentType: "Quiz", dueDate: "2020-03-08" })).toEqual({ text: "Quiz", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: "2020-03-08", dueTime: null });
+});

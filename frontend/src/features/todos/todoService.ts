@@ -5,6 +5,7 @@ import type {
   NewTodoInput,
   Profile,
   ProjectSummary,
+  ClassSummary,
   TodayTodo,
   Todo,
   UUID,
@@ -12,11 +13,14 @@ import type {
 
 export interface TodoRequestOptions {
   readonly signal: AbortSignal;
+  /** Scope Classes requests without changing ordinary task/project behavior. */
+  readonly classId?: string;
 }
 
 export interface TodoWorkspaceSnapshot {
   readonly profile: Profile;
   readonly projects: readonly ProjectSummary[];
+  readonly classes: readonly ClassSummary[];
   /** Active rows only. Soft-deleted records stay behind the restore RPC. */
   readonly todos: readonly Todo[];
 }
@@ -61,9 +65,7 @@ type TodoScheduleUpdate =
  * A details update must name a field and cannot create a time-without-date
  * state at the provider boundary.
  */
-export type UpdateTodoDetailsInput =
-  | TodoTextOrProjectUpdate
-  | TodoScheduleUpdate;
+export type UpdateTodoDetailsInput = (TodoTextOrProjectUpdate | TodoScheduleUpdate | { readonly assignmentType: string; readonly text?: string; readonly projectId?: never; readonly dueDate?: never; readonly dueTime?: never }) & { readonly assignmentType?: string; readonly classId?: string | null };
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;

@@ -302,3 +302,15 @@ describe("GlobalAddTodoController", () => {
     expect(document.body.textContent).not.toContain("private local cache error");
   });
 });
+
+it("offers class selection in Global Add and forwards one parent to the service", async () => {
+  const createTodo = vi.fn(async () => ({ ...CREATED_TODO, projectId: null, classId: "math", assignmentType: "Quiz" }));
+  render(<GlobalAddTodoController workspaceSessionKey="a" service={{ createTodo }} projects={PROJECTS} classes={[{ id: "math", name: "Math" }]} onCreated={() => undefined}><ContextualAdd /></GlobalAddTodoController>);
+  fireEvent.click(screen.getByRole("button", { name: "Add task for Saturday" }));
+  fireEvent.change(screen.getByLabelText("Task"), { target: { value: "Quiz preparation" } });
+  fireEvent.change(screen.getByLabelText("Project"), { target: { value: PROJECTS[0].id } });
+  fireEvent.change(screen.getByLabelText("Class"), { target: { value: "math" } });
+  fireEvent.change(screen.getByLabelText("Assignment type"), { target: { value: "Quiz" } });
+  fireEvent.click(screen.getByRole("button", { name: "Add task" }));
+  await waitFor(() => expect(createTodo).toHaveBeenCalledWith({ text: "Quiz preparation", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: "2026-09-05", dueTime: null }, { signal: expect.any(AbortSignal) }));
+});

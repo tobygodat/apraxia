@@ -352,3 +352,20 @@ describe("TodoComposerDialog", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
+
+it("switches between project and class, keeping assignment type class-only", async () => {
+  const onCreate = vi.fn(async () => undefined);
+  render(<TodoComposerDialog open projects={projects} classes={[{ id: "math", name: "Math" }]} initialProjectId={projects[0].id} initialDueDate="2020-03-08" onCreate={onCreate} onClose={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText("Task"), { target: { value: "Worksheet" } });
+  fireEvent.change(screen.getByLabelText("Class"), { target: { value: "math" } });
+  expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe("");
+  fireEvent.change(screen.getByLabelText("Assignment type"), { target: { value: "Quiz" } });
+  fireEvent.change(screen.getByLabelText("Project"), { target: { value: projects[0].id } });
+  expect((screen.getByLabelText("Class") as HTMLSelectElement).value).toBe("");
+  expect(screen.queryByLabelText("Assignment type")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Class"), { target: { value: "math" } });
+  expect((screen.getByLabelText("Assignment type") as HTMLSelectElement).value).toBe("");
+  fireEvent.change(screen.getByLabelText("Assignment type"), { target: { value: "Reading" } });
+  fireEvent.click(screen.getByRole("button", { name: "Add task" }));
+  await waitFor(() => expect(onCreate).toHaveBeenCalledWith({ text: "Worksheet", projectId: null, classId: "math", assignmentType: "Reading", dueDate: "2020-03-08", dueTime: null }, { signal: expect.any(AbortSignal) }));
+});

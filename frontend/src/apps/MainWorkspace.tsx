@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { AuthIdentity } from "../auth/authPort";
 import type { SignOutStatus } from "../auth/AuthProvider";
-import type { Profile, ProjectSummary, SearchResult, Todo } from "../types/domain";
+import type { ClassSummary, Profile, ProjectSummary, SearchResult, Todo } from "../types/domain";
 import { CloudAppShell } from "../components/app-shell/CloudAppShell";
 import { GlobalAddTodoController, useGlobalAddTodo } from "../components/global-add/GlobalAddTodoController";
 import { SearchDialog } from "../components/search/SearchDialog";
@@ -35,6 +35,8 @@ export interface MainWorkspaceProps {
 export function MainWorkspace(props: MainWorkspaceProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileError, setProfileError] = useState(false);
+  const [classes, setClasses] = useState<readonly ClassSummary[]>([]);
+  const [classError, setClassError] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [projectError, setProjectError] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -53,20 +55,23 @@ export function MainWorkspace(props: MainWorkspaceProps) {
   }, [props.workspaceData, props.identity.userId, profileRevision]);
   useEffect(() => {
     const controller = new AbortController();
+    void (props.workspaceData.classes?.list(props.identity.userId, controller.signal) ?? Promise.resolve([])).then(value => {
+      if (!controller.signal.aborted) { setClasses(value); setClassError(false); }
+    }).catch(() => { if (!controller.signal.aborted) setClassError(true); });
     void props.workspaceData.projects(controller.signal).then(value => {
       if (!controller.signal.aborted) { setProjects(value); setProjectError(false); }
     }).catch(() => { if (!controller.signal.aborted) setProjectError(true); });
     return () => controller.abort();
-  }, [props.workspaceData, revision]);
-  return <GlobalAddTodoController workspaceSessionKey={props.identity.userId} service={props.todoService} projects={projects}
+  }, [props.workspaceData, props.identity.userId, revision]);
+  return <GlobalAddTodoController workspaceSessionKey={props.identity.userId} service={props.todoService} projects={projects} classes={classes}
     onCreated={() => { changed(); setNotice("Task added"); return undefined; }}>
     <WorkspaceRoutes {...props} profile={profile} profileError={profileError} retryProfile={() => setProfileRevision(v => v + 1)}
-      projects={projects} projectError={projectError} revision={revision} changed={changed} notice={notice} setNotice={setNotice} />
+      projects={projects} classes={classes} projectError={projectError || classError} revision={revision} changed={changed} notice={notice} setNotice={setNotice} />
   </GlobalAddTodoController>;
 }
 
-function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projectError, revision, changed, notice, setNotice, ...props }: MainWorkspaceProps & {
-  profile: Profile | null; profileError: boolean; retryProfile(): void; projects: readonly ProjectSummary[];
+function WorkspaceRoutes({ profile, profileError, retryProfile, projects, classes, projectError, revision, changed, notice, setNotice, ...props }: MainWorkspaceProps & {
+  profile: Profile | null; profileError: boolean; retryProfile(): void; projects: readonly ProjectSummary[]; classes: readonly ClassSummary[];
   projectError: boolean; revision: number; changed(): void; notice: string; setNotice(value: string): void;
 }) {
   const { openTodoComposer } = useGlobalAddTodo();
@@ -112,17 +117,17 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
     {profileError ? <div role="alert"><p>Couldn’t load your workspace. Your records are still saved.</p><button onClick={retryProfile}>Try again</button></div>
       : <p role="status">Loading your workspace…</p>}</section>;
   let content;
-  if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage appearanceService={props.workspaceData.homeAppearance} todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
+  if (pathname === "/") content = profile ? <div className="workspace-home-scroll"><HomePage appearanceService={props.workspaceData.homeAppearance} todoService={props.todoService} calendarService={props.calendarService} profile={profile} projects={projects} classes={classes} workspaceSessionKey={props.identity.userId} refreshKey={revision} /></div> : profileState;
   else if (pathname === "/todos") content = <TodosWorkspaceContent service={props.todoService} workspaceSessionKey={props.identity.userId} refreshKey={revision} />;
-  else if (pathname === "/classes" || /^\/classes\/[^/]+$/.test(pathname)) content = <ClassesPage key={props.identity.userId} userId={props.identity.userId} courseId={pathname.split("/")[2]} driveService={props.driveService} assignmentService={props.workspaceData.assignments} classService={props.workspaceData.classes} noteService={props.workspaceData.notes} timezone={profile?.timezone} />;
+  else if (pathname === "/classes" || /^\/classes\/[^/]+$/.test(pathname)) content = <ClassesPage onClassesChanged={changed} key={props.identity.userId} userId={props.identity.userId} courseId={pathname.split("/")[2]} driveService={props.driveService} assignmentService={props.workspaceData.assignments} classService={props.workspaceData.classes} noteService={props.workspaceData.notes} timezone={profile?.timezone} />;
   else if (pathname === "/settings") content = profile ? <SettingsPage calendarService={props.calendarService} profile={profile} onSignOut={props.onSignOut} /> : profileState;
   else if (collectionKind) content = <CollectionPage key={`${collectionKind}:${projectMatch?.[1] ?? ""}`} kind={collectionKind} service={props.collectionService} todoService={props.todoService}
-    projects={projects} refreshKey={revision} onChanged={changed} recordId={projectMatch?.[1]} onOpenProject={id => navigate(`/projects/${encodeURIComponent(id)}`)} onBack={() => navigate("/projects")} />;
+    projects={projects} classes={classes} refreshKey={revision} onChanged={changed} recordId={projectMatch?.[1]} onOpenProject={id => navigate(`/projects/${encodeURIComponent(id)}`)} onBack={() => navigate("/projects")} />;
   else content = <section className="workspace-page"><h1>Page not found</h1><Link to="/">Back to Home</Link></section>;
   return <div ref={rootRef}>
     <CloudAppShell identity={props.identity} signOutStatus={props.signOutStatus} onSignOut={props.onSignOut}
       onOpenGlobalAdd={() => setAddOpen(true)} onOpenSearch={() => setSearchOpen(true)}>
-      {projectError && <p className="workspace-project-warning">Project choices couldn’t load. <button onClick={changed}>Try again</button></p>}
+      {projectError && <p className="workspace-project-warning">Project or class choices couldn’t load. <button onClick={changed}>Try again</button></p>}
       {content}
     </CloudAppShell>
     {addOpen && <WorkspaceDialog title="Add to orbitOS" onClose={() => setAddOpen(false)}><div className="workspace-add-choices">
@@ -133,7 +138,7 @@ function WorkspaceRoutes({ profile, profileError, retryProfile, projects, projec
     {editor && <CollectionEditor key={`${editor.kind}:${editor.record?.id ?? "new"}`} {...editor} service={props.collectionService} projects={projects}
       onSaved={() => { const returnToSearch = editor.fromSearch; setEditor(null); changed(); setNotice("Saved"); if (returnToSearch) setSearchOpen(true); }}
       onClose={() => { const returnToSearch = editor.fromSearch; setEditor(null); if (returnToSearch) setSearchOpen(true); }} />}
-    <TodoEditDialog todo={editingTodo} projects={projects} fallbackFocusRef={rootRef} onClose={() => { setEditingTodo(null); setSearchOpen(true); }}
+    <TodoEditDialog todo={editingTodo} projects={projects} classes={classes} fallbackFocusRef={rootRef} onClose={() => { setEditingTodo(null); setSearchOpen(true); }}
       onSave={async (id, input, options) => { await props.todoService.updateTodoDetails(id, input, options); if (alive.current) { changed(); setNotice("Task saved"); } }} />
     <SearchDialog open={searchOpen} service={props.collectionService} refreshKey={revision} onClose={() => setSearchOpen(false)} onSelect={selectResult} />
     {notice && <aside className="workspace-notice"><p role="status">{notice}</p><button onClick={() => setNotice("")}>Dismiss</button></aside>}

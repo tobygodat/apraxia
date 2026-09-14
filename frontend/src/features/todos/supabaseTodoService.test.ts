@@ -32,7 +32,7 @@ describe("Supabase Todo boundary", () => {
     expect(todo.dueTime).toBe(row.due_time);
     const request = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(request[1].body))).toEqual({ text: row.text,
-      due_date: row.due_date, due_time: row.due_time, project_id: null });
+      due_date: row.due_date, due_time: row.due_time, project_id: null, class_id: null, assignment_type: "" });
   });
 
   it("passes an exact Undo token and preserves a false restore result", async () => {
@@ -66,4 +66,29 @@ describe("Supabase Todo boundary", () => {
     await expect(rejected.service.reorderToday("2026-09-04", [id], options())).rejects.toThrow();
     expect(rejected.fetch).toHaveBeenCalledTimes(1);
   });
+});
+
+it("loads paginated class summaries alongside todos and projects through the browser client", async () => {
+  const classes = Array.from({ length: 200 }, (_, index) => ({ id: `class-${String(index).padStart(3, "0")}`, name: `Class ${index}` }));
+  const fetch = vi.fn(async (url: RequestInfo | URL) => {
+    const request = new URL(String(url));
+    const table = request.pathname.split("/").pop();
+    const body = table === "profiles" ? { user_id: id, timezone: "America/New_York", created_at: row.created_at, updated_at: row.updated_at }
+      : table === "classes" ? request.searchParams.has("id") ? [{ id: "class-200", name: null }] : classes : [];
+    return new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json", "Content-Range": `0-0/${Array.isArray(body) ? body.length : 1}` } });
+  });
+  const client = createClient<Database>("https://example.invalid", "public-test-key", { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch } });
+  const snapshot = await createSupabaseTodoService(client).loadWorkspace(options());
+  expect(snapshot.classes).toHaveLength(201);
+  expect(snapshot.classes[200]).toEqual({ id: "class-200", name: null });
+  const classRequests = fetch.mock.calls.map(([url]) => new URL(String(url))).filter(url => url.pathname.endsWith("/classes"));
+  expect(classRequests[1].searchParams.get("id")).toBe("gt.class-199");
+  expect(classRequests[0].searchParams.get("select")).toBe("id,name");
+});
+
+it("sends class reassignment and clears the other parent in one update", async () => {
+  const { service, fetch } = setup([json({ ...row, class_id: "math", assignment_type: "Quiz", project_id: null })]);
+  await service.updateTodoDetails(id, { text: row.text, classId: "math", projectId: null, assignmentType: "Quiz" }, options());
+  const request = fetch.mock.calls[0] as unknown as [string, RequestInit];
+  expect(JSON.parse(String(request[1].body))).toEqual({ text: row.text, class_id: "math", project_id: null, assignment_type: "Quiz" });
 });

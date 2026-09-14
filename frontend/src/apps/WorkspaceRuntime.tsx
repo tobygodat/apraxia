@@ -13,6 +13,11 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     ["saveProject", "saveIdea", "saveMedia", "softDelete", "restore"]), [props.collectionService, cache]);
   const calendarService = useMemo(() => ({ ...cacheNavigationService(props.calendarService, cache, "calendar",
     ["status", "calendars", "week"], ["connect", "disconnect", "setVisibility"]), invalidate: cache.invalidate }), [props.calendarService, cache]);
+  const workspaceData = useMemo(() => ({ ...props.workspaceData,
+    classes: props.workspaceData.classes ? cacheNavigationService(props.workspaceData.classes, cache, "classes", [], ["create", "rename", "importLegacy"]) : undefined,
+    assignments: props.workspaceData.assignments ? cacheNavigationService(props.workspaceData.assignments, cache, "assignments", [],
+      ["create", "update", "remove", "restore"]) : undefined,
+  }), [props.workspaceData, cache]);
   useEffect(() => {
     const unregister = registerUserStateResetter(cache.clear, { phase: "cancel" });
     const refresh = () => cache.invalidate();
@@ -32,5 +37,5 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     }, 100);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [todoService, collectionService]);
-  return <MainWorkspace {...props} todoService={todoService} collectionService={collectionService} calendarService={calendarService} />;
+  return <MainWorkspace {...props} workspaceData={workspaceData} todoService={todoService} collectionService={collectionService} calendarService={calendarService} />;
 }

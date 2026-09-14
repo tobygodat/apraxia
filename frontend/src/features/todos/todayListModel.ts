@@ -14,8 +14,6 @@ import type { TodayRankUpdate } from "./todoService";
 export interface TodayListModel {
   readonly localDate: SqlDate;
   readonly todos: readonly TodayTodo[];
-  readonly overdueCount: number;
-  readonly dueTodayCount: number;
   readonly hasManualOrder: boolean;
 }
 
@@ -63,13 +61,10 @@ export function buildTodayListModel(
   }
 
   const orderedTodos = sortTodayTodos(todos);
-  const overdueCount = orderedTodos.filter((todo) => todo.isOverdue).length;
 
   return {
     localDate: validLocalDate,
     todos: orderedTodos,
-    overdueCount,
-    dueTodayCount: orderedTodos.length - overdueCount,
     hasManualOrder: orderedTodos.some((todo) => todo.isManuallyOrdered),
   };
 }

@@ -27,7 +27,7 @@ const SNAPSHOT = {
     createdAt: "2026-09-01T12:00:00Z",
     updatedAt: "2026-09-01T12:00:00+00:00",
   },
-  projects: [{ id: "33333333-3333-4333-8333-333333333333", title: "Launch" }],
+  classes: [], projects: [{ id: "33333333-3333-4333-8333-333333333333", title: "Launch" }],
   todos: [TODO],
 };
 
@@ -83,8 +83,8 @@ describe("Todo workspace response validation", () => {
     ["offset instead of IANA timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "+01:00" } }],
     ["whitespace timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "UTC\n" } }],
     ["invalid profile timestamp", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, updatedAt: "yesterday" } }],
-    ["invalid project shape", { ...SNAPSHOT, projects: [{ ...SNAPSHOT.projects[0], title: null }] }],
-    ["duplicate projects", { ...SNAPSHOT, projects: [...SNAPSHOT.projects, ...SNAPSHOT.projects] }],
+    ["invalid project shape", { ...SNAPSHOT, classes: [], projects: [{ ...SNAPSHOT.projects[0], title: null }] }],
+    ["duplicate projects", { ...SNAPSHOT, classes: [], projects: [...SNAPSHOT.projects, ...SNAPSHOT.projects] }],
     ["duplicate todos", { ...SNAPSHOT, todos: [TODO, TODO] }],
     ["non-array rows", { ...SNAPSHOT, todos: {} }],
     ["sparse rows", { ...SNAPSHOT, todos: new Array(1) }],
@@ -129,4 +129,14 @@ describe("exact Todo temporal values", () => {
     "rejects an invalid Undo timestamp %j",
     (value) => expect(isDeleteUndoToken(value)).toBe(false),
   );
+});
+
+it("validates and copies class summaries, preserving case-sensitive class IDs", () => {
+  const classes = [{ id: "Math", name: "Mathematics" }, { id: "math", name: null }];
+  const snapshot = readTodoWorkspaceSnapshot({ ...SNAPSHOT, classes });
+  expect(snapshot?.classes).toEqual(classes);
+  expect(snapshot?.classes[0]).not.toBe(classes[0]);
+  for (const invalid of [undefined, {}, [null], [{ id: "", name: "Math" }], [{ id: "math", name: 123 }], [classes[0], classes[0]]]) {
+    expect(readTodoWorkspaceSnapshot({ ...SNAPSHOT, classes: invalid })).toBeNull();
+  }
 });

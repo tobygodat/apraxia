@@ -388,3 +388,23 @@ describe("TodoEditDialog", () => {
     expect(document.activeElement).toBe(external);
   });
 });
+
+it("retains unavailable class context and clears it atomically when choosing a project", async () => {
+  const onSave = vi.fn(async () => undefined);
+  render(<TodoEditDialog todo={{ ...TODO, projectId: null, classId: "math", assignmentType: "Quiz", dueTime: null }} projects={PROJECTS} onSave={onSave} onClose={vi.fn()} />);
+  expect((screen.getByLabelText("Class") as HTMLSelectElement).value).toBe("math");
+  expect((screen.getByLabelText("Assignment type") as HTMLSelectElement).value).toBe("Quiz");
+  fireEvent.change(screen.getByLabelText("Project"), { target: { value: PROJECTS[0].id } });
+  expect(screen.queryByLabelText("Assignment type")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(onSave).toHaveBeenCalledWith(TODO.id, { text: TODO.text, projectId: PROJECTS[0].id, classId: null, assignmentType: "", dueDate: TODO.dueDate, dueTime: null }, { signal: expect.any(AbortSignal) }));
+});
+
+it("assigns an ordinary task to a class with no synthetic due time", async () => {
+  const onSave = vi.fn(async () => undefined);
+  render(<TodoEditDialog todo={{ ...TODO, dueTime: null }} projects={PROJECTS} classes={[{ id: "math", name: "Math" }]} onSave={onSave} onClose={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText("Class"), { target: { value: "math" } });
+  fireEvent.change(screen.getByLabelText("Assignment type"), { target: { value: "Homework" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(onSave).toHaveBeenCalledWith(TODO.id, { text: TODO.text, projectId: null, classId: "math", assignmentType: "Homework", dueDate: TODO.dueDate, dueTime: null }, { signal: expect.any(AbortSignal) }));
+});

@@ -144,8 +144,8 @@
   border-top-color: rgba(240, 239, 237, 0.45);
 }
 
-.todos-board-column--overdue {
-  border-top-color: rgba(255, 154, 154, 0.5);
+.todos-board-card__due--past {
+  color: #ddb1a4;
 }
 
 .todos-board-column__header {
@@ -448,3 +448,11 @@
     opacity: 1;
   }
 }
+
+.todos-board-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.todos-board-filter { display: flex; align-items: center; gap: 8px; color: #ada9a3; font-size: 12px; }
+.todos-board-filter select { color: #f0efed; background: #242424; border: 1px solid #444; border-radius: 4px; padding: 6px 8px; font: inherit; }
+.todos-board-filter select:focus-visible { outline: 2px solid #f0efed; outline-offset: 3px; }
+
+.todos-board-card__metadata > .todo-source-chip { margin-left: 0; }
+.todos-board-card__metadata > .todo-source-chip::before { content: none; }

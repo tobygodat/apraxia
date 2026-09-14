@@ -37,7 +37,7 @@ function fixture(overrides: Partial<TodoService> = {}) {
     return saved;
   }
   const service: TodoService = {
-    loadWorkspace: vi.fn(async () => ({ profile: PROFILE, projects: [PROJECT], todos: rows })),
+    loadWorkspace: vi.fn(async () => ({ profile: PROFILE, classes: [], projects: [PROJECT], todos: rows })),
     loadToday: vi.fn(async (date) => rows.flatMap((row): TodayTodo[] => (
       !row.completed && row.dueDate !== null && row.dueDate <= date ? [{
         ...row, completed: false, completedAt: null, dueDate: row.dueDate,
@@ -75,7 +75,7 @@ function fixture(overrides: Partial<TodoService> = {}) {
 }
 
 function props(service: TodoService, extra: Partial<TodayPanelProps> = {}): TodayPanelProps {
-  return { service, workspaceSessionKey: "account-a", profile: PROFILE, projects: [PROJECT], ...extra };
+  return { service, workspaceSessionKey: "account-a", profile: PROFILE, classes: [], projects: [PROJECT], ...extra };
 }
 
 async function ready() {
@@ -139,7 +139,7 @@ describe("TodayPanel", () => {
     await waitFor(() => expect(data.service.loadWorkspace).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("button", { name: "Today" }));
     await ready();
-    await act(async () => pending.resolve({ profile: PROFILE, projects: [], todos: [{ ...TODO, text: "Late future task", dueDate: "2026-09-04" }] }));
+    await act(async () => pending.resolve({ profile: PROFILE, classes: [], projects: [], todos: [{ ...TODO, text: "Late future task", dueDate: "2026-09-04" }] }));
     expect(screen.queryByText("Late future task")).toBeNull();
     expect(screen.getByRole("button", { name: "Today" }).getAttribute("aria-pressed")).toBe("true");
   });

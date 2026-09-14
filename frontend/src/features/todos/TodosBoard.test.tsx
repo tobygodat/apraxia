@@ -294,12 +294,13 @@ function PendingAdjacentHarness() {
 }
 
 describe("TodosBoard", () => {
-  it("renders Inbox, Overdue, and the current-week remainder without filler copy", () => {
+  it("renders Inbox, Today, and the current-week remainder without filler copy", () => {
     render(<TodosBoard {...props()} />);
 
     expect(screen.getByRole("heading", { name: "Inbox" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Overdue" })).toBeTruthy();
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(7);
+    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
+    expect(screen.getByRole("heading", { name: /· Today$/ })).toBeTruthy();
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(6);
     expect(screen.queryByText(/no tasks planned/i)).toBeNull();
     expect(screen.queryByText("Workspace")).toBeNull();
     expect(screen.getByText("1 task")).toBeTruthy();
@@ -387,7 +388,9 @@ describe("TodosBoard", () => {
       }),
     ).toBeTruthy();
     const dueDate = document.querySelector('time[datetime="2026-09-01"]');
-    expect(dueDate?.textContent).toContain("Due");
+    expect(dueDate?.textContent).toContain("Sep 1");
+    expect(dueDate?.classList.contains("todos-board-card__due--past")).toBe(true);
+    expect(within(screen.getByRole("region", { name: /· Today$/ })).getByText(TODO.text)).toBeTruthy();
     expect(screen.getByText("Launch")).toBeTruthy();
   });
 
@@ -493,7 +496,7 @@ describe("TodosBoard", () => {
     const source = screen.getByRole("button", { name: `Delete ${TODO.text}` });
     source.focus();
     fireEvent.click(source);
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Overdue" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: /Add task to .*Today$/ }));
 
     const external = screen.getByRole("textbox", { name: "Another workspace control" });
     external.focus();
@@ -639,7 +642,7 @@ describe("TodosBoard", () => {
     fireEvent.click(deleteButton);
 
     expect(document.activeElement).toBe(
-      screen.getByRole("heading", { name: "Overdue" }),
+      screen.getByRole("button", { name: /Add task to .*Today$/ }),
     );
   });
 
@@ -724,4 +727,16 @@ describe("TodosBoard", () => {
     expect(onUndo).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(undo);
   });
+});
+
+it("filters all sources across Inbox and date columns and labels source chips", () => {
+  const rows = [TODO, { ...TODO, id: "project", text: "Project task", projectId: "p" }, { ...TODO, id: "class", text: "Worksheet", classId: "math", className: "Math", assignmentType: "Quiz", dueDate: "2026-09-01" }, { ...TODO, id: "inbox", text: "Reading", classId: "math", className: "Math", assignmentType: "Reading", dueDate: null, dueTime: null }];
+  render(<TodosBoard {...props({ projects: [{ id: "p", title: "Studio" }], model: buildTodoBoardModel(rows, "2026-08-31", "2026-09-02") })} />);
+  expect(screen.getByText("Math · Quiz").className).toBe("todo-source-chip");
+  expect(screen.getByText("Studio").className).toBe("todo-source-chip");
+  for (const [source, visible] of [["Classes", ["Worksheet", "Reading"]], ["Projects", ["Project task"]], ["Unassigned", [TODO.text]], ["All", rows.map(row => row.text)]] as const) {
+    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: source } });
+    for (const row of rows) expect(Boolean(screen.queryByText(row.text, { exact: true }))).toBe((visible as readonly string[]).includes(row.text));
+  }
+  expect(screen.getByText("Due Sep 1").className).toContain("--past");
 });

@@ -1,7 +1,8 @@
 import { createClassPersistenceFixture } from './classPersistenceFixture';
 import type { DriveService } from '../features/classes/driveService';
 import { createFixturePdf } from './fixturePdf';
-import { createFixtureAssignments } from "./ClassAssignmentsMock";
+import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
+import { createTodoAssignmentService } from "../features/classes/assignmentService";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -56,7 +57,13 @@ const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): T
   completed: false, completedAt: null, projectId: null, todayRank: null, ...extra,
 });
 let todos: Todo[] = empty ? [] : [
+  ...fixtureAssignmentTodos(),
+  // Open past-due tasks join Today; the completed task stays on its original date.
   task("Return the library books", -3), task("Send the venue confirmation", -1),
+  task("Renew the library card", -8, { completed: true, completedAt: now }),
+  ...(scenario === "dense" ? Array.from({ length: 12 }, (_, index) =>
+    task(`Review reading note ${index + 1}`, -(index + 1)),
+  ) : []),
   task(long ? longText : "Compare the lighting options", 0, { projectId }),
   task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
   task("Ask Sam about the reading group", null), task("Measure the shelves", 2, { projectId }),
@@ -84,11 +91,16 @@ function currentToday(date: string): TodayTodo[] {
     isManuallyOrdered: t.todayRank !== null, projectTitle: projects.find(p => p.id === t.projectId)?.title ?? null,
   })));
 }
+const classFixture = createClassPersistenceFixture(empty);
+async function withClassName<T extends Todo>(todo: T): Promise<T> {
+  const classes = await classFixture.classes.list(userId, new AbortController().signal);
+  return { ...todo, className: classes.find(course => course.id === todo.classId)?.name ?? null };
+}
 const todoService: TodoService = {
-  async loadWorkspace() { check(); return { profile, projects, todos: [...todos] }; },
-  async loadToday(date) { check(); return currentToday(date); },
-  async createTodo(input) { check(); const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; todos.push(row); return row; },
-  async updateTodoDetails(rowId, input) { check(); return save(todos, { ...find(todos, rowId), ...input }); },
+  async loadWorkspace(options) { check(); return { profile, classes: await classFixture.classes.list(userId, options.signal), projects, todos: await Promise.all(todos.filter(todo => !options.classId || todo.classId === options.classId).map(withClassName)) }; },
+  async loadToday(date) { check(); return Promise.all(currentToday(date).map(withClassName)); },
+  async createTodo(input) { check(); const existing = todos.find(todo => todo.id === input.id); if (existing) return existing; const row = { ...task(input.text, null), ...input, dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null, projectId: input.projectId ?? null }; const saved = await withClassName(row); todos.push(saved); return saved; },
+  async updateTodoDetails(rowId, input) { check(); return save(todos, await withClassName({ ...find(todos, rowId), ...input })); },
   async setTodoCompleted(rowId, completed) { check(); return save(todos, { ...find(todos, rowId), completed, completedAt: completed ? now : null }); },
   async softDeleteTodo(rowId) { check(); deleted.set(rowId, find(todos, rowId)); todos = todos.filter(t => t.id !== rowId); return token; },
   async restoreTodo(rowId) { const row = deleted.get(rowId) as Todo; if (!row) return false; todos.push(row); deleted.delete(rowId); return true; },
@@ -129,8 +141,8 @@ const delay = scenario === "slow" ? 1500 : 180;
 const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario) ? createFixtureCover(scenario === "portrait") : null;
 const calendarService = delayedFixtureService(createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }), delay);
 const workspaceData = {
-  ...createClassPersistenceFixture(empty),
-  assignments: delayedFixtureService(createFixtureAssignments(empty), delay),
+  ...classFixture,
+  assignments: delayedFixtureService(createTodoAssignmentService(todoService), delay),
   homeAppearance: delayedFixtureService(createFixtureAppearance(storage, appearanceKey, cover), delay),
   profile: async () => profile,
   projects: async () => projects.map(({ id, title }) => ({ id, title })),

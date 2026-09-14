@@ -115,7 +115,7 @@ describe("TodayListController reads and ordering", () => {
       todo(A, { dueDate: "2026-08-30" }), todo(B, { todayRank: 1024 }),
     ]);
     expect(ids(controller)).toEqual([B, A]);
-    expect(controller.getSnapshot().model.overdueCount).toBe(1);
+    expect(controller.getSnapshot().model.todos.filter(todo => todo.isOverdue)).toHaveLength(1);
     expect(service.loadToday).toHaveBeenCalledWith(DATE, { signal: expect.any(AbortSignal) });
   });
 
@@ -715,4 +715,14 @@ describe("useTodayListController", () => {
     expect(ids(result.current.controller)).toEqual([A]);
     await act(async () => { expect(await result.current.controller.completeTodo(A)).toBe(true); });
   });
+});
+
+it("updates class context in Today, checks the saved parent and rolls back an incorrect response", async () => {
+  const { service, controller } = await ready();
+  const input = { text: "Worksheet", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: DATE, dueTime: null };
+  expect(await controller.updateDetails(A, input)).toBe(true);
+  expect(controller.getSnapshot().model.todos.find(row => row.id === A)).toMatchObject(input);
+  service.updateTodoDetails.mockResolvedValueOnce(todo(A, input));
+  expect(await controller.updateDetails(A, { ...input, classId: "art" })).toBe(false);
+  expect(controller.getSnapshot().model.todos.find(row => row.id === A)?.classId).toBe("math");
 });

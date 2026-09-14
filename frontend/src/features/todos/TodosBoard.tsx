@@ -1,3 +1,4 @@
+import { TodoSourceChip } from "./TodoSourceChip";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -128,7 +129,6 @@ function formatDateHeading(value: string, today: string): string {
 
 function columnLabel(column: TodoBoardColumn, today: string): string {
   if (column.kind === "inbox") return "Inbox";
-  if (column.kind === "overdue") return "Overdue";
   return formatDateHeading(column.date!, today);
 }
 
@@ -188,17 +188,17 @@ function TodoCard({
 
       <div className="todos-board-card__body">
         <p id={titleId}>{todo.text}</p>
-        {showDueDate || todo.dueTime || projectTitle ? (
+        {showDueDate || todo.dueTime || projectTitle || todo.classId ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
-              <time dateTime={todo.dueDate}>
+              <time className="todos-board-card__due--past" dateTime={todo.dueDate}>
                 Due {weekRangeFormatter.format(dateAtUtcNoon(todo.dueDate))}
               </time>
             ) : null}
             {todo.dueTime ? (
               <time dateTime={todo.dueTime}>{dueTimeLabel(todo.dueTime)}</time>
             ) : null}
-            {projectTitle ? <span>{projectTitle}</span> : null}
+            <TodoSourceChip todo={todo} projectTitle={projectTitle} />
           </div>
         ) : null}
       </div>
@@ -244,6 +244,10 @@ export function TodosBoard({
   onEditTodo,
   onDeleteTodo,
 }: TodosBoardProps) {
+  const [sourceFilter, setSourceFilter] = useState("All");
+  model = { ...model, columns: model.columns.map(column => ({ ...column, todos: column.todos.filter(todo =>
+    sourceFilter === "Projects" ? Boolean(todo.projectId) : sourceFilter === "Classes" ? Boolean(todo.classId) : sourceFilter === "Unassigned" ? !todo.projectId && !todo.classId : true,
+  ) })) };
   const idBase = useId();
   const focusRecoveryRef = useRef<{
     readonly sourceTodoId: string;
@@ -492,6 +496,12 @@ export function TodosBoard({
           </p>
         </div>
 
+        <div className="todos-board-controls">
+        <label className="todos-board-filter">Source
+          <select aria-label="Task source" value={sourceFilter} onChange={event => setSourceFilter(event.target.value)}>
+            {["All", "Projects", "Classes", "Unassigned"].map(source => <option key={source}>{source}</option>)}
+          </select>
+        </label>
         <nav className="todos-board-nav" aria-label="Task week navigation">
           <button
             type="button"
@@ -517,6 +527,7 @@ export function TodosBoard({
             <ArrowIcon direction="right" />
           </button>
         </nav>
+        </div>
       </header>
 
       {loadState.status === "error" ? (
@@ -582,7 +593,7 @@ export function TodosBoard({
                           ? (projectTitles.get(todo.projectId) ?? null)
                           : null
                       }
-                      showDueDate={column.kind === "overdue"}
+                      showDueDate={!todo.completed && todo.dueDate !== null && todo.dueDate < model.today}
                       titleId={`${todoControlId(todo.id)}-title`}
                       onToggleComplete={(selectedTodo) => {
                         const started = onToggleComplete(selectedTodo);

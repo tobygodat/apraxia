@@ -2,9 +2,9 @@
 import { webcrypto } from 'node:crypto';
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { SavedClassNotes } from './SavedClassNotes';
-import { createClassPersistenceFixture } from '../../qa/classPersistenceFixture';
-import type { NoteService } from './noteService';
+import { SavedClassNotes } from '../features/classes/SavedClassNotes';
+import { createClassPersistenceFixture } from './classPersistenceFixture';
+import type { NoteService } from '../features/classes/noteService';
 vi.stubGlobal('crypto', webcrypto);
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const course = { id: 'math3012', name: 'MATH3012', updatedAt: 'seed' };
