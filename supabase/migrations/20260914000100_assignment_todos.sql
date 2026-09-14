@@ -1,3 +1,5 @@
+-- Keep schema, copy, and write revocation atomic in statement-based runners.
+begin;
 -- Release with the todo-backed Classes UI. Keep the legacy rows as a backup.
 alter table public.todos
   add column class_id text,
@@ -137,3 +139,5 @@ $$;
 revoke all on function internal.get_today_todos(date) from public, anon, authenticated, service_role;
 grant execute on function internal.get_today_todos(date) to authenticated;
 notify pgrst, 'reload schema';
+
+commit;
