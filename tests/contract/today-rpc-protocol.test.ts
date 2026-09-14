@@ -1,3 +1,4 @@
+import { storageHarnessSql } from "../helpers/storageHarness";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
@@ -25,6 +26,7 @@ async function databaseFixture() {
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
   `);
+  await database.exec(storageHarnessSql);
   const migrations = path.join(process.cwd(), "supabase", "migrations");
   for (const name of (await readdir(migrations)).filter((name) => name.endsWith(".sql")).sort()) {
     await database.exec(await readFile(path.join(migrations, name), "utf8"));

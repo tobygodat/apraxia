@@ -1,3 +1,4 @@
+import { storageHarnessSql } from "../helpers/storageHarness";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -37,6 +38,7 @@ beforeAll(async () => {
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
   `);
+  await db.exec(storageHarnessSql);
   const directory = path.join(process.cwd(), "supabase", "migrations");
   for (const name of (await readdir(directory)).filter((name) => name.endsWith(".sql")).sort()) {
     await db.exec(await readFile(path.join(directory, name), "utf8"));

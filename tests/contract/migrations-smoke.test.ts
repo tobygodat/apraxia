@@ -1,3 +1,4 @@
+import { storageHarnessSql } from "../helpers/storageHarness";
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
@@ -161,6 +162,7 @@ async function createMigratedDatabase(): Promise<PGlite> {
   const database = await PGlite.create();
 
   await database.exec(supabaseHarnessSql);
+  await database.exec(storageHarnessSql);
   for (const migration of await readMigrations()) {
     await database.exec(migration);
   }
@@ -366,6 +368,7 @@ describe("cloud migrations", () => {
 
       try {
         await database.exec(supabaseHarnessSql);
+        await database.exec(storageHarnessSql);
         const defaultPrivilegesBefore = await database.query<{
           acl: string;
           object_type: string;
@@ -513,6 +516,7 @@ describe("cloud migrations", () => {
       try {
         try {
           await database.exec(managedSupabaseHarnessSql);
+          await database.exec(storageHarnessSql);
         } catch (error) {
           throw new Error("managed Supabase harness setup failed", {
             cause: error,
@@ -687,6 +691,7 @@ describe("cloud migrations", () => {
         const boundaryIndex = migrations.indexOf(migration);
         expect(boundaryIndex).toBeGreaterThanOrEqual(0);
         await database.exec(supabaseHarnessSql);
+        await database.exec(storageHarnessSql);
         for (const previous of migrations.slice(0, boundaryIndex)) {
           await database.exec(previous);
         }

@@ -34,6 +34,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      classes: {
+        Row: { user_id: string; id: string; name: string | null; created_at: string; updated_at: string }
+        Insert: { user_id?: string; id: string; name?: string | null; created_at?: string; updated_at?: string }
+        Update: { user_id?: string; id?: string; name?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      class_notes: {
+        Row: { id: string; user_id: string; course_id: string; name: string; source: string; drive_file_id: string | null; byte_size: number | null; content_sha256: string | null; object_path: string | null; uploaded_at: string | null; created_at: string }
+        Insert: { id?: string; user_id?: string; course_id: string; name: string; source: string; drive_file_id?: string | null; byte_size?: number | null; content_sha256?: string | null; object_path?: never; uploaded_at?: string | null; created_at?: string }
+        Update: { id?: string; user_id?: string; course_id?: string; name?: string; source?: string; drive_file_id?: string | null; byte_size?: number | null; content_sha256?: string | null; object_path?: never; uploaded_at?: string | null; created_at?: string }
+        Relationships: [{ foreignKeyName: "class_notes_class_owner"; columns: ["user_id", "course_id"]; isOneToOne: false; referencedRelation: "classes"; referencedColumns: ["user_id", "id"] }]
+      }
       class_assignments: {
         Row: {
           assignment_type: string
@@ -62,7 +74,7 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [{ foreignKeyName: "class_assignments_class_owner"; columns: ["user_id", "course_id"]; isOneToOne: false; referencedRelation: "classes"; referencedColumns: ["user_id", "id"] }]
       }
       google_calendar_connections: {
         Row: {
@@ -433,6 +445,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      import_classes: { Args: { p_classes: Json }; Returns: undefined }
+      finish_class_pdf: { Args: { p_note_id: string }; Returns: undefined }
+
       begin_calendar_oauth_attempt: {
         Args: {
           p_code_verifier: string

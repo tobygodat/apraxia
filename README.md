@@ -44,6 +44,11 @@ Google sync, OAuth, or hosted configuration. See the
 
 ## Verification record
 
+Classes now uses account-owned database records for classes, assignments, and
+saved notes. Device PDFs upload to private Storage; Drive PDFs are saved as file
+references. Apply the required forward migrations before releasing this UI; see
+[Classes data model](docs/CLASSES_DATA_MODEL.md) for recovery and upload details.
+
 Drive notes are implemented for Classes with separate consent, native Google
 Picker PDF and folder navigation, and streamed PDF reading. Hosted setup and
 live verification are pending; see

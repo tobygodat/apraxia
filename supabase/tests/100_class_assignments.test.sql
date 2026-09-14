@@ -9,6 +9,7 @@ insert into auth.users(id,email) values
   ('22222222-2222-4222-8222-222222222222','assignments-b@example.test');
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+insert into classes(id,name) values ('math3012','MATH3012');
 insert into class_assignments(id,course_id,title,due_date) values
   ('33333333-3333-4333-8333-333333333333','math3012','Problem set','2020-03-08');
 select is((select title from class_assignments), 'Problem set', 'owner reads saved assignment');

@@ -57,7 +57,7 @@ export async function serveDriveFiles(action: string, request: Request, accessTo
   const id = query.get('id')!;
   if (!validId(id)) throw new CalendarHttpError('invalid_request', 400);
   const url = new URL(`https://www.googleapis.com/drive/v3/files/${id}`);
-  url.search = new URLSearchParams({ fields: 'mimeType,size,trashed,capabilities(canDownload)', supportsAllDrives: 'true' }).toString();
+  url.search = new URLSearchParams({ fields: 'name,mimeType,size,trashed,capabilities(canDownload)', supportsAllDrives: 'true' }).toString();
   const value = await metadata(url);
   if (value.mimeType !== PDF || value.trashed === true || !object(value.capabilities) || value.capabilities.canDownload !== true) throw new CalendarHttpError('file_unavailable', 403);
   url.search = 'alt=media&supportsAllDrives=true';
@@ -65,5 +65,6 @@ export async function serveDriveFiles(action: string, request: Request, accessTo
   if (!response.ok || !response.body) throw new CalendarHttpError(response.status === 401 ? 'reconnect_required' : 'file_unavailable', response.status === 401 ? 409 : 502);
   // Pass bytes through as they arrive. Never buffer a PDF into a function payload.
   return new Response(response.body, { headers: { ...headers, 'Content-Type': PDF,
-    'Content-Disposition': 'inline', 'X-Accel-Buffering': 'no' } });
+    'Content-Disposition': 'inline', 'X-Accel-Buffering': 'no',
+    ...(typeof value.name === 'string' && value.name.length <= 1024 ? { 'X-Orbitos-File-Name': encodeURIComponent(value.name) } : {}) } });
 }

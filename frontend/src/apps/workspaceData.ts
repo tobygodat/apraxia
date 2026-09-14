@@ -1,3 +1,5 @@
+import { createClassService, type ClassService } from '../features/classes/classService';
+import { createNoteService, type NoteService } from '../features/classes/noteService';
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
 import type { Profile, ProjectSummary } from "../types/domain";
@@ -6,6 +8,8 @@ import { createHomeAppearanceService, type HomeAppearanceService } from "../feat
 import { createAssignmentService, type AssignmentService } from "../features/classes/assignmentService";
 
 export interface WorkspaceData {
+  classes?: ClassService;
+  notes?: NoteService;
   assignments?: AssignmentService;
   homeAppearance?: HomeAppearanceService;
   profile(signal: AbortSignal): Promise<Profile>;
@@ -14,6 +18,8 @@ export interface WorkspaceData {
 
 export function createWorkspaceData(client: SupabaseClient<Database>): WorkspaceData {
   return {
+    classes: createClassService(client),
+    notes: createNoteService(client),
     assignments: createAssignmentService(client),
     homeAppearance: createHomeAppearanceService(client),
     async profile(signal) {

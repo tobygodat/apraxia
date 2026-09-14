@@ -2,10 +2,10 @@
    Google's own Picker owns file search, previews, selection, and cancellation. */
 import { useEffect, useRef, useState } from 'react';
 import { WorkspaceIcon } from '../../components/WorkspaceIcon';
-import type { DriveService } from './driveService';
+import type { DriveService, DriveFile } from './driveService';
 import './drivePicker.css';
-export function DriveNotes({ userId, courseId, service, onPreview, onChooseLocal }: {
-  userId: string; courseId: string; service: DriveService; onPreview(file: File | null): void; onChooseLocal?(): void;
+export function DriveNotes({ userId, courseId, service, onPreview, onChooseLocal, onSelect, disabled = false }: {
+  userId: string; courseId: string; service: DriveService; onPreview(file: File | null): void; onChooseLocal?(): void; disabled?: boolean; onSelect?(file: DriveFile, pdf: File, signal: AbortSignal): Promise<void>;
 }) {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState('Checking Drive…');
@@ -28,16 +28,13 @@ export function DriveNotes({ userId, courseId, service, onPreview, onChooseLocal
   useEffect(() => { initialize(); return () => pending.current?.abort(); }, [service, userId, courseId]);
   function browse() {
     void run('Choosing a PDF…', async signal => {
-      let parent: string | undefined;
-      try {
-        const folder = JSON.parse(localStorage.getItem(`orbitos:drive-folder:v1:${userId}:${courseId}`) ?? 'null');
-        if (typeof folder?.id === 'string' && /^[A-Za-z0-9_-]{1,256}$/.test(folder.id)) parent = folder.id;
-      } catch { /* A stale folder preference must not prevent opening Drive. */ }
-      const file = await service.pickPdf(signal, parent);
+      const file = await service.pickPdf(signal);
       if (!file || signal.aborted) return;
       setBusy(`Opening ${file.name}…`);
       const pdf = await service.pdf(file, signal);
-      if (!signal.aborted) onPreview(pdf);
+      if (signal.aborted) return;
+      if (onSelect) { setBusy(`Saving ${file.name}…`); await onSelect(file, pdf, signal); }
+      else onPreview(pdf);
     });
   }
   function connect() {
@@ -51,15 +48,15 @@ export function DriveNotes({ userId, courseId, service, onPreview, onChooseLocal
     <div className="drive-source">
       <WorkspaceIcon name="projects" /><strong>Google Drive</strong>
       <span className="drive-source-state" role="status">{busy || (connected ? 'Connected' : 'Read your PDF backups')}</span>
-      <button className="drive-open-button" disabled={!!busy} onClick={connected ? browse : connect}>{connected ? 'Open from Drive' : 'Connect Drive'}<WorkspaceIcon name="right" /></button>
-      {onChooseLocal && <button className="drive-local-button" onClick={() => { pending.current?.abort(); pending.current = null; setBusy(''); setError(''); onChooseLocal(); }}>From device</button>}
+      <button className="drive-open-button" disabled={disabled || !!busy} onClick={connected ? browse : connect}>{connected ? onSelect ? 'Add from Drive' : 'Open from Drive' : 'Connect Drive'}<WorkspaceIcon name="right" /></button>
+      {onChooseLocal && <button className="drive-local-button" disabled={disabled} onClick={() => { pending.current?.abort(); pending.current = null; setBusy(''); setError(''); onChooseLocal(); }}>{onSelect ? 'Upload PDF' : 'From device'}</button>}
       {connected && <details className="drive-menu"><summary aria-label="Drive connection options" title="Drive connection options"><WorkspaceIcon name="down" /></summary><div>
-        <button disabled={!!busy} onClick={() => void run('Disconnecting…', async signal => {
+        <button disabled={disabled || !!busy} onClick={() => void run('Disconnecting…', async signal => {
           await service.disconnect(signal);
           if (!signal.aborted) { setConnected(false); onPreview(null); }
         })}>Disconnect Drive</button>
       </div></details>}
     </div>
-    {error && <div className="drive-inline-error"><p role="alert">{error}</p><button disabled={!!busy} onClick={error.startsWith('Reconnect') ? connect : connected ? browse : initialize}>{error.startsWith('Reconnect') ? 'Reconnect Drive' : 'Try again'}</button></div>}
+    {error && <div className="drive-inline-error"><p role="alert">{error}</p><button disabled={disabled || !!busy} onClick={error.startsWith('Reconnect') ? connect : connected ? browse : initialize}>{error.startsWith('Reconnect') ? 'Reconnect Drive' : 'Try again'}</button></div>}
   </>;
 }
