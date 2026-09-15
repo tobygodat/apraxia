@@ -7,10 +7,7 @@ const repositoryRoot = process.cwd();
 
 describe("Supabase Data API boundary", () => {
   it("exposes only public application schemas and disables automatic grants", async () => {
-    const config = await readFile(
-      path.join(repositoryRoot, "supabase", "config.toml"),
-      "utf8",
-    );
+    const config = await readFile(path.join(repositoryRoot, "supabase", "config.toml"), "utf8");
     const exposedSchemas = config.match(/^schemas\s*=\s*\[(.*)]$/m)?.[1] ?? "";
 
     expect(exposedSchemas).toContain('"public"');
@@ -21,10 +18,7 @@ describe("Supabase Data API boundary", () => {
   });
 
   it("keeps local Auth redirects on the local Vercel origin", async () => {
-    const config = await readFile(
-      path.join(repositoryRoot, "supabase", "config.toml"),
-      "utf8",
-    );
+    const config = await readFile(path.join(repositoryRoot, "supabase", "config.toml"), "utf8");
 
     expect(config).toMatch(/^site_url\s*=\s*"http:\/\/127\.0\.0\.1:3000"$/m);
     expect(config).toContain('"http://127.0.0.1:3000/**"');
@@ -34,19 +28,13 @@ describe("Supabase Data API boundary", () => {
 
 describe("migration security contract", () => {
   it("keeps browser-callable RPCs invoker-only and free of user_id arguments", async () => {
-    const migrationsDirectory = path.join(
-      repositoryRoot,
-      "supabase",
-      "migrations",
-    );
+    const migrationsDirectory = path.join(repositoryRoot, "supabase", "migrations");
     const migrationNames = (await readdir(migrationsDirectory))
       .filter((name) => name.endsWith(".sql"))
       .sort();
     const sql = (
       await Promise.all(
-        migrationNames.map((name) =>
-          readFile(path.join(migrationsDirectory, name), "utf8"),
-        ),
+        migrationNames.map((name) => readFile(path.join(migrationsDirectory, name), "utf8")),
       )
     ).join("\n");
     const publicRpcNames = [
@@ -74,7 +62,19 @@ describe("migration security contract", () => {
     expect(sql).toMatch(/create schema if not exists private/i);
     expect(sql).toMatch(/create schema if not exists internal/i);
     expect(sql).toMatch(/alter table public\.todos enable row level security/i);
-    expect(sql).not.toMatch(/grant\s+delete[\s\S]*?to\s+authenticated/i);
+    // Browser roles never hard-delete a soft-deleted record type. Classes rows
+    // are not soft-deleted and carry their own owner-scoped DELETE policies.
+    const browserDeleteGrants = [
+      ...sql.matchAll(
+        /grant\s+([^;]*?\bdelete\b[^;]*?)\s+on\s+(public\.[a-z_]+)\s+to\s+([^;]+);/gi,
+      ),
+    ]
+      .filter((grant) => /\bauthenticated\b/i.test(grant[3] ?? ""))
+      .map((grant) => grant[2]);
+
+    expect(new Set(browserDeleteGrants)).toEqual(
+      new Set(["public.class_assignments", "public.class_notes", "public.classes"]),
+    );
   });
 
   it("keeps the helper role compatible with managed Supabase postgres", async () => {
@@ -87,9 +87,7 @@ describe("migration security contract", () => {
       ),
       "utf8",
     );
-    const unconditionalAlter = migration.match(
-      /alter\s+role\s+orbitos_rpc([\s\S]*?);/i,
-    )?.[1];
+    const unconditionalAlter = migration.match(/alter\s+role\s+orbitos_rpc([\s\S]*?);/i)?.[1];
 
     expect(unconditionalAlter).toBeDefined();
     expect(unconditionalAlter).not.toMatch(

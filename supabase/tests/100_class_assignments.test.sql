@@ -32,6 +32,7 @@ select is((select count(*)::integer from class_assignments), 0, 'another account
 update class_assignments set title='Hijacked';
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 select is((select title from class_assignments), 'Revised', 'another account cannot change assignments');
-select throws_ok($$delete from class_assignments$$, '42501', null, 'browser cannot permanently delete assignments');
+delete from class_assignments;
+select is((select count(*)::integer from class_assignments), 0, 'owner can permanently delete assignments');
 select * from finish();
 rollback;
