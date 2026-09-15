@@ -287,17 +287,23 @@
    right, inside the same column width as the page content. */
 .workspace-page-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
 }
 .workspace-page-header h1 {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
 .workspace-page-header > div {
+  flex: 1 1 240px;
   min-width: 0;
+}
+.workspace-page-header > h1 {
+  flex: 1 1 240px;
 }
 .cloud-shell .workspace-page-header__action {
   display: inline-flex;
@@ -445,6 +451,7 @@
 @media (max-width: 620px) {
   .cloud-shell {
     grid-template-columns: minmax(0, 1fr);
+    align-content: start;
   }
   .cloud-shell__sidebar {
     position: relative;
@@ -516,5 +523,10 @@
 @media (prefers-reduced-motion: reduce) {
   .cloud-shell__nav-link {
     transition: none;
+  }
+}
+@media (pointer: coarse) {
+  .cloud-shell .workspace-page-header__action {
+    min-height: 44px;
   }
 }

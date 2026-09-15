@@ -1,15 +1,8 @@
 /* Class assignments: a compact work area aligned with the page header column. */
-.classes-page:has(.class-assignments) .workspace-page-header {
-  margin-bottom: 36px;
-}
-.classes-page:has(.class-assignments) > div > h2 {
-  font-size: 20px;
-  margin: 0 0 16px;
-}
 .class-assignments {
   --assignment-grid: var(--cloud-shell-line);
   position: relative;
-  margin: 0 0 48px;
+  margin: 0 0 32px;
 }
 .class-assignments > header {
   display: flex;
@@ -20,20 +13,22 @@
 }
 .class-assignments h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
 }
 .class-assignments > header > button {
-  min-height: 34px;
+  min-height: 38px;
   padding: 6px 12px;
   background: transparent;
   border: 1px solid #555;
   color: inherit;
+  font-size: 12px;
 }
 .class-assignments > header > button:hover {
   background: #292929;
   border-color: #8b8b8b;
 }
 .assignment-table-wrap {
+  position: relative;
   overflow-x: auto;
   scrollbar-color: #555 #1d1d1d;
 }
@@ -201,7 +196,7 @@
   border-bottom: 1px solid var(--cloud-shell-line);
 }
 .classes-course-content:has(.class-assignments) .drive-local-button {
-  min-height: 40px;
+  min-height: 38px;
   white-space: nowrap;
   border-color: transparent;
 }
@@ -252,7 +247,8 @@
   .class-assignments .assignment-cell {
     min-height: 44px;
   }
-  .class-assignments > header > button {
+  .class-assignments > header > button,
+  .classes-course-content:has(.class-assignments) .drive-local-button {
     min-height: 44px;
   }
 }

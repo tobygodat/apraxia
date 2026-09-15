@@ -1,3 +1,478 @@
 {
-  "buildPath": "code"
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "16px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.168Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d6d4d0",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.241Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#707070",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.314Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "18px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.384Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#dedbd6",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.458Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#bdbab4",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.529Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.603Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ffffff60",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.683Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#6a6a6a",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.757Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f28b82",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.827Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "3px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.903Z",
+        "reason": "Agent: preserve the existing calendar event and preview rounding; DESIGN.md Shapes explicitly allows event dialogs their own modest rounding."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "9px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:41.979Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "14px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.053Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "30px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.126Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#383838",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.201Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#4a4a4a",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.279Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fff",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.353Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#555555",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.429Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(0, 0, 0, 0.5)",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.505Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(0, 0, 0, 0.58)",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.589Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "21px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.664Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#515151",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.736Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f0bcbc",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.809Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#000b",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.883Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "32px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:42.957Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "27px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:43.024Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#efb6b0",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:43.099Z",
+        "reason": "Agent: preserve the existing calendar neutral, current-time, error and overlay colors; DESIGN.md Colors and Components retain local variants and semantic calendar colors during refinement."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "19px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:43.166Z",
+        "reason": "Agent: preserve the existing calendar type roles in this layout-only pass; DESIGN.md Typography describes role-based sizes and contextual metadata, cover and dialog variants rather than an exhaustive ramp."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "12px",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:43.240Z",
+        "reason": "Agent: preserve the existing calendar event and preview rounding; DESIGN.md Shapes explicitly allows event dialogs their own modest rounding."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px)",
+        "files": ["frontend/src/features/calendar/calendar.css"],
+        "createdAt": "2026-09-15T02:34:43.316Z",
+        "reason": "Agent: parser false positive on var(--radius-control, 5px); DESIGN.md documents the existing 5px navigation/control radius."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "20px",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.594Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d4d2ce",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.666Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#393939",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.735Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d6d4d0",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.805Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#76504d",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.873Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#efb6b0",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:52.946Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#707070",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.025Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#575757",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.104Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(135, 36, 36, 0.14)",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.189Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ffc1c1",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.259Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(255, 193, 193, 0.38)",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.333Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(255, 193, 193, 0.7)",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.408Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:53.478Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "28px",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.546Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#575757",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.618Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#383838",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.695Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "14px",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.769Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f0c1c1",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.844Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "18px",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.924Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#747474",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:53.997Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "15px",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:54.066Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#515151",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:54.145Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#8b8b8b",
+        "files": ["frontend/src/features/classes/classes.css"],
+        "createdAt": "2026-09-15T02:44:54.222Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "14px",
+        "files": ["frontend/src/features/classes/classes.css"],
+        "createdAt": "2026-09-15T02:44:54.294Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "18px",
+        "files": ["frontend/src/features/classes/classes.css"],
+        "createdAt": "2026-09-15T02:44:54.360Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "18px",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.427Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#555",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.494Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#8b8b8b",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.572Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "14px",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.647Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "3px",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.714Z",
+        "reason": "Agent: preserve existing compact assignment editing geometry; DESIGN.md Shapes records contextual component variants rather than an exhaustive radius scale."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#99958f",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.784Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d5d2ce",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.856Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "16px",
+        "files": ["frontend/src/features/classes/classAssignments.css"],
+        "createdAt": "2026-09-15T02:44:54.936Z",
+        "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#555",
+        "files": ["frontend/src/features/classes/drivePicker.css"],
+        "createdAt": "2026-09-15T02:44:55.007Z",
+        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px)",
+        "files": ["frontend/src/components/app-shell/CloudAppShell.css"],
+        "createdAt": "2026-09-15T02:44:55.087Z",
+        "reason": "Agent: parser false positive on var(--radius-control, 5px); DESIGN.md documents the existing 5px navigation/control radius."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px)",
+        "files": ["frontend/src/features/classes/classes.css"],
+        "createdAt": "2026-09-15T02:44:55.168Z",
+        "reason": "Agent: parser false positive on var(--radius-control, 5px); DESIGN.md documents the existing 5px navigation/control radius."
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px)",
+        "files": ["frontend/src/features/collections/collections.css"],
+        "createdAt": "2026-09-15T02:44:55.234Z",
+        "reason": "Agent: parser false positive on var(--radius-control, 5px); DESIGN.md documents the existing 5px navigation/control radius."
+      }
+    ]
+  }
 }

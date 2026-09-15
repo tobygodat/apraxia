@@ -304,7 +304,7 @@ export function CollectionPage(props: Props) {
   const detail = kind === "project" && Boolean(recordId);
   const completedTasks = tasks.filter((t) => t.completed);
   return (
-    <section className="collection-page">
+    <section className={`collection-page${kind === "project" ? " collection-page--project" : ""}`}>
       {detail && (
         <button className="collection-back" onClick={onBack}>
           <WorkspaceIcon name="left" />
@@ -405,6 +405,7 @@ export function CollectionPage(props: Props) {
               <header>
                 <h2>Tasks</h2>
                 <button className="collection-button" onClick={() => setComposer(true)}>
+                  <WorkspaceIcon name="plus" />
                   Add task
                 </button>
               </header>
@@ -451,6 +452,7 @@ export function CollectionPage(props: Props) {
                   className="collection-button"
                   onClick={() => setEditor({ kind: "idea", projectId: project.id })}
                 >
+                  <WorkspaceIcon name="plus" />
                   Add idea
                 </button>
               </header>

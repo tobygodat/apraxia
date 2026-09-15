@@ -166,7 +166,7 @@ export function ClassesPage({
                   timezone={timezone}
                 />
               )}
-              <h2>Notes</h2>
+              <h2 className="classes-section-heading">Notes</h2>
               {noteService ? (
                 <SavedClassNotes
                   userId={userId}
@@ -181,8 +181,12 @@ export function ClassesPage({
             </div>
           ) : (
             <>
-              {!courses.length && <p>No classes yet. Add a class to save assignments and notes.</p>}
-              <div className="classes-list">
+              {!courses.length && (
+                <p className="classes-empty">
+                  No classes yet. Add a class to save assignments and notes.
+                </p>
+              )}
+              <div className={courses.length ? "classes-list" : undefined}>
                 {courses.map((c) => (
                   <Link key={c.id} to={`/classes/${c.id}`} className="classes-row">
                     <WorkspaceIcon name="classes" />

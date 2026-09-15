@@ -1,7 +1,7 @@
 .home-page {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 62px);
+  height: 100dvh;
   min-height: 600px;
   padding: 10px var(--workspace-page-inset, 32px) 18px;
   background: #191919;
@@ -375,10 +375,10 @@
   padding-left: 14px;
 }
 .home-workspace .today-list__header {
-  min-height: 100px;
-  padding: 20px 0 16px;
+  min-height: 0;
+  padding: 12px 0;
   gap: 10px;
-  align-items: start;
+  align-items: center;
   border-bottom: 1px solid #303030;
 }
 .home-workspace .today-list__header p {
@@ -427,10 +427,10 @@
   cursor: wait;
 }
 .home-workspace .today-list__add {
-  min-height: 31px;
-  padding: 0 9px;
+  min-height: 32px;
+  padding: 0 10px;
   border-radius: var(--radius-control, 5px);
-  font-size: 10px;
+  font-size: 12px;
 }
 .home-workspace .today-list__add svg {
   width: 13px;
@@ -512,18 +512,18 @@
     font-size: 14px;
   }
 }
-@media (max-width: 900px) {
+/* Stack before the seven-day grid competes with the task column for width. */
+@media (max-width: 1400px) {
   .home-page {
     height: auto;
     min-height: 0;
-    padding: 26px 20px;
   }
   .home-workspace {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: 24px;
   }
   .calendar-panel {
-    height: 620px;
+    height: clamp(320px, 44dvh, 480px);
     padding: 0;
     border-right: 0;
   }
@@ -532,11 +532,13 @@
     padding: 0;
     border-top: 1px solid #303030;
   }
-  .home-workspace .today-list__header {
-    min-height: 80px;
-  }
   .week-grid {
     min-width: 0;
+  }
+}
+@media (max-width: 900px) {
+  .home-page {
+    padding: 16px 20px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -879,7 +881,7 @@
 /* The stage supplies native scroll distance; its shrinking sticky frame stays
    joined to the workspace below without intercepting either panel's scrolling. */
 .home-page--cover {
-  height: calc(100dvh - 62px);
+  height: 100dvh;
   min-height: 0;
   overflow-y: auto;
   overflow-anchor: none;
@@ -903,10 +905,12 @@
 .home-page--cover .home-workspace {
   flex: 0 0 var(--home-workspace-height);
 }
-@media (max-width: 900px) {
+@media (max-width: 1400px) {
   .home-page--cover .home-workspace {
     flex-basis: auto;
   }
+}
+@media (max-width: 900px) {
   .home-header--cover .home-header__line {
     padding-inline: 12px;
     gap: 8px;
@@ -1068,6 +1072,36 @@
     width: 44px;
     height: 44px;
     flex-basis: 44px;
+  }
+  .home-workspace .today-list__add,
+  .today-list__day-switch button,
+  .home-workspace .today-list-item__actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .home-workspace .today-list-item article {
+    grid-template-columns: 44px 44px minmax(0, 1fr);
+    gap: 4px 8px;
+    padding-block: 8px;
+  }
+  .home-workspace .today-list-item__drag,
+  .home-workspace .today-list-item__check {
+    width: 44px;
+    height: 44px;
+  }
+  .home-workspace .today-list-item__content {
+    padding-top: 10px;
+  }
+  .home-workspace .today-list-item__meta {
+    font-size: 11px;
+  }
+  .home-workspace .today-list-item__actions {
+    grid-column: 3;
+    grid-row: 2;
+    justify-content: start;
+  }
+  .home-workspace .today-list-item__manage {
+    gap: 8px;
   }
 }
 
