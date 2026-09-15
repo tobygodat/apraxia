@@ -133,6 +133,51 @@ describe("cloud migration SQL behavior", () => {
     await database.exec("set role authenticated");
   }
 
+  it("retires Media while preserving every existing row in a private backup", async () => {
+    const db = await PGlite.create();
+    try {
+      await db.exec(supabaseHarnessSql);
+      await db.exec(storageHarnessSql);
+      const migrations = await readMigrations();
+      const retirementIndex = migrations.findIndex((sql) =>
+        sql.includes("lock table public.media"),
+      );
+      expect(retirementIndex).toBeGreaterThan(0);
+      for (const migration of migrations.slice(0, retirementIndex)) await db.exec(migration);
+      await db.exec(`
+        insert into auth.users (id, email)
+        values ('66666666-6666-4666-8666-666666666666', 'retired@example.test');
+        insert into public.media (user_id, media_type, title, notes, deleted_at)
+        values
+          ('66666666-6666-4666-8666-666666666666', 'book', 'Saved book', 'Keep these notes', null),
+          ('66666666-6666-4666-8666-666666666666', 'movie', 'Deleted film', null, now());
+      `);
+      const before = await db.query(
+        `select to_jsonb(m) as row_data from public.media m order by id`,
+      );
+      await db.exec(migrations[retirementIndex]!);
+      const after = await db.query(`select row_data from private.retired_media order by id`);
+      expect(after.rows).toEqual(before.rows);
+      expect((await db.query(`select to_regclass('public.media') as relation`)).rows).toEqual([
+        { relation: null },
+      ]);
+      expect(
+        (await db.query(`select enum_range(null::public.orbitos_record_type)::text as kinds`)).rows,
+      ).toEqual([{ kinds: "{todo,idea,project}" }]);
+      const access = await db.query<{ role_name: string; allowed: boolean }>(`
+        select role_name, has_table_privilege(role_name, 'private.retired_media', 'SELECT,INSERT,UPDATE,DELETE') as allowed
+        from (values ('anon'), ('authenticated'), ('service_role'), ('orbitos_rpc')) roles(role_name)
+      `);
+      expect(access.rows.every((row) => row.allowed === false)).toBe(true);
+      await db.exec(
+        `set request.jwt.claim.sub = '66666666-6666-4666-8666-666666666666'; set role authenticated;`,
+      );
+      expect((await db.query(`select * from public.search_records('Saved')`)).rows).toEqual([]);
+    } finally {
+      await db.close();
+    }
+  }, 60_000);
+
   it("applies in order and exposes the expected tables and functions", async () => {
     const tables = await database.query<{ table_name: string }>(`
       select table_name
@@ -159,7 +204,6 @@ describe("cloud migration SQL behavior", () => {
 
     expect(tables.rows.map(({ table_name }) => table_name)).toEqual([
       "ideas",
-      "media",
       "profiles",
       "projects",
       "todos",

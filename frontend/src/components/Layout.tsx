@@ -4,7 +4,6 @@ const SECTIONS = [
   { to: "/", label: "Home", end: true },
   { to: "/todos", label: "Todos" },
   { to: "/ideas", label: "Ideas" },
-  { to: "/media", label: "Media" },
   { to: "/projects", label: "Projects" },
 ];
 

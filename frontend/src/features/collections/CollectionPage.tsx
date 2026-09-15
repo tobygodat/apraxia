@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { DeleteUndoToken, Idea, MediaItem, Project, Todo } from "../../types/domain";
+import type { DeleteUndoToken, Idea, Project, Todo } from "../../types/domain";
 import { useWorkspace } from "../../apps/workspaceStore";
 import { TodoComposerDialog, TodoEditDialog } from "../todos/TodoFormDialog";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -22,11 +22,10 @@ interface Props {
   onOpenProject?: (id: string) => void;
   onBack?: () => void;
 }
-const headings = { project: "Projects", idea: "Ideas", media: "Media" };
+const headings = { project: "Projects", idea: "Ideas" };
 const descriptions = {
   project: "Outcomes, with their tasks and thoughts in one place.",
   idea: "A place for thoughts you want to keep.",
-  media: "Books and movies to return to.",
 };
 const titleOf = (kind: CollectionKind, r: CollectionRecord) =>
   kind === "idea" ? ideaTitle(r as Idea) : r.title || "Untitled";
@@ -34,8 +33,6 @@ export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
   const [rows, setRows] = useState<CollectionRecord[]>([]);
-  const [status, setStatus] = useState("all");
-  const [mediaType, setMediaType] = useState("all");
   const [revision, setRevision] = useState(0);
   const [limit, setLimit] = useState(50);
   const [more, setMore] = useState(false);
@@ -108,12 +105,10 @@ export function CollectionPage(props: Props) {
       } else {
         const pages = await Promise.all(
           Array.from({ length: limit / 50 }, (_, n) => {
-            const options = { status, mediaType, offset: n * 50, signal: controller.signal };
+            const options = { offset: n * 50, signal: controller.signal };
             return kind === "project"
               ? service.listProjects({ offset: n * 50, signal: controller.signal })
-              : kind === "idea"
-                ? service.listIdeas(options)
-                : service.listMedia(options);
+              : service.listIdeas(options);
           }),
         );
         const records = pages.flat();
@@ -133,18 +128,7 @@ export function CollectionPage(props: Props) {
       active = false;
       controller.abort();
     };
-  }, [
-    kind,
-    service,
-    recordId,
-    status,
-    mediaType,
-    limit,
-    taskLimit,
-    ideaLimit,
-    revision,
-    refreshKey,
-  ]);
+  }, [kind, service, recordId, limit, taskLimit, ideaLimit, revision, refreshKey]);
   async function remove(k: CollectionKind | "todo", id: string) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -213,18 +197,7 @@ export function CollectionPage(props: Props) {
     const p = k === "idea" ? projects.find((p) => p.id === (r as Idea).projectId) : null;
     const preview =
       k === "idea" ? ideaPreview(r as Idea) : k === "project" ? (r as Project).description : null;
-    const metadata =
-      k === "idea"
-        ? p?.title
-        : k === "media"
-          ? [
-              (r as MediaItem).creator,
-              (r as MediaItem).mediaType,
-              (r as MediaItem).status.replace(/_/g, " "),
-            ]
-              .filter(Boolean)
-              .join(" · ")
-          : null;
+    const metadata = k === "idea" ? p?.title : null;
     return (
       <li key={r.id} className="collection-row">
         <button
@@ -340,43 +313,6 @@ export function CollectionPage(props: Props) {
           </button>
         )}
       </header>
-      {!detail && kind === "media" && (
-        <div className="collection-filters">
-          {kind === "media" && (
-            <label>
-              Type
-              <select
-                value={mediaType}
-                onChange={(e) => {
-                  setMediaType(e.target.value);
-                  setLimit(50);
-                }}
-              >
-                <option value="all">All types</option>
-                <option value="book">Books</option>
-                <option value="movie">Movies</option>
-              </select>
-            </label>
-          )}
-          <label>
-            Status
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setLimit(50);
-              }}
-            >
-              <option value="all">All statuses</option>
-              {["saved", "in_progress", "finished"].map((s) => (
-                <option key={s} value={s}>
-                  {s.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
       {notice && (
         <div className="collection-notice" role="status">
           {notice}
@@ -482,9 +418,7 @@ export function CollectionPage(props: Props) {
               <p>
                 {kind === "project"
                   ? "No projects in this view."
-                  : kind === "media"
-                    ? "No books or movies in this view."
-                    : "No ideas yet. Keep your first thought here."}
+                  : "No ideas yet. Keep your first thought here."}
               </p>
               <button className="collection-button" onClick={() => setEditor({ kind })}>
                 Add {kind}
