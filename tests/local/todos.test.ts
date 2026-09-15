@@ -7,10 +7,13 @@ import { createSupabaseTodoService } from "../../frontend/src/features/todos/sup
 import { localToday, addSqlDateDays } from "../../frontend/src/features/todos/dateDomain";
 
 const url = process.env.ORBITOS_LOCAL_API;
-if (url !== "http://127.0.0.1:54321") throw new Error("Only the fixed local Supabase API is supported.");
+if (url !== "http://127.0.0.1:54321")
+  throw new Error("Only the fixed local Supabase API is supported.");
 const publicKey = process.env.ORBITOS_LOCAL_PUBLIC_KEY!;
 const secretKey = process.env.ORBITOS_LOCAL_SECRET_KEY!;
-const authOptions = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
+const authOptions = {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+};
 const admin = createClient<Database>(url, secretKey, authOptions);
 const users: { id: string; client: SupabaseClient<Database> }[] = [];
 const options = () => ({ signal: new AbortController().signal });
@@ -50,16 +53,31 @@ it("persists CRUD, exact Undo, completion, rescheduling, and denies cross-user a
   expect(initial.profile.timezone).toBe("America/New_York");
   const today = localToday(initial.profile.timezone);
   const yesterday = addSqlDateDays(today, -1);
-  const todo = await a.createTodo({ text: "Local persistence check", dueDate: yesterday, dueTime: "09:30" }, options());
+  const todo = await a.createTodo(
+    { text: "Local persistence check", dueDate: yesterday, dueTime: "09:30" },
+    options(),
+  );
   expect(todo.dueDate).toBe(yesterday);
   expect(todo.dueTime).toBe("09:30:00");
-  expect((await createSupabaseTodoService(users[0]!.client).loadWorkspace(options())).todos.map(t => t.id)).toContain(todo.id);
+  expect(
+    (await createSupabaseTodoService(users[0]!.client).loadWorkspace(options())).todos.map(
+      (t) => t.id,
+    ),
+  ).toContain(todo.id);
   expect((await b.loadWorkspace(options())).todos).toHaveLength(0);
-  await expect(b.updateTodoDetails(todo.id, { text: "Must not change" }, options())).rejects.toThrow();
+  await expect(
+    b.updateTodoDetails(todo.id, { text: "Must not change" }, options()),
+  ).rejects.toThrow();
   await expect(b.softDeleteTodo(todo.id, options())).rejects.toThrow();
-  const project = await users[1]!.client.from("projects").insert({ title: "B only" }).select("id").single();
+  const project = await users[1]!.client
+    .from("projects")
+    .insert({ title: "B only" })
+    .select("id")
+    .single();
   if (project.error || !project.data) throw new Error("Test project creation failed.");
-  await expect(a.updateTodoDetails(todo.id, { projectId: project.data.id }, options())).rejects.toThrow();
+  await expect(
+    a.updateTodoDetails(todo.id, { projectId: project.data.id }, options()),
+  ).rejects.toThrow();
   expect((await a.loadToday(today, options()))[0]?.isOverdue).toBe(true);
   const completed = await a.setTodoCompleted(todo.id, true, options());
   expect(completed.completedAt).not.toBeNull();
@@ -83,9 +101,12 @@ it("loads and reorders 1,005 eligible todos with the 1,000-row HTTP cap unchange
   const service = createSupabaseTodoService(client);
   const today = localToday("America/New_York");
   for (let offset = 0; offset < 1005; offset += 200) {
-    const inserted = await client.from("todos").insert(Array.from({ length: Math.min(200, 1005 - offset) }, (_, index) => ({
-      text: `Local bulk ${offset + index}`, due_date: today,
-    })));
+    const inserted = await client.from("todos").insert(
+      Array.from({ length: Math.min(200, 1005 - offset) }, (_, index) => ({
+        text: `Local bulk ${offset + index}`,
+        due_date: today,
+      })),
+    );
     if (inserted.error) throw new Error("Bulk local fixtures could not be inserted.");
   }
   const capped = await client.from("todos").select("id");
@@ -93,12 +114,18 @@ it("loads and reorders 1,005 eligible todos with the 1,000-row HTTP cap unchange
   expect((await service.loadWorkspace(options())).todos).toHaveLength(1006);
   const start = performance.now();
   const todayList = await service.loadToday(today, options());
-  console.info(`Real HTTP Today: ${todayList.length} rows in ${Math.round(performance.now() - start)} ms.`);
+  console.info(
+    `Real HTTP Today: ${todayList.length} rows in ${Math.round(performance.now() - start)} ms.`,
+  );
   expect(todayList).toHaveLength(1005);
-  const order = todayList.map(t => t.id).reverse();
+  const order = todayList.map((t) => t.id).reverse();
   const ranks = await service.reorderToday(today, order, options());
   expect(ranks).toHaveLength(1005);
-  expect((await createSupabaseTodoService(client).loadToday(today, options())).map(t => t.id)).toEqual(order);
-  await expect(createSupabaseTodoService(users[1]!.client).reorderToday(today, order, options())).rejects.toThrow();
-  expect((await service.loadToday(today, options())).map(t => t.id)).toEqual(order);
+  expect(
+    (await createSupabaseTodoService(client).loadToday(today, options())).map((t) => t.id),
+  ).toEqual(order);
+  await expect(
+    createSupabaseTodoService(users[1]!.client).reorderToday(today, order, options()),
+  ).rejects.toThrow();
+  expect((await service.loadToday(today, options())).map((t) => t.id)).toEqual(order);
 });

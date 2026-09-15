@@ -99,9 +99,7 @@ describe("shared domain contracts", () => {
   });
 
   it("excludes a time-without-date create request", () => {
-    expectTypeOf<{ text: "Invalid"; dueTime: "09:00" }>().not.toMatchTypeOf<
-      NewTodoInput
-    >();
+    expectTypeOf<{ text: "Invalid"; dueTime: "09:00" }>().not.toMatchTypeOf<NewTodoInput>();
   });
 
   it("does not allow browser create inputs to choose an owner", () => {
@@ -120,8 +118,7 @@ describe("shared domain contracts", () => {
     >;
 
     expectTypeOf<ForbiddenConnectionKey>().toEqualTypeOf<never>();
-    expectTypeOf<"userId" extends keyof CalendarPreference ? true : false>()
-      .toEqualTypeOf<false>();
+    expectTypeOf<"userId" extends keyof CalendarPreference ? true : false>().toEqualTypeOf<false>();
     expectTypeOf<ProjectSummary>().toEqualTypeOf<{
       id: string;
       title: string;

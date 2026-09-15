@@ -1,11 +1,11 @@
 import type {
+  ClassSummary,
   DeleteUndoToken,
   LocalDate,
   LocalTime,
   NewTodoInput,
   Profile,
   ProjectSummary,
-  ClassSummary,
   TodayTodo,
   Todo,
   UUID,
@@ -13,7 +13,7 @@ import type {
 
 export interface TodoRequestOptions {
   readonly signal: AbortSignal;
-  /** Scope Classes requests without changing ordinary task/project behavior. */
+  /** Scope Classes requests to one class without changing ordinary task behavior. */
   readonly classId?: string;
 }
 
@@ -61,11 +61,28 @@ type TodoScheduleUpdate =
       readonly projectId?: UUID | null;
     };
 
+type TodoAssignmentUpdate = {
+  readonly assignmentType: string;
+  readonly text?: string;
+  readonly projectId?: never;
+  readonly dueDate?: never;
+  readonly dueTime?: never;
+};
+
+/** A task belongs to at most one project or class; the type is class-only. */
+interface TodoParentFields {
+  readonly classId?: string | null;
+  readonly assignmentType?: string;
+}
+
 /**
  * A details update must name a field and cannot create a time-without-date
  * state at the provider boundary.
  */
-export type UpdateTodoDetailsInput = (TodoTextOrProjectUpdate | TodoScheduleUpdate | { readonly assignmentType: string; readonly text?: string; readonly projectId?: never; readonly dueDate?: never; readonly dueTime?: never }) & { readonly assignmentType?: string; readonly classId?: string | null };
+export type UpdateTodoDetailsInput = (
+  TodoTextOrProjectUpdate | TodoScheduleUpdate | TodoAssignmentUpdate
+) &
+  TodoParentFields;
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;
@@ -80,10 +97,7 @@ export interface TodayRankUpdate {
 export interface TodoService {
   loadWorkspace(options: TodoRequestOptions): Promise<TodoWorkspaceSnapshot>;
 
-  createTodo(
-    input: NewTodoInput,
-    options: TodoRequestOptions,
-  ): Promise<Todo>;
+  createTodo(input: NewTodoInput, options: TodoRequestOptions): Promise<Todo>;
 
   updateTodoDetails(
     todoId: UUID,
@@ -91,16 +105,9 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<Todo>;
 
-  setTodoCompleted(
-    todoId: UUID,
-    completed: boolean,
-    options: TodoRequestOptions,
-  ): Promise<Todo>;
+  setTodoCompleted(todoId: UUID, completed: boolean, options: TodoRequestOptions): Promise<Todo>;
 
-  softDeleteTodo(
-    todoId: UUID,
-    options: TodoRequestOptions,
-  ): Promise<DeleteUndoToken>;
+  softDeleteTodo(todoId: UUID, options: TodoRequestOptions): Promise<DeleteUndoToken>;
 
   restoreTodo(
     todoId: UUID,
@@ -108,10 +115,7 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<boolean>;
 
-  loadToday(
-    localDate: LocalDate,
-    options: TodoRequestOptions,
-  ): Promise<readonly TodayTodo[]>;
+  loadToday(localDate: LocalDate, options: TodoRequestOptions): Promise<readonly TodayTodo[]>;
 
   /** The complete eligible ID list is required for the atomic reorder RPC. */
   reorderToday(

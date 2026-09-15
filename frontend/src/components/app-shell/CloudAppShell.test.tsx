@@ -1,14 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
@@ -79,9 +72,7 @@ describe("CloudAppShell", () => {
       "/classes",
     ]);
     expect(
-      within(primaryNavigation).getByRole("link", { name: "ideas" }).getAttribute(
-        "aria-current",
-      ),
+      within(primaryNavigation).getByRole("link", { name: "ideas" }).getAttribute("aria-current"),
     ).toBe("page");
     expect(within(primaryNavigation).queryByRole("link", { name: /settings/i })).toBeNull();
   });
@@ -111,9 +102,7 @@ describe("CloudAppShell", () => {
     expect(container.textContent).not.toContain(String(IDENTITY.expiresAt));
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(
-        within(popover).getByRole("link", { name: "settings" }),
-      );
+      expect(document.activeElement).toBe(within(popover).getByRole("link", { name: "settings" }));
     });
   });
 
@@ -121,7 +110,9 @@ describe("CloudAppShell", () => {
     renderShell();
     const trigger = screen.getByRole("button", { name: /account/i });
     fireEvent.click(trigger);
-    await waitFor(() => expect(screen.getByRole("group", { name: "Account options" })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole("group", { name: "Account options" })).toBeTruthy(),
+    );
 
     fireEvent.keyDown(document, { key: "Escape" });
 
@@ -162,9 +153,7 @@ describe("CloudAppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: /account/i }));
     const pendingButton = screen.getByRole("button", { name: "Signing out…" });
     expect((pendingButton as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByRole("status").textContent).toContain(
-      "closing this private workspace",
-    );
+    expect(screen.getByRole("status").textContent).toContain("closing this private workspace");
 
     rerender(
       <MemoryRouter>

@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
@@ -64,19 +58,13 @@ export function CloudAppShell({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !accountRootRef.current?.contains(event.target)
-      ) {
+      if (event.target instanceof Node && !accountRootRef.current?.contains(event.target)) {
         setAccountOpen(false);
       }
     };
 
     const handleFocusIn = (event: FocusEvent) => {
-      if (
-        event.target instanceof Node &&
-        !accountRootRef.current?.contains(event.target)
-      ) {
+      if (event.target instanceof Node && !accountRootRef.current?.contains(event.target)) {
         setAccountOpen(false);
       }
     };
@@ -92,18 +80,14 @@ export function CloudAppShell({
         (item): item is HTMLAnchorElement | HTMLButtonElement =>
           item !== null && !item.hasAttribute("disabled"),
       );
-      const currentIndex = items.findIndex(
-        (item) => item === document.activeElement,
-      );
+      const currentIndex = items.findIndex((item) => item === document.activeElement);
       let nextIndex: number | null = null;
 
       if (event.key === "ArrowDown") {
         nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
       } else if (event.key === "ArrowUp") {
         nextIndex =
-          currentIndex < 0
-            ? items.length - 1
-            : (currentIndex - 1 + items.length) % items.length;
+          currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
       } else if (event.key === "Home") {
         nextIndex = 0;
       } else if (event.key === "End") {
@@ -147,17 +131,31 @@ export function CloudAppShell({
             <WorkspaceIcon name="orbit" />
             <span>orbitOS</span>
           </Link>
-          <button className="cloud-shell__add" type="button" disabled={globalAddDisabled} onClick={onOpenGlobalAdd} aria-label="+ add" title="Add">
+          <button
+            className="cloud-shell__add"
+            type="button"
+            disabled={globalAddDisabled}
+            onClick={onOpenGlobalAdd}
+            aria-label="+ add"
+            title="Add"
+          >
             <WorkspaceIcon name="plus" />
           </button>
         </div>
 
-        {onOpenSearch ? <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>
-          <WorkspaceIcon name="search" /><span>Search</span><kbd aria-hidden="true">Ctrl K</kbd>
-        </button> : null}
+        {onOpenSearch ? (
+          <button className="cloud-shell__search" type="button" onClick={onOpenSearch}>
+            <WorkspaceIcon name="search" />
+            <span>Search</span>
+            <kbd aria-hidden="true">Ctrl K</kbd>
+          </button>
+        ) : null}
 
         <nav className="cloud-shell__nav" aria-label="Primary navigation">
-          {PRIMARY_DESTINATIONS.filter((destination) => !availableDestinations || availableDestinations.includes(destination.to)).map((destination) => (
+          {PRIMARY_DESTINATIONS.filter(
+            (destination) =>
+              !availableDestinations || availableDestinations.includes(destination.to),
+          ).map((destination) => (
             <NavLink
               key={destination.to}
               to={destination.to}
@@ -172,10 +170,7 @@ export function CloudAppShell({
           ))}
         </nav>
 
-        <div
-          className="cloud-shell__actions"
-          data-account-open={accountOpen}
-        >
+        <div className="cloud-shell__actions" data-account-open={accountOpen}>
           <div className="cloud-shell__account" ref={accountRootRef}>
             <button
               ref={accountTriggerRef}
@@ -186,7 +181,9 @@ export function CloudAppShell({
               aria-controls={accountOpen ? accountMenuId : undefined}
               onClick={() => setAccountOpen((open) => !open)}
             >
-              <span className="cloud-shell__avatar" aria-hidden="true">o</span>
+              <span className="cloud-shell__avatar" aria-hidden="true">
+                o
+              </span>
               <span>Account</span>
               <WorkspaceIcon name="down" />
             </button>
@@ -205,14 +202,16 @@ export function CloudAppShell({
                 ) : (
                   <p className="cloud-shell__account-email">Signed in</p>
                 )}
-                {settingsAvailable ? <Link
-                  ref={settingsLinkRef}
-                  className="cloud-shell__menu-item"
-                  to="/settings"
-                  onClick={() => setAccountOpen(false)}
-                >
-                  settings
-                </Link> : null}
+                {settingsAvailable ? (
+                  <Link
+                    ref={settingsLinkRef}
+                    className="cloud-shell__menu-item"
+                    to="/settings"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    settings
+                  </Link>
+                ) : null}
                 <button
                   ref={signOutButtonRef}
                   className="cloud-shell__menu-item cloud-shell__sign-out"
@@ -231,14 +230,8 @@ export function CloudAppShell({
               Couldn’t sign out. Your workspace remains open. Try again.
             </p>
           ) : null}
-          <p
-            className="cloud-shell__sr-only"
-            role="status"
-            aria-live="polite"
-          >
-            {signOutStatus === "pending"
-              ? "Signing out and closing this private workspace."
-              : ""}
+          <p className="cloud-shell__sr-only" role="status" aria-live="polite">
+            {signOutStatus === "pending" ? "Signing out and closing this private workspace." : ""}
           </p>
         </div>
       </aside>
@@ -251,5 +244,3 @@ export function CloudAppShell({
     </div>
   );
 }
-
-export default CloudAppShell;

@@ -17,11 +17,3 @@ export interface TodayPageEnvelope {
   readonly snapshot_token: string;
   readonly items: readonly unknown[];
 }
-
-export interface TodayReorderReceipt {
-  readonly local_date: string;
-  readonly applied_count: number;
-  readonly rank_step: number;
-  /** SHA-256 of lowercase saved UUIDs, comma-joined in saved-rank order. */
-  readonly order_fingerprint: string;
-}

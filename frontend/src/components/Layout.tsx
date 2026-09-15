@@ -8,11 +8,7 @@ const SECTIONS = [
   { to: "/projects", label: "Projects" },
 ];
 
-export default function Layout({
-  onLogout,
-}: {
-  onLogout: () => void;
-}) {
+export default function Layout({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="orbit-shell">
       <header className="orbit-shell__header">

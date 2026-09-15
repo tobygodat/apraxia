@@ -1,9 +1,7 @@
 function isLoopbackHost(hostname: string): boolean {
   const normalized = hostname.toLowerCase();
   return (
-    normalized === "localhost" ||
-    normalized === "[::1]" ||
-    /^127(?:\.\d{1,3}){3}$/.test(normalized)
+    normalized === "localhost" || normalized === "[::1]" || /^127(?:\.\d{1,3}){3}$/.test(normalized)
   );
 }
 
@@ -25,12 +23,7 @@ export function normalizeSecureHttpOrigin(value: unknown): string | null {
       parsed.search === "" &&
       parsed.hash === "";
 
-    if (
-      !usesSecureTransport ||
-      !isOriginOnly ||
-      parsed.username ||
-      parsed.password
-    ) {
+    if (!usesSecureTransport || !isOriginOnly || parsed.username || parsed.password) {
       return null;
     }
 
@@ -66,9 +59,7 @@ function decodeJwtRole(value: string): string | null {
   return null;
 }
 
-export function normalizeBrowserSafeSupabaseKey(
-  value: unknown,
-): string | null {
+export function normalizeBrowserSafeSupabaseKey(value: unknown): string | null {
   if (typeof value !== "string" || value.trim() === "") return null;
 
   const normalized = value.trim();

@@ -43,16 +43,23 @@ beforeAll(async () => {
   for (const name of (await readdir(directory)).filter((name) => name.endsWith(".sql")).sort()) {
     await db.exec(await readFile(path.join(directory, name), "utf8"));
   }
-  await db.query("insert into auth.users(id,email) values ($1,'oauth-a@example.test'),($2,'oauth-b@example.test')", [A, B]);
+  await db.query(
+    "insert into auth.users(id,email) values ($1,'oauth-a@example.test'),($2,'oauth-b@example.test')",
+    [A, B],
+  );
 }, 30_000);
 
 beforeEach(async () => {
   await db.exec("reset role; truncate private.google_oauth_transactions; set role service_role;");
 });
 
-afterAll(async () => { await db?.close(); });
+afterAll(async () => {
+  await db?.close();
+});
 
-function pending(overrides: Partial<PendingCalendarOAuthTransaction> = {}): PendingCalendarOAuthTransaction {
+function pending(
+  overrides: Partial<PendingCalendarOAuthTransaction> = {},
+): PendingCalendarOAuthTransaction {
   return {
     userId: A,
     stateHash: createHash("sha256").update(randomUUID()).digest("hex"),
@@ -70,7 +77,9 @@ async function begin(transaction: PendingCalendarOAuthTransaction) {
   return result.rows[0]!.receipt;
 }
 
-async function consume(command: Pick<PendingCalendarOAuthTransaction, "userId" | "stateHash" | "redirectUri">) {
+async function consume(
+  command: Pick<PendingCalendarOAuthTransaction, "userId" | "stateHash" | "redirectUri">,
+) {
   const result = await db.query<{ receipt: { id: string; consumed_at: string } }>(
     "select public.consume_calendar_oauth_transaction($1::uuid,$2::text,$3::text) as receipt",
     [command.userId, command.stateHash, command.redirectUri],
@@ -84,13 +93,18 @@ async function verifyFakeSession(userId: string) {
       headers: { Authorization: "Bearer fictional-session" },
     }),
     { SUPABASE_URL: "https://auth.example.test", SUPABASE_ANON_KEY: "sb_publishable_test" },
-    { fetch: async () => Response.json({ id: userId, role: "authenticated", is_anonymous: false }) },
+    {
+      fetch: async () => Response.json({ id: userId, role: "authenticated", is_anonymous: false }),
+    },
   );
 }
 
 describe("private OAuth SQL lifecycle with server policy", () => {
   it("uses independently verified identity and stores only a state hash before consuming once", async () => {
-    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), { appUrl: APP, clientId: "fictional-client" });
+    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), {
+      appUrl: APP,
+      clientId: "fictional-client",
+    });
     const receipt = await begin(attempt.transaction);
     expect(Object.keys(receipt).sort()).toEqual(["expires_at", "id"]);
     const rawState = new URL(attempt.authorizationUrl).searchParams.get("state")!;
@@ -98,12 +112,18 @@ describe("private OAuth SQL lifecycle with server policy", () => {
       "select to_jsonb(transaction) as record from private.google_oauth_transactions as transaction",
     );
     expect(rows.rows[0]!.record).toMatchObject({
-      id: receipt.id, user_id: A, state_hash: attempt.transaction.stateHash,
-      redirect_uri: REDIRECT, consumed_at: null,
+      id: receipt.id,
+      user_id: A,
+      state_hash: attempt.transaction.stateHash,
+      redirect_uri: REDIRECT,
+      consumed_at: null,
     });
     expect(JSON.stringify(rows.rows)).not.toContain(rawState);
 
-    const callback = parseCalendarOAuthCallback(`${REDIRECT}?state=${rawState}&code=fake-code&user_id=${B}`, APP);
+    const callback = parseCalendarOAuthCallback(
+      `${REDIRECT}?state=${rawState}&code=fake-code&user_id=${B}`,
+      APP,
+    );
     const command = createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(A), APP);
     const consumed = await consume(command);
     expect(Object.keys(consumed).sort()).toEqual(["consumed_at", "id"]);
@@ -113,22 +133,34 @@ describe("private OAuth SQL lifecycle with server policy", () => {
   });
 
   it("rejects a switched account without burning the original owner's attempt", async () => {
-    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), { appUrl: APP, clientId: "fictional-client" });
+    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), {
+      appUrl: APP,
+      clientId: "fictional-client",
+    });
     const receipt = await begin(attempt.transaction);
     const state = new URL(attempt.authorizationUrl).searchParams.get("state")!;
     const callback = parseCalendarOAuthCallback(`${REDIRECT}?state=${state}&code=fake-code`, APP);
-    await expect(consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(B), APP)))
-      .rejects.toMatchObject(SAFE_ERROR);
-    expect((await consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(A), APP))).id)
-      .toBe(receipt.id);
+    await expect(
+      consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(B), APP)),
+    ).rejects.toMatchObject(SAFE_ERROR);
+    expect(
+      (await consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(A), APP)))
+        .id,
+    ).toBe(receipt.id);
   });
 
   it("consumes a verified denial too, without retaining the provider error", async () => {
     const session = await verifyFakeSession(A);
-    const attempt = createCalendarOAuthAttempt(session, { appUrl: APP, clientId: "fictional-client" });
+    const attempt = createCalendarOAuthAttempt(session, {
+      appUrl: APP,
+      clientId: "fictional-client",
+    });
     await begin(attempt.transaction);
     const state = new URL(attempt.authorizationUrl).searchParams.get("state")!;
-    const callback = parseCalendarOAuthCallback(`${REDIRECT}?state=${state}&error=access_denied&error_description=private-detail`, APP);
+    const callback = parseCalendarOAuthCallback(
+      `${REDIRECT}?state=${state}&error=access_denied&error_description=private-detail`,
+      APP,
+    );
     expect(callback).toEqual({ status: "denied", state });
     const command = createCalendarOAuthConsumeCommand(callback, session, APP);
     await consume(command);
@@ -139,7 +171,10 @@ describe("private OAuth SQL lifecycle with server policy", () => {
     await db.query("select set_config('request.jwt.claim.sub', $1, false)", [B]);
     const transaction = pending();
     await begin(transaction);
-    expect((await db.query<{ user_id: string }>("select user_id from private.google_oauth_transactions")).rows[0]!.user_id).toBe(A);
+    expect(
+      (await db.query<{ user_id: string }>("select user_id from private.google_oauth_transactions"))
+        .rows[0]!.user_id,
+    ).toBe(A);
     await consume(transaction);
   });
 });
@@ -163,9 +198,17 @@ describe("database-clock expiry and exact one-time matching", () => {
   it("rejects expired state without consuming it", async () => {
     const transaction = pending();
     await begin(transaction);
-    await db.exec("update private.google_oauth_transactions set created_at=clock_timestamp()-interval '2 minutes', expires_at=clock_timestamp()-interval '1 minute'");
+    await db.exec(
+      "update private.google_oauth_transactions set created_at=clock_timestamp()-interval '2 minutes', expires_at=clock_timestamp()-interval '1 minute'",
+    );
     await expect(consume(transaction)).rejects.toMatchObject(SAFE_ERROR);
-    expect((await db.query<{ consumed_at: null }>("select consumed_at from private.google_oauth_transactions")).rows[0]!.consumed_at).toBeNull();
+    expect(
+      (
+        await db.query<{ consumed_at: null }>(
+          "select consumed_at from private.google_oauth_transactions",
+        )
+      ).rows[0]!.consumed_at,
+    ).toBeNull();
   });
 
   it("uses a current clock rather than the beginning of a long transaction", async () => {
@@ -175,20 +218,30 @@ describe("database-clock expiry and exact one-time matching", () => {
     try {
       // A historical creation time keeps the fixture's table constraints valid.
       // After waiting, expiry is after transaction_timestamp but before real now.
-      await db.exec("select pg_sleep(0.03); update private.google_oauth_transactions set created_at=transaction_timestamp()-interval '1 minute', expires_at=transaction_timestamp()+interval '1 millisecond'");
+      await db.exec(
+        "select pg_sleep(0.03); update private.google_oauth_transactions set created_at=transaction_timestamp()-interval '1 minute', expires_at=transaction_timestamp()+interval '1 millisecond'",
+      );
       await expect(consume(transaction)).rejects.toMatchObject(SAFE_ERROR);
-    } finally { await db.exec("rollback"); }
+    } finally {
+      await db.exec("rollback");
+    }
   });
 
   it.each([
     ["infinite expiry", "clock_timestamp()", "'infinity'::timestamptz"],
     ["infinite creation", "'-infinity'::timestamptz", "clock_timestamp()+interval '1 minute'"],
-    ["future creation", "clock_timestamp()+interval '1 minute'", "clock_timestamp()+interval '2 minutes'"],
+    [
+      "future creation",
+      "clock_timestamp()+interval '1 minute'",
+      "clock_timestamp()+interval '2 minutes'",
+    ],
     ["excess lifetime", "clock_timestamp()", "clock_timestamp()+interval '11 minutes'"],
   ])("rejects pre-existing private rows with %s", async (_label, created, expires) => {
     const transaction = pending();
     await begin(transaction);
-    await db.exec(`update private.google_oauth_transactions set created_at=${created}, expires_at=${expires}`);
+    await db.exec(
+      `update private.google_oauth_transactions set created_at=${created}, expires_at=${expires}`,
+    );
     await expect(consume(transaction)).rejects.toMatchObject(SAFE_ERROR);
   });
 
@@ -217,40 +270,96 @@ describe("database-clock expiry and exact one-time matching", () => {
     const receipt = await begin(transaction);
     await expect(begin({ ...transaction, userId: B })).rejects.toMatchObject(SAFE_ERROR);
     expect((await consume(transaction)).id).toBe(receipt.id);
-    expect((await db.query<{ count: number }>("select count(*)::integer as count from private.google_oauth_transactions")).rows[0]!.count).toBe(1);
+    expect(
+      (
+        await db.query<{ count: number }>(
+          "select count(*)::integer as count from private.google_oauth_transactions",
+        )
+      ).rows[0]!.count,
+    ).toBe(1);
   });
 
-  it.each([null, "infinity", "-infinity", "2000-01-01T00:00:00Z"])("rejects nonfuture or nonfinite expiry %s", async (expiry) => {
-    await expect(db.query("select public.begin_calendar_oauth_transaction($1,$2,$3,$4::timestamptz)", [A, "a".repeat(64), REDIRECT, expiry]))
-      .rejects.toMatchObject(SAFE_ERROR);
-  });
+  it.each([null, "infinity", "-infinity", "2000-01-01T00:00:00Z"])(
+    "rejects nonfuture or nonfinite expiry %s",
+    async (expiry) => {
+      await expect(
+        db.query("select public.begin_calendar_oauth_transaction($1,$2,$3,$4::timestamptz)", [
+          A,
+          "a".repeat(64),
+          REDIRECT,
+          expiry,
+        ]),
+      ).rejects.toMatchObject(SAFE_ERROR);
+    },
+  );
 
-  it.each([null, "00000000-0000-0000-0000-000000000000", UNKNOWN])("rejects missing, nil, or absent ownership %s without FK disclosure", async (userId) => {
-    await expect(db.query("select public.begin_calendar_oauth_transaction($1::uuid,$2,$3,clock_timestamp()+interval '5 minutes')", [userId, "a".repeat(64), REDIRECT]))
-      .rejects.toMatchObject(SAFE_ERROR);
-  });
+  it.each([null, "00000000-0000-0000-0000-000000000000", UNKNOWN])(
+    "rejects missing, nil, or absent ownership %s without FK disclosure",
+    async (userId) => {
+      await expect(
+        db.query(
+          "select public.begin_calendar_oauth_transaction($1::uuid,$2,$3,clock_timestamp()+interval '5 minutes')",
+          [userId, "a".repeat(64), REDIRECT],
+        ),
+      ).rejects.toMatchObject(SAFE_ERROR);
+    },
+  );
 
-  it.each([null, "", "A".repeat(64), "a".repeat(63), "a".repeat(65), "z".repeat(64), "a".repeat(64) + "\n"])("rejects malformed state hash %# in both operations", async (hash) => {
-    await expect(db.query("select public.begin_calendar_oauth_transaction($1,$2,$3,clock_timestamp()+interval '5 minutes')", [A, hash, REDIRECT]))
-      .rejects.toMatchObject(SAFE_ERROR);
-    await expect(db.query("select public.consume_calendar_oauth_transaction($1,$2,$3)", [A, hash, REDIRECT]))
-      .rejects.toMatchObject(SAFE_ERROR);
+  it.each([
+    null,
+    "",
+    "A".repeat(64),
+    "a".repeat(63),
+    "a".repeat(65),
+    "z".repeat(64),
+    "a".repeat(64) + "\n",
+  ])("rejects malformed state hash %# in both operations", async (hash) => {
+    await expect(
+      db.query(
+        "select public.begin_calendar_oauth_transaction($1,$2,$3,clock_timestamp()+interval '5 minutes')",
+        [A, hash, REDIRECT],
+      ),
+    ).rejects.toMatchObject(SAFE_ERROR);
+    await expect(
+      db.query("select public.consume_calendar_oauth_transaction($1,$2,$3)", [A, hash, REDIRECT]),
+    ).rejects.toMatchObject(SAFE_ERROR);
   });
 
   it.each([
-    null, "", "http://app.example.test/api/calendar/callback", `${REDIRECT}?extra=1`, `${REDIRECT}#fragment`,
-    `${REDIRECT}/`, "https://user:password@app.example.test/api/calendar/callback", `${REDIRECT}\n`,
-    "https://app.example.test\\other/api/calendar/callback", "https://example.test/other/api/calendar/callback",
-    "https://" + "a".repeat(4096) + "/api/calendar/callback", "https://éxample.test/api/calendar/callback",
+    null,
+    "",
+    "http://app.example.test/api/calendar/callback",
+    `${REDIRECT}?extra=1`,
+    `${REDIRECT}#fragment`,
+    `${REDIRECT}/`,
+    "https://user:password@app.example.test/api/calendar/callback",
+    `${REDIRECT}\n`,
+    "https://app.example.test\\other/api/calendar/callback",
+    "https://example.test/other/api/calendar/callback",
+    "https://" + "a".repeat(4096) + "/api/calendar/callback",
+    "https://éxample.test/api/calendar/callback",
   ])("rejects an unsafe structural redirect %# in both operations", async (redirect) => {
-    await expect(db.query("select public.begin_calendar_oauth_transaction($1,$2,$3,clock_timestamp()+interval '5 minutes')", [A, "a".repeat(64), redirect]))
-      .rejects.toMatchObject(SAFE_ERROR);
-    await expect(db.query("select public.consume_calendar_oauth_transaction($1,$2,$3)", [A, "a".repeat(64), redirect]))
-      .rejects.toMatchObject(SAFE_ERROR);
+    await expect(
+      db.query(
+        "select public.begin_calendar_oauth_transaction($1,$2,$3,clock_timestamp()+interval '5 minutes')",
+        [A, "a".repeat(64), redirect],
+      ),
+    ).rejects.toMatchObject(SAFE_ERROR);
+    await expect(
+      db.query("select public.consume_calendar_oauth_transaction($1,$2,$3)", [
+        A,
+        "a".repeat(64),
+        redirect,
+      ]),
+    ).rejects.toMatchObject(SAFE_ERROR);
   });
 
   it.each([
-    "http://localhost:3000", "http://127.0.0.1:3000", "http://127.1.2.3", "http://[::1]:3000", "https://[2001:db8::1]:8443",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.1.2.3",
+    "http://[::1]:3000",
+    "https://[2001:db8::1]:8443",
   ])("preserves policy-supported development and HTTPS origins: %s", async (appUrl) => {
     const attempt = createCalendarOAuthAttempt({ userId: A }, { appUrl, clientId: "fake-client" });
     const receipt = await begin(attempt.transaction);
@@ -262,26 +371,47 @@ describe("SQL role and execution boundaries", () => {
   it("keeps all three helpers invoker-only, search-path-hardened, and service-only", async () => {
     await db.exec("reset role");
     for (const signature of [BEGIN_SIGNATURE, CONSUME_SIGNATURE, VALIDATE_SIGNATURE]) {
-      const result = await db.query<{ elevated: boolean; config: string[]; service: boolean; browser: boolean; anon: boolean; helper: boolean }>(`
+      const result = await db.query<{
+        elevated: boolean;
+        config: string[];
+        service: boolean;
+        browser: boolean;
+        anon: boolean;
+        helper: boolean;
+      }>(
+        `
         select p.prosecdef as elevated, p.proconfig as config,
           has_function_privilege('service_role',p.oid,'EXECUTE') as service,
           has_function_privilege('authenticated',p.oid,'EXECUTE') as browser,
           has_function_privilege('anon',p.oid,'EXECUTE') as anon,
           has_function_privilege('orbitos_rpc',p.oid,'EXECUTE') as helper
-        from pg_proc p where p.oid=$1::regprocedure`, [signature]);
-      expect(result.rows[0]).toMatchObject({ elevated: false, service: true, browser: false, anon: false, helper: false });
+        from pg_proc p where p.oid=$1::regprocedure`,
+        [signature],
+      );
+      expect(result.rows[0]).toMatchObject({
+        elevated: false,
+        service: true,
+        browser: false,
+        anon: false,
+        helper: false,
+      });
       expect(result.rows[0]!.config).toContain('search_path=""');
     }
   });
 
-  it.each(["anon", "authenticated", "orbitos_rpc"])("denies %s actual calls and private reads", async (role) => {
-    const transaction = pending();
-    await begin(transaction);
-    await db.exec(`reset role; set role ${role}`);
-    await expect(begin(transaction)).rejects.toMatchObject({ code: "42501" });
-    await expect(consume(transaction)).rejects.toMatchObject({ code: "42501" });
-    await expect(db.query("select * from private.google_oauth_transactions")).rejects.toMatchObject({ code: "42501" });
-  });
+  it.each(["anon", "authenticated", "orbitos_rpc"])(
+    "denies %s actual calls and private reads",
+    async (role) => {
+      const transaction = pending();
+      await begin(transaction);
+      await db.exec(`reset role; set role ${role}`);
+      await expect(begin(transaction)).rejects.toMatchObject({ code: "42501" });
+      await expect(consume(transaction)).rejects.toMatchObject({ code: "42501" });
+      await expect(
+        db.query("select * from private.google_oauth_transactions"),
+      ).rejects.toMatchObject({ code: "42501" });
+    },
+  );
 
   it("keeps receipts in UTC despite the caller timezone", async () => {
     await db.exec("set timezone='Pacific/Auckland'");
@@ -289,7 +419,9 @@ describe("SQL role and execution boundaries", () => {
       const transaction = pending();
       expect((await begin(transaction)).expires_at).toMatch(/\+00:00$/);
       expect((await consume(transaction)).consumed_at).toMatch(/\+00:00$/);
-    } finally { await db.exec("set timezone='UTC'"); }
+    } finally {
+      await db.exec("set timezone='UTC'");
+    }
   });
 
   it("rolls back consumption with its surrounding transaction", async () => {
@@ -302,10 +434,16 @@ describe("SQL role and execution boundaries", () => {
   });
 
   it("checks the real clock after the row-lock statement in the installed function", async () => {
-    const definition = (await db.query<{ definition: string }>("select pg_get_functiondef($1::regprocedure) as definition", [CONSUME_SIGNATURE])).rows[0]!.definition;
+    const definition = (
+      await db.query<{ definition: string }>(
+        "select pg_get_functiondef($1::regprocedure) as definition",
+        [CONSUME_SIGNATURE],
+      )
+    ).rows[0]!.definition;
     expect(definition.indexOf("for update;")).toBeGreaterThan(0);
-    expect(definition.indexOf("v_now := pg_catalog.clock_timestamp()"))
-      .toBeGreaterThan(definition.indexOf("for update;"));
+    expect(definition.indexOf("v_now := pg_catalog.clock_timestamp()")).toBeGreaterThan(
+      definition.indexOf("for update;"),
+    );
     // This structural assertion is not a two-session concurrency test.
   });
 });

@@ -1,20 +1,16 @@
 import type {
+  ClassSummary,
   DeleteUndoToken,
   Profile,
   ProjectSummary,
-  ClassSummary,
   Todo,
 } from "../../types/domain";
 import { isSqlDate } from "./dateDomain";
-import type {
-  TodoWorkspaceSnapshot,
-  UpdateTodoDetailsInput,
-} from "./todoService";
+import type { TodoWorkspaceSnapshot, UpdateTodoDetailsInput } from "./todoService";
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LOCAL_TIME_PATTERN =
-  /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d)(?:\.(\d{1,6}))?)?$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LOCAL_TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d)(?:\.(\d{1,6}))?)?$/;
+const ASSIGNMENT_TYPES = ["", "Homework", "Quiz", "Reading", "Exam", "Other"];
 const TIMESTAMP_PATTERN =
   /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,6})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 
@@ -101,9 +97,7 @@ export function readTodoResponse(value: unknown): Todo | null {
     !isUuid(value.id) ||
     !isNonemptyText(value.text) ||
     typeof value.completed !== "boolean" ||
-    (value.completed
-      ? !isTimestamp(value.completedAt)
-      : value.completedAt !== null) ||
+    (value.completed ? !isTimestamp(value.completedAt) : value.completedAt !== null) ||
     (value.dueDate !== null && !isLocalDate(value.dueDate)) ||
     (value.dueTime !== null && canonicalLocalTime(value.dueTime) === null) ||
     (value.dueDate === null && value.dueTime !== null) ||
@@ -111,8 +105,8 @@ export function readTodoResponse(value: unknown): Todo | null {
     (value.classId != null && (!isNonemptyText(value.classId) || value.projectId !== null)) ||
     (value.className != null && typeof value.className !== "string") ||
     (value.assignmentType !== undefined &&
-      (!["", "Homework", "Quiz", "Reading", "Exam", "Other"].includes(value.assignmentType as string) ||
-       (value.assignmentType !== "" && value.classId == null))) ||
+      (!ASSIGNMENT_TYPES.includes(value.assignmentType as string) ||
+        (value.assignmentType !== "" && value.classId == null))) ||
     (value.todayRank !== null &&
       (typeof value.todayRank !== "number" ||
         !Number.isSafeInteger(value.todayRank) ||
@@ -132,26 +126,43 @@ export function readTodoResponse(value: unknown): Todo | null {
     projectId: value.projectId as string | null,
     ...(value.classId !== undefined && { classId: value.classId as string | null }),
     ...(value.className !== undefined && { className: value.className as string | null }),
-    ...(value.assignmentType !== undefined && { assignmentType: value.assignmentType as string }),
+    ...(value.assignmentType !== undefined && {
+      assignmentType: value.assignmentType as string,
+    }),
     todayRank: value.todayRank as number | null,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
   };
 }
 
-export function readTodoWorkspaceSnapshot(
-  value: unknown,
-): TodoWorkspaceSnapshot | null {
-  if (!isRecord(value) || !Array.isArray(value.projects) || !Array.isArray(value.todos)) {
+function readClassSummary(value: unknown): ClassSummary | null {
+  if (
+    !isRecord(value) ||
+    !isNonemptyText(value.id) ||
+    (value.name !== null && typeof value.name !== "string")
+  ) {
     return null;
   }
-  if (!Array.isArray(value.classes)) return null;
-  const classes: ClassSummary[] = [];
-  for (const course of value.classes) {
-    if (!isRecord(course) || !isNonemptyText(course.id) || (course.name !== null && typeof course.name !== "string")) return null;
-    classes.push({ id: course.id, name: course.name });
+  return { id: value.id, name: value.name };
+}
+
+export function readTodoWorkspaceSnapshot(value: unknown): TodoWorkspaceSnapshot | null {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.projects) ||
+    !Array.isArray(value.classes) ||
+    !Array.isArray(value.todos)
+  ) {
+    return null;
   }
-  if (new Set(classes.map(course => course.id)).size !== classes.length) return null;
+  // Class IDs are case-sensitive text, unlike the UUID collections below.
+  const classes = Array.from(value.classes, readClassSummary);
+  if (
+    classes.some((course) => course === null) ||
+    new Set(classes.map((course) => course!.id)).size !== classes.length
+  ) {
+    return null;
+  }
   const profile = readProfile(value.profile);
   const projects = Array.from(value.projects, readProjectSummary);
   const todos = Array.from(value.todos, readTodoResponse);
@@ -166,18 +177,21 @@ export function readTodoWorkspaceSnapshot(
   const validProjects = projects as ProjectSummary[];
   const validTodos = todos as Todo[];
   if (
-    new Set(validProjects.map((project) => project.id.toLowerCase())).size !== validProjects.length ||
+    new Set(validProjects.map((project) => project.id.toLowerCase())).size !==
+      validProjects.length ||
     new Set(validTodos.map((todo) => todo.id.toLowerCase())).size !== validTodos.length
   ) {
     return null;
   }
-  return { profile, classes, projects: validProjects, todos: validTodos };
+  return {
+    profile,
+    projects: validProjects,
+    classes: classes as ClassSummary[],
+    todos: validTodos,
+  };
 }
 
-export function todoMatchesDetails(
-  todo: Todo,
-  input: UpdateTodoDetailsInput,
-): boolean {
+export function todoMatchesDetails(todo: Todo, input: UpdateTodoDetailsInput): boolean {
   return (
     (input.text === undefined || todo.text === input.text) &&
     (input.classId === undefined || (todo.classId ?? null) === input.classId) &&

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  BrowserEnvironmentError,
-  parseBrowserEnvironment,
-} from "./browserEnv";
+import { BrowserEnvironmentError, parseBrowserEnvironment } from "./browserEnv";
 
 describe("parseBrowserEnvironment", () => {
   it("returns only the browser-safe Supabase configuration", () => {

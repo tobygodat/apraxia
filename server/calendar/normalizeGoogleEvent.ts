@@ -1,9 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 
-import type {
-  CalendarEvent,
-  VisibleCalendarMetadata,
-} from "../../frontend/src/types/domain.js";
+import type { CalendarEvent, VisibleCalendarMetadata } from "../../frontend/src/types/domain.js";
 
 export type GoogleEventNormalizationResult =
   | { status: "event"; event: CalendarEvent }
@@ -24,11 +21,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isIdentifier(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    value.length > 0 &&
-    !/[\s\u0000-\u001f\u007f]/u.test(value)
-  );
+  // eslint-disable-next-line no-control-regex -- deliberately rejects control characters in untrusted provider input.
+  return typeof value === "string" && value.length > 0 && !/[\s\u0000-\u001f\u007f]/u.test(value);
 }
 
 function isNamedTimeZone(value: unknown): value is string {
@@ -40,6 +34,7 @@ function isNamedTimeZone(value: unknown): value is string {
 }
 
 function safeGoogleEventLink(value: unknown): value is string {
+  // eslint-disable-next-line no-control-regex -- deliberately rejects control characters in untrusted provider input.
   if (typeof value !== "string" || /[\s\\\u0000-\u001f\u007f]/u.test(value)) {
     return false;
   }
@@ -58,9 +53,7 @@ function safeGoogleEventLink(value: unknown): value is string {
   // Only event-detail routes are navigable. Generic Google routes, Calendar's
   // composer, and redirect parameters are deliberately outside this allowlist.
   const queryEvent = /^\/calendar\/(?:u\/\d+\/)?event$/.test(url.pathname);
-  const pathEvent = /^\/calendar\/(?:u\/\d+\/)?r\/eventedit\/[A-Za-z0-9_-]+$/.test(
-    url.pathname,
-  );
+  const pathEvent = /^\/calendar\/(?:u\/\d+\/)?r\/eventedit\/[A-Za-z0-9_-]+$/.test(url.pathname);
   if (!queryEvent && !pathEvent) return false;
   if (queryEvent && !isIdentifier(url.searchParams.get("eid"))) return false;
   const seen = new Set<string>();
@@ -83,11 +76,7 @@ function hasSupportedInstantYear(instant: Temporal.Instant): boolean {
 }
 
 function timedBoundary(raw: Record<string, unknown>): TimedBoundary | null {
-  if (
-    raw.date !== undefined ||
-    typeof raw.dateTime !== "string" ||
-    !DATE_TIME.test(raw.dateTime)
-  ) {
+  if (raw.date !== undefined || typeof raw.dateTime !== "string" || !DATE_TIME.test(raw.dateTime)) {
     return null;
   }
   let timeZone: string | null = null;
@@ -136,9 +125,7 @@ export function normalizeGoogleEvent(
     // Deleted instances may have no title, dates, or link at all.
     if (raw.status === "cancelled") return { status: "cancelled" };
     if (
-      (raw.status !== undefined &&
-        raw.status !== "confirmed" &&
-        raw.status !== "tentative") ||
+      (raw.status !== undefined && raw.status !== "confirmed" && raw.status !== "tentative") ||
       !isIdentifier(raw.id) ||
       (raw.summary !== undefined && typeof raw.summary !== "string") ||
       !safeGoogleEventLink(raw.htmlLink) ||
@@ -150,17 +137,20 @@ export function normalizeGoogleEvent(
       return invalid;
     }
     // The read transport resolves label colors (or the legacy event palette).
-    const eventColor = isRecord(raw.resolvedEventColor) && typeof raw.resolvedEventColor.background === "string" &&
-      /^#[\da-f]{6}$/i.test(raw.resolvedEventColor.background) ? raw.resolvedEventColor.background : null;
+    const eventColor =
+      isRecord(raw.resolvedEventColor) &&
+      typeof raw.resolvedEventColor.background === "string" &&
+      /^#[\da-f]{6}$/i.test(raw.resolvedEventColor.background)
+        ? raw.resolvedEventColor.background
+        : null;
     const base = {
       eventId: raw.id,
       calendarId: calendar.calendarId,
       title:
-        typeof raw.summary === "string" && raw.summary.trim() !== ""
-          ? raw.summary
-          : "(No title)",
+        typeof raw.summary === "string" && raw.summary.trim() !== "" ? raw.summary : "(No title)",
       ...(typeof raw.location === "string" && raw.location.trim() !== ""
-        ? { location: raw.location.trim().slice(0, 4096) } : {}),
+        ? { location: raw.location.trim().slice(0, 4096) }
+        : {}),
       calendarColor: {
         background: eventColor ?? calendar.color.background,
         foreground: eventColor ? null : calendar.color.foreground,

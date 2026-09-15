@@ -12,9 +12,7 @@ export class BrowserEnvironmentError extends Error {
   readonly variables: readonly string[];
 
   constructor(variables: readonly string[]) {
-    super(
-      `Configure the browser-safe environment variables: ${variables.join(", ")}.`,
-    );
+    super(`Configure the browser-safe environment variables: ${variables.join(", ")}.`);
     this.name = "BrowserEnvironmentError";
     this.variables = variables;
   }
@@ -22,9 +20,7 @@ export class BrowserEnvironmentError extends Error {
 
 type BrowserEnvironmentSource = Record<string, unknown>;
 
-export function parseBrowserEnvironment(
-  source: BrowserEnvironmentSource,
-): BrowserEnvironment {
+export function parseBrowserEnvironment(source: BrowserEnvironmentSource): BrowserEnvironment {
   const invalid: string[] = [];
   const supabaseUrl = source.VITE_SUPABASE_URL;
   const supabaseAnonKey = source.VITE_SUPABASE_ANON_KEY;

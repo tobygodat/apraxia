@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "api/**/*.ts",
+        "scripts/*.mjs",
+        "vitest.local.config.ts",
+        "tests/**/*.test.ts",
+        "tests/helpers/**/*.ts"
+      ],
+      "project": [
+        "api/**/*.ts",
+        "server/**/*.ts",
+        "shared/**/*.ts",
+        "scripts/*.mjs",
+        "tests/**/*.ts"
+      ],
+      "ignoreDependencies": ["@supabase/supabase-js"]
+    },
+    "frontend": {
+      "entry": [
+        "src/qa/*.tsx",
+        "pdfAssets.ts",
+        "src/**/*.test.{ts,tsx}",
+        "tests/**/*.test.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "*.ts"],
+      "ignore": ["src/types/database.ts", "src/api/**"]
+    }
+  }
+}

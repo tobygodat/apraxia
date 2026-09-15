@@ -17,8 +17,7 @@ const configuredEnvironment = {
   APP_URL: "https://preview.example.test",
   GOOGLE_CLIENT_ID: "google-client-canary",
   GOOGLE_CLIENT_SECRET: "google-secret-canary",
-  GOOGLE_TOKEN_ENCRYPTION_KEY:
-    Buffer.from("0123456789abcdef0123456789abcdef").toString("base64"),
+  GOOGLE_TOKEN_ENCRYPTION_KEY: Buffer.from("0123456789abcdef0123456789abcdef").toString("base64"),
 };
 
 describe("cloud health", () => {
@@ -69,11 +68,7 @@ describe("cloud health", () => {
       status: string;
       checks: {
         application: { configured: boolean };
-        calendar: {
-          configured: boolean;
-          missingOrInvalid: string[];
-          status: string;
-        };
+        calendar: { configured: boolean; status: string };
       };
     };
 
@@ -82,7 +77,6 @@ describe("cloud health", () => {
     expect(body.checks.application.configured).toBe(true);
     expect(body.checks.calendar).toEqual({
       configured: false,
-      missingOrInvalid: [],
       status: "not_configured",
     });
   });
@@ -94,10 +88,11 @@ describe("cloud health", () => {
     };
 
     const response = createHealthResponse(partialCalendarEnvironment);
-    const body = (await response.json()) as {
+    const bodyText = await response.text();
+    const body = JSON.parse(bodyText) as {
       status: string;
       checks: {
-        calendar: { status: string; missingOrInvalid: string[] };
+        calendar: { configured: boolean; status: string };
       };
     };
 
@@ -105,9 +100,9 @@ describe("cloud health", () => {
     expect(body.status).toBe("degraded");
     expect(body.checks.calendar).toEqual({
       configured: false,
-      missingOrInvalid: ["GOOGLE_CLIENT_SECRET"],
       status: "invalid",
     });
+    expect(bodyText).not.toContain("GOOGLE_CLIENT_SECRET");
   });
 
   it("returns a safe failure when application configuration is invalid", async () => {
@@ -121,12 +116,13 @@ describe("cloud health", () => {
     const bodyText = await response.text();
     const body = JSON.parse(bodyText) as {
       status: string;
-      checks: { application: { missingOrInvalid: string[] } };
+      checks: { application: { configured: boolean } };
     };
 
     expect(response.status).toBe(503);
     expect(body.status).toBe("not_configured");
-    expect(body.checks.application.missingOrInvalid).toEqual(["SUPABASE_URL"]);
+    expect(body.checks.application).toEqual({ configured: false });
+    expect(bodyText).not.toContain("SUPABASE_URL");
     expect(bodyText).not.toContain("service-role-must-not-leak");
   });
 
@@ -135,24 +131,25 @@ describe("cloud health", () => {
       ...configuredEnvironment,
       SUPABASE_URL: "https://other-project.supabase.co",
     });
-    const body = (await response.json()) as {
+    const bodyText = await response.text();
+    const body = JSON.parse(bodyText) as {
       status: string;
-      checks: { application: { missingOrInvalid: string[] } };
+      checks: { application: { configured: boolean } };
     };
 
     expect(response.status).toBe(503);
     expect(body.status).toBe("not_configured");
-    expect(body.checks.application.missingOrInvalid).toEqual([
-      "SUPABASE_URL",
-      "VITE_SUPABASE_URL",
-    ]);
+    expect(body.checks.application).toEqual({ configured: false });
+    expect(bodyText).not.toContain("SUPABASE_URL");
+    expect(bodyText).not.toContain("VITE_SUPABASE_URL");
   });
 });
 
 describe("typed environment parsing", () => {
   it("accepts an exactly encoded 256-bit Calendar encryption key", () => {
-    expect(requireCalendarEnvironment(configuredEnvironment).GOOGLE_TOKEN_ENCRYPTION_KEY)
-      .toBe(configuredEnvironment.GOOGLE_TOKEN_ENCRYPTION_KEY);
+    expect(requireCalendarEnvironment(configuredEnvironment).GOOGLE_TOKEN_ENCRYPTION_KEY).toBe(
+      configuredEnvironment.GOOGLE_TOKEN_ENCRYPTION_KEY,
+    );
   });
 
   it.each([
@@ -164,9 +161,12 @@ describe("typed environment parsing", () => {
   ])("rejects an invalid encryption key without exposing it", async (key) => {
     const environment = { ...configuredEnvironment, GOOGLE_TOKEN_ENCRYPTION_KEY: key };
     expect(() => requireCalendarEnvironment(environment)).toThrow(EnvironmentConfigurationError);
-    try { requireCalendarEnvironment(environment); }
-    catch (error) {
-      expect((error as EnvironmentConfigurationError).variables).toEqual(["GOOGLE_TOKEN_ENCRYPTION_KEY"]);
+    try {
+      requireCalendarEnvironment(environment);
+    } catch (error) {
+      expect((error as EnvironmentConfigurationError).variables).toEqual([
+        "GOOGLE_TOKEN_ENCRYPTION_KEY",
+      ]);
       expect(String(error)).not.toContain(key);
     }
     const response = createHealthResponse(environment);
@@ -186,10 +186,7 @@ describe("typed environment parsing", () => {
   });
 
   it.each([
-    [
-      { SUPABASE_URL: "https://other-project.supabase.co" },
-      ["SUPABASE_URL", "VITE_SUPABASE_URL"],
-    ],
+    [{ SUPABASE_URL: "https://other-project.supabase.co" }, ["SUPABASE_URL", "VITE_SUPABASE_URL"]],
     [
       { SUPABASE_ANON_KEY: "different-public-key" },
       ["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"],
@@ -205,9 +202,7 @@ describe("typed environment parsing", () => {
         throw new Error("expected validation to fail");
       } catch (error) {
         expect(error).toBeInstanceOf(EnvironmentConfigurationError);
-        expect(
-          (error as EnvironmentConfigurationError).variables,
-        ).toEqual(expectedVariables);
+        expect((error as EnvironmentConfigurationError).variables).toEqual(expectedVariables);
       }
     },
   );
@@ -241,9 +236,7 @@ describe("typed environment parsing", () => {
       throw new Error("expected validation to fail");
     } catch (error) {
       expect(error).toBeInstanceOf(EnvironmentConfigurationError);
-      expect((error as EnvironmentConfigurationError).variables).toEqual([
-        "APP_URL",
-      ]);
+      expect((error as EnvironmentConfigurationError).variables).toEqual(["APP_URL"]);
       expect(String(error)).not.toContain(url);
     }
   });
@@ -265,9 +258,9 @@ describe("typed environment parsing", () => {
 
   it.each([
     "sb_secret_do-not-bundle-this",
-    `header.${Buffer.from(
-      JSON.stringify({ role: "service_role" }),
-    ).toString("base64url")}.signature`,
+    `header.${Buffer.from(JSON.stringify({ role: "service_role" })).toString(
+      "base64url",
+    )}.signature`,
   ])("rejects the privileged public key %s without echoing it", (key) => {
     try {
       requireApplicationEnvironment({

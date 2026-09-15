@@ -25,10 +25,9 @@ describe("useLocalToday", () => {
 
   it("changes timezone synchronously without returning the previous zone's date", () => {
     vi.setSystemTime(new Date("2026-09-03T02:00:00Z"));
-    const { result, rerender } = renderHook(
-      ({ timeZone }) => useLocalToday(timeZone),
-      { initialProps: { timeZone: "America/New_York" } },
-    );
+    const { result, rerender } = renderHook(({ timeZone }) => useLocalToday(timeZone), {
+      initialProps: { timeZone: "America/New_York" },
+    });
     expect(result.current).toBe("2026-09-02");
 
     rerender({ timeZone: "Asia/Tokyo" });
@@ -87,9 +86,7 @@ describe("useLocalToday", () => {
 
   it("refreshes immediately when a sleeping document becomes visible", () => {
     vi.setSystemTime(new Date("2026-09-02T16:00:00Z"));
-    const visibility = vi
-      .spyOn(document, "visibilityState", "get")
-      .mockReturnValue("hidden");
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
     const { result } = renderHook(() => useLocalToday("America/New_York"));
 
     vi.setSystemTime(new Date("2026-09-03T16:00:00Z"));
@@ -120,9 +117,6 @@ describe("useLocalToday", () => {
 
     expect(vi.getTimerCount()).toBe(0);
     expect(removeWindowListener).toHaveBeenCalledWith("focus", focusListener);
-    expect(removeDocumentListener).toHaveBeenCalledWith(
-      "visibilitychange",
-      visibilityListener,
-    );
+    expect(removeDocumentListener).toHaveBeenCalledWith("visibilitychange", visibilityListener);
   });
 });

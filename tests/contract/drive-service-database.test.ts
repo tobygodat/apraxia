@@ -1,10 +1,10 @@
 import { storageHarnessSql } from "../helpers/storageHarness";
-import { readFile, readdir } from 'node:fs/promises';
-import { PGlite } from '@electric-sql/pglite';
-import { describe, expect, it } from 'vitest';
+import { readFile, readdir } from "node:fs/promises";
+import { PGlite } from "@electric-sql/pglite";
+import { describe, expect, it } from "vitest";
 
-describe('Drive private service storage', () => {
-  it('isolates credentials, consumes PKCE once, and prevents stale writes after disconnect', async () => {
+describe("Drive private service storage", () => {
+  it("isolates credentials, consumes PKCE once, and prevents stale writes after disconnect", async () => {
     const db = new PGlite();
     try {
       await db.exec(`
@@ -19,49 +19,135 @@ describe('Drive private service storage', () => {
         grant execute on function auth.uid() to anon, authenticated, service_role;
       `);
       await db.exec(storageHarnessSql);
-      const migrations = (await readdir('supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
-      for (const name of migrations) await db.exec(await readFile(`supabase/migrations/${name}`, 'utf8'));
-      const owner = '11111111-1111-4111-8111-111111111111';
-      const connection = '22222222-2222-4222-8222-222222222222';
-      await db.query('insert into auth.users(id,email) values($1,$2)', [owner, 'drive@example.test']);
-      const denied = await db.query<{ allowed: boolean }>(`select has_function_privilege('authenticated',
+      const migrations = (await readdir("supabase/migrations"))
+        .filter((name) => name.endsWith(".sql"))
+        .sort();
+      for (const name of migrations)
+        await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
+      const owner = "11111111-1111-4111-8111-111111111111";
+      const connection = "22222222-2222-4222-8222-222222222222";
+      await db.query("insert into auth.users(id,email) values($1,$2)", [
+        owner,
+        "drive@example.test",
+      ]);
+      const denied = await db.query<{
+        allowed: boolean;
+      }>(`select has_function_privilege('authenticated',
         'public.read_drive_credentials(uuid)', 'execute') as allowed`);
       expect(denied.rows[0]?.allowed).toBe(false);
-      for (const table of ['public.google_drive_connections', 'private.google_drive_credentials', 'private.google_drive_oauth_transactions']) {
-        const permission = await db.query<{ allowed: boolean }>(`select has_table_privilege('authenticated', $1, 'select') as allowed`, [table]);
+      for (const table of [
+        "public.google_drive_connections",
+        "private.google_drive_credentials",
+        "private.google_drive_oauth_transactions",
+      ]) {
+        const permission = await db.query<{ allowed: boolean }>(
+          `select has_table_privilege('authenticated', $1, 'select') as allowed`,
+          [table],
+        );
         expect(permission.rows[0]?.allowed).toBe(false);
       }
-      await db.exec('set role service_role');
-      const stateHash = 'a'.repeat(64);
-      const redirect = 'https://app.example.test/api/drive/callback';
-      await db.query(`select public.begin_drive_oauth_attempt($1,$2,$3,clock_timestamp()+interval '5 minutes',$4)`,
-        [owner, stateHash, redirect, 'v'.repeat(43)]);
+      await db.exec("set role service_role");
+      const stateHash = "a".repeat(64);
+      const redirect = "https://app.example.test/api/drive/callback";
+      await db.query(
+        `select public.begin_drive_oauth_attempt($1,$2,$3,clock_timestamp()+interval '5 minutes',$4)`,
+        [owner, stateHash, redirect, "v".repeat(43)],
+      );
       const attempt = await db.query<{ result: { code_verifier: string } }>(
-        'select public.consume_drive_oauth_attempt($1,$2,$3) as result', [owner, stateHash, redirect]);
-      expect(attempt.rows[0]?.result.code_verifier).toBe('v'.repeat(43));
-      await expect(db.query('select public.consume_drive_oauth_attempt($1,$2,$3)', [owner, stateHash, redirect])).rejects.toThrow();
-      const verifier = await db.query<{ code_verifier: null }>('select code_verifier from private.google_drive_oauth_transactions where user_id=$1', [owner]);
+        "select public.consume_drive_oauth_attempt($1,$2,$3) as result",
+        [owner, stateHash, redirect],
+      );
+      expect(attempt.rows[0]?.result.code_verifier).toBe("v".repeat(43));
+      await expect(
+        db.query("select public.consume_drive_oauth_attempt($1,$2,$3)", [
+          owner,
+          stateHash,
+          redirect,
+        ]),
+      ).rejects.toThrow();
+      const verifier = await db.query<{ code_verifier: null }>(
+        "select code_verifier from private.google_drive_oauth_transactions where user_id=$1",
+        [owner],
+      );
       expect(verifier.rows[0]?.code_verifier).toBeNull();
 
-      const save = (expected: string | null, envelope = 'encrypted-envelope') => db.query<{ saved: boolean }>(
-        'select public.save_drive_credentials($1,$2,$3,$4,1,$5::text[]) as saved',
-        [owner, connection, expected, envelope, ['read-scope']]);
+      const save = (expected: string | null, envelope = "encrypted-envelope") =>
+        db.query<{ saved: boolean }>(
+          "select public.save_drive_credentials($1,$2,$3,$4,1,$5::text[]) as saved",
+          [owner, connection, expected, envelope, ["read-scope"]],
+        );
       expect((await save(null)).rows[0]?.saved).toBe(true);
-      const stored = await db.query<{ result: { envelope: string; connection: { updated_at: string } } }>(
-        'select public.read_drive_credentials($1) as result', [owner]);
-      expect(stored.rows[0]?.result.envelope).toBe('encrypted-envelope');
-      const other = await db.query<{ result: null }>('select public.read_drive_credentials($1) as result', ['33333333-3333-4333-8333-333333333333']);
+      const stored = await db.query<{
+        result: { envelope: string; connection: { updated_at: string } };
+      }>("select public.read_drive_credentials($1) as result", [owner]);
+      expect(stored.rows[0]?.result.envelope).toBe("encrypted-envelope");
+      const other = await db.query<{ result: null }>(
+        "select public.read_drive_credentials($1) as result",
+        ["33333333-3333-4333-8333-333333333333"],
+      );
       expect(other.rows[0]?.result).toBeNull();
+      expect(stored.rows[0]?.result).toMatchObject({
+        access_token_envelope: null,
+        access_token_expires_at: null,
+      });
+      const cached = await db.query<{ saved: boolean }>(
+        "select public.save_drive_credentials($1,$2,$3,$4,1,$5::text[],$6,$7::timestamptz) as saved",
+        [
+          owner,
+          connection,
+          stored.rows[0]!.result.connection.updated_at,
+          "encrypted-envelope",
+          ["read-scope"],
+          "access-envelope",
+          "2026-09-14T12:00:00Z",
+        ],
+      );
+      expect(cached.rows[0]?.saved).toBe(true);
+      const withCache = await db.query<{
+        result: {
+          access_token_envelope: string;
+          access_token_expires_at: string;
+          connection: { updated_at: string };
+        };
+      }>("select public.read_drive_credentials($1) as result", [owner]);
+      expect(withCache.rows[0]?.result.access_token_envelope).toBe("access-envelope");
+      expect(Date.parse(withCache.rows[0]!.result.access_token_expires_at)).toBe(
+        Date.parse("2026-09-14T12:00:00Z"),
+      );
+      await expect(
+        db.query("select public.save_drive_credentials($1,$2,$3,$4,1,$5::text[],$6,null)", [
+          owner,
+          connection,
+          withCache.rows[0]!.result.connection.updated_at,
+          "encrypted-envelope",
+          ["read-scope"],
+          "access-envelope",
+        ]),
+      ).rejects.toThrow();
+      expect((await save(withCache.rows[0]!.result.connection.updated_at)).rows[0]?.saved).toBe(
+        true,
+      );
+      const uncached = await db.query<{
+        result: { access_token_envelope: null; access_token_expires_at: null };
+      }>("select public.read_drive_credentials($1) as result", [owner]);
+      expect(uncached.rows[0]?.result).toMatchObject({
+        access_token_envelope: null,
+        access_token_expires_at: null,
+      });
       const originalRevision = stored.rows[0]!.result.connection.updated_at;
-      await db.query('select public.clear_drive_credentials($1,$2)', [owner, 'disconnected']);
+      await db.query("select public.clear_drive_credentials($1,$2)", [owner, "disconnected"]);
       expect((await save(originalRevision)).rows[0]?.saved).toBe(false);
-      const cleared = await db.query<{ result: { envelope: null; connection: { connection_state: string } } }>(
-        'select public.read_drive_credentials($1) as result', [owner]);
+      const cleared = await db.query<{
+        result: { envelope: null; connection: { connection_state: string } };
+      }>("select public.read_drive_credentials($1) as result", [owner]);
       expect(cleared.rows[0]?.result.envelope).toBeNull();
-      expect(cleared.rows[0]?.result.connection.connection_state).toBe('disconnected');
+      expect(cleared.rows[0]?.result.connection.connection_state).toBe("disconnected");
 
-      await db.exec('reset role');
+      await db.exec("reset role");
       await db.close();
-    } catch (error) { await db.close(); throw error; }
+    } catch (error) {
+      await db.close();
+      throw error;
+    }
   }, 30_000);
 });

@@ -1,4 +1,4 @@
-export type UserStateResetPhase = "cancel" | "clear";
+type UserStateResetPhase = "cancel" | "clear";
 
 /**
  * User-state cleanup must complete synchronously before another account can
@@ -79,9 +79,7 @@ function successfulCleanup(): UserStateCleanupResult {
   return { ok: true, retry: successfulCleanup };
 }
 
-function runResetters(
-  orderedResetters: readonly UserStateResetter[],
-): UserStateCleanupResult {
+function runResetters(orderedResetters: readonly UserStateResetter[]): UserStateCleanupResult {
   if (isClearingUserState) return successfulCleanup();
 
   isClearingUserState = true;

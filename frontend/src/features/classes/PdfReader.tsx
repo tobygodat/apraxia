@@ -1,8 +1,22 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy, type PDFPageProxy, type RenderTask } from "pdfjs-dist";
+import {
+  getDocument,
+  GlobalWorkerOptions,
+  TextLayer,
+  type PDFDocumentProxy,
+  type PDFPageProxy,
+  type RenderTask,
+} from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import "pdfjs-dist/web/pdf_viewer.css";
-import { layoutPages, pageAt, renderScale, visiblePages, PAGE_GAP, type PageBox, type PageSize } from "./pdfLayout";
+import {
+  layoutPages,
+  pageAt,
+  renderScale,
+  visiblePages,
+  PAGE_GAP,
+  type PageBox,
+  type PageSize,
+} from "./pdfLayout";
 import "./pdfReader.css";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -22,11 +36,19 @@ export default function PdfReader({ file, showTools }: { file: File; showTools: 
   useEffect(() => {
     let cancelled = false;
     let task: ReturnType<typeof getDocument> | undefined;
-    setError(""); setDocument(null); setSizes([]);
+    setError("");
+    setDocument(null);
+    setSizes([]);
     void (async () => {
       const data = new Uint8Array(await file.arrayBuffer());
       if (cancelled) return;
-      task = getDocument({ data, cMapUrl: "/pdf-assets/cmaps/", cMapPacked: true, standardFontDataUrl: "/pdf-assets/standard_fonts/", wasmUrl: "/pdf-assets/wasm/" });
+      task = getDocument({
+        data,
+        cMapUrl: "/pdf-assets/cmaps/",
+        cMapPacked: true,
+        standardFontDataUrl: "/pdf-assets/standard_fonts/",
+        wasmUrl: "/pdf-assets/wasm/",
+      });
       const pdf = await task.promise;
       // Read only dimensions up front: stable placeholders prevent scroll jumps.
       const dimensions: PageSize[] = [];
@@ -37,23 +59,42 @@ export default function PdfReader({ file, showTools }: { file: File; showTools: 
         dimensions.push({ width: size.width, height: size.height });
         page.cleanup();
       }
-      if (!cancelled) { setSizes(dimensions); setDocument(pdf); }
-    })().catch(reason => {
-      if (!cancelled) setError(reason?.name === "PasswordException" ? "This PDF is password protected. Choose an unlocked copy." : "Couldn’t open this PDF. Try again or choose another copy.");
+      if (!cancelled) {
+        setSizes(dimensions);
+        setDocument(pdf);
+      }
+    })().catch((reason) => {
+      if (!cancelled)
+        setError(
+          reason?.name === "PasswordException"
+            ? "This PDF is password protected. Choose an unlocked copy."
+            : "Couldn’t open this PDF. Try again or choose another copy.",
+        );
     });
-    return () => { cancelled = true; void task?.destroy().catch(() => undefined); };
+    return () => {
+      cancelled = true;
+      void task?.destroy().catch(() => undefined);
+    };
   }, [file, retry]);
 
   useEffect(() => {
     const node = scroll.current;
     if (!node) return;
-    const update = () => setViewport({ width: node.clientWidth, height: node.clientHeight, top: node.scrollTop });
+    const update = () =>
+      setViewport({ width: node.clientWidth, height: node.clientHeight, top: node.scrollTop });
     const observer = new ResizeObserver(update);
-    observer.observe(node); update();
-    return () => { observer.disconnect(); if (frame.current !== null) cancelAnimationFrame(frame.current); };
+    observer.observe(node);
+    update();
+    return () => {
+      observer.disconnect();
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    };
   }, []);
 
-  const boxes = useMemo(() => layoutPages(sizes, viewport.width, zoom), [sizes, viewport.width, zoom]);
+  const boxes = useMemo(
+    () => layoutPages(sizes, viewport.width, zoom),
+    [sizes, viewport.width, zoom],
+  );
   useLayoutEffect(() => {
     const node = scroll.current;
     const old = previousBoxes.current;
@@ -61,7 +102,7 @@ export default function PdfReader({ file, showTools }: { file: File; showTools: 
       const index = Math.min(pageAt(old, node.scrollTop), boxes.length - 1);
       const fraction = (node.scrollTop - old[index].top) / old[index].height;
       node.scrollTop = Math.max(0, boxes[index].top + fraction * boxes[index].height);
-      setViewport(value => ({ ...value, top: node.scrollTop }));
+      setViewport((value) => ({ ...value, top: node.scrollTop }));
     }
     previousBoxes.current = boxes;
   }, [boxes]);
@@ -72,36 +113,124 @@ export default function PdfReader({ file, showTools }: { file: File; showTools: 
 
   function goTo(page: number) {
     const index = Math.min(boxes.length - 1, Math.max(0, Math.round(page) - 1));
-    if (!Number.isFinite(index) || !boxes[index] || !scroll.current) { setPageInput(String(current)); return; }
+    if (!Number.isFinite(index) || !boxes[index] || !scroll.current) {
+      setPageInput(String(current));
+      return;
+    }
     scroll.current.scrollTop = boxes[index].top - PAGE_GAP;
-    setViewport(value => ({ ...value, top: scroll.current!.scrollTop }));
+    setViewport((value) => ({ ...value, top: scroll.current!.scrollTop }));
     setPageInput(String(index + 1));
   }
 
-  return <div className="pdf-reader">
-    {showTools && <div className="pdf-toolbar" role="toolbar" aria-label="PDF toolbar">
-      <button type="button" disabled={!document || current === 1} onClick={() => goTo(current - 1)} aria-label="Previous page">Previous</button>
-      <form onSubmit={event => { event.preventDefault(); goTo(Number(pageInput)); }}>
-        <input aria-label="Page number" type="number" min="1" max={sizes.length || 1} value={pageInput} onChange={event => setPageInput(event.target.value)} disabled={!document} />
-        <span> / {sizes.length || "—"}</span>
-      </form>
-      <button type="button" disabled={!document || current === sizes.length} onClick={() => goTo(current + 1)} aria-label="Next page">Next</button>
-      <button type="button" disabled={zoom <= .75} onClick={() => setZoom(value => Math.max(.75, value - .25))} aria-label="Zoom out">−</button>
-      <button type="button" onClick={() => setZoom(1)} title="Fit width">{Math.round(zoom * 100)}%</button>
-      <button type="button" disabled={zoom >= 2} onClick={() => setZoom(value => Math.min(2, value + .25))} aria-label="Zoom in">+</button>
-    </div>}
-    <div ref={scroll} className="pdf-scroll" tabIndex={0} role="region" aria-label={`PDF pages: ${file.name}`} onScroll={() => {
-      if (frame.current !== null) return;
-      frame.current = requestAnimationFrame(() => { frame.current = null; if (scroll.current) setViewport(value => ({ ...value, top: scroll.current!.scrollTop })); });
-    }}>
-      {error ? <div className="pdf-message" role="alert"><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>Try again</button></div> : !document ? <p className="pdf-message" role="status">Preparing PDF…</p> : <div className="pdf-pages" style={{ height: last ? last.top + last.height + PAGE_GAP : 0, minWidth: last ? last.width + 32 : 0 }}>
-        {active.map(index => <PdfPage key={index} document={document} pageNumber={index + 1} box={boxes[index]} />)}
-      </div>}
+  return (
+    <div className="pdf-reader">
+      {showTools && (
+        <div className="pdf-toolbar" role="toolbar" aria-label="PDF toolbar">
+          <button
+            type="button"
+            disabled={!document || current === 1}
+            onClick={() => goTo(current - 1)}
+            aria-label="Previous page"
+          >
+            Previous
+          </button>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              goTo(Number(pageInput));
+            }}
+          >
+            <input
+              aria-label="Page number"
+              type="number"
+              min="1"
+              max={sizes.length || 1}
+              value={pageInput}
+              onChange={(event) => setPageInput(event.target.value)}
+              disabled={!document}
+            />
+            <span> / {sizes.length || "—"}</span>
+          </form>
+          <button
+            type="button"
+            disabled={!document || current === sizes.length}
+            onClick={() => goTo(current + 1)}
+            aria-label="Next page"
+          >
+            Next
+          </button>
+          <button
+            type="button"
+            disabled={zoom <= 0.75}
+            onClick={() => setZoom((value) => Math.max(0.75, value - 0.25))}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <button type="button" onClick={() => setZoom(1)} title="Fit width">
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            disabled={zoom >= 2}
+            onClick={() => setZoom((value) => Math.min(2, value + 0.25))}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+        </div>
+      )}
+      <div
+        ref={scroll}
+        className="pdf-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label={`PDF pages: ${file.name}`}
+        onScroll={() => {
+          if (frame.current !== null) return;
+          frame.current = requestAnimationFrame(() => {
+            frame.current = null;
+            if (scroll.current)
+              setViewport((value) => ({ ...value, top: scroll.current!.scrollTop }));
+          });
+        }}
+      >
+        {error ? (
+          <div className="pdf-message" role="alert">
+            <p>{error}</p>
+            <button onClick={() => setRetry((value) => value + 1)}>Try again</button>
+          </div>
+        ) : !document ? (
+          <p className="pdf-message" role="status">
+            Preparing PDF…
+          </p>
+        ) : (
+          <div
+            className="pdf-pages"
+            style={{
+              height: last ? last.top + last.height + PAGE_GAP : 0,
+              minWidth: last ? last.width + 32 : 0,
+            }}
+          >
+            {active.map((index) => (
+              <PdfPage key={index} document={document} pageNumber={index + 1} box={boxes[index]} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>;
+  );
 }
 
-function PdfPage({ document, pageNumber, box }: { document: PDFDocumentProxy; pageNumber: number; box: PageBox }) {
+function PdfPage({
+  document,
+  pageNumber,
+  box,
+}: {
+  document: PDFDocumentProxy;
+  pageNumber: number;
+  box: PageBox;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -125,23 +254,49 @@ function PdfPage({ document, pageNumber, box }: { document: PDFDocumentProxy; pa
       const resolution = renderScale(viewport.width, viewport.height, window.devicePixelRatio || 1);
       canvas.width = Math.ceil(viewport.width * resolution);
       canvas.height = Math.ceil(viewport.height * resolution);
-      canvas.style.width = `${viewport.width}px`; canvas.style.height = `${viewport.height}px`;
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
       container.style.setProperty("--scale-factor", String(viewport.scale));
       container.style.setProperty("--total-scale-factor", String(viewport.scale));
       render = page.render({ canvas, viewport, transform: [resolution, 0, 0, resolution, 0, 0] });
       await render.promise;
       if (cancelled) return;
-      text = new TextLayer({ textContentSource: page.streamTextContent(), container: layer, viewport });
+      text = new TextLayer({
+        textContentSource: page.streamTextContent(),
+        container: layer,
+        viewport,
+      });
       await text.render();
-    })().catch(reason => { if (!cancelled && reason?.name !== "RenderingCancelledException") setError(true); }).finally(() => { if (cancelled) page?.cleanup(); });
+    })()
+      .catch((reason) => {
+        if (!cancelled && reason?.name !== "RenderingCancelledException") setError(true);
+      })
+      .finally(() => {
+        if (cancelled) page?.cleanup();
+      });
     return () => {
-      cancelled = true; render?.cancel(); text?.cancel();
-      canvas.width = 0; canvas.height = 0; canvas.remove(); layer.remove();
+      cancelled = true;
+      render?.cancel();
+      text?.cancel();
+      canvas.width = 0;
+      canvas.height = 0;
+      canvas.remove();
+      layer.remove();
       page?.cleanup();
     };
   }, [document, pageNumber, box.width, box.height]);
-  return <section className="pdf-page" aria-label={`Page ${pageNumber}`} style={{ top: box.top, width: box.width, height: box.height }}>
-    <div ref={root} className="pdf-page-content" />
-    {error && <p className="pdf-page-error" role="alert">Page {pageNumber} couldn’t render. Scroll away and back to retry.</p>}
-  </section>;
+  return (
+    <section
+      className="pdf-page"
+      aria-label={`Page ${pageNumber}`}
+      style={{ top: box.top, width: box.width, height: box.height }}
+    >
+      <div ref={root} className="pdf-page-content" />
+      {error && (
+        <p className="pdf-page-error" role="alert">
+          Page {pageNumber} couldn’t render. Scroll away and back to retry.
+        </p>
+      )}
+    </section>
+  );
 }

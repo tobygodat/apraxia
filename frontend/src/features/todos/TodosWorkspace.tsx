@@ -1,16 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { CloudAppShell, type CloudAppShellProps } from "../../components/app-shell/CloudAppShell";
-import { GlobalAddTodoController, useGlobalAddTodo } from "../../components/global-add/GlobalAddTodoController";
+import {
+  GlobalAddTodoController,
+  useGlobalAddTodo,
+} from "../../components/global-add/GlobalAddTodoController";
 import { GlobalAddTodoShell } from "../../components/global-add/GlobalAddTodoShell";
 import type { Profile, Todo } from "../../types/domain";
 import { shiftWeekMonday, startOfWeekMonday, type SqlDate } from "./dateDomain";
 import { buildTodoBoardModel } from "./todoBoardModel";
-import { TodoEditDialog } from "./TodoEditDialog";
+import { type TodoControllerBinding, useTodoController } from "./todoController";
+import { TodoFormDialog } from "./TodoFormDialog";
 import type { TodoService } from "./todoService";
 import { TodosBoard } from "./TodosBoard";
+import { todoLoadErrorCopy } from "./todoUiState";
 import { useLocalToday } from "./useLocalToday";
-import { type TodoWorkspaceController, useTodoWorkspaceController } from "./useTodoWorkspaceController";
 
 export interface TodosWorkspaceProps extends Pick<
   CloudAppShellProps,
@@ -29,47 +33,76 @@ export function TodosWorkspace(props: TodosWorkspaceProps) {
   return <TodosWorkspaceSession key={props.workspaceSessionKey} {...props} />;
 }
 
+function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+  return (
+    <section className="todos-board-page" aria-labelledby="todos-loading-heading">
+      <header className="todos-board-toolbar">
+        <h1 id="todos-loading-heading">Tasks</h1>
+      </header>
+      {failed ? (
+        <div className="todos-board-error" role="alert">
+          <p>{todoLoadErrorCopy("Tasks")}</p>
+          <button type="button" onClick={onRetry}>
+            Try again
+          </button>
+        </div>
+      ) : (
+        <p className="todos-board-status" role="status">
+          Loading your tasks…
+        </p>
+      )}
+    </section>
+  );
+}
+
 /** Route content uses the app-level capture provider and keeps its board position. */
-export function TodosWorkspaceContent({ service, workspaceSessionKey, refreshKey }: {
-  service: TodoService; workspaceSessionKey: string; refreshKey: number;
+export function TodosWorkspaceContent({
+  service,
+  workspaceSessionKey,
+}: {
+  service: TodoService;
+  workspaceSessionKey: string;
 }) {
-  const controller = useTodoWorkspaceController(service, workspaceSessionKey);
-  const applied = useRef(refreshKey);
-  useEffect(() => {
-    if (applied.current === refreshKey || !controller.profile || controller.pendingTodoIds.size > 0) return;
-    applied.current = refreshKey;
-    void controller.refreshWorkspace();
-  }, [refreshKey, controller.profile, controller.pendingTodoIds, controller.refreshWorkspace]);
-  if (controller.profile) return <ReadyTodosBoard controller={controller} profile={controller.profile} />;
-  return <section className="todos-board-page">
-    <header className="todos-board-toolbar"><h1>Tasks</h1></header>
-    {controller.loadState.status === "error" ? <div className="todos-board-error" role="alert">
-      <p>Couldn’t load your todos. Try again.</p><button onClick={controller.retryLoad}>Try again</button>
-    </div> : <p className="todos-board-status" role="status">Loading your todos…</p>}
-  </section>;
+  const binding = useTodoController(service, workspaceSessionKey, { workspace: true });
+  if (binding.state.profile)
+    return <ReadyTodosBoard binding={binding} profile={binding.state.profile} />;
+  return (
+    <BoardPlaceholder
+      failed={binding.state.workspaceStatus === "error"}
+      onRetry={() => {
+        void binding.controller.loadWorkspace();
+      }}
+    />
+  );
 }
 
 function TodosWorkspaceSession(props: TodosWorkspaceProps) {
-  const controller = useTodoWorkspaceController(props.service, props.workspaceSessionKey);
-  const profile = controller.profile;
-  const ready = controller.loadState.status === "idle" &&
-    profile !== null && profile.userId === props.identity.userId;
+  const binding = useTodoController(props.service, props.workspaceSessionKey, { workspace: true });
+  const { state, controller } = binding;
+  const profile = state.profile;
+  const ready =
+    state.workspaceStatus === "ready" &&
+    profile !== null &&
+    profile.userId === props.identity.userId;
 
   if (!ready || profile === null) {
-    const failed = controller.loadState.status === "error" ||
+    const failed =
+      state.workspaceStatus === "error" ||
       (profile !== null && profile.userId !== props.identity.userId);
-
     return (
-      <CloudAppShell {...props} availableDestinations={["/todos"]} settingsAvailable={false} globalAddDisabled onOpenGlobalAdd={() => undefined}>
-        <section className="todos-board-page" aria-labelledby="todos-loading-heading">
-          <header className="todos-board-toolbar"><h1 id="todos-loading-heading">Tasks</h1></header>
-          {failed ? (
-            <div className="todos-board-error" role="alert">
-              <p>Couldn’t load your todos. Try again.</p>
-              <button type="button" onClick={controller.retryLoad}>Try again</button>
-            </div>
-          ) : <p className="todos-board-status" role="status">Loading your todos…</p>}
-        </section>
+      <CloudAppShell
+        {...props}
+        availableDestinations={["/todos"]}
+        settingsAvailable={false}
+        globalAddDisabled
+        onOpenGlobalAdd={() => undefined}
+      >
+        <BoardPlaceholder
+          failed={failed}
+          onRetry={() => {
+            void controller.loadWorkspace();
+          }}
+        />
       </CloudAppShell>
     );
   }
@@ -78,7 +111,8 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
     <GlobalAddTodoController
       workspaceSessionKey={props.workspaceSessionKey}
       service={props.service}
-      projects={controller.projects} classes={controller.classes}
+      projects={state.projects}
+      classes={state.classes}
       onCreated={(todo) => {
         if (!controller.acceptCreatedTodo(todo)) {
           throw new Error("Saved todo requires a fresh workspace view.");
@@ -87,17 +121,17 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
       }}
     >
       <GlobalAddTodoShell {...props} availableDestinations={["/todos"]} settingsAvailable={false}>
-        <ReadyTodosBoard controller={controller} profile={profile} />
+        <ReadyTodosBoard binding={binding} profile={profile} />
       </GlobalAddTodoShell>
     </GlobalAddTodoController>
   );
 }
 
 function ReadyTodosBoard({
-  controller,
+  binding: { state, controller },
   profile,
 }: {
-  readonly controller: TodoWorkspaceController;
+  readonly binding: TodoControllerBinding;
   readonly profile: Profile;
 }) {
   const { openTodoComposer } = useGlobalAddTodo();
@@ -109,36 +143,47 @@ function ReadyTodosBoard({
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const boardFocusRef = useRef<HTMLDivElement>(null);
   const model = useMemo(
-    () => buildTodoBoardModel(controller.todos, visibleMonday, today),
-    [controller.todos, today, visibleMonday],
+    () => buildTodoBoardModel(state.todos, visibleMonday, today),
+    [state.todos, today, visibleMonday],
   );
 
   return (
     <div ref={boardFocusRef} tabIndex={-1}>
       <TodosBoard
         model={model}
-        loadState={controller.loadState}
-        projects={controller.projects}
-        pendingTodoIds={controller.pendingTodoIds}
-        mutationResult={controller.mutationResult}
-        mutationError={controller.mutationError}
-        undoNotice={controller.undoNotice}
+        loadStatus={state.workspaceStatus}
+        projects={state.projects}
+        pendingTodoIds={state.pendingTodoIds}
+        mutationResult={state.mutationResult}
+        mutationError={state.mutationError}
+        undoNotice={state.undoNotice}
+        announcement={state.announcement}
         onPreviousWeek={() => setSelectedMonday(shiftWeekMonday(visibleMonday, -1))}
         onNextWeek={() => setSelectedMonday(shiftWeekMonday(visibleMonday, 1))}
         onToday={() => setSelectedMonday(null)}
-        onRetry={controller.retryLoad}
+        onRetry={() => {
+          void controller.loadWorkspace();
+        }}
         onAddTodo={(dueDate) => openTodoComposer({ initialDueDate: dueDate })}
         onToggleComplete={(todo) => controller.setCompleted(todo.id, !todo.completed)}
         onEditTodo={setEditingTodo}
         onDeleteTodo={(todo) => controller.deleteTodo(todo.id)}
+        onUndoDelete={() => {
+          controller.undoDelete();
+        }}
+        onDismissUndo={controller.dismissUndo}
       />
-      <TodoEditDialog
+      <TodoFormDialog
+        mode="edit"
+        open={editingTodo !== null}
         todo={editingTodo}
-        projects={controller.projects} classes={controller.classes}
+        projects={state.projects}
+        classes={state.classes}
         fallbackFocusRef={boardFocusRef}
         onClose={() => setEditingTodo(null)}
-        onSave={async (todoId, input, options) => {
-          await controller.updateDetails(todoId, input, options);
+        onSubmit={async (submission, options) => {
+          if (submission.mode !== "create")
+            await controller.updateDetails(submission.todoId, submission.input, options);
         }}
       />
     </div>

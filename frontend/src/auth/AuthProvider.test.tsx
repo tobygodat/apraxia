@@ -1,24 +1,12 @@
 // @vitest-environment happy-dom
 
 import { useEffect } from "react";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider, useAuth, type AuthState } from "./AuthProvider";
 import { RequireAuth } from "./RequireAuth";
-import type {
-  AuthIdentity,
-  AuthPort,
-  AuthStateChange,
-  AuthStateListener,
-} from "./authPort";
+import type { AuthIdentity, AuthPort, AuthStateChange, AuthStateListener } from "./authPort";
 import { registerUserStateResetter } from "./userState";
 
 interface Deferred<T> {
@@ -158,9 +146,7 @@ describe("AuthProvider restoration", () => {
     expect(screen.getByTestId("auth-state").textContent).toBe("restoring");
     expect(screen.queryByText("private workspace")).toBeNull();
     await expectState("authenticated:user-a:a@example.com:idle");
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
   });
 
   it("restores a missing session as anonymous", async () => {
@@ -189,9 +175,7 @@ describe("AuthProvider restoration", () => {
     render(<TestApp port={fake.port} />);
 
     await expectState("restore_error");
-    expect(screen.getByText("restore error boundary").textContent).toBe(
-      "restore error boundary",
-    );
+    expect(screen.getByText("restore error boundary").textContent).toBe("restore error boundary");
     fireEvent.click(screen.getByRole("button", { name: "Retry restore" }));
     expect(screen.getByTestId("auth-state").textContent).toBe("restoring");
     expect(screen.queryByText("private workspace")).toBeNull();
@@ -225,9 +209,7 @@ describe("AuthProvider restoration", () => {
     expect(screen.getByTestId("auth-state").textContent).toBe(
       "authenticated:user-a:a@example.com:idle",
     );
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
   });
 });
 
@@ -249,9 +231,7 @@ describe("AuthProvider sign-out", () => {
     expect(screen.getByTestId("auth-state").textContent).toBe(
       "authenticated:user-a:a@example.com:pending",
     );
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
 
     await act(async () => {
       signOut.resolve();
@@ -265,9 +245,7 @@ describe("AuthProvider sign-out", () => {
     act(() => {
       fake.emit({ identity: null, reason: "SIGNED_OUT" });
     });
-    expect(screen.getByTestId("auth-state").textContent).toBe(
-      "anonymous:signed_out",
-    );
+    expect(screen.getByTestId("auth-state").textContent).toBe("anonymous:signed_out");
     expect(reset).toHaveBeenCalledOnce();
   });
 
@@ -324,10 +302,15 @@ describe("AuthProvider sign-out", () => {
     expect(fake.signOut).not.toHaveBeenCalled();
   });
 
-  it("keeps private content mounted and exposes an error when sign-out fails", async () => {
+  it("keeps the latest same-user identity and private content when sign-out fails", async () => {
     const fake = fakeAuthPort();
     const signOut = deferred<void>();
     const reset = vi.fn();
+    const refreshedIdentity = {
+      ...userA,
+      email: "fresh@example.com",
+      expiresAt: userA.expiresAt! + 3_600,
+    };
     registerTestResetter(reset);
     fake.restore.mockResolvedValueOnce({
       identity: userA,
@@ -338,9 +321,10 @@ describe("AuthProvider sign-out", () => {
     await expectState("authenticated:user-a:a@example.com:idle");
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
+    act(() => {
+      fake.emit({ identity: refreshedIdentity, reason: "TOKEN_REFRESHED" });
+    });
 
     await act(async () => {
       signOut.reject(new Error("network failure"));
@@ -351,44 +335,11 @@ describe("AuthProvider sign-out", () => {
       }
     });
 
-    await expectState("authenticated:user-a:a@example.com:error");
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
-    expect(reset).not.toHaveBeenCalled();
-  });
-
-  it("preserves the latest same-user identity when sign-out fails after a refresh", async () => {
-    const fake = fakeAuthPort();
-    const signOut = deferred<void>();
-    const refreshedIdentity = {
-      ...userA,
-      email: "fresh@example.com",
-      expiresAt: userA.expiresAt! + 3_600,
-    };
-    fake.restore.mockResolvedValueOnce({
-      identity: userA,
-      reason: "INITIAL_SESSION",
-    });
-    fake.signOut.mockReturnValueOnce(signOut.promise);
-    render(<TestApp port={fake.port} />);
-    await expectState("authenticated:user-a:a@example.com:idle");
-
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-    act(() => {
-      fake.emit({ identity: refreshedIdentity, reason: "TOKEN_REFRESHED" });
-    });
-
-    await act(async () => {
-      signOut.reject(new Error("network failure"));
-      try {
-        await signOut.promise;
-      } catch {
-        // The provider converts the rejected operation into UI state.
-      }
-    });
-
+    // A failed sign-out must not sign the user out locally: the session is
+    // still live, so private content stays mounted and state stays untouched.
     await expectState("authenticated:user-a:fresh@example.com:error");
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
+    expect(reset).not.toHaveBeenCalled();
   });
 });
 
@@ -413,22 +364,16 @@ describe("AuthProvider fail-closed cleanup", () => {
     });
 
     await expectState("cleanup_error");
-    expect(screen.getByText("cleanup error boundary").textContent).toBe(
-      "cleanup error boundary",
-    );
+    expect(screen.getByText("cleanup error boundary").textContent).toBe("cleanup error boundary");
     expect(screen.queryByText("private workspace")).toBeNull();
     expect(screen.queryByText(/b@example\.com/)).toBeNull();
-    expect(report.mock.calls.flat().join(" ")).not.toContain(
-      "private cleanup detail",
-    );
+    expect(report.mock.calls.flat().join(" ")).not.toContain("private cleanup detail");
 
     shouldFail = false;
     fireEvent.click(screen.getByRole("button", { name: "Retry cleanup" }));
 
     await expectState("authenticated:user-b:b@example.com:idle");
-    expect(screen.getByText("private workspace").textContent).toBe(
-      "private workspace",
-    );
+    expect(screen.getByText("private workspace").textContent).toBe("private workspace");
     expect(reset).toHaveBeenCalledTimes(2);
   });
 
@@ -491,9 +436,7 @@ describe("AuthProvider fail-closed cleanup", () => {
     shouldFail = false;
     fireEvent.click(screen.getByRole("button", { name: "Retry cleanup" }));
 
-    await expectState(
-      "authenticated:user-a:reauthenticated@example.com:idle",
-    );
+    await expectState("authenticated:user-a:reauthenticated@example.com:idle");
     expect(reset).toHaveBeenCalledTimes(2);
   });
 
@@ -514,48 +457,40 @@ describe("AuthProvider fail-closed cleanup", () => {
 
     await expectState("cleanup_error");
     expect(screen.queryByText("private workspace")).toBeNull();
-    expect(report).toHaveBeenCalledWith(
-      "Failed to clear user-scoped application state.",
-    );
+    expect(report).toHaveBeenCalledWith("Failed to clear user-scoped application state.");
   });
 
-  it.each(["resolve", "reject"] as const)(
-    "does not start a new sign-out while A-to-B cleanup is pending, even if the port would %s",
-    async (outcome) => {
-      const fake = fakeAuthPort();
-      const reset = vi.fn(() => {
-        throw new Error("cleanup failed");
-      });
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      registerTestResetter(reset);
-      fake.restore.mockResolvedValueOnce({
-        identity: userA,
-        reason: "INITIAL_SESSION",
-      });
-      if (outcome === "resolve") {
-        fake.signOut.mockResolvedValueOnce();
-      } else {
-        fake.signOut.mockRejectedValueOnce(new Error("must not be observed"));
-      }
-      render(<TestApp port={fake.port} />);
-      await expectState("authenticated:user-a:a@example.com:idle");
+  it("does not start a new sign-out while A-to-B cleanup is pending", async () => {
+    const fake = fakeAuthPort();
+    const reset = vi.fn(() => {
+      throw new Error("cleanup failed");
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    registerTestResetter(reset);
+    fake.restore.mockResolvedValueOnce({
+      identity: userA,
+      reason: "INITIAL_SESSION",
+    });
+    fake.signOut.mockRejectedValue(new Error("must not be observed"));
+    render(<TestApp port={fake.port} />);
+    await expectState("authenticated:user-a:a@example.com:idle");
 
-      act(() => {
-        fake.emit({ identity: userB, reason: "SIGNED_IN" });
-      });
-      await expectState("cleanup_error");
+    act(() => {
+      fake.emit({ identity: userB, reason: "SIGNED_IN" });
+    });
+    await expectState("cleanup_error");
 
-      fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-      await act(async () => {
-        await Promise.resolve();
-      });
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
 
-      expect(fake.signOut).not.toHaveBeenCalled();
-      expect(screen.getByTestId("auth-state").textContent).toBe("cleanup_error");
-      expect(screen.queryByText("private workspace")).toBeNull();
-      expect(reset).toHaveBeenCalledOnce();
-    },
-  );
+    // The port is never reached, so neither adapter outcome is observable.
+    expect(fake.signOut).not.toHaveBeenCalled();
+    expect(screen.getByTestId("auth-state").textContent).toBe("cleanup_error");
+    expect(screen.queryByText("private workspace")).toBeNull();
+    expect(reset).toHaveBeenCalledOnce();
+  });
 
   it.each(["resolve", "reject"] as const)(
     "keeps A-to-B cleanup closed when an already pending sign-out %ss",

@@ -47,12 +47,7 @@ function ContextualAdd() {
   const { openTodoComposer } = useGlobalAddTodo();
 
   return (
-    <button
-      type="button"
-      onClick={() =>
-        openTodoComposer({ initialDueDate: "2026-09-05" })
-      }
-    >
+    <button type="button" onClick={() => openTodoComposer({ initialDueDate: "2026-09-05" })}>
       Add task for Saturday
     </button>
   );
@@ -152,14 +147,10 @@ describe("GlobalAddTodoController", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(
-      await screen.findByText(
-        "We couldn’t add this task. Your details are still here—try again.",
-      ),
+      await screen.findByText("We couldn’t add this task. Your details are still here—try again."),
     ).toBeTruthy();
     expect((task as HTMLInputElement).value).toBe("  Call Sam 📞  ");
-    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe(
-      "2026-09-04",
-    );
+    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe("2026-09-04");
     expect(container.textContent).not.toContain("database secret");
 
     const firstSignal = createTodo.mock.calls[0]?.[1].signal;
@@ -182,9 +173,7 @@ describe("GlobalAddTodoController", () => {
     contextualOpener.focus();
     fireEvent.click(contextualOpener);
 
-    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe(
-      "2026-09-05",
-    );
+    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe("2026-09-05");
     fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
       target: { value: "Discard this draft" },
     });
@@ -233,7 +222,10 @@ describe("GlobalAddTodoController", () => {
       let resolveCreate!: (todo: Todo) => void;
       let latestActions!: GlobalAddTodoActions;
       const createTodo = vi.fn<TodoService["createTodo"]>(
-        () => new Promise((resolve) => { resolveCreate = resolve; }),
+        () =>
+          new Promise((resolve) => {
+            resolveCreate = resolve;
+          }),
       );
       const firstService = { createTodo };
       const secondService = { createTodo: vi.fn<TodoService["createTodo"]>() };
@@ -298,19 +290,48 @@ describe("GlobalAddTodoController", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(createTodo).toHaveBeenCalledOnce();
-    expect(screen.getByText("Task added, but this view may be out of date. Refresh to see it.")).toBeTruthy();
+    expect(
+      screen.getByText("Task added, but this view may be out of date. Refresh to see it."),
+    ).toBeTruthy();
     expect(document.body.textContent).not.toContain("private local cache error");
   });
 });
 
 it("offers class selection in Global Add and forwards one parent to the service", async () => {
-  const createTodo = vi.fn(async () => ({ ...CREATED_TODO, projectId: null, classId: "math", assignmentType: "Quiz" }));
-  render(<GlobalAddTodoController workspaceSessionKey="a" service={{ createTodo }} projects={PROJECTS} classes={[{ id: "math", name: "Math" }]} onCreated={() => undefined}><ContextualAdd /></GlobalAddTodoController>);
+  const createTodo = vi.fn(async () => ({
+    ...CREATED_TODO,
+    projectId: null,
+    classId: "math",
+    assignmentType: "Quiz",
+  }));
+  render(
+    <GlobalAddTodoController
+      workspaceSessionKey="a"
+      service={{ createTodo }}
+      projects={PROJECTS}
+      classes={[{ id: "math", name: "Math" }]}
+      onCreated={() => undefined}
+    >
+      <ContextualAdd />
+    </GlobalAddTodoController>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Add task for Saturday" }));
   fireEvent.change(screen.getByLabelText("Task"), { target: { value: "Quiz preparation" } });
   fireEvent.change(screen.getByLabelText("Project"), { target: { value: PROJECTS[0].id } });
   fireEvent.change(screen.getByLabelText("Class"), { target: { value: "math" } });
   fireEvent.change(screen.getByLabelText("Assignment type"), { target: { value: "Quiz" } });
   fireEvent.click(screen.getByRole("button", { name: "Add task" }));
-  await waitFor(() => expect(createTodo).toHaveBeenCalledWith({ text: "Quiz preparation", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: "2026-09-05", dueTime: null }, { signal: expect.any(AbortSignal) }));
+  await waitFor(() =>
+    expect(createTodo).toHaveBeenCalledWith(
+      {
+        text: "Quiz preparation",
+        projectId: null,
+        classId: "math",
+        assignmentType: "Quiz",
+        dueDate: "2026-09-05",
+        dueTime: null,
+      },
+      { signal: expect.any(AbortSignal) },
+    ),
+  );
 });

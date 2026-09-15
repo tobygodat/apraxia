@@ -9,19 +9,15 @@ export function getBrowserSupabaseClient(): SupabaseClient<Database> {
   if (browserClient) return browserClient;
 
   const environment = getBrowserEnvironment();
-  browserClient = createClient<Database>(
-    environment.supabaseUrl,
-    environment.supabaseAnonKey,
-    {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        flowType: "pkce",
-        storage: createProviderSafeStorage(globalThis.localStorage),
-      },
+  browserClient = createClient<Database>(environment.supabaseUrl, environment.supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: "pkce",
+      storage: createProviderSafeStorage(globalThis.localStorage),
     },
-  );
+  });
 
   return browserClient;
 }

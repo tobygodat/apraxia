@@ -1,11 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import type { NewTodoInput } from "../../types/domain";
-import {
-  todoInputSchema,
-  validateTodoInput,
-  type TodoInputValues,
-} from "./todoInput";
+import { todoInputSchema, validateTodoInput, type TodoInputValues } from "./todoInput";
 
 describe("todoInputSchema", () => {
   it("trims task text and preserves valid local date/time strings", () => {
@@ -90,9 +86,7 @@ describe("todoInputSchema", () => {
 
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(result.fieldErrors.dueDate).toEqual([
-      "Enter a valid date in YYYY-MM-DD format.",
-    ]);
+    expect(result.fieldErrors.dueDate).toEqual(["Enter a valid date in YYYY-MM-DD format."]);
   });
 
   it.each(["9:30", "24:00", "12:60", "12:30:60", "12:30:00.5"])(
@@ -121,9 +115,7 @@ describe("todoInputSchema", () => {
 
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(result.fieldErrors.dueTime).toEqual([
-      "Add a due date before adding a due time.",
-    ]);
+    expect(result.fieldErrors.dueTime).toEqual(["Add a due date before adding a due time."]);
   });
 
   it("rejects a malformed project id", () => {
@@ -149,16 +141,36 @@ describe("todoInputSchema", () => {
     expect(result.success).toBe(false);
     if (result.success) return;
     expect(result.error.issues).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: "unrecognized_keys" }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ code: "unrecognized_keys" })]),
     );
   });
 });
 
 it("rejects two parents and assignment types without a class", () => {
-  expect(validateTodoInput({ text: "Task", projectId: "87d45aa9-0012-4fea-8ee5-e394cb159bf7", classId: "math" }).success).toBe(false);
+  expect(
+    validateTodoInput({
+      text: "Task",
+      projectId: "87d45aa9-0012-4fea-8ee5-e394cb159bf7",
+      classId: "math",
+    }).success,
+  ).toBe(false);
   expect(validateTodoInput({ text: "Task", assignmentType: "Quiz" }).success).toBe(false);
-  expect(validateTodoInput({ text: "Task", classId: "math", assignmentType: "Unknown" }).success).toBe(false);
-  expect(todoInputSchema.parse({ text: "Quiz", classId: "math", assignmentType: "Quiz", dueDate: "2020-03-08" })).toEqual({ text: "Quiz", projectId: null, classId: "math", assignmentType: "Quiz", dueDate: "2020-03-08", dueTime: null });
+  expect(
+    validateTodoInput({ text: "Task", classId: "math", assignmentType: "Unknown" }).success,
+  ).toBe(false);
+  expect(
+    todoInputSchema.parse({
+      text: "Quiz",
+      classId: "math",
+      assignmentType: "Quiz",
+      dueDate: "2020-03-08",
+    }),
+  ).toEqual({
+    text: "Quiz",
+    projectId: null,
+    classId: "math",
+    assignmentType: "Quiz",
+    dueDate: "2020-03-08",
+    dueTime: null,
+  });
 });

@@ -8,15 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type {
-  AuthIdentity,
-  AuthPort,
-  AuthStateChange,
-} from "./authPort";
-import {
-  clearUserScopedState,
-  type UserStateCleanupResult,
-} from "./userState";
+import type { AuthIdentity, AuthPort, AuthStateChange } from "./authPort";
+import { clearUserScopedState, type UserStateCleanupResult } from "./userState";
 
 export type AnonymousReason = "no_session" | "signed_out" | "expired";
 export type SignOutStatus = "idle" | "pending" | "error";
@@ -83,10 +76,7 @@ export function AuthProvider({
   const explicitSignOutRef = useRef(false);
 
   const commitChange = useCallback(
-    (
-      change: AuthStateChange,
-      hadIdentityBeforeCleanup = scopedUserIdRef.current !== null,
-    ) => {
+    (change: AuthStateChange, hadIdentityBeforeCleanup = scopedUserIdRef.current !== null) => {
       const previousUserId = scopedUserIdRef.current;
       const nextIdentity = change.identity;
 
@@ -134,8 +124,7 @@ export function AuthProvider({
       const scopedUserId = scopedUserIdRef.current;
       const nextIdentity = change.identity;
       const userChanged =
-        scopedUserId !== null &&
-        (nextIdentity === null || nextIdentity.userId !== scopedUserId);
+        scopedUserId !== null && (nextIdentity === null || nextIdentity.userId !== scopedUserId);
 
       if (userChanged) {
         const cleanupResult = clearUserScopedState();
@@ -262,10 +251,7 @@ export function AuthProvider({
     try {
       await port.signOut();
 
-      if (
-        !lifecycleAtStart.active ||
-        lifecycleRef.current !== lifecycleAtStart
-      ) {
+      if (!lifecycleAtStart.active || lifecycleRef.current !== lifecycleAtStart) {
         return;
       }
 
@@ -275,17 +261,11 @@ export function AuthProvider({
         applyChange({ identity: null, reason: "SIGNED_OUT" });
       }
     } catch {
-      if (
-        !lifecycleAtStart.active ||
-        lifecycleRef.current !== lifecycleAtStart
-      ) {
+      if (!lifecycleAtStart.active || lifecycleRef.current !== lifecycleAtStart) {
         return;
       }
       const currentIdentity = sessionIdentityRef.current;
-      if (
-        !pendingCleanupRef.current &&
-        currentIdentity?.userId === identityAtStart.userId
-      ) {
+      if (!pendingCleanupRef.current && currentIdentity?.userId === identityAtStart.userId) {
         explicitSignOutRef.current = false;
         setState({
           status: "authenticated",

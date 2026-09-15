@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Todo } from "../types";
 import "./OrbitHome.css";
+import { ArrowIcon, CheckIcon } from "../components/icons";
 
 const shortDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 const monthDate = new Intl.DateTimeFormat(undefined, { month: "long", day: "numeric" });
@@ -36,29 +37,6 @@ function todoDueKey(todo: Todo) {
   return todo.due?.slice(0, 10) ?? null;
 }
 
-function ArrowIcon({ direction }: { direction: "left" | "right" }) {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        d={direction === "left" ? "m12.5 5-5 5 5 5" : "m7.5 5 5 5-5 5"}
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m5.5 10 3 3 6-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
 export default function OrbitHome() {
   const today = startOfDay(new Date());
   const todayKey = dateKey(today);
@@ -88,15 +66,16 @@ export default function OrbitHome() {
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
   const weekEnd = weekDays[6];
   const hours = Array.from({ length: 16 }, (_, index) => index + 7);
-  const timezone = new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" })
-    .formatToParts(today)
-    .find((part) => part.type === "timeZoneName")?.value ?? "local";
+  const timezone =
+    new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" })
+      .formatToParts(today)
+      .find((part) => part.type === "timeZoneName")?.value ?? "local";
   const showingCurrentWeek = dateKey(weekStart) === dateKey(currentWeekStart);
 
   const todayTodos = todos
     .filter((todo) => {
       const due = todoDueKey(todo);
-      return !Boolean(todo.done) && due !== null && due <= todayKey;
+      return !todo.done && due !== null && due <= todayKey;
     })
     .sort((left, right) => {
       const dueOrder = (todoDueKey(left) ?? "").localeCompare(todoDueKey(right) ?? "");
@@ -141,13 +120,25 @@ export default function OrbitHome() {
             <p>{rangeLabel}</p>
           </div>
           <div className="week-calendar__nav" aria-label="Calendar week navigation">
-            <button type="button" aria-label="Previous week" onClick={() => setWeekStart((week) => addDays(week, -7))}>
+            <button
+              type="button"
+              aria-label="Previous week"
+              onClick={() => setWeekStart((week) => addDays(week, -7))}
+            >
               <ArrowIcon direction="left" />
             </button>
-            <button type="button" disabled={showingCurrentWeek} onClick={() => setWeekStart(currentWeekStart)}>
+            <button
+              type="button"
+              disabled={showingCurrentWeek}
+              onClick={() => setWeekStart(currentWeekStart)}
+            >
               today
             </button>
-            <button type="button" aria-label="Next week" onClick={() => setWeekStart((week) => addDays(week, 7))}>
+            <button
+              type="button"
+              aria-label="Next week"
+              onClick={() => setWeekStart((week) => addDays(week, 7))}
+            >
               <ArrowIcon direction="right" />
             </button>
           </div>
@@ -159,7 +150,10 @@ export default function OrbitHome() {
             {weekDays.map((day) => {
               const isToday = dateKey(day) === todayKey;
               return (
-                <div className={`week-calendar__day${isToday ? " week-calendar__day--today" : ""}`} key={dateKey(day)}>
+                <div
+                  className={`week-calendar__day${isToday ? " week-calendar__day--today" : ""}`}
+                  key={dateKey(day)}
+                >
                   <span>{weekday.format(day)}</span>
                   <strong>{day.getDate()}</strong>
                 </div>
@@ -169,17 +163,25 @@ export default function OrbitHome() {
 
           <div className="week-calendar__all-day">
             <span>all-day</span>
-            {weekDays.map((day) => <div key={dateKey(day)} />)}
+            {weekDays.map((day) => (
+              <div key={dateKey(day)} />
+            ))}
           </div>
 
           <div className="week-calendar__scroll">
             <div className="week-calendar__grid" aria-label="Hourly calendar grid">
               {hours.map((hour) => (
                 <div className="week-calendar__hour" key={hour}>
-                  <span>{hour > 12 ? hour - 12 : hour} {hour >= 12 ? "PM" : "AM"}</span>
+                  <span>
+                    {hour > 12 ? hour - 12 : hour} {hour >= 12 ? "PM" : "AM"}
+                  </span>
                   {weekDays.map((day) => (
                     <div
-                      className={dateKey(day) === todayKey ? "week-calendar__cell week-calendar__cell--today" : "week-calendar__cell"}
+                      className={
+                        dateKey(day) === todayKey
+                          ? "week-calendar__cell week-calendar__cell--today"
+                          : "week-calendar__cell"
+                      }
                       key={`${dateKey(day)}-${hour}`}
                     />
                   ))}
@@ -203,7 +205,11 @@ export default function OrbitHome() {
           <span aria-label={`${todayTodos.length} incomplete tasks`}>{todayTodos.length}</span>
         </header>
 
-        {error && <p className="today-panel__error" role="alert">{error}</p>}
+        {error && (
+          <p className="today-panel__error" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="today-panel__list" aria-live="polite">
           {loadingTodos && <p className="today-panel__status">Loading today…</p>}
@@ -215,13 +221,24 @@ export default function OrbitHome() {
             const overdue = due < todayKey;
             return (
               <article className="today-task" key={todo.id}>
-                <button type="button" className="today-task__check" aria-label={`Complete ${todo.text}`} onClick={() => void toggle(todo)}>
+                <button
+                  type="button"
+                  className="today-task__check"
+                  aria-label={`Complete ${todo.text}`}
+                  onClick={() => void toggle(todo)}
+                >
                   <CheckIcon />
                 </button>
                 <div>
                   <p>{todo.text}</p>
-                  <span className={overdue ? "today-task__due today-task__due--overdue" : "today-task__due"}>
-                    {overdue ? `overdue · ${shortDate.format(new Date(`${due}T00:00:00`))}` : "due today"}
+                  <span
+                    className={
+                      overdue ? "today-task__due today-task__due--overdue" : "today-task__due"
+                    }
+                  >
+                    {overdue
+                      ? `overdue · ${shortDate.format(new Date(`${due}T00:00:00`))}`
+                      : "due today"}
                   </span>
                 </div>
               </article>
@@ -230,7 +247,9 @@ export default function OrbitHome() {
         </div>
 
         <form className="today-panel__add" onSubmit={(event) => void addTask(event)}>
-          <label htmlFor="today-task-input" className="sr-only">Add a task due today</label>
+          <label htmlFor="today-task-input" className="sr-only">
+            Add a task due today
+          </label>
           <input
             id="today-task-input"
             value={newTask}

@@ -7,10 +7,10 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 
-# Environment / secrets (never commit real values — see .env.example)
+# Environment / secrets (never commit real values — see .env.cloud.example)
 .env
 .env.*
-!.env.example
+!.env.legacy.example
 !.env.cloud.example
 
 # Local provider state
@@ -32,6 +32,9 @@ frontend/.vite/
 
 # Local clone of the Obsidian vault on the VPS (read-only input, not source)
 /vault/
+
+# Agent scratch output (dated critiques, not source)
+.impeccable/critique/
 
 # OS / editor cruft
 .DS_Store

@@ -1,2 +1,2 @@
-import { createCalendarHandler } from '../../server/calendar/calendarHandlers.js';
-export default { fetch: createCalendarHandler('events') };
+import { createCalendarHandler } from "../../server/calendar/calendarHandlers.js";
+export default { fetch: createCalendarHandler("events") };

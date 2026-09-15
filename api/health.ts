@@ -1,7 +1,4 @@
-import {
-  deploymentEnvironment,
-  inspectCloudEnvironment,
-} from "../server/env/cloud.js";
+import { deploymentEnvironment, inspectCloudEnvironment } from "../server/env/cloud.js";
 
 type EnvironmentSource = Record<string, string | undefined>;
 
@@ -22,7 +19,17 @@ export function createHealthResponse(
       runtime: "vercel-function",
       status,
       environment: deploymentEnvironment(source),
-      checks,
+      // This endpoint is unauthenticated. It reports whether each area is
+      // configured, never which variables are missing or invalid: those names
+      // describe the deployment's internals to anyone who asks. Operators read
+      // the exact variable names from the deployment logs instead.
+      checks: {
+        application: { configured: checks.application.configured },
+        calendar: {
+          configured: checks.calendar.configured,
+          status: checks.calendar.status,
+        },
+      },
       timestamp: now.toISOString(),
     },
     {

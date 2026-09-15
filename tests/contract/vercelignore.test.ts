@@ -20,8 +20,7 @@ type IgnoreFactory = () => IgnoreMatcher;
 const repositoryRoot = process.cwd();
 const require = createRequire(import.meta.url);
 const IGNORE_VERSION = "4.0.6";
-const MODULE_MARKER =
-  `// ../../node_modules/.pnpm/ignore@${IGNORE_VERSION}/node_modules/ignore/index.js`;
+const MODULE_MARKER = `// ../../node_modules/.pnpm/ignore@${IGNORE_VERSION}/node_modules/ignore/index.js`;
 const MODULE_DECLARATION = "var require_ignore = __commonJS({";
 
 /**
@@ -38,9 +37,7 @@ const MODULE_DECLARATION = "var require_ignore = __commonJS({";
 async function loadInstalledUploadIgnore(): Promise<IgnoreFactory> {
   const cliRoot = path.dirname(require.resolve("vercel/package.json"));
   const chunksRoot = path.join(cliRoot, "dist", "chunks");
-  const chunkNames = (await readdir(chunksRoot))
-    .filter((name) => name.endsWith(".js"))
-    .sort();
+  const chunkNames = (await readdir(chunksRoot)).filter((name) => name.endsWith(".js")).sort();
 
   let moduleSource: string | null = null;
   for (const chunkName of chunkNames) {
@@ -59,14 +56,19 @@ async function loadInstalledUploadIgnore(): Promise<IgnoreFactory> {
       throw new Error("Vercel's bundled ignore module layout changed; re-audit the upload parser.");
     }
     moduleSource = source.slice(declarationIndex, nextModuleIndex).trim();
-    if (!moduleSource.endsWith("});") || moduleSource.includes("\nvar require_", MODULE_DECLARATION.length)) {
+    if (
+      !moduleSource.endsWith("});") ||
+      moduleSource.includes("\nvar require_", MODULE_DECLARATION.length)
+    ) {
       throw new Error("The extracted Vercel ignore source is not one isolated CommonJS module.");
     }
     break;
   }
 
   if (moduleSource === null) {
-    throw new Error(`Vercel no longer bundles ignore@${IGNORE_VERSION}; re-audit the upload parser.`);
+    throw new Error(
+      `Vercel no longer bundles ignore@${IGNORE_VERSION}; re-audit the upload parser.`,
+    );
   }
 
   const sandbox: {
@@ -108,8 +110,10 @@ describe("Vercel upload ignore semantics", () => {
   beforeAll(async () => {
     const createIgnore = await loadInstalledUploadIgnore();
     // This is the same normalization performed by Vercel's upload helper.
-    const rules = (await readFile(path.join(repositoryRoot, ".vercelignore"), "utf8"))
-      .replace(/(\n|^)\.\//g, "$1");
+    const rules = (await readFile(path.join(repositoryRoot, ".vercelignore"), "utf8")).replace(
+      /(\n|^)\.\//g,
+      "$1",
+    );
     matcher = createIgnore().add(rules);
   });
 
@@ -121,6 +125,10 @@ describe("Vercel upload ignore semantics", () => {
     ".ruff_cache/example",
     "tests/test_api.py",
     "tests/__pycache__/test_api.pyc",
+    "tests/contract/platform-config.test.ts",
+    "tests/contract/vercelignore.test.ts",
+    "supabase/config.toml",
+    "supabase/migrations/20260902000100_initial_cloud_schema.sql",
     "frontend/qa/todos-workspace.html",
     "frontend/src/qa/todosWorkspaceFixture.tsx",
     "frontend/src/qa/todosWorkspaceFixture.css",
@@ -151,11 +159,10 @@ describe("Vercel upload ignore semantics", () => {
     "api/health.ts",
     "server/env/cloud.ts",
     "shared/supabaseEnvironment.ts",
-    "tests/contract/platform-config.test.ts",
-    "tests/contract/vercelignore.test.ts",
     "package.json",
     "package-lock.json",
-    ".env.example",
+    "scripts/check-browser-bundle.mjs",
+    ".env.legacy.example",
     ".env.cloud.example",
     // Synthetic near-matches catch accidental unanchored directory rules.
     "frontend/src/quality.ts",

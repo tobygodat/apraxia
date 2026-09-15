@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Todo } from "../types";
 import "./Todos.css";
+import { ArrowIcon, PlusIcon, CheckIcon } from "../components/icons";
 
 const dateLabel = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -44,29 +45,6 @@ function isSameDay(left: Date, right: Date) {
   return dateKey(left) === dateKey(right);
 }
 
-function ArrowIcon({ direction }: { direction: "left" | "right" }) {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        d={direction === "left" ? "m12.5 5-5 5 5 5" : "m7.5 5 5 5-5 5"}
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
 function InboxIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -77,7 +55,13 @@ function InboxIcon() {
         strokeLinejoin="round"
         strokeWidth="1.5"
       />
-      <path d="M3.5 12h3.2l1.1 1.5h4.4l1.1-1.5h3.2" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.5" />
+      <path
+        d="M3.5 12h3.2l1.1 1.5h4.4l1.1-1.5h3.2"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
@@ -85,8 +69,23 @@ function InboxIcon() {
 function CalendarIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
-      <rect x="3.5" y="4.5" width="13" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M6.5 3v3M13.5 3v3M3.5 8h13" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
+      <rect
+        x="3.5"
+        y="4.5"
+        width="13"
+        height="12"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M6.5 3v3M13.5 3v3M3.5 8h13"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
@@ -94,15 +93,14 @@ function CalendarIcon() {
 function TrashIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M4.5 6.5h11M8 3.5h4l1 3H7l1-3ZM6.5 6.5l.7 10h5.6l.7-10" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m5.5 10 3 3 6-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path
+        d="M4.5 6.5h11M8 3.5h4l1 3H7l1-3ZM6.5 6.5l.7 10h5.6l.7-10"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
@@ -192,7 +190,7 @@ export default function Todos() {
   const overdueTodos = todos
     .filter((todo) => {
       const due = dueKey(todo);
-      return !Boolean(todo.done) && due !== null && due < todayKey;
+      return !todo.done && due !== null && due < todayKey;
     })
     .sort((left, right) => (dueKey(left) ?? "").localeCompare(dueKey(right) ?? ""));
 
@@ -292,9 +290,14 @@ export default function Todos() {
               </h2>
 
               <div className="todo-column__tasks">
-                {loading && <div className="todo-card todo-card--loading" aria-label="Loading tasks" />}
+                {loading && (
+                  <div className="todo-card todo-card--loading" aria-label="Loading tasks" />
+                )}
                 {column.todos.map((todo) => (
-                  <article className={`todo-card${todo.done ? " todo-card--done" : ""}`} key={todo.id}>
+                  <article
+                    className={`todo-card${todo.done ? " todo-card--done" : ""}`}
+                    key={todo.id}
+                  >
                     <label className="todo-check">
                       <input
                         type="checkbox"
@@ -358,13 +361,21 @@ export default function Todos() {
                     <button className="todo-composer__cancel" type="button" onClick={closeComposer}>
                       cancel
                     </button>
-                    <button className="todo-composer__submit" type="submit" disabled={!text.trim() || submitting}>
+                    <button
+                      className="todo-composer__submit"
+                      type="submit"
+                      disabled={!text.trim() || submitting}
+                    >
                       {submitting ? "adding…" : "add task"}
                     </button>
                   </div>
                 </form>
               ) : column.allowAdd ? (
-                <button className="todo-add-button" type="button" onClick={() => openComposer(column.key)}>
+                <button
+                  className="todo-add-button"
+                  type="button"
+                  onClick={() => openComposer(column.key)}
+                >
                   <span className="todo-add-button__icon">
                     <PlusIcon />
                   </span>

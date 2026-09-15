@@ -8,6 +8,7 @@ import OrbitHome from "../pages/OrbitHome";
 import Projects from "../pages/Projects";
 import Todos from "../pages/Todos";
 import Writing from "../pages/Writing";
+import "../pages/legacy.css";
 
 // Recoverable access to the transitional FastAPI application. Cloud builds do
 // not import or render this tree unless VITE_ORBITOS_RUNTIME=legacy is explicit.

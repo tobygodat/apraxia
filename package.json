@@ -21,8 +21,11 @@
     "test:watch": "vitest",
     "test:related": "vitest related --run",
     "check:bundle": "node scripts/check-browser-bundle.mjs",
-    "verify:quick": "npm run typecheck && npm test -- --maxWorkers=4",
-    "verify": "npm run typecheck && npm test && npm run build && npm run check:bundle",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "knip": "knip",
+    "verify:quick": "npm run typecheck && npm run lint && npm test -- --maxWorkers=4",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build && npm run check:bundle",
     "verify:db": "npm run db:start && npm run db:verify && npm run db:rewind:verify && npm run db:test:oauth-concurrency && npm run db:test:todos-http && npm run db:types && npm run typecheck",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
@@ -33,7 +36,7 @@
     "db:test:todos-http": "node scripts/check-local-todos.mjs",
     "db:lint": "supabase db lint --local --level error --fail-on error",
     "db:verify": "supabase db reset --local && npm run db:lint && npm run db:test",
-    "db:rewind:verify": "supabase --yes migration down --local --last 12 && supabase migration up --local && npm run db:test",
+    "db:rewind:verify": "node scripts/migration-rewind.mjs && supabase migration up --local && npm run db:test",
     "db:types": "supabase gen types typescript --local > frontend/src/types/database.ts"
   },
   "dependencies": {
@@ -45,11 +48,19 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@eslint/js": "10.0.1",
     "@types/google.picker": "^0.0.52",
     "@types/node": "^22.18.1",
     "cross-env": "^10.0.0",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.12.0",
+    "knip": "6.35.1",
+    "prettier": "3.9.6",
     "supabase": "^2.116.0",
     "typescript": "^5.9.2",
+    "typescript-eslint": "8.70.0",
     "vercel": "^59.11.2",
     "vitest": "^4.1.11"
   }

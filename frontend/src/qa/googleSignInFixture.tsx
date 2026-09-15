@@ -12,9 +12,15 @@ if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.")
 // No real account, environment, storage, or provider is used in this fixture.
 const client = {
   auth: {
-    async getSession() { return { data: { session: null }, error: null }; },
-    onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
-    async signOut() { return { error: null }; },
+    async getSession() {
+      return { data: { session: null }, error: null };
+    },
+    onAuthStateChange() {
+      return { data: { subscription: { unsubscribe() {} } } };
+    },
+    async signOut() {
+      return { error: null };
+    },
   },
 } as unknown as SupabaseClient;
 

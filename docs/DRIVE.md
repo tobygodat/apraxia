@@ -43,11 +43,18 @@ from Google's API domain; CSP permits the Picker's Google frames. The app uses a
 receiving page paths or query strings. Both the HTTP header and HTML meta policy
 must agree; `no-referrer` causes Google to reject the restricted key.
 
+Access tokens are cached beside the refresh token in a separate AES-256-GCM
+envelope with an expiry. Requests reuse the cached token and refresh only when it
+is missing, within a minute of expiry, or rejected once by Google. The
+`save_drive_credentials` eight-argument overload carries that envelope and expiry;
+the six-argument form remains and delegates with an empty cache.
+
 A reconnect must return a fresh refresh token. Disconnect deletes Drive's stored
-credentials and pending attempts, without revoking the shared Google client grant
-that Calendar also uses. Revoking the app in Google, or Calendar's existing
-revocation flow, may require reconnecting Drive. A previously issued temporary
-access token expires independently of local disconnect.
+credentials and pending attempts and now also revokes the refresh token at
+Google, as Calendar does. Because both features share one Google client, revoking
+Drive can require reconnecting Calendar. Revocation failure never blocks the local
+disconnect, so disconnect still works after Google configuration or key loss. A
+previously issued temporary access token expires independently of disconnect.
 
 PDF MIME type and download permission are checked by the authenticated server
 before streaming. Responses are private/no-store. The server avoids buffering the

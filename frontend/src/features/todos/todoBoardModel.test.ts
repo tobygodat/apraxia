@@ -43,11 +43,7 @@ describe("buildTodoBoardModel", () => {
       "2026-09-06",
     ]);
     expect(model.columns[0]?.todos.map(({ id }) => id)).toEqual(["inbox"]);
-    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual([
-      "oldest",
-      "older",
-      "today",
-    ]);
+    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["oldest", "older", "today"]);
     expect(model.columns[5]?.todos.map(({ id }) => id)).toEqual(["sunday"]);
   });
 
@@ -66,7 +62,7 @@ describe("buildTodoBoardModel", () => {
     ]);
   });
 
-  it("does not duplicate open overdue tasks in historical date columns", () => {
+  it("shows open past-due tasks only under Today, never in historical date columns", () => {
     const open = todo({
       id: "open",
       text: "Open",
@@ -80,26 +76,27 @@ describe("buildTodoBoardModel", () => {
       dueDate: "2026-08-25",
     });
 
-    const model = buildTodoBoardModel(
-      [open, completed],
-      "2026-08-24",
-      "2026-09-02",
-    );
+    const model = buildTodoBoardModel([open, completed], "2026-08-24", "2026-09-02");
 
-    expect(model.columns.flatMap(column => column.todos).map(({ id }) => id)).not.toContain("open");
+    expect(model.columns.flatMap((column) => column.todos).map(({ id }) => id)).not.toContain(
+      "open",
+    );
     const current = buildTodoBoardModel([open, completed], "2026-08-31", "2026-09-02");
     expect(current.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
-    const historicalColumn = model.columns.find(
-      (column) => column.key === "2026-08-25",
-    );
+    const historicalColumn = model.columns.find((column) => column.key === "2026-08-25");
     expect(historicalColumn?.todos.map(({ id }) => id)).toEqual(["completed"]);
   });
 
   it("keeps completed dates separate across a Sunday-to-Monday rollover", () => {
     const source = [
       todo({ id: "open", text: "Open", dueDate: "2026-09-06" }),
-      todo({ id: "done", text: "Done", dueDate: "2026-09-06", completed: true,
-        completedAt: "2026-09-06T12:00:00Z" }),
+      todo({
+        id: "done",
+        text: "Done",
+        dueDate: "2026-09-06",
+        completed: true,
+        completedAt: "2026-09-06T12:00:00Z",
+      }),
       todo({ id: "future", text: "Future", dueDate: "2026-09-08" }),
     ];
     const sunday = buildTodoBoardModel(source, "2026-08-31", "2026-09-06");
@@ -127,17 +124,11 @@ describe("buildTodoBoardModel", () => {
   });
 
   it("rejects invalid selected weeks and duplicate rows", () => {
-    expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow(
-      "Monday",
-    );
+    expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow("Monday");
 
     const duplicate = todo({ id: "same", text: "Duplicate" });
     expect(() =>
-      buildTodoBoardModel(
-        [duplicate, { ...duplicate }],
-        "2026-08-31",
-        "2026-09-02",
-      ),
+      buildTodoBoardModel([duplicate, { ...duplicate }], "2026-08-31", "2026-09-02"),
     ).toThrow("unique IDs");
   });
 });

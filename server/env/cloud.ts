@@ -34,7 +34,7 @@ const browserSafePublicKey = z.string().transform((value, context) => {
   return normalized;
 });
 
-export const applicationEnvironmentSchema = z
+const applicationEnvironmentSchema = z
   .object({
     VITE_SUPABASE_URL: secureOrigin,
     VITE_SUPABASE_ANON_KEY: browserSafePublicKey,
@@ -54,13 +54,8 @@ export const applicationEnvironmentSchema = z
       }
     }
 
-    if (
-      environment.VITE_SUPABASE_ANON_KEY !== environment.SUPABASE_ANON_KEY
-    ) {
-      for (const variable of [
-        "SUPABASE_ANON_KEY",
-        "VITE_SUPABASE_ANON_KEY",
-      ] as const) {
+    if (environment.VITE_SUPABASE_ANON_KEY !== environment.SUPABASE_ANON_KEY) {
+      for (const variable of ["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"] as const) {
         context.addIssue({
           code: "custom",
           message: "Browser and server Supabase public keys must match.",
@@ -69,10 +64,7 @@ export const applicationEnvironmentSchema = z
       }
     }
 
-    if (
-      environment.VITE_SUPABASE_ANON_KEY ===
-      environment.SUPABASE_SERVICE_ROLE_KEY
-    ) {
+    if (environment.VITE_SUPABASE_ANON_KEY === environment.SUPABASE_SERVICE_ROLE_KEY) {
       for (const variable of [
         "SUPABASE_ANON_KEY",
         "SUPABASE_SERVICE_ROLE_KEY",
@@ -87,7 +79,7 @@ export const applicationEnvironmentSchema = z
     }
   });
 
-export const calendarEnvironmentSchema = z.object({
+const calendarEnvironmentSchema = z.object({
   GOOGLE_CLIENT_ID: requiredText,
   GOOGLE_CLIENT_SECRET: requiredText,
   GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().refine(isCanonicalEncryptionKey, {
@@ -95,9 +87,7 @@ export const calendarEnvironmentSchema = z.object({
   }),
 });
 
-export type ApplicationEnvironment = z.infer<
-  typeof applicationEnvironmentSchema
->;
+export type ApplicationEnvironment = z.infer<typeof applicationEnvironmentSchema>;
 export type CalendarEnvironment = z.infer<typeof calendarEnvironmentSchema>;
 
 export type EnvironmentCheck = {
@@ -119,9 +109,7 @@ export class EnvironmentConfigurationError extends Error {
   readonly variables: string[];
 
   constructor(area: string, variables: string[]) {
-    super(
-      `${area} environment is incomplete or invalid: ${variables.join(", ")}`,
-    );
+    super(`${area} environment is incomplete or invalid: ${variables.join(", ")}`);
     this.name = "EnvironmentConfigurationError";
     this.variables = variables;
   }
@@ -138,10 +126,7 @@ function issueVariables(error: z.ZodError): string[] {
   ].sort();
 }
 
-function inspectSchema(
-  schema: z.ZodType<unknown>,
-  source: EnvironmentSource,
-): EnvironmentCheck {
+function inspectSchema(schema: z.ZodType<unknown>, source: EnvironmentSource): EnvironmentCheck {
   const result = schema.safeParse(source);
 
   return result.success
@@ -177,18 +162,11 @@ function inspectOptionalSchema(
   };
 }
 
-function parseSchema<T>(
-  area: string,
-  schema: z.ZodType<T>,
-  source: EnvironmentSource,
-): T {
+function parseSchema<T>(area: string, schema: z.ZodType<T>, source: EnvironmentSource): T {
   const result = schema.safeParse(source);
 
   if (!result.success) {
-    throw new EnvironmentConfigurationError(
-      area,
-      issueVariables(result.error),
-    );
+    throw new EnvironmentConfigurationError(area, issueVariables(result.error));
   }
 
   return result.data;
@@ -197,11 +175,7 @@ function parseSchema<T>(
 export function inspectCloudEnvironment(source: EnvironmentSource) {
   return {
     application: inspectSchema(applicationEnvironmentSchema, source),
-    calendar: inspectOptionalSchema(
-      calendarEnvironmentSchema,
-      calendarVariables,
-      source,
-    ),
+    calendar: inspectOptionalSchema(calendarEnvironmentSchema, calendarVariables, source),
   };
 }
 
@@ -219,9 +193,7 @@ export function requireCalendarEnvironment(
 
 export function deploymentEnvironment(source: EnvironmentSource): string {
   const environment = source.VERCEL_ENV;
-  return environment === "development" ||
-    environment === "preview" ||
-    environment === "production"
+  return environment === "development" || environment === "preview" || environment === "production"
     ? environment
     : "local";
 }
