@@ -50,6 +50,12 @@
   before another push. If the local environment cannot reproduce it, report the
   specific blocker instead of cycling through speculative remote fixes.
   Docker is not needed for ordinary frontend tests. See `docs/CLOUD_DEVELOPMENT.md`.
+- Use Docker only when the task requires local containers. Check `docker info`
+  first and reuse a running engine. Otherwise use `docker desktop start` once
+  and wait for `docker info` to succeed; a startup timeout alone does not mean
+  the engine failed. If startup fails, inspect logs before retrying. Do not
+  force-kill Docker, shut down WSL, or restart Docker as routine cleanup. Never
+  automatically reset Docker or delete its data.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
   need a consistency and diff check. Once required checks pass, repeat or broaden
   testing only for new changes, failures, or unresolved concerns.
