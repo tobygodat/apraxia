@@ -28,12 +28,11 @@ function fixture(result: unknown) {
   };
 }
 describe("Collection service", () => {
-  it("filters Media on the server and fetches a stable 50-record page", async () => {
+  it("filters Projects on the server and fetches a stable 50-record page", async () => {
     const { service, client, chain } = fixture([]);
-    await service.listMedia({ mediaType: "book", status: "saved", offset: 50 });
-    expect(client.from).toHaveBeenCalledWith("media");
-    expect(chain.eq).toHaveBeenCalledWith("media_type", "book");
-    expect(chain.eq).toHaveBeenCalledWith("status", "saved");
+    await service.listProjects({ status: "active", offset: 50 });
+    expect(client.from).toHaveBeenCalledWith("projects");
+    expect(chain.eq).toHaveBeenCalledWith("status", "active");
     expect(chain.is).toHaveBeenCalledWith("deleted_at", null);
     expect(chain.range).toHaveBeenCalledWith(50, 99);
     expect(chain.order).toHaveBeenCalledWith("id");

@@ -40,7 +40,7 @@ select ok(
       ('public', 'projects'),
       ('public', 'todos'),
       ('public', 'ideas'),
-      ('public', 'media'),
+      ('private', 'retired_media'),
       ('public', 'google_calendar_connections'),
       ('public', 'google_calendar_preferences'),
       ('private', 'google_calendar_credentials'),

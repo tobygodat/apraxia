@@ -23,7 +23,6 @@ const icons = {
     </>
   ),
   ideas: <path d="M5 3h10l4 4v14H5ZM14 3v5h5M8 12h8m-8 4h6" />,
-  media: <path d="M12 5C8 3 5 3 3 4v15c4-1 6-1 9 1 3-2 5-2 9-1V4c-2-1-5-1-9 1Zm0 0v15" />,
   projects: <path d="M3 7V4h6l3 3h9v13H3Z M3 10h18" />,
   search: (
     <>

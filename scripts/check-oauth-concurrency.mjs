@@ -32,13 +32,29 @@ export function assertLocalDockerEndpoint(endpoint) {
 }
 
 export function assertLocalContainer(container) {
+  const checks = {
+    name: container?.name === `/${CONTAINER}`,
+    running: container?.running === true,
+    id: /^[a-f0-9]{64}$/.test(container?.id ?? ""),
+    project: container?.labels?.["com.supabase.cli.project"] === PROJECT,
+    image: /^(?:public\.ecr\.aws\/|docker\.io\/)?supabase\/postgres:17\./.test(
+      container?.image ?? "",
+    ),
+  };
+  const failed = Object.entries(checks)
+    .filter(([, ok]) => !ok)
+    .map(([field]) => field);
+  // Only these non-secret identity fields may enter diagnostics. Never log
+  // the full Docker inspect response, labels, environment, or child stderr.
+  const identity = {
+    name: container?.name,
+    running: container?.running,
+    project: container?.labels?.["com.supabase.cli.project"],
+    image: container?.image,
+  };
   check(
-    container?.name === `/${CONTAINER}` &&
-      container?.running === true &&
-      /^[a-f0-9]{64}$/.test(container?.id ?? "") &&
-      container?.labels?.["com.supabase.cli.project"] === PROJECT &&
-      /^(?:public\.ecr\.aws\/|docker\.io\/)?supabase\/postgres:17\./.test(container?.image ?? ""),
-    "Refusing a container that is not the running orbitos local Supabase PostgreSQL 17 instance.",
+    failed.length === 0,
+    `Refusing a container that is not the running orbitos local Supabase PostgreSQL 17 instance. Mismatched: ${failed.join(", ")}. Identity: ${JSON.stringify(identity)}`,
   );
   return container.id;
 }

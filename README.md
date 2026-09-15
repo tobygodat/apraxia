@@ -1,6 +1,6 @@
 # orbitOS
 
-A private, manual-entry workspace for Todos, Projects, Ideas, and Media.
+A private, manual-entry workspace for Todos, Projects, and Ideas.
 Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
 React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
@@ -84,4 +84,4 @@ The SQLite backup is `.local/backups/orbitos-legacy-20260904T212441Z.db`
 Off-device backup and hosted retention have not been verified.
 
 Export/account deletion UI and legacy import remain deferred, as do mobile,
-recurrence, AI, reminders, analytics, rich text, and media metadata services.
+recurrence, AI, reminders, analytics, and rich text.

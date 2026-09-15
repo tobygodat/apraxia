@@ -67,19 +67,6 @@
   opacity: 0.5;
   cursor: wait;
 }
-.collection-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-.collection-filters label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #ada9a3;
-  font-size: 12px;
-}
 .collection-list {
   list-style: none;
   padding: 0;

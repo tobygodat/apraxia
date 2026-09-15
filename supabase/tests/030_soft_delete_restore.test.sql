@@ -44,14 +44,6 @@ values (
   'A idea body'
 );
 
-insert into public.media (id, user_id, media_type, title)
-values (
-  'a0000000-0000-4000-8000-000000000004',
-  '11111111-1111-4111-8111-111111111111',
-  'book',
-  'A book'
-);
-
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
@@ -89,14 +81,6 @@ select lives_ok(
           'idea',
           'a0000000-0000-4000-8000-000000000003'
         )
-      ),
-      (
-        'media',
-        'a0000000-0000-4000-8000-000000000004',
-        public.soft_delete_record(
-          'media',
-          'a0000000-0000-4000-8000-000000000004'
-        )
       )
   $test$,
   'all record types soft-delete through the public wrappers'
@@ -104,7 +88,7 @@ select lives_ok(
 
 select ok(
   (
-    select count(*) = 4 and bool_and(token is not null)
+    select count(*) = 3 and bool_and(token is not null)
     from pg_temp.delete_tokens
   ),
   'every soft delete returns an exact undo token'
@@ -125,10 +109,6 @@ select is(
       select id
       from public.ideas
       where id = 'a0000000-0000-4000-8000-000000000003'
-      union all
-      select id
-      from public.media
-      where id = 'a0000000-0000-4000-8000-000000000004'
     ) as visible_record
   ),
   0::bigint,
@@ -178,8 +158,7 @@ select set_eq(
     values
       ('project'::text, false),
       ('todo', false),
-      ('idea', false),
-      ('media', false)
+      ('idea', false)
   $$,
   'stale undo tokens restore nothing'
 );
@@ -208,10 +187,6 @@ select set_eq(
     select 'idea', id, deleted_at
     from public.ideas
     where id = 'a0000000-0000-4000-8000-000000000003'
-    union all
-    select 'media', id, deleted_at
-    from public.media
-    where id = 'a0000000-0000-4000-8000-000000000004'
   $$,
   $$
     select record_type::text, record_id, token
@@ -233,8 +208,7 @@ select set_eq(
     values
       ('project'::text, true),
       ('todo', true),
-      ('idea', true),
-      ('media', true)
+      ('idea', true)
   $$,
   'only the exact deletion tokens restore every record type'
 );
@@ -254,13 +228,9 @@ select is(
       select id
       from public.ideas
       where id = 'a0000000-0000-4000-8000-000000000003'
-      union all
-      select id
-      from public.media
-      where id = 'a0000000-0000-4000-8000-000000000004'
     ) as visible_record
   ),
-  4::bigint,
+  3::bigint,
   'restored records return to ordinary selects'
 );
 
@@ -275,8 +245,7 @@ select set_eq(
     values
       ('project'::text, false),
       ('todo', false),
-      ('idea', false),
-      ('media', false)
+      ('idea', false)
   $$,
   'a consumed undo token cannot be replayed'
 );

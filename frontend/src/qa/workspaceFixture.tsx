@@ -25,7 +25,6 @@ import { sortTodayTodos } from "../features/todos/todayOrder";
 import type {
   DeleteUndoToken,
   Idea,
-  MediaItem,
   Project,
   SearchResult,
   TodayTodo,
@@ -164,40 +163,6 @@ let ideas: Idea[] = empty
         projectId: null,
       },
     ];
-let media: MediaItem[] = empty
-  ? []
-  : [
-      {
-        ...base(),
-        mediaType: "book",
-        title: long ? longText : "A Field Guide to Getting Lost",
-        creator: "Rebecca Solnit",
-        releaseYear: 2005,
-        status: "in_progress",
-        rating: null,
-        notes: "For slow mornings.",
-      },
-      {
-        ...base(),
-        mediaType: "movie",
-        title: "Perfect Days",
-        creator: "Wim Wenders",
-        releaseYear: 2023,
-        status: "saved",
-        rating: null,
-        notes: null,
-      },
-      {
-        ...base(),
-        mediaType: "book",
-        title: "The Summer Book",
-        creator: "Tove Jansson",
-        releaseYear: 1972,
-        status: "finished",
-        rating: 5,
-        notes: null,
-      },
-    ];
 const deleted = new Map<string, unknown>();
 const token = "2026-09-04T12:00:00.123456Z" as DeleteUndoToken;
 function check() {
@@ -301,8 +266,7 @@ const todoService: TodoService = {
     });
   },
 };
-const rowsFor = (kind: CollectionKind) =>
-  kind === "project" ? projects : kind === "idea" ? ideas : media;
+const rowsFor = (kind: CollectionKind) => (kind === "project" ? projects : ideas);
 const collectionService: CollectionService = {
   async listProjects(o = {}) {
     return page(
@@ -316,24 +280,11 @@ const collectionService: CollectionService = {
       o,
     );
   },
-  async listMedia(o = {}) {
-    return page(
-      media.filter(
-        (m) =>
-          (!o.mediaType || o.mediaType === "all" || m.mediaType === o.mediaType) &&
-          (!o.status || o.status === "all" || m.status === o.status),
-      ),
-      o,
-    );
-  },
   async getProject(rowId) {
     return find(projects, rowId);
   },
   async getIdea(rowId) {
     return find(ideas, rowId);
-  },
-  async getMedia(rowId) {
-    return find(media, rowId);
   },
   async getTodo(rowId) {
     return find(todos, rowId);
@@ -356,33 +307,18 @@ const collectionService: CollectionService = {
       projectId: input.projectId ?? null,
     });
   },
-  async saveMedia(input, rowId) {
-    check();
-    return save(media, {
-      ...(rowId ? find(media, rowId) : base()),
-      mediaType: input.mediaType,
-      title: input.title,
-      creator: input.creator ?? null,
-      releaseYear: input.releaseYear ?? null,
-      status: input.status ?? "saved",
-      rating: input.rating ?? null,
-      notes: input.notes ?? null,
-    });
-  },
   async softDelete(kind, rowId) {
     check();
-    deleted.set(rowId, find<Project | Idea | MediaItem>(rowsFor(kind), rowId));
+    deleted.set(rowId, find<Project | Idea>(rowsFor(kind), rowId));
     projects = projects.filter((p) => kind !== "project" || p.id !== rowId);
     ideas = ideas.filter((i) => kind !== "idea" || i.id !== rowId);
-    media = media.filter((m) => kind !== "media" || m.id !== rowId);
     return token;
   },
   async restore(kind, rowId) {
     const row = deleted.get(rowId);
     if (!row) return false;
     if (kind === "project") projects.push(row as Project);
-    else if (kind === "idea") ideas.push(row as Idea);
-    else media.push(row as MediaItem);
+    else ideas.push(row as Idea);
     deleted.delete(rowId);
     return true;
   },
@@ -411,15 +347,6 @@ const collectionService: CollectionService = {
         recordId: i.id,
         title: i.title ?? i.body.split("\n")[0],
         snippet: i.body,
-        updatedAt: now,
-        relevance: 1,
-        totalCount: 0,
-      })),
-      ...media.map((m) => ({
-        recordType: "media" as const,
-        recordId: m.id,
-        title: m.title,
-        snippet: m.creator ?? "",
         updatedAt: now,
         relevance: 1,
         totalCount: 0,

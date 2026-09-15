@@ -118,26 +118,6 @@ describe("Collection pages", () => {
     expect(listIdeas).toHaveBeenCalledWith(expect.objectContaining({ offset: 50 }));
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
   });
-  it("keeps Media filters independent and passes them to the list service", async () => {
-    const listMedia = vi.fn().mockResolvedValue([]);
-    render(
-      <Page
-        kind="media"
-        service={{ listMedia } as unknown as CollectionService}
-        todoService={{} as TodoService}
-        projects={[]}
-        onChanged={vi.fn()}
-      />,
-    );
-    await screen.findByText("No books or movies in this view.");
-    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "movie" } });
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "finished" } });
-    await waitFor(() =>
-      expect(listMedia).toHaveBeenLastCalledWith(
-        expect.objectContaining({ mediaType: "movie", status: "finished", offset: 0 }),
-      ),
-    );
-  });
   it("shows project tasks and ideas and deletes only the selected project with Undo", async () => {
     const project = {
       id: "p",

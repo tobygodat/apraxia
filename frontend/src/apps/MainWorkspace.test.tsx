@@ -33,7 +33,7 @@ const idea: Idea = {
 };
 function fixture(userId = "user-a") {
   const createTodo = vi.fn().mockResolvedValue(todo);
-  const listMedia = vi.fn().mockResolvedValue([]);
+  const listProjects = vi.fn().mockResolvedValue([]);
   const search = vi.fn().mockResolvedValue([]);
   const getTodo = vi.fn().mockResolvedValue(todo);
   const getIdea = vi.fn().mockResolvedValue(idea);
@@ -43,7 +43,7 @@ function fixture(userId = "user-a") {
     signOutStatus: "idle",
     onSignOut: vi.fn().mockResolvedValue(undefined),
     todoService: { createTodo } as unknown as TodoService,
-    collectionService: { listMedia, search, getTodo, getIdea } as unknown as CollectionService,
+    collectionService: { listProjects, search, getTodo, getIdea } as unknown as CollectionService,
     calendarService: {} as CalendarService,
     workspaceData: {
       projects,
@@ -52,14 +52,14 @@ function fixture(userId = "user-a") {
         .mockResolvedValue({ userId, timezone: "America/New_York", createdAt: "", updatedAt: "" }),
     },
   };
-  return { props, createTodo, listMedia, search, getTodo, getIdea, projects };
+  return { props, createTodo, listProjects, search, getTodo, getIdea, projects };
 }
 function RouteWitness() {
   return <output aria-label="Current route">{useLocation().pathname}</output>;
 }
 function mount(props: MainWorkspaceProps) {
   return render(
-    <MemoryRouter initialEntries={["/media"]}>
+    <MemoryRouter initialEntries={["/projects"]}>
       <MainWorkspace {...props} />
       <RouteWitness />
     </MemoryRouter>,
@@ -71,6 +71,21 @@ async function openSearch(query: string) {
   fireEvent.change(input, { target: { value: query } });
 }
 describe("Main workspace integration", () => {
+  it("removes Media navigation, creation, and the old route", async () => {
+    const f = fixture();
+    render(
+      <MemoryRouter initialEntries={["/media"]}>
+        <MainWorkspace {...f.props} />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /media/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "+ add" }));
+    expect(await screen.findByRole("button", { name: "Idea" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Project" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Media" })).toBeNull();
+  });
+
   it("reuses the runtime project preload when opening Projects and returning to it", async () => {
     const f = fixture();
     const listProjects = vi.fn().mockResolvedValue([
@@ -84,7 +99,7 @@ describe("Main workspace integration", () => {
       },
     ]);
     render(
-      <MemoryRouter initialEntries={["/media"]}>
+      <MemoryRouter initialEntries={["/ideas"]}>
         <WorkspaceRuntime
           {...f.props}
           todoService={{
@@ -99,12 +114,12 @@ describe("Main workspace integration", () => {
         />
       </MemoryRouter>,
     );
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No ideas yet. Keep your first thought here.");
     await waitFor(() => expect(listProjects).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("link", { name: "projects" }));
     await screen.findByText("Garden plans");
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "ideas" }));
+    await screen.findByText("No ideas yet. Keep your first thought here.");
     fireEvent.click(screen.getByRole("link", { name: "projects" }));
     await screen.findByText("Garden plans");
     expect(listProjects).toHaveBeenCalledTimes(1);
@@ -117,42 +132,40 @@ describe("Main workspace integration", () => {
       { ...f.props.collectionService, listIdeas },
       new NavigationCache(),
       "collections",
-      ["listMedia", "listIdeas"],
+      ["listProjects", "listIdeas"],
       [],
     );
-    await service.listMedia({
-      status: "all",
-      mediaType: "all",
+    await service.listProjects({
       offset: 0,
       signal: new AbortController().signal,
     });
     mount({ ...f.props, collectionService: service });
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("link", { name: "ideas" }));
     await screen.findByText("Garden thought");
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
-    expect(f.listMedia).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("No projects in this view.");
+    expect(f.listProjects).toHaveBeenCalledTimes(1);
     expect(listIdeas).toHaveBeenCalledTimes(1);
   });
 
-  it("captures a Todo from Media, stays on Media, and refreshes visible data once", async () => {
+  it("captures a Todo from Projects, stays on Projects, and refreshes visible data once", async () => {
     const f = fixture();
     mount(f.props);
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
     fireEvent.click(screen.getByRole("button", { name: "Task" }));
     fireEvent.change(screen.getByLabelText("Task"), { target: { value: todo.text } });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     await screen.findByText("Task added");
-    expect(screen.getByLabelText("Current route").textContent).toBe("/media");
+    expect(screen.getByLabelText("Current route").textContent).toBe("/projects");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(f.createTodo).toHaveBeenCalledTimes(1);
     expect(f.createTodo).toHaveBeenCalledWith(
       expect.objectContaining({ text: todo.text, dueDate: null }),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    await waitFor(() => expect(f.listMedia).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(f.listProjects).toHaveBeenCalledTimes(2));
     expect(f.projects).toHaveBeenCalledTimes(2);
   });
 
@@ -186,14 +199,14 @@ describe("Main workspace integration", () => {
       expect((restored as HTMLInputElement).value).toBe("match");
       expect(screen.getByRole("button", { name: /Search match/ })).toBeTruthy();
       expect(f.search).toHaveBeenCalledTimes(1);
-      expect(screen.getByLabelText("Current route").textContent).toBe("/media");
+      expect(screen.getByLabelText("Current route").textContent).toBe("/projects");
     },
   );
 
   it("keeps Ctrl+K closed while the Add dialog is open", async () => {
     const f = fixture();
     mount(f.props);
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
     await screen.findByRole("dialog", { name: "Add to orbitOS" });
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
@@ -224,8 +237,8 @@ describe("Main workspace integration", () => {
         .getByRole("main")
         .contains(screen.getByText("No ideas yet. Keep your first thought here.")),
     ).toBe(true);
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("No projects in this view.");
     expect(document.activeElement).toBe(screen.getByRole("main"));
   });
 

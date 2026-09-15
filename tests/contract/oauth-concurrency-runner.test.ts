@@ -64,6 +64,21 @@ describe("local OAuth concurrency runner safety guards (not concurrency proof)",
     expect(() => assertLocalContainer({ ...localContainer, ...change })).toThrow();
   });
 
+  it("identifies a container mismatch without logging other Docker metadata", () => {
+    const container = {
+      ...localContainer,
+      running: false,
+      labels: { ...localContainer.labels, secret: "do-not-log-label" },
+      env: ["PASSWORD=do-not-log-env"],
+    };
+    expect(() => assertLocalContainer(container)).toThrow("Mismatched: running.");
+    try {
+      assertLocalContainer(container);
+    } catch (error) {
+      expect(String(error)).not.toContain("do-not-log");
+    }
+  });
+
   it("accepts the expected socket database and applied OAuth migration", () => {
     expect(() => assertDatabaseIdentity(localDatabase)).not.toThrow();
   });

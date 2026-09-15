@@ -35,17 +35,8 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
         props.collectionService,
         cache,
         "collections",
-        [
-          "listProjects",
-          "listIdeas",
-          "listMedia",
-          "getProject",
-          "getIdea",
-          "getMedia",
-          "getTodo",
-          "projectTodos",
-        ],
-        ["saveProject", "saveIdea", "saveMedia", "softDelete", "restore"],
+        ["listProjects", "listIdeas", "getProject", "getIdea", "getTodo", "projectTodos"],
+        ["saveProject", "saveIdea", "softDelete", "restore"],
       ),
     [props.collectionService, cache],
   );
@@ -108,8 +99,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
       void Promise.allSettled([
         todoService.loadWorkspace({ signal }),
         collectionService.listProjects({ offset: 0, signal }),
-        collectionService.listIdeas({ status: "all", mediaType: "all", offset: 0, signal }),
-        collectionService.listMedia({ status: "all", mediaType: "all", offset: 0, signal }),
+        collectionService.listIdeas({ offset: 0, signal }),
       ]);
     }, 100);
     let idleHandle: number | undefined;
