@@ -155,7 +155,8 @@ describe("cloud migration SQL behavior", () => {
       const before = await db.query(
         `select to_jsonb(m) as row_data from public.media m order by id`,
       );
-      await db.exec(migrations[retirementIndex]!);
+      // Extended-query execution requires a single statement, like the CLI.
+      await db.query(migrations[retirementIndex]!);
       const after = await db.query(`select row_data from private.retired_media order by id`);
       expect(after.rows).toEqual(before.rows);
       expect((await db.query(`select to_regclass('public.media') as relation`)).rows).toEqual([

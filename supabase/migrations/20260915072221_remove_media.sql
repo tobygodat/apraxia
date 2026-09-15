@@ -1,3 +1,7 @@
+-- One statement keeps the backup, lock, and schema changes atomic even when
+-- the Supabase CLI applies migration statements separately.
+do $migration$
+begin
 -- Retire Media without discarding existing user data. The backup is private,
 -- has no API grants or policies, and is not used by the application.
 lock table public.media in access exclusive mode;
@@ -353,3 +357,6 @@ grant execute on function internal.restore_record(
 
 revoke create on schema internal from orbitos_rpc;
 revoke orbitos_rpc from postgres;
+
+end
+$migration$;
