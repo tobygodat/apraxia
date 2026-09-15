@@ -1,9 +1,10 @@
 # Workspace data model
 
-The core workspace tables and the rules the browser must respect. Classes,
-notes, and assignments have their own document:
-[Classes data model](CLASSES_DATA_MODEL.md). Today reads and ordering have
-[Today data protocol](TODAY_DATA_PROTOCOL.md).
+The core workspace tables and the rules the browser must respect. Classes and
+notes have their own document: [Classes data model](CLASSES_DATA_MODEL.md).
+Class assignments are todos with a class link; the decision record is
+[Task aggregation roadmap](TASK_AGGREGATION_ROADMAP.md). Today reads and
+ordering have [Today data protocol](TODAY_DATA_PROTOCOL.md).
 
 Everything below is defined in
 `supabase/migrations/20260902000100_initial_cloud_schema.sql` and
@@ -36,13 +37,22 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `due_date` | `date` | Date only. See below. |
 | `due_time` | `time without time zone` | Allowed only when `due_date` is set. |
 | `project_id` | `uuid` | Composite foreign key on `(user_id, project_id)`, so a task can only reference the same owner's project. Set to null when the project is hard-deleted; a trigger also requires the project to be active. |
+| `class_id` | `text` | Composite foreign key on `(user_id, class_id)` to `classes`, `on delete set null`. A check forbids setting both `project_id` and `class_id`: a task has at most one parent. Added by `20260914000100_assignment_todos.sql`. |
+| `assignment_type` | `text` | `''`, `Homework`, `Quiz`, `Reading`, `Exam`, or `Other`; non-empty only with a `class_id`. A trigger clears it when the class link is removed. Class-only; not a general task kind. |
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
 | `search_vector` | `tsvector` | Generated from `text`. |
 
-Browser grants: `select` on all columns, `insert (text, due_date, due_time,
-project_id)`, `update (text, completed, due_date, due_time, project_id)`.
+Browser grants: `select` on all columns, `insert (id, text, due_date, due_time,
+project_id, class_id, assignment_type)`, `update (text, completed, due_date,
+due_time, project_id, class_id, assignment_type)`. The `id` insert grant lets
+the Classes editor keep a draft UUID across retries.
+
+The Today RPC projects `class_id`, `class_name`, and `assignment_type` alongside
+the project title, and the workspace snapshot carries paginated class summaries
+so task forms can offer a class choice. Past-due incomplete tasks appear under
+Today with their stored date unchanged; there is no Overdue column.
 
 ### `public.projects`
 

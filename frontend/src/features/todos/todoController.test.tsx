@@ -69,7 +69,12 @@ function fixture(
     return saved;
   };
   const service: TodoService = {
-    loadWorkspace: vi.fn(async () => ({ profile: PROFILE, projects: [PROJECT], todos: rows })),
+    loadWorkspace: vi.fn(async () => ({
+      profile: PROFILE,
+      classes: [],
+      projects: [PROJECT],
+      todos: rows,
+    })),
     loadToday: vi.fn(async (date) =>
       rows.flatMap((row): TodayTodo[] =>
         !row.completed && row.dueDate !== null && row.dueDate <= date
@@ -138,7 +143,7 @@ describe("TodoController loads", () => {
     // Ranked rows lead; unranked eligible rows follow in Postgres order.
     expect(ids(state.today.todos)).toEqual([OVERDUE.id, DUE_TODAY.id]);
     expect(state.today.todos[0]!.projectTitle).toBe(PROJECT.title);
-    expect(state.today.overdueCount).toBe(1);
+    expect(state.today.todos.filter((row) => row.isOverdue)).toHaveLength(1);
     expect(service.loadToday).toHaveBeenCalledWith(TODAY, expect.anything());
   });
 
@@ -253,6 +258,29 @@ describe("TodoController completion and details", () => {
     expect(controller.getSnapshot().mutationError).toBe("update_failed");
     expect(controller.getSnapshot().todos.find((row) => row.id === OVERDUE.id)?.dueTime).toBe(
       "14:30:00.1",
+    );
+  });
+
+  it("updates class context in Today, checks the saved parent, and rolls back a wrong response", async () => {
+    const { controller, service } = await ready();
+    const input = {
+      text: "Worksheet",
+      projectId: null,
+      classId: "math",
+      assignmentType: "Quiz",
+      dueDate: TODAY,
+      dueTime: null,
+    };
+    await controller.updateDetails(OVERDUE.id, input);
+    expect(controller.getSnapshot().today.todos.find((row) => row.id === OVERDUE.id)).toMatchObject(
+      input,
+    );
+    vi.mocked(service.updateTodoDetails).mockResolvedValueOnce({ ...OVERDUE, ...input });
+    await expect(
+      controller.updateDetails(OVERDUE.id, { ...input, classId: "art" }),
+    ).rejects.toBeInstanceOf(TodoMutationError);
+    expect(controller.getSnapshot().today.todos.find((row) => row.id === OVERDUE.id)?.classId).toBe(
+      "math",
     );
   });
 
@@ -435,7 +463,12 @@ describe("TodoController shared create and lifecycle", () => {
         projectTitle: PROJECT.title,
       } as TodayTodo,
     ]);
-    staleWorkspace.resolve({ profile: PROFILE, projects: [PROJECT], todos: [OVERDUE] });
+    staleWorkspace.resolve({
+      profile: PROFILE,
+      classes: [],
+      projects: [PROJECT],
+      todos: [OVERDUE],
+    });
     await reads;
     expect(ids(controller.getSnapshot().today.todos)).toEqual([OVERDUE.id, DUE_TODAY.id]);
     expect(ids(controller.getSnapshot().todos)).toEqual([OVERDUE.id, DUE_TODAY.id]);

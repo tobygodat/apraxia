@@ -17,7 +17,7 @@ import { ServiceError } from "../../lib/serviceError";
 
 export const PAGE_SIZE = 200;
 const TODO_FIELDS =
-  "id,text,completed,completed_at,due_date,due_time,project_id,today_rank,created_at,updated_at";
+  "id,text,completed,completed_at,due_date,due_time,project_id,class_id,assignment_type,classes(name),today_rank,created_at,updated_at";
 type TodoRow = Pick<
   Tables<"todos">,
   | "id"
@@ -27,10 +27,12 @@ type TodoRow = Pick<
   | "due_date"
   | "due_time"
   | "project_id"
+  | "class_id"
+  | "assignment_type"
   | "today_rank"
   | "created_at"
   | "updated_at"
->;
+> & { classes?: { name: string | null } | null };
 
 function failed(): never {
   throw new ServiceError("unavailable", "Couldn’t load or save your tasks. Try again.");
@@ -56,6 +58,9 @@ function mapTodo(row: TodoRow): Todo {
     dueDate: row.due_date,
     dueTime: row.due_time,
     projectId: row.project_id,
+    classId: row.class_id,
+    className: row.classes?.name ?? null,
+    assignmentType: row.assignment_type,
     todayRank: row.today_rank,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -93,7 +98,7 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
   return {
     async loadWorkspace(options) {
       const signal = requestSignal(options);
-      const [profileResponse, projects, todos] = await Promise.all([
+      const [profileResponse, projects, todos, classes] = await Promise.all([
         client
           .from("profiles")
           .select("user_id,timezone,created_at,updated_at")
@@ -117,6 +122,16 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
             .order("id")
             .limit(PAGE_SIZE)
             .abortSignal(signal);
+          if (options.classId !== undefined) query.eq("class_id", options.classId);
+          return afterId === null ? query : query.gt("id", afterId);
+        }, options),
+        collectRows((afterId) => {
+          const query = client
+            .from("classes")
+            .select("id,name", { count: "exact" })
+            .order("id")
+            .limit(PAGE_SIZE)
+            .abortSignal(signal);
           return afterId === null ? query : query.gt("id", afterId);
         }, options),
       ]);
@@ -130,19 +145,40 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
             updatedAt: profile.updated_at,
           },
           projects,
+          classes,
           todos: todos.map(mapTodo),
         }) ?? failed()
       );
     },
     async createTodo(input, options) {
+      const values = {
+        ...(input.id !== undefined && { id: input.id }),
+        text: input.text,
+        due_date: input.dueDate ?? null,
+        due_time: input.dueTime ?? null,
+        project_id: input.projectId ?? null,
+        class_id: input.classId ?? null,
+        assignment_type: input.assignmentType ?? "",
+      };
+      if (input.id !== undefined) {
+        // A draft keeps its UUID across retries: an interrupted response must
+        // never create a duplicate, so the write ignores an existing row.
+        const write = await client
+          .from("todos")
+          .upsert(values, { onConflict: "id", ignoreDuplicates: true })
+          .abortSignal(requestSignal(options));
+        if (write.error) failed();
+        const query = client
+          .from("todos")
+          .select(TODO_FIELDS)
+          .eq("id", input.id)
+          .is("deleted_at", null);
+        if (options.classId !== undefined) query.eq("class_id", options.classId);
+        return mapTodo(result(await query.abortSignal(requestSignal(options)).single(), options));
+      }
       const response = await client
         .from("todos")
-        .insert({
-          text: input.text,
-          due_date: input.dueDate ?? null,
-          due_time: input.dueTime ?? null,
-          project_id: input.projectId ?? null,
-        })
+        .insert(values)
         .select(TODO_FIELDS)
         .abortSignal(requestSignal(options))
         .single();
@@ -152,30 +188,22 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
       const update: Database["public"]["Tables"]["todos"]["Update"] = {};
       if (input.text !== undefined) update.text = input.text;
       if (input.projectId !== undefined) update.project_id = input.projectId;
+      if (input.classId !== undefined) update.class_id = input.classId;
+      if (input.assignmentType !== undefined) update.assignment_type = input.assignmentType;
       if (input.dueDate !== undefined) update.due_date = input.dueDate;
       if (input.dueTime !== undefined) update.due_time = input.dueTime;
       if (input.dueDate === null) update.due_time = null;
       if (Object.keys(update).length === 0) failed();
-      const response = await client
-        .from("todos")
-        .update(update)
-        .eq("id", id)
-        .is("deleted_at", null)
-        .select(TODO_FIELDS)
-        .abortSignal(requestSignal(options))
-        .single();
+      const query = client.from("todos").update(update).eq("id", id).is("deleted_at", null);
+      if (options.classId !== undefined) query.eq("class_id", options.classId);
+      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
     async setTodoCompleted(id, completed, options) {
       // The database trigger owns completed_at and resets stale Today ranks.
-      const response = await client
-        .from("todos")
-        .update({ completed })
-        .eq("id", id)
-        .is("deleted_at", null)
-        .select(TODO_FIELDS)
-        .abortSignal(requestSignal(options))
-        .single();
+      const query = client.from("todos").update({ completed }).eq("id", id).is("deleted_at", null);
+      if (options.classId !== undefined) query.eq("class_id", options.classId);
+      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
     async softDeleteTodo(id, options) {

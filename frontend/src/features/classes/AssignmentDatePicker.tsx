@@ -24,8 +24,10 @@ function shiftMonth(value: string, offset: number) {
   return date.toISOString().slice(0, 10);
 }
 
-/** Date-only picker for the assignments. */
+/** Dates remain date-only unless the user explicitly applies a time. */
 export function AssignmentDatePicker({
+  dueTime = "",
+  onTimeChange,
   value,
   label,
   disabled,
@@ -35,6 +37,8 @@ export function AssignmentDatePicker({
   onKeyDown,
   today = localToday(Intl.DateTimeFormat().resolvedOptions().timeZone),
 }: {
+  dueTime?: string;
+  onTimeChange?(value: string): void;
   value: string;
   label: string;
   disabled?: boolean;
@@ -88,10 +92,20 @@ export function AssignmentDatePicker({
         }}
       >
         {formatAssignmentDate(value)}
+        {dueTime ? ` · ${dueTime.slice(0, 5)}` : ""}
       </button>
       {open &&
         createPortal(
           <DateCalendar
+            dueTime={dueTime}
+            onTimeChange={
+              onTimeChange
+                ? (time) => {
+                    onTimeChange(time);
+                    close();
+                  }
+                : undefined
+            }
             today={today}
             id={dialogId}
             value={value}
@@ -109,6 +123,8 @@ export function AssignmentDatePicker({
 }
 
 function DateCalendar({
+  dueTime,
+  onTimeChange,
   id,
   value,
   anchor,
@@ -116,6 +132,8 @@ function DateCalendar({
   onClose,
   today,
 }: {
+  dueTime: string;
+  onTimeChange?(value: string): void;
   id: string;
   value: string;
   anchor: HTMLButtonElement;
@@ -123,6 +141,7 @@ function DateCalendar({
   onChange(value: string): void;
   onClose(): void;
 }) {
+  const [time, setTime] = useState(dueTime.slice(0, 5));
   const [month, setMonth] = useState(monthStart(value || today));
   const [focused, setFocused] = useState(value || today);
   const panel = useRef<HTMLDivElement>(null);
@@ -261,6 +280,23 @@ function DateCalendar({
           </button>
         ))}
       </div>
+      {onTimeChange && (
+        <div className="assignment-calendar-time">
+          <label>
+            Time (optional)
+            <input
+              type="time"
+              value={time}
+              disabled={!value}
+              onChange={(event) => setTime(event.target.value)}
+            />
+          </label>
+          <button type="button" disabled={!value} onClick={() => onTimeChange(time)}>
+            Apply time
+          </button>
+          {!value && <span>Choose a date first.</span>}
+        </div>
+      )}
       <div className="assignment-calendar-footer">
         <button type="button" disabled={!value} onClick={() => onChange("")}>
           Clear date

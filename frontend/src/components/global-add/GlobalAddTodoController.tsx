@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-import type { LocalDate, ProjectSummary, Todo } from "../../types/domain";
+import type { ClassSummary, LocalDate, ProjectSummary, Todo } from "../../types/domain";
 import { TodoComposerDialog } from "../../features/todos/TodoFormDialog";
 import type { TodoService } from "../../features/todos/todoService";
 import "./GlobalAddTodoController.css";
@@ -38,6 +38,7 @@ export interface GlobalAddTodoControllerProps {
   readonly workspaceSessionKey: string;
   readonly service: Pick<TodoService, "createTodo">;
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   /** Synchronously reconcile the saved row into the current local view. */
   readonly onCreated: (todo: Todo) => undefined;
   readonly children: ReactNode;
@@ -60,6 +61,7 @@ export function GlobalAddTodoController({
   workspaceSessionKey,
   service,
   projects,
+  classes = [],
   onCreated,
   children,
 }: GlobalAddTodoControllerProps) {
@@ -141,6 +143,7 @@ export function GlobalAddTodoController({
         }}
         open={currentComposer.open}
         projects={projects}
+        classes={classes}
       />
     </GlobalAddTodoContext.Provider>
   );

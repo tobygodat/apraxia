@@ -101,18 +101,22 @@ function MutationHarness({
 }
 
 describe("TodosBoard", () => {
-  it("renders Inbox, Overdue, and the current-week remainder with task context", () => {
+  it("renders Inbox, Today with past-due tasks, and the current-week remainder", () => {
     render(<TodosBoard {...props()} />);
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings.slice(0, 3)).toEqual(["Inbox", "Overdue", expect.stringContaining("· Today")]);
+    expect(headings.slice(0, 2)).toEqual(["Inbox", expect.stringContaining("· Today")]);
+    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
     // The current week starts at today (Wednesday): Wed through Sun.
-    expect(headings).toHaveLength(2 + 5);
-    const overdue = screen.getByRole("region", { name: "Overdue" });
-    expect(within(overdue).getByText("Due Aug 30")).toBeTruthy();
-    expect(within(overdue).getByText("2:30 PM")).toBeTruthy();
-    expect(within(overdue).getByText("Launch")).toBeTruthy();
+    expect(headings).toHaveLength(1 + 5);
+    const today = screen.getByRole("region", { name: /· Today$/ });
+    const pastDate = within(today).getByText("Due Aug 30");
+    expect(pastDate.getAttribute("datetime")).toBe("2026-08-30");
+    expect(pastDate.classList.contains("todos-board-card__due--past")).toBe(true);
+    expect(within(today).getByText(TODO.text)).toBeTruthy();
+    expect(within(today).getAllByText("2:30 PM")).toHaveLength(2);
+    expect(within(today).getAllByText("Launch")[0]!.className).toBe("todo-source-chip");
     expect(screen.getByRole("checkbox", { name: "Mark as complete Call the clinic" })).toBeTruthy();
     expect(screen.queryByText(/nothing due/i)).toBeNull();
   });
@@ -237,4 +241,57 @@ describe("TodosBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Settle" }));
     expect(document.activeElement).toBe(screen.getByLabelText("Elsewhere"));
   });
+});
+
+it("filters all sources across Inbox and date columns and labels source chips", () => {
+  const rows = [
+    { ...TODO, projectId: null },
+    { ...TODO, id: "project", text: "Project task", projectId: "p" },
+    {
+      ...TODO,
+      id: "class",
+      text: "Worksheet",
+      projectId: null,
+      classId: "math",
+      className: "Math",
+      assignmentType: "Quiz",
+      dueDate: "2026-09-01",
+    },
+    {
+      ...TODO,
+      id: "inbox",
+      text: "Reading",
+      projectId: null,
+      classId: "math",
+      className: "Math",
+      assignmentType: "Reading",
+      dueDate: null,
+      dueTime: null,
+    },
+  ];
+  render(
+    <TodosBoard
+      {...props({
+        projects: [{ id: "p", title: "Studio" }],
+        model: buildTodoBoardModel(rows, "2026-08-31", "2026-09-02"),
+      })}
+    />,
+  );
+  expect(screen.getByText("Math · Quiz").className).toBe("todo-source-chip");
+  expect(screen.getByText("Studio").className).toBe("todo-source-chip");
+  const cases = [
+    ["Classes", ["Worksheet", "Reading"]],
+    ["Projects", ["Project task"]],
+    ["Unassigned", [TODO.text]],
+    ["All", rows.map((row) => row.text)],
+  ] as const;
+  for (const [source, visible] of cases) {
+    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: source } });
+    for (const row of rows) {
+      expect(Boolean(screen.queryByText(row.text, { exact: true }))).toBe(
+        (visible as readonly string[]).includes(row.text),
+      );
+    }
+  }
+  expect(screen.getByText("Due Sep 1").className).toContain("--past");
 });

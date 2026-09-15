@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-import type { Profile, ProjectSummary, Todo } from "../../types/domain";
+import type { ClassSummary, Profile, ProjectSummary, Todo } from "../../types/domain";
 import { TodayList } from "./TodayList";
 import { useTodoController } from "./todoController";
 import { TodoFormDialog } from "./TodoFormDialog";
@@ -18,6 +18,7 @@ export interface TodayPanelProps {
   readonly workspaceSessionKey: string;
   readonly profile: Profile;
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
 }
 
 /** Reusable Today slice; calendar loading and credentials never enter this component. */
@@ -30,6 +31,7 @@ function TodayPanelSession({
   workspaceSessionKey,
   profile,
   projects,
+  classes = [],
   heading,
   allowTomorrow = false,
 }: TodayPanelProps) {
@@ -51,7 +53,7 @@ function TodayPanelSession({
     readonly mode: "edit" | "reschedule";
   } | null>(null);
   const edit = editIntent?.scope === controller ? editIntent : null;
-  const view = selectTodayList(state, selectedDay, today, projects);
+  const view = selectTodayList(state, selectedDay, today, projects, classes);
 
   return (
     <div className="today-panel" ref={focusRef} tabIndex={-1} aria-label={`${selectedDay} tasks`}>
@@ -87,6 +89,7 @@ function TodayPanelSession({
         open={composerOpen}
         initialDueDate={localDate}
         projects={projects}
+        classes={classes}
         onClose={() => setComposerOpen(false)}
         onSubmit={async (submission, options) => {
           if (submission.mode !== "create") return;
@@ -102,6 +105,7 @@ function TodayPanelSession({
         open={edit !== null}
         todo={edit?.todo}
         projects={projects}
+        classes={classes}
         fallbackFocusRef={focusRef}
         onClose={() => setEditIntent(null)}
         onSubmit={async (submission, options) => {

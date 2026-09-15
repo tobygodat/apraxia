@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import type { AuthIdentity } from "../auth/authPort";
-import type { Profile, ProjectSummary } from "../types/domain";
+import type { ClassSummary, Profile, ProjectSummary } from "../types/domain";
 import { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
 
@@ -27,6 +27,9 @@ export interface WorkspaceStore {
   readonly profile: Profile | null;
   readonly profileError: boolean;
   readonly projects: readonly ProjectSummary[];
+  /** Class choices for task forms; empty when the account has no class storage. */
+  readonly classes: readonly ClassSummary[];
+  /** True when project or class choices could not load. */
   readonly projectError: boolean;
   /** Increments after invalidate(); visible pages reload their data. */
   readonly revision: number;
@@ -42,6 +45,7 @@ const DETACHED: WorkspaceStore = {
   profile: null,
   profileError: false,
   projects: [],
+  classes: [],
   projectError: false,
   revision: 0,
   invalidate: () => undefined,
@@ -72,7 +76,7 @@ export function WorkspaceProvider({
   children,
 }: {
   readonly identity: AuthIdentity;
-  readonly workspaceData: Pick<WorkspaceData, "profile" | "projects">;
+  readonly workspaceData: Pick<WorkspaceData, "profile" | "projects" | "classes">;
   readonly cache?: NavigationCache;
   readonly children: ReactNode;
 }) {
@@ -81,6 +85,8 @@ export function WorkspaceProvider({
   const [profileError, setProfileError] = useState(false);
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
   const [projectError, setProjectError] = useState(false);
+  const [classes, setClasses] = useState<readonly ClassSummary[]>([]);
+  const [classError, setClassError] = useState(false);
   const [revision, setRevision] = useState(0);
   const [profileRevision, setProfileRevision] = useState(0);
   const validatedAt = useRef(Date.now());
@@ -146,18 +152,51 @@ export function WorkspaceProvider({
     return () => controller.abort();
   }, [ownCache, workspaceData, revision]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const classService = workspaceData.classes;
+    void ownCache
+      .read(
+        "workspace:classes",
+        (signal) => classService?.list(identity.userId, signal) ?? Promise.resolve([]),
+        controller.signal,
+      )
+      .then((value) => {
+        if (!controller.signal.aborted) {
+          setClasses(value.map(({ id, name }) => ({ id, name })));
+          setClassError(false);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setClassError(true);
+      });
+    return () => controller.abort();
+  }, [ownCache, workspaceData, identity.userId, revision]);
+
   const store = useMemo<WorkspaceStore>(
     () => ({
       profile,
       profileError,
       projects,
-      projectError,
+      classes,
+      projectError: projectError || classError,
       revision,
       invalidate,
       retryProfile,
       dialogs,
     }),
-    [profile, profileError, projects, projectError, revision, invalidate, retryProfile, dialogs],
+    [
+      profile,
+      profileError,
+      projects,
+      classes,
+      projectError,
+      classError,
+      revision,
+      invalidate,
+      retryProfile,
+      dialogs,
+    ],
   );
   return <WorkspaceContext.Provider value={store}>{children}</WorkspaceContext.Provider>;
 }

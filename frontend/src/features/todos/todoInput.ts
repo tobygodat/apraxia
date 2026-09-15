@@ -7,6 +7,8 @@ export interface TodoInputValues {
   dueDate?: string | null;
   dueTime?: string | null;
   projectId?: string | null;
+  classId?: string | null;
+  assignmentType?: string;
 }
 
 export type TodoInputField = keyof TodoInputValues;
@@ -47,7 +49,15 @@ const LOCAL_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
 const UUID_PATTERN =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-const KNOWN_FIELDS: readonly TodoInputField[] = ["text", "dueDate", "dueTime", "projectId"];
+const KNOWN_FIELDS: readonly TodoInputField[] = [
+  "text",
+  "dueDate",
+  "dueTime",
+  "projectId",
+  "classId",
+  "assignmentType",
+];
+const ASSIGNMENT_TYPES = ["", "Homework", "Quiz", "Reading", "Exam", "Other"];
 
 const INVALID = Symbol("invalid");
 
@@ -124,6 +134,44 @@ function parseTodoInput(input: unknown): TodoInputParseResult {
     projectId = rawProjectId;
   }
 
+  const rawClassId = optionalFormValue(values.classId);
+  let classId: string | null = null;
+  if (
+    rawClassId === INVALID ||
+    (rawClassId !== null && (rawClassId.trim().length === 0 || rawClassId.length > 120))
+  ) {
+    issues.push({ code: "invalid_format", path: ["classId"], message: "Choose a valid class." });
+  } else {
+    classId = rawClassId?.trim() ?? null;
+  }
+
+  const rawAssignmentType = values.assignmentType ?? "";
+  let assignmentType = "";
+  if (typeof rawAssignmentType !== "string" || !ASSIGNMENT_TYPES.includes(rawAssignmentType)) {
+    issues.push({
+      code: "invalid_format",
+      path: ["assignmentType"],
+      message: "Choose an assignment type from the list.",
+    });
+  } else {
+    assignmentType = rawAssignmentType;
+  }
+
+  if (projectId !== null && classId !== null) {
+    issues.push({
+      code: "custom",
+      path: ["classId"],
+      message: "Choose a project or a class, not both.",
+    });
+  }
+  if (assignmentType !== "" && classId === null) {
+    issues.push({
+      code: "custom",
+      path: ["assignmentType"],
+      message: "Choose a class before an assignment type.",
+    });
+  }
+
   if (dueTimeValid && dueTime !== null && dueDate === null) {
     issues.push({
       code: "custom",
@@ -134,7 +182,8 @@ function parseTodoInput(input: unknown): TodoInputParseResult {
 
   if (issues.length > 0) return { success: false, error: { issues } };
 
-  const base = { text, projectId };
+  // Class fields are emitted only for a class task, so ordinary creates stay unchanged.
+  const base = { text, projectId, ...(classId !== null ? { classId, assignmentType } : {}) };
   return {
     success: true,
     data:
@@ -167,8 +216,8 @@ function collectErrors(error: TodoInputError): TodoInputErrors {
   for (const issue of error.issues) {
     const field = issue.path[0];
 
-    if (field === "text" || field === "dueDate" || field === "dueTime" || field === "projectId") {
-      (fieldErrors[field] ??= []).push(issue.message);
+    if (KNOWN_FIELDS.includes(field as TodoInputField)) {
+      (fieldErrors[field as TodoInputField] ??= []).push(issue.message);
     } else {
       formErrors.push(issue.message);
     }

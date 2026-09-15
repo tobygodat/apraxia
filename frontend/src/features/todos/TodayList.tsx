@@ -6,6 +6,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodayDropPlacement } from "./todayListModel";
 import type { MoveDirection } from "./todayOrder";
+import { TodoSourceChip } from "./TodoSourceChip";
 import type { TodayListDay, TodayListViewState } from "./todoViews";
 import "./TodayList.css";
 
@@ -39,9 +40,10 @@ interface MutationFocusRecovery {
   ownedFocus: HTMLElement;
 }
 
+/** A past-due row shows only its original date; the red style carries the status. */
 function dueDateLabel(todo: TodayTodo, day: TodayListDay): string {
-  const prefix = todo.isOverdue ? "Overdue" : `Due ${day.toLowerCase()}`;
-  return `${prefix} · ${formatTaskDate(todo.dueDate)}`;
+  const date = formatTaskDate(todo.dueDate);
+  return todo.isOverdue ? date : `Due ${day.toLowerCase()} · ${date}`;
 }
 
 export function TodayList({
@@ -206,13 +208,9 @@ export function TodayList({
       <header className="today-list__header">
         <div>
           <h2 id={`${idBase}-heading`}>{heading}</h2>
-          <p id={`${idBase}-summary`}>
-            {day === "Tomorrow"
-              ? `${model.todos.length} due tomorrow`
-              : model.todos.length === 0
-                ? "Tasks due today and overdue"
-                : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
-          </p>
+          {day === "Tomorrow" ? (
+            <p id={`${idBase}-summary`}>{model.todos.length} due tomorrow</p>
+          ) : null}
         </div>
         <button
           className="today-list__add"
@@ -283,7 +281,7 @@ export function TodayList({
         role="region"
         aria-label={`${day} task list`}
         tabIndex={0}
-        aria-describedby={`${idBase}-summary`}
+        aria-describedby={day === "Tomorrow" ? `${idBase}-summary` : undefined}
       >
         {model.todos.length === 0 && state.pendingMutation !== null ? (
           <p className="today-list__pending-empty" role="status">
@@ -388,7 +386,7 @@ export function TodayList({
                         {todo.dueTime ? (
                           <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
                         ) : null}
-                        {todo.projectTitle ? <span>{todo.projectTitle}</span> : null}
+                        <TodoSourceChip todo={todo} projectTitle={todo.projectTitle} />
                       </div>
                     </div>
 

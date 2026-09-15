@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import type {
+  ClassSummary,
   DeleteUndoToken,
   LocalDate,
   Profile,
@@ -64,6 +65,7 @@ export interface TodoControllerState {
   readonly todayStatus: TodoLoadStatus;
   readonly profile: Profile | null;
   readonly projects: readonly ProjectSummary[];
+  readonly classes: readonly ClassSummary[];
   /** Every active row of the account, as the board shows it. */
   readonly todos: readonly Todo[];
   /** The Today RPC slice for the current local date, ranked as Postgres orders it. */
@@ -233,6 +235,7 @@ export class TodoController {
       todayStatus: "idle",
       profile: null,
       projects: [],
+      classes: [],
       todos: [],
       today: buildTodayListModel([], PLACEHOLDER_DATE),
       pending: [],
@@ -401,7 +404,11 @@ export class TodoController {
         startedAt,
       );
       this.confirmed = { ...this.confirmed, todos: slices.todos };
-      this.publish(slices, { profile: snapshot.profile, projects: snapshot.projects });
+      this.publish(slices, {
+        profile: snapshot.profile,
+        projects: snapshot.projects,
+        classes: snapshot.classes,
+      });
       return true;
     } catch {
       if (!this.isCurrentLoad("workspace", abort)) return false;
@@ -598,7 +605,9 @@ export class TodoController {
     const optimistic =
       todo &&
       keys.length &&
-      keys.every((key) => ["text", "projectId", "dueDate", "dueTime"].includes(key)) &&
+      keys.every((key) =>
+        ["text", "projectId", "classId", "assignmentType", "dueDate", "dueTime"].includes(key),
+      ) &&
       !(request.dueDate === null && request.dueTime !== null) &&
       !(
         typeof request.dueTime === "string" &&

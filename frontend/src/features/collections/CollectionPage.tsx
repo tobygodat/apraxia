@@ -32,7 +32,7 @@ const titleOf = (kind: CollectionKind, r: CollectionRecord) =>
   kind === "idea" ? ideaTitle(r as Idea) : r.title || "Untitled";
 export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
-  const { projects, revision: refreshKey, invalidate: onChanged } = useWorkspace();
+  const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
   const [rows, setRows] = useState<CollectionRecord[]>([]);
   const [status, setStatus] = useState(kind === "project" ? "active" : "all");
   const [mediaType, setMediaType] = useState("all");
@@ -502,6 +502,7 @@ export function CollectionPage(props: Props) {
           open
           initialProjectId={recordId}
           projects={projects}
+          classes={classes}
           onClose={() => setComposer(false)}
           onCreate={async (input, options) => {
             await todoService.createTodo(input, options);
@@ -512,6 +513,7 @@ export function CollectionPage(props: Props) {
       <TodoEditDialog
         todo={editingTask}
         projects={projects}
+        classes={classes}
         onClose={() => setEditingTask(null)}
         onSave={async (id, input, options) => {
           await todoService.updateTodoDetails(id, input, options);

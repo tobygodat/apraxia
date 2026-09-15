@@ -62,8 +62,9 @@ describe("migration security contract", () => {
     expect(sql).toMatch(/create schema if not exists private/i);
     expect(sql).toMatch(/create schema if not exists internal/i);
     expect(sql).toMatch(/alter table public\.todos enable row level security/i);
-    // Browser roles never hard-delete a soft-deleted record type. Classes rows
-    // are not soft-deleted and carry their own owner-scoped DELETE policies.
+    // Browser roles never hard-delete a soft-deleted record type. Classes and
+    // notes are not soft-deleted and carry their own owner-scoped DELETE
+    // policies; the legacy class_assignments backup is read-only.
     const browserDeleteGrants = [
       ...sql.matchAll(
         /grant\s+([^;]*?\bdelete\b[^;]*?)\s+on\s+(public\.[a-z_]+)\s+to\s+([^;]+);/gi,
@@ -72,9 +73,7 @@ describe("migration security contract", () => {
       .filter((grant) => /\bauthenticated\b/i.test(grant[3] ?? ""))
       .map((grant) => grant[2]);
 
-    expect(new Set(browserDeleteGrants)).toEqual(
-      new Set(["public.class_assignments", "public.class_notes", "public.classes"]),
-    );
+    expect(new Set(browserDeleteGrants)).toEqual(new Set(["public.class_notes", "public.classes"]));
   });
 
   it("keeps the helper role compatible with managed Supabase postgres", async () => {

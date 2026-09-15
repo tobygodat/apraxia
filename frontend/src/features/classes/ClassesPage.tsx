@@ -23,6 +23,7 @@ export function ClassesPage({
   classService,
   noteService,
   timezone,
+  onClassesChanged,
 }: {
   userId: string;
   courseId?: string;
@@ -31,6 +32,8 @@ export function ClassesPage({
   classService?: ClassService;
   noteService?: NoteService;
   timezone?: string;
+  /** Task forms list classes by name; a create or rename refreshes those choices. */
+  onClassesChanged?: () => void;
 }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -97,6 +100,7 @@ export function ClassesPage({
         ? await classService.create(userId, { id: editing.course.id, name }, controller.signal)
         : await classService.rename(userId, editing.course, name, controller.signal);
       if (controller.signal.aborted) return;
+      onClassesChanged?.();
       setCourses((rows) => [...rows.filter((c) => c.id !== saved.id), saved]);
       setEditing(null);
       navigate(`/classes/${saved.id}`);

@@ -21,6 +21,7 @@ const store = (revision: number): WorkspaceStore => ({
   profile: null,
   profileError: false,
   projects: [],
+  classes: [],
   projectError: false,
   revision,
   invalidate: vi.fn(),

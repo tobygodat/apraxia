@@ -42,8 +42,9 @@ describe("pgTAP database suite", () => {
       "090_home_appearance.test.sql",
       "100_class_assignments.test.sql",
       "110_classes_notes.test.sql",
-      "120_class_deletes.test.sql",
-      "130_browser_role_posture.test.sql",
+      "120_assignment_todos.test.sql",
+      "130_class_deletes.test.sql",
+      "140_browser_role_posture.test.sql",
     ]);
 
     for (const name of testNames) {

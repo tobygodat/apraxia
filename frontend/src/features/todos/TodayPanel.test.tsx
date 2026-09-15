@@ -48,7 +48,12 @@ function fixture(overrides: Partial<TodoService> = {}) {
     return saved;
   }
   const service: TodoService = {
-    loadWorkspace: vi.fn(async () => ({ profile: PROFILE, projects: [PROJECT], todos: rows })),
+    loadWorkspace: vi.fn(async () => ({
+      profile: PROFILE,
+      classes: [],
+      projects: [PROJECT],
+      todos: rows,
+    })),
     loadToday: vi.fn(async (date) =>
       rows.flatMap((row): TodayTodo[] =>
         !row.completed && row.dueDate !== null && row.dueDate <= date
@@ -117,6 +122,7 @@ function store(revision: number): WorkspaceStore {
     profile: null,
     profileError: false,
     projects: [],
+    classes: [],
     projectError: false,
     revision,
     invalidate: vi.fn(),
@@ -227,6 +233,7 @@ describe("TodayPanel", () => {
     await act(async () =>
       pending.resolve({
         profile: PROFILE,
+        classes: [],
         projects: [],
         todos: [{ ...TODO, text: "Late future task", dueDate: "2026-09-04" }],
       }),

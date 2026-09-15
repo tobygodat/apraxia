@@ -20,7 +20,7 @@ function todo(overrides: Partial<Todo> & Pick<Todo, "id" | "text">): Todo {
 }
 
 describe("buildTodoBoardModel", () => {
-  it("shows permanent Inbox, explicit Overdue, and today through Sunday for the current week", () => {
+  it("shows Inbox and merges past-due tasks into Today through Sunday for the current week", () => {
     const model = buildTodoBoardModel(
       [
         todo({ id: "inbox", text: "Inbox" }),
@@ -36,7 +36,6 @@ describe("buildTodoBoardModel", () => {
     expect(model.isCurrentWeek).toBe(true);
     expect(model.columns.map((column) => column.key)).toEqual([
       "inbox",
-      "overdue",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
@@ -44,16 +43,15 @@ describe("buildTodoBoardModel", () => {
       "2026-09-06",
     ]);
     expect(model.columns[0]?.todos.map(({ id }) => id)).toEqual(["inbox"]);
-    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["oldest", "older"]);
-    expect(model.columns[2]?.todos.map(({ id }) => id)).toEqual(["today"]);
-    expect(model.columns[6]?.todos.map(({ id }) => id)).toEqual(["sunday"]);
+    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["oldest", "older", "today"]);
+    expect(model.columns[5]?.todos.map(({ id }) => id)).toEqual(["sunday"]);
   });
 
   it("shows all Monday-through-Sunday dates for a navigated week", () => {
     const model = buildTodoBoardModel([], "2026-09-07", "2026-09-02");
 
     expect(model.isCurrentWeek).toBe(false);
-    expect(model.columns.slice(2).map((column) => column.key)).toEqual([
+    expect(model.columns.slice(1).map((column) => column.key)).toEqual([
       "2026-09-07",
       "2026-09-08",
       "2026-09-09",
@@ -64,7 +62,7 @@ describe("buildTodoBoardModel", () => {
     ]);
   });
 
-  it("does not duplicate open overdue tasks in historical date columns", () => {
+  it("shows open past-due tasks only under Today, never in historical date columns", () => {
     const open = todo({
       id: "open",
       text: "Open",
@@ -80,9 +78,34 @@ describe("buildTodoBoardModel", () => {
 
     const model = buildTodoBoardModel([open, completed], "2026-08-24", "2026-09-02");
 
-    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
+    expect(model.columns.flatMap((column) => column.todos).map(({ id }) => id)).not.toContain(
+      "open",
+    );
+    const current = buildTodoBoardModel([open, completed], "2026-08-31", "2026-09-02");
+    expect(current.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
     const historicalColumn = model.columns.find((column) => column.key === "2026-08-25");
     expect(historicalColumn?.todos.map(({ id }) => id)).toEqual(["completed"]);
+  });
+
+  it("keeps completed dates separate across a Sunday-to-Monday rollover", () => {
+    const source = [
+      todo({ id: "open", text: "Open", dueDate: "2026-09-06" }),
+      todo({
+        id: "done",
+        text: "Done",
+        dueDate: "2026-09-06",
+        completed: true,
+        completedAt: "2026-09-06T12:00:00Z",
+      }),
+      todo({ id: "future", text: "Future", dueDate: "2026-09-08" }),
+    ];
+    const sunday = buildTodoBoardModel(source, "2026-08-31", "2026-09-06");
+    expect(sunday.columns[1]?.todos.map(({ id }) => id)).toEqual(["open", "done"]);
+    const monday = buildTodoBoardModel(source, "2026-09-07", "2026-09-07");
+    expect(monday.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
+    expect(monday.columns[2]?.todos.map(({ id }) => id)).toEqual(["future"]);
+    const history = buildTodoBoardModel(source, "2026-08-31", "2026-09-07");
+    expect(history.columns.at(-1)?.todos.map(({ id }) => id)).toEqual(["done"]);
   });
 
   it("preserves date-only values and does not mutate the source list", () => {

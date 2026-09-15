@@ -1,4 +1,4 @@
-import { useCallback, useId, useLayoutEffect, useRef } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -6,6 +6,7 @@ import { addSqlDateDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
 import type { TodoAnnouncement, TodoMutationResult, TodoUndoNotice } from "./todoController";
+import { TodoSourceChip } from "./TodoSourceChip";
 import {
   todoLoadErrorCopy,
   todoMutationErrorCopy,
@@ -59,8 +60,17 @@ function formatDateHeading(value: string, today: string): string {
 
 function columnLabel(column: TodoBoardColumn, today: string): string {
   if (column.kind === "inbox") return "Inbox";
-  if (column.kind === "overdue") return "Overdue";
   return formatDateHeading(column.date!, today);
+}
+
+const SOURCE_FILTERS = ["All", "Projects", "Classes", "Unassigned"] as const;
+type SourceFilter = (typeof SOURCE_FILTERS)[number];
+
+function matchesSource(todo: Todo, filter: SourceFilter): boolean {
+  if (filter === "Projects") return Boolean(todo.projectId);
+  if (filter === "Classes") return Boolean(todo.classId);
+  if (filter === "Unassigned") return !todo.projectId && !todo.classId;
+  return true;
 }
 
 function weekRangeLabel(monday: string): string {
@@ -110,15 +120,18 @@ function TodoCard({
 
       <div className="todos-board-card__body">
         <p id={titleId}>{todo.text}</p>
-        {showDueDate || todo.dueTime || projectTitle ? (
+        {showDueDate || todo.dueTime || projectTitle || todo.classId ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
-              <time dateTime={todo.dueDate}>Due {formatTaskDate(todo.dueDate, RANGE_FORMAT)}</time>
+              // Past-due tasks sit under Today; the original date stays visible in red.
+              <time className="todos-board-card__due--past" dateTime={todo.dueDate}>
+                Due {formatTaskDate(todo.dueDate, RANGE_FORMAT)}
+              </time>
             ) : null}
             {todo.dueTime ? (
               <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
             ) : null}
-            {projectTitle ? <span>{projectTitle}</span> : null}
+            <TodoSourceChip todo={todo} projectTitle={projectTitle} />
           </div>
         ) : null}
       </div>
@@ -148,7 +161,7 @@ function TodoCard({
 }
 
 export function TodosBoard({
-  model,
+  model: fullModel,
   loadStatus = "ready",
   pendingTodoIds = new Set<string>(),
   projects = [],
@@ -167,6 +180,21 @@ export function TodosBoard({
   onEditTodo,
   onDeleteTodo,
 }: TodosBoardProps) {
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
+  // Filtering keeps column order and each column's saved order intact.
+  const model = useMemo(
+    () =>
+      sourceFilter === "All"
+        ? fullModel
+        : {
+            ...fullModel,
+            columns: fullModel.columns.map((column) => ({
+              ...column,
+              todos: column.todos.filter((todo) => matchesSource(todo, sourceFilter)),
+            })),
+          },
+    [fullModel, sourceFilter],
+  );
   const idBase = useId();
   const focusRecoveryRef = useRef<
     | ({
@@ -386,31 +414,45 @@ export function TodosBoard({
           </p>
         </div>
 
-        <nav className="todos-board-nav" aria-label="Task week navigation">
-          <button
-            type="button"
-            onClick={onPreviousWeek}
-            aria-label="Previous week"
-            disabled={navigationPending}
-          >
-            <ArrowIcon direction="left" />
-          </button>
-          <button
-            type="button"
-            onClick={onToday}
-            disabled={model.isCurrentWeek || navigationPending}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={onNextWeek}
-            aria-label="Next week"
-            disabled={navigationPending}
-          >
-            <ArrowIcon direction="right" />
-          </button>
-        </nav>
+        <div className="todos-board-controls">
+          <label className="todos-board-filter">
+            Source
+            <select
+              aria-label="Task source"
+              value={sourceFilter}
+              onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}
+            >
+              {SOURCE_FILTERS.map((source) => (
+                <option key={source}>{source}</option>
+              ))}
+            </select>
+          </label>
+          <nav className="todos-board-nav" aria-label="Task week navigation">
+            <button
+              type="button"
+              onClick={onPreviousWeek}
+              aria-label="Previous week"
+              disabled={navigationPending}
+            >
+              <ArrowIcon direction="left" />
+            </button>
+            <button
+              type="button"
+              onClick={onToday}
+              disabled={model.isCurrentWeek || navigationPending}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={onNextWeek}
+              aria-label="Next week"
+              disabled={navigationPending}
+            >
+              <ArrowIcon direction="right" />
+            </button>
+          </nav>
+        </div>
       </header>
 
       {loadStatus === "error" ? (
@@ -472,7 +514,9 @@ export function TodosBoard({
                       projectTitle={
                         todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null
                       }
-                      showDueDate={column.kind === "overdue"}
+                      showDueDate={
+                        !todo.completed && todo.dueDate !== null && todo.dueDate < model.today
+                      }
                       titleId={`${todoControlId(todo.id)}-title`}
                       onToggleComplete={(selectedTodo) => {
                         const started = onToggleComplete(selectedTodo);

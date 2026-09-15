@@ -62,6 +62,31 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     }),
     [props.calendarService, cache],
   );
+  const workspaceData = useMemo(
+    () => ({
+      ...props.workspaceData,
+      // Class and assignment writes drop cached task reads: assignments are todos.
+      classes: props.workspaceData.classes
+        ? cacheNavigationService(
+            props.workspaceData.classes,
+            cache,
+            "classes",
+            [],
+            ["create", "rename", "importLegacy"],
+          )
+        : undefined,
+      assignments: props.workspaceData.assignments
+        ? cacheNavigationService(
+            props.workspaceData.assignments,
+            cache,
+            "assignments",
+            [],
+            ["create", "update", "remove", "restore"],
+          )
+        : undefined,
+    }),
+    [props.workspaceData, cache],
+  );
   useEffect(() => {
     const unregister = registerUserStateResetter(cache.clear, { phase: "cancel" });
     return () => {
@@ -89,6 +114,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     <MainWorkspace
       {...props}
       cache={cache}
+      workspaceData={workspaceData}
       todoService={todoService}
       collectionService={collectionService}
       calendarService={calendarService}

@@ -14,7 +14,7 @@ it("persists assignments with account isolation, immutable ownership, date-only 
       grant execute on function auth.uid() to anon, authenticated, service_role;`);
     await db.exec(storageHarnessSql);
     for (const name of (await readdir("supabase/migrations"))
-      .filter((name) => name.endsWith(".sql"))
+      .filter((name) => name.endsWith(".sql") && name < "20260914000100")
       .sort()) {
       await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
     }
@@ -77,12 +77,13 @@ it("persists assignments with account isolation, immutable ownership, date-only 
         ])
       ).rows,
     ).toEqual([]);
-    expect((await db.query("delete from class_assignments returning id")).rows).toEqual([]);
     await db.exec(`set request.jwt.claim.sub = '${alice}'`);
     expect((await db.query("select title from class_assignments where id=$1", [id])).rows).toEqual([
       { title: "Revised" },
     ]);
-    expect((await db.query("delete from class_assignments returning id")).rowCount).toBe(2);
+    // Hard deletion of the legacy table is never granted; after the aggregation
+    // migration it is a read-only backup (see assignment-aggregation.test.ts).
+    await expect(db.exec("delete from class_assignments")).rejects.toThrow(/permission denied/);
     await db.exec("reset role; set role anon");
     await expect(db.exec("select * from class_assignments")).rejects.toThrow(/permission denied/);
   } finally {

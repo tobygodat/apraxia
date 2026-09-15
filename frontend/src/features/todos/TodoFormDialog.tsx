@@ -7,8 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import type { NewTodoInput, ProjectSummary, Todo } from "../../types/domain";
+import type { ClassSummary, NewTodoInput, ProjectSummary, Todo } from "../../types/domain";
 import { Dialog } from "../../components/dialog/Dialog";
+import { TodoClassFields } from "./TodoClassFields";
+import { changeTodoField } from "./todoParent";
 import {
   type TodoInputErrors,
   type TodoInputField,
@@ -36,6 +38,7 @@ export interface TodoFormDialogProps {
   readonly initialDueDate?: string | null;
   readonly initialProjectId?: string | null;
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   /**
    * The signal only abandons client work if the dialog is removed by its owner.
    * It is not a promise that a started write rolled back, so the dialog blocks
@@ -51,7 +54,7 @@ export interface TodoFormDialogProps {
 }
 
 const EMPTY_ERRORS: TodoInputErrors = { fieldErrors: {}, formErrors: [] };
-const FIELDS = ["text", "dueDate", "dueTime", "projectId"] as const;
+const FIELDS = ["text", "dueDate", "dueTime", "projectId", "classId", "assignmentType"] as const;
 const PRECISE_TIME_PATTERN = /^((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)\.\d{1,6}$/;
 
 const COPY = {
@@ -64,7 +67,7 @@ const COPY = {
   },
   edit: {
     title: "Edit task",
-    description: "Task is required. The schedule and project are optional.",
+    description: "Task is required. The schedule, project, and class are optional.",
     submit: "Save changes",
     pending: "Saving…",
     failed: "We couldn’t save this task. Your details are still here—try again.",
@@ -91,6 +94,7 @@ function TodoForm({
   initialDueDate = null,
   initialProjectId = null,
   projects,
+  classes = [],
   onSubmit,
   onClose,
   fallbackFocusRef,
@@ -110,6 +114,8 @@ function TodoForm({
     dueDate: useRef<HTMLInputElement>(null),
     dueTime: useRef<HTMLInputElement>(null),
     projectId: useRef<HTMLSelectElement>(null),
+    classId: useRef<HTMLSelectElement>(null),
+    assignmentType: useRef<HTMLSelectElement>(null),
   };
   const submitRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
@@ -122,6 +128,8 @@ function TodoForm({
     // is retained separately until the user edits this field.
     dueTime: todo?.dueTime?.replace(PRECISE_TIME_PATTERN, "$1") ?? "",
     projectId: todo?.projectId ?? initialProjectId ?? "",
+    classId: todo?.classId ?? "",
+    assignmentType: todo?.assignmentType ?? "",
   }));
   const [retainedDueTime, setRetainedDueTime] = useState(todo?.dueTime ?? null);
   const [errors, setErrors] = useState<TodoInputErrors>(EMPTY_ERRORS);
@@ -156,8 +164,8 @@ function TodoForm({
     if (submittingRef.current) return;
     if (field === "dueTime" || (field === "dueDate" && value === "")) setRetainedDueTime(null);
     setValues((current) => ({
-      ...current,
-      [field]: value,
+      // A task has one parent: choosing a project or class clears the other.
+      ...changeTodoField(current, field, value),
       // Clearing the date clears its time, matching the atomic provider rule.
       ...(field === "dueDate" && value === "" ? { dueTime: "" } : {}),
     }));
@@ -179,7 +187,17 @@ function TodoForm({
     if (mode === "create") return { mode, input: data };
     const dueDate = data.dueDate ?? null;
     const details =
-      mode === "reschedule" ? {} : { text: data.text, projectId: data.projectId ?? null };
+      mode === "reschedule"
+        ? {}
+        : {
+            text: data.text,
+            projectId: data.projectId ?? null,
+            // Send class fields only when the class changed or was set, so an
+            // ordinary edit never rewrites assignment metadata it did not show.
+            ...(todo?.classId || values.classId
+              ? { classId: data.classId ?? null, assignmentType: data.assignmentType ?? "" }
+              : {}),
+          };
     const input: UpdateTodoDetailsInput =
       dueDate === null
         ? { ...details, dueDate: null, dueTime: null }
@@ -344,6 +362,18 @@ function TodoForm({
             {renderFieldError("projectId")}
           </div>
         )}
+        {mode !== "reschedule" && (
+          <TodoClassFields
+            baseId={baseId}
+            classes={classes}
+            values={values}
+            disabled={isSubmitting}
+            onChange={updateValue}
+            classRef={refs.classId as RefObject<HTMLSelectElement>}
+            typeRef={refs.assignmentType as RefObject<HTMLSelectElement>}
+            errors={errors}
+          />
+        )}
         {errors.formErrors.length > 0 && (
           <p className="todo-dialog__submit-error" role="alert">
             Review the form and try again.
@@ -388,6 +418,7 @@ export interface TodoComposerDialogProps {
   readonly initialDueDate?: string | null;
   readonly initialProjectId?: string | null;
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   readonly onCreate: (
     input: NewTodoInput,
     options: { readonly signal: AbortSignal },
@@ -412,6 +443,7 @@ export interface TodoEditDialogProps {
   readonly todo: Todo | null;
   readonly mode?: "edit" | "reschedule";
   readonly projects: readonly ProjectSummary[];
+  readonly classes?: readonly ClassSummary[];
   readonly onSave: (
     todoId: string,
     input: UpdateTodoDetailsInput,

@@ -88,13 +88,16 @@ function CompletionHarness() {
 }
 
 describe("TodayList", () => {
-  it("renders overdue and due-today rows with explicit non-color status and counts", () => {
+  it("renders original past-due dates in red without an Overdue prefix or count", () => {
     render(<TodayList {...props()} />);
     expect(screen.getByRole("heading", { name: "Today" })).toBeTruthy();
-    expect(screen.getByText("1 overdue · 1 due today")).toBeTruthy();
+    expect(screen.queryByText(/overdue/i)).toBeNull();
     const items = screen.getAllByRole("listitem");
-    expect(within(items[0]!).getByText("Overdue · Tue, Aug 25")).toBeTruthy();
-    expect(within(items[0]!).getByText("Health")).toBeTruthy();
+    const pastDate = within(items[0]!).getByText("Tue, Aug 25");
+    expect(pastDate.getAttribute("datetime")).toBe("2026-08-25");
+    expect(items[0]!.className).toContain("today-list-item--overdue");
+    expect(items[1]!.className).not.toContain("today-list-item--overdue");
+    expect(within(items[0]!).getByText("Health").className).toBe("todo-source-chip");
     expect(within(items[1]!).getByText("Due today · Wed, Sep 2")).toBeTruthy();
     expect(within(items[1]!).getByText("2:30 PM")).toBeTruthy();
   });
@@ -268,4 +271,24 @@ describe("TodayList", () => {
       screen.getByRole("checkbox", { name: "Mark Second task complete" }),
     );
   });
+});
+
+it("shows class and assignment type alongside the original red past-due date", () => {
+  render(
+    <TodayList
+      {...props({
+        state: state([
+          todo("assignment", {
+            classId: "math",
+            className: "Math",
+            assignmentType: "Homework",
+            dueDate: "2026-08-25",
+            isOverdue: true,
+          }),
+        ]),
+      })}
+    />,
+  );
+  expect(screen.getByText("Math · Homework").className).toBe("todo-source-chip");
+  expect(screen.getByText("Math · Homework").closest("li")?.className).toContain("overdue");
 });

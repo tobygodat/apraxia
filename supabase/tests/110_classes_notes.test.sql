@@ -13,7 +13,7 @@ select import_classes('[{"id":"math3012","name":"MATH3012"}]');
 update classes set name='Renamed';
 select import_classes('[{"id":"math3012","name":"Old browser"}]');
 select is((select name from classes), 'Renamed', 'stale import cannot overwrite name');
-select throws_ok($$insert into class_assignments(course_id,title) values ('missing','Orphan')$$, '23503', null, 'assignment requires own class');
+select throws_ok($$insert into todos(class_id,text) values ('missing','Orphan')$$, '23503', null, 'assignment requires own class');
 select throws_ok($$insert into classes(id,name) values ('blank',null)$$, '42501', null, 'normal create requires name');
 insert into class_notes(id,course_id,name,source,byte_size,content_sha256) values
  ('33333333-3333-4333-8333-333333333333','math3012','Lecture.pdf','upload',10,repeat('a',64));

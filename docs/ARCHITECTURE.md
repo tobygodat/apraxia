@@ -26,11 +26,14 @@ flowchart LR
 
 ## Path 1: browser to Supabase
 
-Todos, projects, ideas, media, home appearance, classes, notes, and assignments
-are read and written by `supabase-js` in the browser using the signed-in user's
-JWT. There is no application server in this path. Every table has RLS policies
-and column-scoped grants, so the browser cannot read another account's rows or
-write protected lifecycle columns. Multi-row atomic work (Today ordering, soft
+Todos, projects, ideas, media, home appearance, classes, and notes are read and
+written by `supabase-js` in the browser using the signed-in user's JWT. Class
+assignments are todos with a `class_id`; the Classes page reads and writes them
+through an adapter over the todo service (see
+[task aggregation](TASK_AGGREGATION_ROADMAP.md)). There is no application
+server in this path. Every table has RLS policies and column-scoped grants, so
+the browser cannot read another account's rows or write protected lifecycle
+columns. Multi-row atomic work (Today ordering, soft
 delete, restore, search) happens in `public` RPCs that wrap `internal` helpers
 owned by the `orbitos_rpc` role. See
 [workspace data model](WORKSPACE_DATA_MODEL.md) and

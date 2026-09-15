@@ -1,4 +1,5 @@
 import type {
+  ClassSummary,
   DeleteUndoToken,
   LocalDate,
   LocalTime,
@@ -12,11 +13,14 @@ import type {
 
 export interface TodoRequestOptions {
   readonly signal: AbortSignal;
+  /** Scope Classes requests to one class without changing ordinary task behavior. */
+  readonly classId?: string;
 }
 
 export interface TodoWorkspaceSnapshot {
   readonly profile: Profile;
   readonly projects: readonly ProjectSummary[];
+  readonly classes: readonly ClassSummary[];
   /** Active rows only. Soft-deleted records stay behind the restore RPC. */
   readonly todos: readonly Todo[];
 }
@@ -57,11 +61,28 @@ type TodoScheduleUpdate =
       readonly projectId?: UUID | null;
     };
 
+type TodoAssignmentUpdate = {
+  readonly assignmentType: string;
+  readonly text?: string;
+  readonly projectId?: never;
+  readonly dueDate?: never;
+  readonly dueTime?: never;
+};
+
+/** A task belongs to at most one project or class; the type is class-only. */
+interface TodoParentFields {
+  readonly classId?: string | null;
+  readonly assignmentType?: string;
+}
+
 /**
  * A details update must name a field and cannot create a time-without-date
  * state at the provider boundary.
  */
-export type UpdateTodoDetailsInput = TodoTextOrProjectUpdate | TodoScheduleUpdate;
+export type UpdateTodoDetailsInput = (
+  TodoTextOrProjectUpdate | TodoScheduleUpdate | TodoAssignmentUpdate
+) &
+  TodoParentFields;
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;

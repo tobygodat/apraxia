@@ -17,6 +17,7 @@ function Page({ projects = [], onChanged = vi.fn(), ...props }: PageProps) {
     profile: null,
     profileError: false,
     projects,
+    classes: [],
     projectError: false,
     revision: 0,
     invalidate: onChanged,

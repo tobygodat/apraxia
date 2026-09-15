@@ -62,8 +62,11 @@ describe("Today list model", () => {
       "new-recent-overdue",
       "new-today",
     ]);
-    expect(model.overdueCount).toBe(3);
-    expect(model.dueTodayCount).toBe(2);
+    expect(model.todos.filter((todo) => todo.isOverdue).map((todo) => todo.dueDate)).toEqual([
+      "2026-08-20",
+      "2026-08-25",
+      "2026-09-01",
+    ]);
     expect(model.hasManualOrder).toBe(true);
   });
 

@@ -77,13 +77,14 @@ export function MainWorkspace(props: MainWorkspaceProps) {
 }
 
 function WorkspaceCapture(props: MainWorkspaceProps) {
-  const { projects, invalidate } = useWorkspace();
+  const { projects, classes, invalidate } = useWorkspace();
   const [notice, setNotice] = useState("");
   return (
     <GlobalAddTodoController
       workspaceSessionKey={props.identity.userId}
       service={props.todoService}
       projects={projects}
+      classes={classes}
       onCreated={() => {
         invalidate();
         setNotice("Task added");
@@ -133,7 +134,7 @@ function WorkspaceContent() {
     <>
       {projectError && (
         <p className="workspace-project-warning">
-          Project choices couldn’t load. <button onClick={invalidate}>Try again</button>
+          Project or class choices couldn’t load. <button onClick={invalidate}>Try again</button>
         </p>
       )}
       <Suspense
@@ -167,7 +168,7 @@ function ProfilePlaceholder({ title }: { title: string }) {
 }
 
 function HomeRoute(props: MainWorkspaceProps) {
-  const { profile, projects } = useWorkspace();
+  const { profile, projects, classes } = useWorkspace();
   if (!profile) return <ProfilePlaceholder title="Home" />;
   return (
     <div className="workspace-home-scroll">
@@ -177,6 +178,7 @@ function HomeRoute(props: MainWorkspaceProps) {
         calendarService={props.calendarService}
         profile={profile}
         projects={projects}
+        classes={classes}
         workspaceSessionKey={props.identity.userId}
       />
     </div>
@@ -196,11 +198,12 @@ function SettingsRoute(props: MainWorkspaceProps) {
 }
 
 function ClassesRoute(props: MainWorkspaceProps) {
-  const { profile } = useWorkspace();
+  const { profile, invalidate } = useWorkspace();
   const { id } = useParams();
   return (
     <ClassesPage
       key={props.identity.userId}
+      onClassesChanged={invalidate}
       userId={props.identity.userId}
       courseId={id}
       driveService={props.driveService}
@@ -234,7 +237,7 @@ function WorkspaceLayout({
   ...props
 }: MainWorkspaceProps & { notice: string; setNotice(value: string): void }) {
   const { openTodoComposer } = useGlobalAddTodo();
-  const { projects, invalidate, dialogs } = useWorkspace();
+  const { projects, classes, invalidate, dialogs } = useWorkspace();
   const location = useLocation();
   const navigationType = useNavigationType();
   const navigate = useNavigate();
@@ -357,6 +360,7 @@ function WorkspaceLayout({
       <TodoEditDialog
         todo={editingTodo}
         projects={projects}
+        classes={classes}
         fallbackFocusRef={rootRef}
         onClose={() => {
           setEditingTodo(null);

@@ -123,6 +123,7 @@ const service: TodoService = {
     await prepareLoad(signal);
     return {
       profile,
+      classes: [],
       projects: [project],
       todos: [...todos],
     };

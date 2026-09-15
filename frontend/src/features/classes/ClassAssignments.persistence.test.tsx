@@ -83,7 +83,7 @@ it("sends only edited fields and keeps an overdue due date after reloading", asy
   expect(update.mock.calls[0].slice(0, 4)).toEqual([
     "owner",
     "math3012",
-    "1",
+    "33333333-3333-4333-8333-000000000001",
     { title: "Renamed worksheet" },
   ]);
   const due = screen.getByRole("button", { name: "Edit due for Renamed worksheet" }).textContent;
@@ -112,4 +112,29 @@ it("aborts the previous class request and ignores its late result", async () => 
   );
   await waitFor(() => expect(screen.getByText(/No assignments yet/)).toBeTruthy());
   expect(screen.queryByText("Wrong course")).toBeNull();
+});
+it("saves an optional time, clears it with the date, and preserves deletion Undo after a failed restore", async () => {
+  const service = createFixtureAssignments();
+  const update = vi.spyOn(service, "update");
+  const restore = vi.spyOn(service, "restore").mockRejectedValueOnce(new Error("Offline restore"));
+  await mount(service);
+  fireEvent.click(screen.getByRole("button", { name: "Edit due for Problem set 3" }));
+  fireEvent.change(screen.getByLabelText("Time (optional)"), { target: { value: "14:30" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Apply time" })));
+  expect(screen.getByRole("button", { name: "Edit due for Problem set 3" }).textContent).toContain(
+    "14:30",
+  );
+  expect(update.mock.calls[0][3]).toMatchObject({ dueTime: "14:30" });
+  fireEvent.click(screen.getByRole("button", { name: "Edit due for Problem set 3" }));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Clear date" })));
+  expect(screen.getByRole("button", { name: "Edit due for Problem set 3" }).textContent).toBe("—");
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Delete Problem set 3" })),
+  );
+  expect(screen.queryByRole("button", { name: "Edit title for Problem set 3" })).toBeNull();
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Undo" })));
+  expect(screen.getByRole("alert").textContent).toContain("Offline restore");
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Try again" })));
+  expect(screen.getByRole("button", { name: "Edit title for Problem set 3" })).toBeTruthy();
+  expect(restore.mock.calls[0][3]).toBe(restore.mock.calls[1][3]);
 });

@@ -203,8 +203,12 @@ pretending to verify Google's behavior.
 
 Class assignments require `20260913000200_class_assignments.sql` before releasing
 the UI. It adds account-owned rows under RLS without modifying existing data.
-Assignments save independently of Tasks; names, date-only due dates, types,
-completion, and Undo persist. Classes and notes additionally require
+Task aggregation additionally requires
+`20260914000100_assignment_todos.sql` coordinated with the matching UI. Assignments
+then share `todos` with Tasks and Home; the legacy table remains a read-only backup.
+Do not deploy the new Classes adapter before that migration. Follow
+[TASK_AGGREGATION_RELEASE.md](TASK_AGGREGATION_RELEASE.md) for backup, validation,
+and release sequencing. Classes and notes additionally require
 `20260913000300_classes_and_notes.sql` and
 `20260913000400_class_pdf_storage.sql`. The first preserves existing assignments
 and recovers parent classes before enforcing account/class foreign keys. The
@@ -213,9 +217,11 @@ limit and recoverable pending records; Drive notes store file references.
 Browser class data is imported without overwriting established cloud names and
 is retained unchanged as a recovery copy. See [Classes data model](CLASSES_DATA_MODEL.md).
 
-Owner delete policies for classes, notes, assignments, and the private PDF
-objects arrive in `20260914000100_class_deletes.sql`; apply it before releasing
-any delete affordance (in progress).
+Owner delete policies for classes, notes, and the private PDF objects arrive in
+`20260914000300_class_deletes.sql`; apply it after the aggregation migration and
+before releasing any delete affordance. Assignments are todos, so they are
+removed through the soft-delete RPC with Undo; the legacy `class_assignments`
+backup gains no delete grant.
 
 
 Home page names and optional covers use the account-owned `home_appearance`
@@ -236,12 +242,14 @@ apply required forward migrations before publishing dependent code. Inspect
 current hosted data and migration history, and preserve a backup/export when
 data exists. Never infer an empty database from a historical smoke test.
 
-This release adds two forward migrations. Apply them, in order, before the code
+This release adds two forward migrations after the already-applied
+`20260914000100_assignment_todos.sql`. Apply them, in order, before the code
 that depends on them:
 
-1. `20260914000100_class_deletes.sql` — owner-scoped delete policies for classes,
-   assignments, notes, and their private PDF objects.
-2. `20260914000200_google_access_token_cache.sql` — encrypted access-token cache
+1. `20260914000300_class_deletes.sql` — owner-scoped delete policies for classes,
+   notes, and their private PDF objects, plus Storage hash verification and the
+   abandoned-upload reaper.
+2. `20260914000400_google_access_token_cache.sql` — encrypted access-token cache
    columns, the `service_role` column grant on `public.profiles`, and the
    eight-argument `save_calendar_credentials` / `save_drive_credentials`
    overloads. See [Calendar](CALENDAR.md) and [Drive](DRIVE.md).

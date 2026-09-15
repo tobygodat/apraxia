@@ -5,6 +5,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { localToday } from "../todos/dateDomain";
 import "./classAssignments.css";
 
+import type { DeleteUndoToken } from "../../types/domain";
 import type { Assignment, AssignmentPatch, AssignmentService } from "./assignmentService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 type Field = "title" | "due" | "type";
@@ -112,12 +113,16 @@ function AssignmentEditorRow({
               <AssignmentDatePicker
                 today={today}
                 value={draft.due}
+                dueTime={draft.dueTime}
+                onTimeChange={(dueTime) => setDraft((previous) => ({ ...previous, dueTime }))}
                 label={label}
                 disabled={saving}
                 buttonRef={(node) => {
                   if (node) controls.current.due = node;
                 }}
-                onChange={(due) => setDraft((previous) => ({ ...previous, due }))}
+                onChange={(due) =>
+                  setDraft((previous) => ({ ...previous, due, ...(!due && { dueTime: "" }) }))
+                }
                 onKeyDown={(event) => keyDown(event, "due")}
               />
             </td>
@@ -167,6 +172,7 @@ function AssignmentEditorRow({
           </td>
         );
       })}
+      <td />
     </tr>
   );
 }
@@ -225,6 +231,10 @@ function AssignmentSession({
     null,
   );
   const [undo, setUndo] = useState<Assignment | null>(null);
+  const [deletedUndo, setDeletedUndo] = useState<{
+    item: Assignment;
+    token: DeleteUndoToken;
+  } | null>(null);
   const [notice, setNotice] = useState("");
   const addButton = useRef<HTMLButtonElement>(null);
   const cells = useRef(new Map<string, HTMLButtonElement>());
@@ -275,6 +285,10 @@ function AssignmentSession({
       // Only send edited fields, so another device’s completion/date is preserved.
       const patch: AssignmentPatch = {};
       for (const field of fields) if (original?.[field] !== item[field]) patch[field] = item[field];
+      if (original?.dueTime !== item.dueTime) {
+        patch.dueTime = item.dueTime ?? "";
+        patch.due = item.due;
+      }
       const saved = editing?.isNew
         ? await service.create(userId, courseId, item, signal)
         : Object.keys(patch).length
@@ -289,6 +303,67 @@ function AssignmentSession({
       focusAfterRender.current = focus ? `${item.id}:${focus}` : null;
       setEditing(null);
       setNotice(`${saved.title} saved.`);
+    } finally {
+      busy.current = false;
+      if (!signal.aborted) setPending(false);
+    }
+  }
+  async function remove(item: Assignment) {
+    if (busy.current || !session.current || session.current.signal.aborted) return;
+    const signal = session.current.signal;
+    busy.current = true;
+    setPending(true);
+    setFailure(null);
+    try {
+      const token = await service.remove(userId, courseId, item.id, signal);
+      if (!signal.aborted) {
+        setItems((rows) => rows.filter((row) => row.id !== item.id));
+        setUndo(null);
+        setDeletedUndo({ item, token });
+        focusAfterRender.current = "add";
+      }
+    } catch (error) {
+      if (!signal.aborted)
+        setFailure({
+          message: serviceErrorMessage(error, "Couldn’t delete assignment."),
+          retry: () => {
+            void remove(item);
+          },
+        });
+    } finally {
+      busy.current = false;
+      if (!signal.aborted) setPending(false);
+    }
+  }
+  async function restoreDeleted() {
+    if (!deletedUndo || busy.current || !session.current || session.current.signal.aborted) return;
+    const signal = session.current.signal;
+    busy.current = true;
+    setPending(true);
+    setFailure(null);
+    try {
+      const restored = await service.restore(
+        userId,
+        courseId,
+        deletedUndo.item.id,
+        deletedUndo.token,
+        signal,
+      );
+      if (!restored)
+        throw new Error("Couldn’t restore assignment. It may have changed; try again.");
+      if (!signal.aborted) {
+        setDeletedUndo(null);
+        setRevision((value) => value + 1);
+        setNotice("Assignment restored.");
+      }
+    } catch (error) {
+      if (!signal.aborted)
+        setFailure({
+          message: serviceErrorMessage(error, "Couldn’t restore assignment."),
+          retry: () => {
+            void restoreDeleted();
+          },
+        });
     } finally {
       busy.current = false;
       if (!signal.aborted) setPending(false);
@@ -355,6 +430,9 @@ function AssignmentSession({
               <th scope="col">Name</th>
               <th scope="col">Date</th>
               <th scope="col">Type</th>
+              <th scope="col">
+                <span className="cloud-shell__sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -372,7 +450,10 @@ function AssignmentSession({
                       aria-label={`Mark ${item.title} ${item.done ? "unfinished" : "done"}`}
                       onChange={() => {
                         if (editing) return;
-                        void update(item.id, { done: !item.done }, () => setUndo(item));
+                        void update(item.id, { done: !item.done }, () => {
+                          setDeletedUndo(null);
+                          setUndo(item);
+                        });
                       }}
                     />
                   </td>
@@ -389,6 +470,10 @@ function AssignmentSession({
                         <AssignmentDatePicker
                           today={today}
                           value={item.due}
+                          dueTime={item.dueTime}
+                          onTimeChange={(dueTime) => {
+                            void update(item.id, { due: item.due, dueTime });
+                          }}
                           label={`Edit due for ${item.title}`}
                           disabled={!!editing || loading || !!loadError}
                           busy={pending}
@@ -438,12 +523,24 @@ function AssignmentSession({
                       )}
                     </td>
                   ))}
+                  <td>
+                    <button
+                      className="assignment-cell"
+                      disabled={pending || !!editing}
+                      aria-label={`Delete ${item.title}`}
+                      onClick={() => {
+                        void remove(item);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ),
             )}
             {!loading && !loadError && !items.length && !editing && (
               <tr>
-                <td colSpan={4} className="assignment-empty">
+                <td colSpan={5} className="assignment-empty">
                   No assignments yet. Add your first assignment above.
                 </td>
               </tr>
@@ -457,6 +554,19 @@ function AssignmentSession({
       <span className="cloud-shell__sr-only" role="status">
         {notice}
       </span>
+      {deletedUndo && (
+        <p className="assignment-undo" role="status">
+          Assignment deleted.{" "}
+          <button
+            disabled={pending || !!editing}
+            onClick={() => {
+              void restoreDeleted();
+            }}
+          >
+            Undo
+          </button>
+        </p>
+      )}
       {undo && (
         <p className="assignment-undo" role="status">
           Assignment {undo.done ? "reopened" : "completed"}.{" "}

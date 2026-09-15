@@ -278,3 +278,95 @@ describe("TodoFormDialog edit and reschedule modes", () => {
     fallback.remove();
   });
 });
+
+describe("TodoFormDialog class fields", () => {
+  const CLASSES = [{ id: "math", name: "Math" }];
+
+  it("switches between project and class, keeping assignment type class-only", async () => {
+    const onCreate = vi.fn(async () => undefined);
+    render(
+      <TodoComposerDialog
+        open
+        projects={[PROJECT]}
+        classes={CLASSES}
+        initialProjectId={PROJECT.id}
+        initialDueDate="2020-03-08"
+        onCreate={onCreate}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(field("Task"), { target: { value: "Worksheet" } });
+    fireEvent.change(field("Class"), { target: { value: "math" } });
+    expect(field("Project").value).toBe("");
+    fireEvent.change(field("Assignment type"), { target: { value: "Quiz" } });
+    fireEvent.change(field("Project"), { target: { value: PROJECT.id } });
+    expect(field("Class").value).toBe("");
+    expect(screen.queryByLabelText("Assignment type")).toBeNull();
+    fireEvent.change(field("Class"), { target: { value: "math" } });
+    expect(field("Assignment type").value).toBe("");
+    fireEvent.change(field("Assignment type"), { target: { value: "Reading" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
+    await waitFor(() =>
+      expect(onCreate).toHaveBeenCalledWith(
+        {
+          text: "Worksheet",
+          projectId: null,
+          classId: "math",
+          assignmentType: "Reading",
+          dueDate: "2020-03-08",
+          dueTime: null,
+        },
+        { signal: expect.any(AbortSignal) },
+      ),
+    );
+  });
+
+  it("retains unavailable class context and clears it atomically when choosing a project", async () => {
+    const { props } = renderEdit({
+      todo: { ...TODO, projectId: null, classId: "math", assignmentType: "Quiz", dueTime: null },
+    });
+    expect(field("Class").value).toBe("math");
+    expect(field("Assignment type").value).toBe("Quiz");
+    fireEvent.change(field("Project"), { target: { value: PROJECT.id } });
+    expect(screen.queryByLabelText("Assignment type")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(props.onSave).toHaveBeenCalledWith(
+        TODO.id,
+        {
+          text: TODO.text,
+          projectId: PROJECT.id,
+          classId: null,
+          assignmentType: "",
+          dueDate: TODO.dueDate,
+          dueTime: null,
+        },
+        { signal: expect.any(AbortSignal) },
+      ),
+    );
+  });
+
+  it("assigns an ordinary task to a class with no synthetic due time", async () => {
+    const { props } = renderEdit({
+      todo: { ...TODO, projectId: null, dueTime: null },
+      classes: CLASSES,
+    });
+    fireEvent.change(field("Class"), { target: { value: "math" } });
+    fireEvent.change(field("Assignment type"), { target: { value: "Homework" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(props.onSave).toHaveBeenCalledWith(
+        TODO.id,
+        {
+          text: TODO.text,
+          projectId: null,
+          classId: "math",
+          assignmentType: "Homework",
+          dueDate: TODO.dueDate,
+          dueTime: null,
+        },
+        { signal: expect.any(AbortSignal) },
+      ),
+    );
+  });
+});

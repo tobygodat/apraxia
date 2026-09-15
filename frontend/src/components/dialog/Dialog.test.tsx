@@ -75,6 +75,7 @@ describe("Dialog", () => {
       profile: null,
       profileError: false,
       projects: [],
+      classes: [],
       projectError: false,
       revision: 0,
       invalidate: vi.fn(),

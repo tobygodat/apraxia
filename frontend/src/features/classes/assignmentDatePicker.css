@@ -129,3 +129,31 @@
     min-width: 44px;
   }
 }
+
+.assignment-calendar-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding: 8px 0;
+}
+.assignment-calendar-time label {
+  display: grid;
+  gap: 4px;
+}
+.assignment-calendar-time input {
+  color-scheme: dark;
+  background: var(--cloud-field, #111111);
+  color: inherit;
+  border: 1px solid var(--cloud-line, #303030);
+  border-radius: 4px;
+  padding: 6px;
+  font: inherit;
+}
+.assignment-calendar-time input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.assignment-calendar-time input:disabled {
+  opacity: 0.5;
+}

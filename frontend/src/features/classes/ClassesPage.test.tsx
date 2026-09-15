@@ -100,3 +100,30 @@ it("starts a new account empty rather than creating a default class", async () =
     await screen.findByText("No classes yet. Add a class to save assignments and notes."),
   ).toBeTruthy();
 });
+it("uses todo-backed assignments in the class detail while retaining the inline editor", async () => {
+  const { createFixtureAssignments } = await import("../../qa/ClassAssignmentsMock");
+  const data = createClassPersistenceFixture();
+  const assignments = createFixtureAssignments();
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        courseId="math3012"
+        classService={data.classes}
+        noteService={data.notes}
+        assignmentService={assignments}
+      />
+    </MemoryRouter>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Edit title for Problem set 3" }));
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Updated assignment" } });
+  fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+  expect(
+    await screen.findByRole("button", { name: "Edit title for Updated assignment" }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Delete Updated assignment" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+  expect(
+    await screen.findByRole("button", { name: "Edit title for Updated assignment" }),
+  ).toBeTruthy();
+});

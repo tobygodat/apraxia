@@ -1,0 +1,11 @@
+.todo-source-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid var(--line, #444);
+  border-radius: 4px;
+  color: var(--muted, #ada9a3);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

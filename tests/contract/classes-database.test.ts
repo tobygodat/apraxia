@@ -68,7 +68,7 @@ it("recovers existing assignments, imports without overwrites, and enforces note
       /row-level security/,
     );
     await expect(
-      db.exec("insert into class_assignments(course_id,title) values ('missing','No parent')"),
+      db.exec("insert into todos(class_id,text) values ('missing','No parent')"),
     ).rejects.toThrow(/foreign key/);
     await expect(
       db.query("insert into classes(user_id,id,name) values ($1,'forged','Forged')", [bob]),

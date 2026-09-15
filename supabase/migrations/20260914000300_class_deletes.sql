@@ -1,14 +1,13 @@
--- Owner-scoped deletion for Classes. Until now classes, assignments, notes, and
--- their private PDF objects could only accumulate: no DELETE policy existed on
--- any of them, so an abandoned upload reservation kept its bytes forever.
--- Deletion stays owner-scoped and column-grant shaped like every other Classes
+-- Owner-scoped deletion for Classes. Until now classes, notes, and their
+-- private PDF objects could only accumulate: no DELETE policy existed on any of
+-- them, so an abandoned upload reservation kept its bytes forever. Deletion
+-- stays owner-scoped and column-grant shaped like every other Classes
 -- privilege; nothing here widens read or write access.
-
--- Assignments: an owner may remove their own rows. Foreign keys still require
--- the parent class to exist, so an assignment never outlives its class.
-grant delete on public.class_assignments to authenticated;
-create policy class_assignments_delete_own on public.class_assignments for delete to authenticated
-  using ((select auth.uid()) = user_id);
+--
+-- Assignments live in public.todos since 20260914000100_assignment_todos.sql
+-- and are removed through the soft-delete RPC like every other task. The
+-- legacy public.class_assignments table is a read-only backup with browser
+-- writes revoked; it deliberately gains no delete policy here.
 
 -- Notes: the row is still immutable after insert. Deleting it is the only
 -- browser mutation added, and it never touches another account's rows.
@@ -16,9 +15,11 @@ grant delete on public.class_notes to authenticated;
 create policy class_notes_delete on public.class_notes for delete to authenticated
   using ((select auth.uid()) = user_id);
 
--- Classes: deleting a class removes its assignments and notes first. The
--- composite foreign keys have no ON DELETE action, so an attempt to delete a
--- class that still has children raises 23503 rather than silently orphaning it.
+-- Classes: deleting a class removes its notes first. The notes foreign key has
+-- no ON DELETE action, so an attempt to delete a class that still has notes
+-- raises 23503 rather than silently orphaning them. Tasks that belonged to the
+-- class are detached (todos_class_owner is ON DELETE SET NULL, and the trigger
+-- from 20260914000100 clears their assignment type); they are never deleted.
 grant delete on public.classes to authenticated;
 create policy classes_delete on public.classes for delete to authenticated
   using ((select auth.uid()) = user_id);

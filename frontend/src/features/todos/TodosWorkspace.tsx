@@ -112,6 +112,7 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
       workspaceSessionKey={props.workspaceSessionKey}
       service={props.service}
       projects={state.projects}
+      classes={state.classes}
       onCreated={(todo) => {
         if (!controller.acceptCreatedTodo(todo)) {
           throw new Error("Saved todo requires a fresh workspace view.");
@@ -177,6 +178,7 @@ function ReadyTodosBoard({
         open={editingTodo !== null}
         todo={editingTodo}
         projects={state.projects}
+        classes={state.classes}
         fallbackFocusRef={boardFocusRef}
         onClose={() => setEditingTodo(null)}
         onSubmit={async (submission, options) => {
