@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import type { LocalDate, ProjectSummary, Todo } from "../../types/domain";
-import { TodoComposerDialog } from "../../features/todos/TodoComposerDialog";
+import { TodoComposerDialog } from "../../features/todos/TodoFormDialog";
 import type { TodoService } from "../../features/todos/todoService";
 import "./GlobalAddTodoController.css";
 
@@ -64,6 +64,8 @@ export function GlobalAddTodoController({
   children,
 }: GlobalAddTodoControllerProps) {
   const [composer, setComposer] = useState<ComposerState>(CLOSED_COMPOSER);
+  // Reset keys, not inputs: a new session or provider must invalidate the open composer.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scope = useMemo(() => ({}), [service, workspaceSessionKey]);
   const activeScopeRef = useRef<object | null>(null);
   const [refreshIssueScope, setRefreshIssueScope] = useState<object | null>(null);
@@ -101,10 +103,7 @@ export function GlobalAddTodoController({
     }
   }, [scope]);
 
-  const actions = useMemo<GlobalAddTodoActions>(
-    () => ({ openTodoComposer }),
-    [openTodoComposer],
-  );
+  const actions = useMemo<GlobalAddTodoActions>(() => ({ openTodoComposer }), [openTodoComposer]);
 
   return (
     <GlobalAddTodoContext.Provider value={actions}>
@@ -112,7 +111,9 @@ export function GlobalAddTodoController({
       {refreshIssueScope === scope ? (
         <aside className="global-add-notice" aria-label="Task added">
           <p role="status">Task added, but this view may be out of date. Refresh to see it.</p>
-          <button type="button" onClick={() => setRefreshIssueScope(null)}>Dismiss</button>
+          <button type="button" onClick={() => setRefreshIssueScope(null)}>
+            Dismiss
+          </button>
         </aside>
       ) : null}
       <TodoComposerDialog
@@ -149,9 +150,7 @@ export function useGlobalAddTodo(): GlobalAddTodoActions {
   const actions = useContext(GlobalAddTodoContext);
 
   if (!actions) {
-    throw new Error(
-      "useGlobalAddTodo must be used inside GlobalAddTodoController.",
-    );
+    throw new Error("useGlobalAddTodo must be used inside GlobalAddTodoController.");
   }
 
   return actions;

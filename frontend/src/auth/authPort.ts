@@ -10,7 +10,7 @@ export interface AuthIdentity {
   readonly expiresAt: number | null;
 }
 
-export type AuthChangeReason = AuthChangeEvent | "no_session";
+type AuthChangeReason = AuthChangeEvent | "no_session";
 
 export interface AuthStateChange {
   readonly identity: AuthIdentity | null;

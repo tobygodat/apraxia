@@ -1,22 +1,129 @@
-.cloud-shell { --workspace-page-inset: clamp(20px, 2.5vw, 36px); --workspace-page-top: 36px; }
-.workspace-page { padding: var(--workspace-page-top) var(--workspace-page-inset); }
-.workspace-page h1 { margin: 0 0 20px; font-size: 32px; letter-spacing: -.035em; }
-.workspace-page p { color: #ada9a3; line-height: 1.6; }
-.workspace-page button, .workspace-notice button { min-height: 40px; background: transparent; color: #f0efed; border: 1px solid #5b5b5b; padding: 8px 14px; }
-.workspace-home-scroll { overflow-x: auto; }
-.workspace-notice { position: fixed; z-index: 45; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; align-items: center; max-width: calc(100vw - 32px); padding: 10px 16px; border: 1px solid #535353; background: #242424; color: #f0efed; box-shadow: 0 8px 24px #0006; }
-.workspace-notice p { margin: 0; font-size: 14px; }
-.workspace-dialog-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: #0009; }
-.workspace-dialog { width: min(440px, 100%); max-height: calc(100dvh - 48px); overflow: auto; background: #1d1d1d; color: #f0efed; border: 1px solid #535353; padding: 24px; box-shadow: 0 20px 60px #0008; }
-.workspace-dialog header { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
-.workspace-dialog h2 { margin: 0; font-size: 24px; letter-spacing: -.025em; }
-.workspace-dialog button { background: transparent; color: #f0efed; border: 1px solid #515151; min-height: 40px; padding: 8px 12px; }
-.workspace-add-choices { display: grid; gap: 8px; }
-.workspace-add-choices button, .workspace-add-choices a { display: block; padding: 14px; text-align: left; background: transparent; border: 1px solid #454545; color: #f0efed; text-decoration: none; font: inherit; }
-.workspace-add-choices button:hover, .workspace-add-choices a:hover { background: #292929; border-color: #8b8b8b; }
-.workspace-dialog :focus-visible, .workspace-notice :focus-visible, .workspace-page :focus-visible { outline: 2px solid #f0efed; outline-offset: 3px; }
-.workspace-project-warning { margin: 0; padding: 10px 24px; color: #ada9a3; background: #242424; font-size: 13px; }
-.workspace-project-warning button { color: inherit; background: transparent; border: 0; text-decoration: underline; }
+.cloud-shell {
+  --workspace-page-inset: clamp(20px, 2.5vw, 36px);
+  --workspace-page-top: 36px;
+}
+.workspace-page {
+  padding: var(--workspace-page-top) var(--workspace-page-inset);
+}
+.workspace-page h1 {
+  margin: 0 0 20px;
+  font-size: 32px;
+  letter-spacing: -0.035em;
+}
+.workspace-page p {
+  color: #ada9a3;
+  line-height: 1.6;
+}
+.workspace-page button,
+.workspace-notice button {
+  min-height: 40px;
+  background: transparent;
+  color: #f0efed;
+  border: 1px solid #5b5b5b;
+  border-radius: var(--radius-control, 5px);
+  padding: 8px 14px;
+}
+.workspace-home-scroll {
+  overflow-x: auto;
+}
+.workspace-notice {
+  position: fixed;
+  z-index: 45;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border: 1px solid #535353;
+  background: #242424;
+  color: #f0efed;
+  box-shadow: 0 8px 24px #0006;
+}
+.workspace-notice p {
+  margin: 0;
+  font-size: 14px;
+}
+.workspace-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #0009;
+}
+.workspace-dialog {
+  width: min(440px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  background: #1d1d1d;
+  color: #f0efed;
+  border: 1px solid #535353;
+  padding: 24px;
+  box-shadow: 0 20px 60px #0008;
+}
+.workspace-dialog header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.workspace-dialog h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.025em;
+}
+.workspace-dialog button {
+  background: transparent;
+  color: #f0efed;
+  border: 1px solid #515151;
+  border-radius: var(--radius-control, 5px);
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.workspace-add-choices {
+  display: grid;
+  gap: 8px;
+}
+.workspace-add-choices button,
+.workspace-add-choices a {
+  display: block;
+  padding: 14px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid #454545;
+  color: #f0efed;
+  text-decoration: none;
+  font: inherit;
+}
+.workspace-add-choices button:hover,
+.workspace-add-choices a:hover {
+  background: #292929;
+  border-color: #8b8b8b;
+}
+.workspace-dialog :focus-visible,
+.workspace-notice :focus-visible,
+.workspace-page :focus-visible {
+  outline: 2px solid #f0efed;
+  outline-offset: 3px;
+}
+.workspace-project-warning {
+  margin: 0;
+  padding: 10px 24px;
+  color: #ada9a3;
+  background: #242424;
+  font-size: 13px;
+}
+.workspace-project-warning button {
+  color: inherit;
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+}
 
 /* Shared page headings use the home page's document-style typography. */
 .cloud-shell .workspace-page h1,
@@ -29,5 +136,11 @@
   line-height: 1.15;
   letter-spacing: -1px;
 }
-.cloud-shell .collection-page { margin-inline: 0; max-width: 1120px; }
-.cloud-shell .todos-board-nav button, .cloud-shell .todos-board-add { border-radius: 5px; }
+.cloud-shell .collection-page {
+  margin-inline: 0;
+  max-width: var(--workspace-page-max, 1120px);
+}
+.cloud-shell .todos-board-nav button,
+.cloud-shell .todos-board-add {
+  border-radius: 5px;
+}

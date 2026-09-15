@@ -23,7 +23,5 @@ export function RequireAuth({
   if (state.status === "cleanup_error") return <>{cleanupError}</>;
   if (state.status === "anonymous") return <>{anonymous(state.reason)}</>;
 
-  return (
-    <Fragment key={state.identity.userId}>{children(state.identity)}</Fragment>
-  );
+  return <Fragment key={state.identity.userId}>{children(state.identity)}</Fragment>;
 }

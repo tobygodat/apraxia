@@ -1,23 +1,12 @@
 // @vitest-environment happy-dom
 
 import { useEffect } from "react";
-import {
-  act,
-  cleanup,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "./AuthProvider";
 import { RequireAuth } from "./RequireAuth";
-import type {
-  AuthIdentity,
-  AuthPort,
-  AuthStateChange,
-  AuthStateListener,
-} from "./authPort";
+import type { AuthIdentity, AuthPort, AuthStateChange, AuthStateListener } from "./authPort";
 import { registerUserStateResetter } from "./userState";
 
 interface Deferred<T> {
@@ -92,6 +81,8 @@ function ProtectedChild({
   useEffect(() => {
     mounted(identity.userId);
     return () => unmounted(identity.userId);
+    // Mount/unmount probe: empty deps are the point of the assertion.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -119,11 +110,7 @@ function ProtectedApp({
         anonymous={(reason) => <p>anonymous:{reason}</p>}
       >
         {(identity) => (
-          <ProtectedChild
-            identity={identity}
-            mounted={mounted}
-            unmounted={unmounted}
-          />
+          <ProtectedChild identity={identity} mounted={mounted} unmounted={unmounted} />
         )}
       </RequireAuth>
     </AuthProvider>
@@ -140,19 +127,11 @@ describe("RequireAuth", () => {
     const unmounted = vi.fn();
     fake.restore.mockReturnValueOnce(restore.promise);
 
-    render(
-      <ProtectedApp
-        port={fake.port}
-        mounted={mounted}
-        unmounted={unmounted}
-      />,
-    );
+    render(<ProtectedApp port={fake.port} mounted={mounted} unmounted={unmounted} />);
 
     expect(screen.getByText("restoring").textContent).toBe("restoring");
     expect(mounted).not.toHaveBeenCalled();
-    expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-      deepLink,
-    );
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe(deepLink);
 
     await act(async () => {
       restore.resolve({ identity: userA, reason: "INITIAL_SESSION" });
@@ -163,31 +142,27 @@ describe("RequireAuth", () => {
     expect(screen.getByText("private:user-a:a@example.com").textContent).toBe(
       "private:user-a:a@example.com",
     );
-    expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-      deepLink,
-    );
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe(deepLink);
   });
 
-  it("updates a same-user refresh without cleanup or remounting", async () => {
+  it("refreshes user A in place, then clears state and remounts for user B", async () => {
     const fake = fakeAuthPort();
-    const mounted = vi.fn();
-    const unmounted = vi.fn();
-    const reset = vi.fn();
+    const order: string[] = [];
+    const mounted = vi.fn((userId: string) => order.push(`mount:${userId}`));
+    const unmounted = vi.fn((userId: string) => order.push(`unmount:${userId}`));
+    const reset = vi.fn(() => order.push("clear:user-state"));
     registerTestResetter(reset);
     fake.restore.mockResolvedValueOnce({
       identity: userA,
       reason: "INITIAL_SESSION",
     });
 
-    render(
-      <ProtectedApp
-        port={fake.port}
-        mounted={mounted}
-        unmounted={unmounted}
-      />,
-    );
+    render(<ProtectedApp port={fake.port} mounted={mounted} unmounted={unmounted} />);
     await waitFor(() => expect(mounted).toHaveBeenCalledWith("user-a"));
+    order.length = 0;
 
+    // A same-user refresh must update the identity without tearing down the
+    // protected subtree or clearing state that still belongs to user A.
     act(() => {
       fake.emit({
         identity: {
@@ -203,32 +178,10 @@ describe("RequireAuth", () => {
       "private:user-a:refreshed@example.com",
     );
     expect(reset).not.toHaveBeenCalled();
-    expect(mounted).toHaveBeenCalledTimes(1);
-    expect(unmounted).not.toHaveBeenCalled();
-  });
+    expect(order).toEqual([]);
 
-  it("clears user-scoped state and remounts the protected boundary for user B", async () => {
-    const fake = fakeAuthPort();
-    const order: string[] = [];
-    const mounted = vi.fn((userId: string) => order.push(`mount:${userId}`));
-    const unmounted = vi.fn((userId: string) => order.push(`unmount:${userId}`));
-    const reset = vi.fn(() => order.push("clear:user-state"));
-    registerTestResetter(reset);
-    fake.restore.mockResolvedValueOnce({
-      identity: userA,
-      reason: "INITIAL_SESSION",
-    });
-
-    render(
-      <ProtectedApp
-        port={fake.port}
-        mounted={mounted}
-        unmounted={unmounted}
-      />,
-    );
-    await waitFor(() => expect(mounted).toHaveBeenCalledWith("user-a"));
-    order.length = 0;
-
+    // A different user must clear user-scoped state before the new subtree
+    // mounts, so no component can read the previous account's data.
     act(() => {
       fake.emit({ identity: userB, reason: "SIGNED_IN" });
     });
@@ -238,12 +191,6 @@ describe("RequireAuth", () => {
       "private:user-b:b@example.com",
     );
     expect(reset).toHaveBeenCalledOnce();
-    expect(unmounted).toHaveBeenCalledWith("user-a");
-    expect(mounted).toHaveBeenCalledTimes(2);
-    expect(order).toEqual([
-      "clear:user-state",
-      "unmount:user-a",
-      "mount:user-b",
-    ]);
+    expect(order).toEqual(["clear:user-state", "unmount:user-a", "mount:user-b"]);
   });
 });

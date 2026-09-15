@@ -1,3 +1,7 @@
+// LEGACY RUNTIME ONLY. This client serves the transitional FastAPI application
+// (VITE_ORBITOS_RUNTIME=legacy); the cloud app talks to Supabase directly and
+// the /api/me and /api/login endpoints do not exist on Vercel.
+//
 // Thin typed fetch client for the /api JSON API.
 // Cookies are sent with every request (credentials: "include") for the session
 // auth gate (spec §9). A 401 throws UnauthorizedError so the app can show login.
@@ -5,9 +9,16 @@
 // Server state is fetched with plain fetch for now; TanStack Query is an easy
 // later add if caching/mutations get fiddly.
 
+import { ServiceError } from "../lib/serviceError";
+
 const BASE = "/api";
 
-export class UnauthorizedError extends Error {}
+export class UnauthorizedError extends ServiceError {
+  constructor() {
+    super("unauthorized", "");
+    this.name = "UnauthorizedError";
+  }
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -16,7 +27,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
   });
   if (res.status === 401) throw new UnauthorizedError();
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new ServiceError("unavailable", `${res.status} ${res.statusText}`);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }

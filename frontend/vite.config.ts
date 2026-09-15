@@ -11,9 +11,7 @@ export function createViteConfig(environment: ViteEnvironment) {
   const cloudDev = environment.ORBITOS_CLOUD_DEV === "1";
 
   if (cloudDev && runtimeMode === "legacy") {
-    throw new Error(
-      "ORBITOS_CLOUD_DEV=1 cannot be combined with VITE_ORBITOS_RUNTIME=legacy.",
-    );
+    throw new Error("ORBITOS_CLOUD_DEV=1 cannot be combined with VITE_ORBITOS_RUNTIME=legacy.");
   }
 
   const cloudRuntime = cloudDev || runtimeMode === "cloud";
@@ -21,6 +19,8 @@ export function createViteConfig(environment: ViteEnvironment) {
 
   return {
     plugins: [react(), pdfAssets()],
+    // A literal lets Rollup drop the legacy runtime branch in App.tsx.
+    define: { "import.meta.env.VITE_ORBITOS_RUNTIME": JSON.stringify(runtimeMode) },
     server: {
       port: Number.isNaN(requestedPort) ? 5173 : requestedPort,
       strictPort: true,

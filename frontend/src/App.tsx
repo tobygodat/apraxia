@@ -2,7 +2,10 @@ import { lazy, Suspense } from "react";
 import { resolveRuntimeMode } from "./config/runtime";
 
 const CloudApp = lazy(() => import("./apps/CloudApp"));
-const LegacyApp = lazy(() => import("./apps/LegacyApp"));
+// Vite inlines VITE_ORBITOS_RUNTIME at build time (see vite.config.ts), so the
+// legacy tree and its stylesheet are dropped from cloud bundles entirely.
+const LegacyApp =
+  import.meta.env.VITE_ORBITOS_RUNTIME === "legacy" ? lazy(() => import("./apps/LegacyApp")) : null;
 
 function RuntimeConfigurationError({ message }: { message: string }) {
   return (
@@ -24,8 +27,7 @@ export default function App() {
   try {
     runtime = resolveRuntimeMode(import.meta.env.VITE_ORBITOS_RUNTIME);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Check VITE_ORBITOS_RUNTIME.";
+    const message = error instanceof Error ? error.message : "Check VITE_ORBITOS_RUNTIME.";
     return <RuntimeConfigurationError message={message} />;
   }
 
@@ -39,7 +41,7 @@ export default function App() {
         </main>
       }
     >
-      {runtime === "legacy" ? <LegacyApp /> : <CloudApp />}
+      {runtime === "legacy" && LegacyApp ? <LegacyApp /> : <CloudApp />}
     </Suspense>
   );
 }

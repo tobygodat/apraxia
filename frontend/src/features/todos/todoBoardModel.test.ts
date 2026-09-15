@@ -44,10 +44,7 @@ describe("buildTodoBoardModel", () => {
       "2026-09-06",
     ]);
     expect(model.columns[0]?.todos.map(({ id }) => id)).toEqual(["inbox"]);
-    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual([
-      "oldest",
-      "older",
-    ]);
+    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["oldest", "older"]);
     expect(model.columns[2]?.todos.map(({ id }) => id)).toEqual(["today"]);
     expect(model.columns[6]?.todos.map(({ id }) => id)).toEqual(["sunday"]);
   });
@@ -81,16 +78,10 @@ describe("buildTodoBoardModel", () => {
       dueDate: "2026-08-25",
     });
 
-    const model = buildTodoBoardModel(
-      [open, completed],
-      "2026-08-24",
-      "2026-09-02",
-    );
+    const model = buildTodoBoardModel([open, completed], "2026-08-24", "2026-09-02");
 
     expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
-    const historicalColumn = model.columns.find(
-      (column) => column.key === "2026-08-25",
-    );
+    const historicalColumn = model.columns.find((column) => column.key === "2026-08-25");
     expect(historicalColumn?.todos.map(({ id }) => id)).toEqual(["completed"]);
   });
 
@@ -110,17 +101,11 @@ describe("buildTodoBoardModel", () => {
   });
 
   it("rejects invalid selected weeks and duplicate rows", () => {
-    expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow(
-      "Monday",
-    );
+    expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow("Monday");
 
     const duplicate = todo({ id: "same", text: "Duplicate" });
     expect(() =>
-      buildTodoBoardModel(
-        [duplicate, { ...duplicate }],
-        "2026-08-31",
-        "2026-09-02",
-      ),
+      buildTodoBoardModel([duplicate, { ...duplicate }], "2026-08-31", "2026-09-02"),
     ).toThrow("unique IDs");
   });
 });

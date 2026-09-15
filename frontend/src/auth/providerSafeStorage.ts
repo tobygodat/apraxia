@@ -16,10 +16,7 @@ interface SanitizedJsonValue {
   value: unknown;
 }
 
-const PROVIDER_TOKEN_KEYS = new Set([
-  "provider_token",
-  "provider_refresh_token",
-]);
+const PROVIDER_TOKEN_KEYS = new Set(["provider_token", "provider_refresh_token"]);
 
 function isPromise<T>(value: MaybePromise<T>): value is Promise<T> {
   return typeof (value as Promise<T> | undefined)?.then === "function";
@@ -90,16 +87,12 @@ function sanitizeStorageValue(value: string): SanitizedValue {
  * automatic refresh continue to work. Reads are sanitized as well as writes so
  * sessions persisted before this wrapper was installed are repaired in place.
  */
-export function createProviderSafeStorage(
-  storage: SupportedStorage,
-): SupportedStorage {
+export function createProviderSafeStorage(storage: SupportedStorage): SupportedStorage {
   const providerSafeStorage: SupportedStorage = {
     getItem(key) {
       const storedValue = storage.getItem(key);
 
-      const sanitizeAndRewrite = (
-        value: string | null,
-      ): MaybePromise<string | null> => {
+      const sanitizeAndRewrite = (value: string | null): MaybePromise<string | null> => {
         if (value === null) return null;
 
         const sanitized = sanitizeStorageValue(value);

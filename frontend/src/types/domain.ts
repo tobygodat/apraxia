@@ -1,17 +1,13 @@
 export type UUID = string;
 export type LocalDate = string;
 export type LocalTime = string;
-export type Timestamp = string;
+type Timestamp = string;
 
-export type RecordSource = "manual" | "migration";
 export type ProjectStatus = "active" | "someday" | "completed" | "archived";
 export type MediaType = "book" | "movie";
 export type MediaStatus = "saved" | "in_progress" | "finished";
-export type OrbitRecordType = "todo" | "idea" | "media" | "project";
-export type GoogleCalendarConnectionState =
-  | "connected"
-  | "reconnect_required"
-  | "disconnected";
+type OrbitRecordType = "todo" | "idea" | "media" | "project";
+type GoogleCalendarConnectionState = "connected" | "reconnect_required" | "disconnected";
 
 /** Browser-safe calendar colors. No Google event body or credential data belongs here. */
 export interface CalendarColor {
@@ -20,7 +16,7 @@ export interface CalendarColor {
 }
 
 /** Display metadata persisted for a calendar discovered through Google Calendar. */
-export interface CalendarMetadata {
+interface CalendarMetadata {
   calendarId: string;
   displayName: string;
   color: CalendarColor;
@@ -188,10 +184,7 @@ interface NewTodoInputBase {
 
 /** A due time can enter the service boundary only together with a due date. */
 export type NewTodoInput = NewTodoInputBase &
-  (
-    | { dueDate?: null; dueTime?: null }
-    | { dueDate: LocalDate; dueTime?: LocalTime | null }
-  );
+  ({ dueDate?: null; dueTime?: null } | { dueDate: LocalDate; dueTime?: LocalTime | null });
 
 export interface NewIdeaInput {
   title?: string | null;

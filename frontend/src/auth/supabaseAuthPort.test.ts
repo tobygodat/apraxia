@@ -1,15 +1,8 @@
-import {
-  AuthError,
-  type AuthChangeEvent,
-  type Session,
-} from "@supabase/supabase-js";
+import { AuthError, type AuthChangeEvent, type Session } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 import type { AuthStateChange } from "./authPort";
-import {
-  createSupabaseAuthPort,
-  type SupabaseAuthClient,
-} from "./supabaseAuthPort";
+import { createSupabaseAuthPort, type SupabaseAuthClient } from "./supabaseAuthPort";
 
 function session(overrides: Partial<Session> = {}): Session {
   return {
@@ -41,30 +34,21 @@ function fakeClient({
   restoreError = null,
   signOutError = null,
 }: FakeAuthOptions = {}) {
-  let authListener:
-    | ((event: AuthChangeEvent, currentSession: Session | null) => void)
-    | undefined;
+  let authListener: ((event: AuthChangeEvent, currentSession: Session | null) => void) | undefined;
   const unsubscribe = vi.fn();
-  const getSession = vi.fn<SupabaseAuthClient["auth"]["getSession"]>(
-    async () => {
-      if (restoreError) {
-        return { data: { session: null }, error: restoreError };
-      }
+  const getSession = vi.fn<SupabaseAuthClient["auth"]["getSession"]>(async () => {
+    if (restoreError) {
+      return { data: { session: null }, error: restoreError };
+    }
 
-      if (restoredSession) {
-        return { data: { session: restoredSession }, error: null };
-      }
+    if (restoredSession) {
+      return { data: { session: restoredSession }, error: null };
+    }
 
-      return { data: { session: null }, error: null };
-    },
-  );
+    return { data: { session: null }, error: null };
+  });
   const onAuthStateChange = vi.fn(
-    (
-      listener: (
-        event: AuthChangeEvent,
-        currentSession: Session | null,
-      ) => void,
-    ) => {
+    (listener: (event: AuthChangeEvent, currentSession: Session | null) => void) => {
       authListener = listener;
 
       return {
@@ -78,9 +62,9 @@ function fakeClient({
       };
     },
   );
-  const signOut = vi.fn<SupabaseAuthClient["auth"]["signOut"]>(
-    async (_options) => ({ error: signOutError }),
-  );
+  const signOut = vi.fn<SupabaseAuthClient["auth"]["signOut"]>(async (_options) => ({
+    error: signOutError,
+  }));
   const client: SupabaseAuthClient = {
     auth: {
       getSession,
@@ -117,11 +101,7 @@ describe("createSupabaseAuthPort", () => {
       },
       reason: "INITIAL_SESSION",
     });
-    expect(Object.keys(change.identity ?? {}).sort()).toEqual([
-      "email",
-      "expiresAt",
-      "userId",
-    ]);
+    expect(Object.keys(change.identity ?? {}).sort()).toEqual(["email", "expiresAt", "userId"]);
     expect(JSON.stringify(change)).not.toContain("secret-access-token");
     expect(JSON.stringify(change)).not.toContain("secret-refresh-token");
     expect(fake.getSession).toHaveBeenCalledOnce();

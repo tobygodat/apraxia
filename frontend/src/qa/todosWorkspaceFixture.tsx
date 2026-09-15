@@ -1,7 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import { addSqlDateDays, asSqlDate, compareSqlDates, localToday } from "../features/todos/dateDomain";
+import {
+  addSqlDateDays,
+  asSqlDate,
+  compareSqlDates,
+  localToday,
+} from "../features/todos/dateDomain";
 import { TodayPanel } from "../features/todos/TodayPanel";
 import { assignTodayRanks, sortTodayTodos } from "../features/todos/todayOrder";
 import type { TodoService } from "../features/todos/todoService";
@@ -27,27 +32,42 @@ const scenarioQuery = `?scenario=${encodeURIComponent(scenario)}`;
 let nextId = 10;
 const uuid = () => `33333333-3333-4333-8333-${String(nextId++).padStart(12, "0")}`;
 const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): Todo => ({
-  id: uuid(), text, completed: false, completedAt: null,
-  dueDate: offset === null ? null : addSqlDateDays(today, offset), dueTime: null,
-  projectId: null, todayRank: null, createdAt: now, updatedAt: now, ...extra,
+  id: uuid(),
+  text,
+  completed: false,
+  completedAt: null,
+  dueDate: offset === null ? null : addSqlDateDays(today, offset),
+  dueTime: null,
+  projectId: null,
+  todayRank: null,
+  createdAt: now,
+  updatedAt: now,
+  ...extra,
 });
-let todos: Todo[] = scenario === "empty" ? [] : [
-  task("Compare desk measurements", null, { projectId: project.id }),
-  task("Ask Mia about the reading group", null),
-  task("Return the library books", -4),
-  task("Send the venue confirmation", -1, { dueTime: "14:30:00" }),
-  task("Review the lighting options", 0, { projectId: project.id }),
-  task("Pick up the repaired headphones", 0, { dueTime: "17:00:00" }),
-  task("Book a quiet afternoon to read", 1),
-  task("Plan next week’s groceries", 3),
-];
+let todos: Todo[] =
+  scenario === "empty"
+    ? []
+    : [
+        task("Compare desk measurements", null, { projectId: project.id }),
+        task("Ask Mia about the reading group", null),
+        task("Return the library books", -4),
+        task("Send the venue confirmation", -1, { dueTime: "14:30:00" }),
+        task("Review the lighting options", 0, { projectId: project.id }),
+        task("Pick up the repaired headphones", 0, { dueTime: "17:00:00" }),
+        task("Book a quiet afternoon to read", 1),
+        task("Plan next week’s groceries", 3),
+      ];
 if (scenario === "dense") {
-  todos.push(...Array.from({ length: 100 }, (_, index) => task(
-    index % 7 === 0
-      ? `A longer task title to check wrapping, readable actions, and the original due date — item ${index + 1}`
-      : `Example accumulated task ${index + 1}`,
-    -(index % 20 + 1),
-  )));
+  todos.push(
+    ...Array.from({ length: 100 }, (_, index) =>
+      task(
+        index % 7 === 0
+          ? `A longer task title to check wrapping, readable actions, and the original due date — item ${index + 1}`
+          : `Example accumulated task ${index + 1}`,
+        -((index % 20) + 1),
+      ),
+    ),
+  );
 }
 const deleted = new Map<string, { todo: Todo; token: DeleteUndoToken }>();
 let failNextLoad = scenario === "error";
@@ -60,30 +80,42 @@ async function prepareLoad(signal: AbortSignal) {
   // error scenario before the live request observes it.
   await Promise.resolve();
   requireActive(signal);
-  if (failNextLoad) { failNextLoad = false; throw new Error("Deliberate local fixture failure."); }
+  if (failNextLoad) {
+    failNextLoad = false;
+    throw new Error("Deliberate local fixture failure.");
+  }
 }
 function todayRows(localDate: LocalDate): TodayTodo[] {
   const validDate = asSqlDate(localDate);
-  return sortTodayTodos(todos.flatMap((todo): TodayTodo[] => {
-    if (todo.completed || todo.completedAt !== null || todo.dueDate === null ||
-      compareSqlDates(todo.dueDate, validDate) > 0) return [];
-    return [{
-      ...todo,
-      completed: false,
-      completedAt: null,
-      dueDate: todo.dueDate,
-      isOverdue: compareSqlDates(todo.dueDate, validDate) < 0,
-      isManuallyOrdered: todo.todayRank !== null,
-      projectTitle: todo.projectId === project.id ? project.title : null,
-    }];
-  }));
+  return sortTodayTodos(
+    todos.flatMap((todo): TodayTodo[] => {
+      if (
+        todo.completed ||
+        todo.completedAt !== null ||
+        todo.dueDate === null ||
+        compareSqlDates(todo.dueDate, validDate) > 0
+      )
+        return [];
+      return [
+        {
+          ...todo,
+          completed: false,
+          completedAt: null,
+          dueDate: todo.dueDate,
+          isOverdue: compareSqlDates(todo.dueDate, validDate) < 0,
+          isManuallyOrdered: todo.todayRank !== null,
+          projectTitle: todo.projectId === project.id ? project.title : null,
+        },
+      ];
+    }),
+  );
 }
 function update(todoId: string, values: Partial<Todo>, signal: AbortSignal): Todo {
   requireActive(signal);
   const current = todos.find((todo) => todo.id === todoId);
   if (!current) throw new Error("Fixture row not found.");
   const saved = { ...current, ...values, updatedAt: new Date().toISOString() };
-  todos = todos.map((todo) => todo.id === todoId ? saved : todo);
+  todos = todos.map((todo) => (todo.id === todoId ? saved : todo));
   return saved;
 }
 const service: TodoService = {
@@ -91,21 +123,29 @@ const service: TodoService = {
     await prepareLoad(signal);
     return {
       profile,
-      projects: [project], todos: [...todos],
+      projects: [project],
+      todos: [...todos],
     };
   },
   async createTodo(input, { signal }) {
     requireActive(signal);
     const saved = task(input.text, null, {
-      dueDate: input.dueDate ?? null, dueTime: input.dueTime ?? null,
+      dueDate: input.dueDate ?? null,
+      dueTime: input.dueTime ?? null,
       projectId: input.projectId ?? null,
     });
     todos = [...todos, saved];
     return saved;
   },
-  async updateTodoDetails(todoId, input, { signal }) { return update(todoId, input, signal); },
+  async updateTodoDetails(todoId, input, { signal }) {
+    return update(todoId, input, signal);
+  },
   async setTodoCompleted(todoId, completed, { signal }) {
-    return update(todoId, { completed, completedAt: completed ? new Date().toISOString() : null }, signal);
+    return update(
+      todoId,
+      { completed, completedAt: completed ? new Date().toISOString() : null },
+      signal,
+    );
   },
   async softDeleteTodo(todoId, { signal }) {
     requireActive(signal);
@@ -131,17 +171,19 @@ const service: TodoService = {
   async reorderToday(localDate, orderedTodoIds, { signal }) {
     requireActive(signal);
     const eligibleIds = new Set(todayRows(localDate).map((todo) => todo.id));
-    if (eligibleIds.size !== orderedTodoIds.length ||
-      orderedTodoIds.some((todoId) => !eligibleIds.has(todoId))) {
+    if (
+      eligibleIds.size !== orderedTodoIds.length ||
+      orderedTodoIds.some((todoId) => !eligibleIds.has(todoId))
+    ) {
       throw new Error("Fixture reorder requires every currently eligible todo.");
     }
     // Validate the entire order before replacing any records, and retain ranks
     // in the fictional store so a controller refresh verifies persistence.
     const ranks = assignTodayRanks(orderedTodoIds);
     const updatedAt = new Date().toISOString();
-    todos = todos.map((todo) => ranks.has(todo.id)
-      ? { ...todo, todayRank: ranks.get(todo.id)!, updatedAt }
-      : todo);
+    todos = todos.map((todo) =>
+      ranks.has(todo.id) ? { ...todo, todayRank: ranks.get(todo.id)!, updatedAt } : todo,
+    );
     return orderedTodoIds.map((todoId) => ({ todoId, todayRank: ranks.get(todoId)! }));
   },
 };
@@ -149,16 +191,38 @@ const service: TodoService = {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <header className="qa-fixture-banner">
-      <p className="qa-fixture-note">Local QA fixture · fictional data · changes reset on reload · no account connection</p>
+      <p className="qa-fixture-note">
+        Local QA fixture · fictional data · changes reset on reload · no account connection
+      </p>
       <div className="qa-fixture-navigation">
         <nav aria-label="QA previews">
-          <a href={`/qa/todos-workspace.html${scenarioQuery}`} aria-current={!isTodayFixture ? "page" : undefined}>Todos</a>
-          <a href={`/qa/today-panel.html${scenarioQuery}`} aria-current={isTodayFixture ? "page" : undefined}>Today panel</a>
+          <a
+            href={`/qa/todos-workspace.html${scenarioQuery}`}
+            aria-current={!isTodayFixture ? "page" : undefined}
+          >
+            Todos
+          </a>
+          <a
+            href={`/qa/today-panel.html${scenarioQuery}`}
+            aria-current={isTodayFixture ? "page" : undefined}
+          >
+            Today panel
+          </a>
         </nav>
         <nav aria-label="QA scenarios">
           {["default", "empty", "dense", "error"].map((option) => (
-            <a key={option} href={`${fixturePath}?scenario=${option}`} aria-current={scenario === option ? "true" : undefined}>
-              {option === "default" ? "Default" : option === "empty" ? "Empty" : option === "dense" ? "Dense" : "Load error"}
+            <a
+              key={option}
+              href={`${fixturePath}?scenario=${option}`}
+              aria-current={scenario === option ? "true" : undefined}
+            >
+              {option === "default"
+                ? "Default"
+                : option === "empty"
+                  ? "Empty"
+                  : option === "dense"
+                    ? "Dense"
+                    : "Load error"}
             </a>
           ))}
         </nav>

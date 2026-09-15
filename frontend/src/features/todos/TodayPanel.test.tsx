@@ -4,25 +4,36 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeleteUndoToken, Profile, TodayTodo, Todo } from "../../types/domain";
 import { TodayPanel, type TodayPanelProps } from "./TodayPanel";
+import { WorkspaceContext, type WorkspaceStore } from "../../apps/workspaceStore";
 import type { TodoService } from "./todoService";
 
 const PROFILE: Profile = {
-  userId: "11111111-1111-4111-8111-111111111111", timezone: "America/New_York",
-  createdAt: "2026-09-01T12:00:00Z", updatedAt: "2026-09-01T12:00:00Z",
+  userId: "11111111-1111-4111-8111-111111111111",
+  timezone: "America/New_York",
+  createdAt: "2026-09-01T12:00:00Z",
+  updatedAt: "2026-09-01T12:00:00Z",
 };
 const PROJECT = { id: "44444444-4444-4444-8444-444444444444", title: "Launch" };
 const TODO: Todo = {
-  id: "22222222-2222-4222-8222-222222222222", text: "Send the brief",
-  completed: false, completedAt: null, dueDate: "2026-09-02", dueTime: "14:30:00.123456",
-  projectId: null, todayRank: null,
-  createdAt: "2026-09-01T14:00:00.000000Z", updatedAt: "2026-09-01T14:00:00.000000Z",
+  id: "22222222-2222-4222-8222-222222222222",
+  text: "Send the brief",
+  completed: false,
+  completedAt: null,
+  dueDate: "2026-09-02",
+  dueTime: "14:30:00.123456",
+  projectId: null,
+  todayRank: null,
+  createdAt: "2026-09-01T14:00:00.000000Z",
+  updatedAt: "2026-09-01T14:00:00.000000Z",
 };
 const CREATED_ID = "33333333-3333-4333-8333-333333333333";
 const TOKEN = "2026-09-03T19:00:00.123456Z" as DeleteUndoToken;
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((success) => { resolve = success; });
+  const promise = new Promise<T>((success) => {
+    resolve = success;
+  });
   return { promise, resolve };
 }
 
@@ -33,27 +44,47 @@ function fixture(overrides: Partial<TodoService> = {}) {
     const existing = rows.find((row) => row.id === id);
     if (!existing) throw new Error("Missing test row.");
     const saved = { ...existing, ...values };
-    rows = rows.map((row) => row.id === id ? saved : row);
+    rows = rows.map((row) => (row.id === id ? saved : row));
     return saved;
   }
   const service: TodoService = {
     loadWorkspace: vi.fn(async () => ({ profile: PROFILE, projects: [PROJECT], todos: rows })),
-    loadToday: vi.fn(async (date) => rows.flatMap((row): TodayTodo[] => (
-      !row.completed && row.dueDate !== null && row.dueDate <= date ? [{
-        ...row, completed: false, completedAt: null, dueDate: row.dueDate,
-        isOverdue: row.dueDate < date, isManuallyOrdered: row.todayRank !== null, projectTitle: null,
-      }] : []
-    ))),
+    loadToday: vi.fn(async (date) =>
+      rows.flatMap((row): TodayTodo[] =>
+        !row.completed && row.dueDate !== null && row.dueDate <= date
+          ? [
+              {
+                ...row,
+                completed: false,
+                completedAt: null,
+                dueDate: row.dueDate,
+                isOverdue: row.dueDate < date,
+                isManuallyOrdered: row.todayRank !== null,
+                projectTitle: null,
+              },
+            ]
+          : [],
+      ),
+    ),
     createTodo: vi.fn(async (input) => {
-      const saved = { ...TODO, ...input, id: CREATED_ID, dueDate: input.dueDate ?? null,
-        dueTime: input.dueTime ?? null, projectId: input.projectId ?? null };
+      const saved = {
+        ...TODO,
+        ...input,
+        id: CREATED_ID,
+        dueDate: input.dueDate ?? null,
+        dueTime: input.dueTime ?? null,
+        projectId: input.projectId ?? null,
+      };
       rows = [...rows, saved];
       return saved;
     }),
     updateTodoDetails: vi.fn(async (id, input) => update(id, input)),
-    setTodoCompleted: vi.fn(async (id, completed) => update(id, {
-      completed, completedAt: completed ? "2026-09-03T19:00:00Z" : null,
-    })),
+    setTodoCompleted: vi.fn(async (id, completed) =>
+      update(id, {
+        completed,
+        completedAt: completed ? "2026-09-03T19:00:00Z" : null,
+      }),
+    ),
     softDeleteTodo: vi.fn(async (id) => {
       deleted = rows.find((row) => row.id === id) ?? null;
       rows = rows.filter((row) => row.id !== id);
@@ -65,36 +96,81 @@ function fixture(overrides: Partial<TodoService> = {}) {
       deleted = null;
       return true;
     }),
-    reorderToday: vi.fn(async (_date: string, ids: readonly string[]) => ids.map((id, index) => {
-      update(id, { todayRank: index + 1 });
-      return { todoId: id, todayRank: index + 1 };
-    })),
+    reorderToday: vi.fn(async (_date: string, ids: readonly string[]) =>
+      ids.map((id, index) => {
+        update(id, { todayRank: index + 1 });
+        return { todoId: id, todayRank: index + 1 };
+      }),
+    ),
     ...overrides,
   };
-  return { service, replaceRows: (next: Todo[]) => { rows = next; } };
+  return {
+    service,
+    replaceRows: (next: Todo[]) => {
+      rows = next;
+    },
+  };
 }
 
+function store(revision: number): WorkspaceStore {
+  return {
+    profile: null,
+    profileError: false,
+    projects: [],
+    projectError: false,
+    revision,
+    invalidate: vi.fn(),
+    retryProfile: vi.fn(),
+    dialogs: { isOpen: () => false, register: () => () => undefined },
+  };
+}
 function props(service: TodoService, extra: Partial<TodayPanelProps> = {}): TodayPanelProps {
-  return { service, workspaceSessionKey: "account-a", profile: PROFILE, projects: [PROJECT], ...extra };
+  return {
+    service,
+    workspaceSessionKey: "account-a",
+    profile: PROFILE,
+    projects: [PROJECT],
+    ...extra,
+  };
 }
 
 async function ready() {
   await screen.findByRole("checkbox", { name: `Mark ${TODO.text} complete` });
 }
-function field(name: string) { return screen.getByLabelText(name) as HTMLInputElement; }
+function field(name: string) {
+  return screen.getByLabelText(name) as HTMLInputElement;
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-09-04T00:30:00Z"));
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe("TodayPanel", () => {
   it("shows only tomorrow's incomplete tasks, defaults creation to tomorrow, and preserves Today", async () => {
     const data = fixture();
     const tomorrow = { ...TODO, id: CREATED_ID, text: "Prepare tomorrow", dueDate: "2026-09-04" };
-    data.replaceRows([TODO, tomorrow, { ...tomorrow, id: "later", dueDate: "2026-09-05", text: "Later" },
-      { ...tomorrow, id: "done", text: "Already done", completed: true, completedAt: "2026-09-03T18:00:00Z" }]);
+    data.replaceRows([
+      TODO,
+      tomorrow,
+      {
+        ...tomorrow,
+        id: "55555555-5555-4555-8555-555555555555",
+        dueDate: "2026-09-05",
+        text: "Later",
+      },
+      {
+        ...tomorrow,
+        id: "66666666-6666-4666-8666-666666666666",
+        text: "Already done",
+        completed: true,
+        completedAt: "2026-09-03T18:00:00Z",
+      },
+    ]);
     render(<TodayPanel {...props(data.service, { allowTomorrow: true })} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: "Tomorrow" }));
@@ -109,13 +185,18 @@ describe("TodayPanel", () => {
     await ready();
     expect(screen.getAllByRole("checkbox")).toHaveLength(1);
     expect(data.service.loadToday).toHaveBeenCalledWith("2026-09-03", expect.anything());
-    expect(vi.mocked(data.service.loadToday).mock.calls.every(([date]) => date === "2026-09-03")).toBe(true);
+    expect(
+      vi.mocked(data.service.loadToday).mock.calls.every(([date]) => date === "2026-09-03"),
+    ).toBe(true);
     expect(data.service.reorderToday).not.toHaveBeenCalled();
   });
 
   it("moves an edited task between day views without changing its title or saved rank", async () => {
     const data = fixture();
-    data.replaceRows([TODO, { ...TODO, id: CREATED_ID, text: "Review Today", dueDate: "2026-09-04", todayRank: 2048 }]);
+    data.replaceRows([
+      TODO,
+      { ...TODO, id: CREATED_ID, text: "Review Today", dueDate: "2026-09-04", todayRank: 2048 },
+    ]);
     render(<TodayPanel {...props(data.service, { allowTomorrow: true })} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: "Tomorrow" }));
@@ -126,7 +207,11 @@ describe("TodayPanel", () => {
     expect(screen.getByText("Review Today updated.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Today" }));
     await screen.findByRole("checkbox", { name: "Mark Review Today complete" });
-    expect((await data.service.loadWorkspace({ signal: new AbortController().signal })).todos.find(todo => todo.id === CREATED_ID)?.todayRank).toBe(2048);
+    expect(
+      (await data.service.loadWorkspace({ signal: new AbortController().signal })).todos.find(
+        (todo) => todo.id === CREATED_ID,
+      )?.todayRank,
+    ).toBe(2048);
     expect(data.service.reorderToday).not.toHaveBeenCalled();
   });
 
@@ -139,14 +224,23 @@ describe("TodayPanel", () => {
     await waitFor(() => expect(data.service.loadWorkspace).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("button", { name: "Today" }));
     await ready();
-    await act(async () => pending.resolve({ profile: PROFILE, projects: [], todos: [{ ...TODO, text: "Late future task", dueDate: "2026-09-04" }] }));
+    await act(async () =>
+      pending.resolve({
+        profile: PROFILE,
+        projects: [],
+        todos: [{ ...TODO, text: "Late future task", dueDate: "2026-09-04" }],
+      }),
+    );
     expect(screen.queryByText("Late future task")).toBeNull();
     expect(screen.getByRole("button", { name: "Today" }).getAttribute("aria-pressed")).toBe("true");
   });
 
   it("keeps deletion Undo across day switches and supports completing Tomorrow tasks", async () => {
     const data = fixture();
-    data.replaceRows([TODO, { ...TODO, id: CREATED_ID, text: "Prepare tomorrow", dueDate: "2026-09-04" }]);
+    data.replaceRows([
+      TODO,
+      { ...TODO, id: CREATED_ID, text: "Prepare tomorrow", dueDate: "2026-09-04" },
+    ]);
     render(<TodayPanel {...props(data.service, { allowTomorrow: true })} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: "Tomorrow" }));
@@ -157,7 +251,9 @@ describe("TodayPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(screen.queryByRole("button", { name: "Undo" })).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Tomorrow" }));
-    fireEvent.click(await screen.findByRole("checkbox", { name: "Mark Prepare tomorrow complete" }));
+    fireEvent.click(
+      await screen.findByRole("checkbox", { name: "Mark Prepare tomorrow complete" }),
+    );
     await screen.findByText("Nothing is due tomorrow.");
     expect(data.service.restoreTodo).toHaveBeenCalledWith(CREATED_ID, TOKEN, expect.anything());
     expect(data.service.setTodoCompleted).toHaveBeenCalledWith(CREATED_ID, true, expect.anything());
@@ -169,7 +265,9 @@ describe("TodayPanel", () => {
     render(<TodayPanel {...props(service)} />);
     await ready();
     expect(service.loadWorkspace).not.toHaveBeenCalled();
-    expect(service.loadToday).toHaveBeenCalledWith("2026-09-03", { signal: expect.any(AbortSignal) });
+    expect(service.loadToday).toHaveBeenCalledWith("2026-09-03", {
+      signal: expect.any(AbortSignal),
+    });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     expect(field("Due date").value).toBe("2026-09-03");
     fireEvent.change(field("Task"), { target: { value: "New local task" } });
@@ -202,16 +300,26 @@ describe("TodayPanel", () => {
     fireEvent.change(field("Due date"), { target: { value: "2026-09-10" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(service.updateTodoDetails).toHaveBeenCalledWith(TODO.id, {
-      dueDate: "2026-09-10", dueTime: "14:30:00.123456",
-      text: TODO.text, projectId: TODO.projectId,
-    }, { signal: expect.any(AbortSignal) });
+    expect(service.updateTodoDetails).toHaveBeenCalledWith(
+      TODO.id,
+      {
+        dueDate: "2026-09-10",
+        dueTime: "14:30:00.123456",
+        text: TODO.text,
+        projectId: TODO.projectId,
+      },
+      { signal: expect.any(AbortSignal) },
+    );
     expect(screen.queryByRole("checkbox")).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Today tasks")));
   });
 
   it("retains a failed edit draft and does not expose provider details", async () => {
-    const { service } = fixture({ updateTodoDetails: vi.fn(async () => { throw new Error("private database response"); }) });
+    const { service } = fixture({
+      updateTodoDetails: vi.fn(async () => {
+        throw new Error("private database response");
+      }),
+    });
     render(<TodayPanel {...props(service)} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: `Edit ${TODO.text}` }));
@@ -222,15 +330,17 @@ describe("TodayPanel", () => {
     expect(document.body.textContent).not.toContain("private database response");
   });
 
-  it("deletes and reloads authoritative state on Undo", async () => {
+  it("deletes and restores the row locally on Undo", async () => {
     const { service } = fixture();
     render(<TodayPanel {...props(service)} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: `Delete ${TODO.text}` }));
     fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
     await ready();
-    expect(service.restoreTodo).toHaveBeenCalledWith(TODO.id, TOKEN, { signal: expect.any(AbortSignal) });
-    expect(service.loadToday).toHaveBeenCalledTimes(2);
+    expect(service.restoreTodo).toHaveBeenCalledWith(TODO.id, TOKEN, {
+      signal: expect.any(AbortSignal),
+    });
+    expect(service.loadToday).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   });
 
@@ -266,11 +376,19 @@ describe("TodayPanel", () => {
   it("queues external refresh behind deletion without losing its Undo token", async () => {
     const deletion = deferred<DeleteUndoToken>();
     const data = fixture({ softDeleteTodo: vi.fn(() => deletion.promise) });
-    const view = render(<TodayPanel {...props(data.service, { refreshKey: 0 })} />);
+    const view = render(
+      <WorkspaceContext.Provider value={store(0)}>
+        <TodayPanel {...props(data.service)} />
+      </WorkspaceContext.Provider>,
+    );
     await ready();
     fireEvent.click(screen.getByRole("button", { name: `Delete ${TODO.text}` }));
     const signal = vi.mocked(data.service.softDeleteTodo).mock.calls[0]![1].signal;
-    view.rerender(<TodayPanel {...props(data.service, { refreshKey: 1 })} />);
+    view.rerender(
+      <WorkspaceContext.Provider value={store(1)}>
+        <TodayPanel {...props(data.service)} />
+      </WorkspaceContext.Provider>,
+    );
     expect(data.service.loadToday).toHaveBeenCalledTimes(1);
     expect(signal.aborted).toBe(false);
     data.replaceRows([]);
@@ -280,7 +398,9 @@ describe("TodayPanel", () => {
   });
 
   it("reloads after a persisted create cannot reconcile, without duplicate retry", async () => {
-    const data = fixture({ createTodo: vi.fn(async () => ({ ...TODO, id: "malformed-response" })) });
+    const data = fixture({
+      createTodo: vi.fn(async () => ({ ...TODO, id: "malformed-response" })),
+    });
     render(<TodayPanel {...props(data.service)} />);
     await ready();
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));

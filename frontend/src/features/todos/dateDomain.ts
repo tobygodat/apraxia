@@ -12,16 +12,7 @@ export interface SqlDateParts {
   readonly day: number;
 }
 
-export interface WeekBounds {
-  readonly monday: SqlDate;
-  readonly sunday: SqlDate;
-}
-
-export type TodoDueDateClassification =
-  | "inbox"
-  | "overdue"
-  | "today"
-  | "future";
+export type TodoDueDateClassification = "inbox" | "overdue" | "today" | "future";
 
 function isLeapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
@@ -125,10 +116,7 @@ export function addSqlDateDays(value: string, days: number): SqlDate {
 }
 
 /** Return the date at `now` in an IANA timezone. */
-export function localToday(
-  timeZone: string,
-  now: Date = new Date(),
-): SqlDate {
+export function localToday(timeZone: string, now: Date = new Date()): SqlDate {
   if (!timeZone || timeZone !== timeZone.trim()) {
     throw new RangeError("Timezone must be a non-empty IANA timezone name.");
   }
@@ -170,11 +158,6 @@ export function startOfWeekMonday(value: string): SqlDate {
   return addSqlDateDays(value, -daysSinceMonday);
 }
 
-export function weekBounds(value: string): WeekBounds {
-  const monday = startOfWeekMonday(value);
-  return { monday, sunday: addSqlDateDays(monday, 6) };
-}
-
 function assertMonday(value: string): SqlDate {
   const date = asSqlDate(value);
   if (startOfWeekMonday(date) !== date) {
@@ -183,10 +166,7 @@ function assertMonday(value: string): SqlDate {
   return date;
 }
 
-export function shiftWeekMonday(
-  visibleWeekMonday: string,
-  offsetWeeks: number,
-): SqlDate {
+export function shiftWeekMonday(visibleWeekMonday: string, offsetWeeks: number): SqlDate {
   const monday = assertMonday(visibleWeekMonday);
   if (!Number.isSafeInteger(offsetWeeks)) {
     throw new RangeError("Week offset must be a safe integer.");
@@ -209,19 +189,14 @@ function inclusiveDateRange(start: string, end: string): SqlDate[] {
     throw new RangeError("Date range end must be on or after its start.");
   }
 
-  return Array.from({ length: dayCount + 1 }, (_, index) =>
-    addSqlDateDays(start, index),
-  );
+  return Array.from({ length: dayCount + 1 }, (_, index) => addSqlDateDays(start, index));
 }
 
 /**
  * Dates shown by the full Todos board. The current week starts at today;
  * every other selected week shows all seven Monday-through-Sunday dates.
  */
-export function visibleTodoWeekDates(
-  visibleWeekMonday: string,
-  today: string,
-): SqlDate[] {
+export function visibleTodoWeekDates(visibleWeekMonday: string, today: string): SqlDate[] {
   const monday = assertMonday(visibleWeekMonday);
   const validToday = asSqlDate(today);
   const currentWeekMonday = startOfWeekMonday(validToday);
@@ -241,13 +216,4 @@ export function classifyTodoDueDate(
   if (comparison < 0) return "overdue";
   if (comparison === 0) return "today";
   return "future";
-}
-
-/** Date-only portion of Today eligibility; completion/deletion are separate. */
-export function isDueDateTodayEligible(
-  dueDate: string | null | undefined,
-  today: string,
-): boolean {
-  const classification = classifyTodoDueDate(dueDate, today);
-  return classification === "overdue" || classification === "today";
 }

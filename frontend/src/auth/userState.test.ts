@@ -1,15 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  clearUserScopedState,
-  registerUserStateResetter,
-} from "./userState";
+import { clearUserScopedState, registerUserStateResetter } from "./userState";
 
 const unregisterAfterTest: Array<() => void> = [];
 
-function registerForTest(
-  ...parameters: Parameters<typeof registerUserStateResetter>
-): void {
+function registerForTest(...parameters: Parameters<typeof registerUserStateResetter>): void {
   unregisterAfterTest.push(registerUserStateResetter(...parameters));
 }
 
@@ -30,12 +25,7 @@ describe("user-scoped state cleanup", () => {
 
     expect(clearUserScopedState().ok).toBe(true);
 
-    expect(calls).toEqual([
-      "cancel first",
-      "cancel second",
-      "clear first",
-      "clear second",
-    ]);
+    expect(calls).toEqual(["cancel first", "cancel second", "clear first", "clear second"]);
   });
 
   it("supports idempotent unregistration", () => {
@@ -73,31 +63,33 @@ describe("user-scoped state cleanup", () => {
     const calls: string[] = [];
     const report = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    registerForTest(() => {
-      calls.push("failing cancel");
-      throw new Error("sensitive reset detail");
-    }, { phase: "cancel" });
+    registerForTest(
+      () => {
+        calls.push("failing cancel");
+        throw new Error("sensitive reset detail");
+      },
+      { phase: "cancel" },
+    );
     registerForTest(() => calls.push("remaining cancel"), { phase: "cancel" });
     registerForTest(() => calls.push("clear"));
 
     expect(clearUserScopedState().ok).toBe(false);
     expect(calls).toEqual(["failing cancel", "remaining cancel", "clear"]);
-    expect(report).toHaveBeenCalledWith(
-      "Failed to clear user-scoped application state.",
-    );
-    expect(report.mock.calls.flat().join(" ")).not.toContain(
-      "sensitive reset detail",
-    );
+    expect(report).toHaveBeenCalledWith("Failed to clear user-scoped application state.");
+    expect(report.mock.calls.flat().join(" ")).not.toContain("sensitive reset detail");
   });
 
   it("repeats cancellation and clearing together after a transient failure", () => {
     const calls: string[] = [];
     let cancelFails = true;
     vi.spyOn(console, "error").mockImplementation(() => {});
-    registerForTest(() => {
-      calls.push("cancel");
-      if (cancelFails) throw new Error("cancel failed");
-    }, { phase: "cancel" });
+    registerForTest(
+      () => {
+        calls.push("cancel");
+        if (cancelFails) throw new Error("cancel failed");
+      },
+      { phase: "cancel" },
+    );
     registerForTest(() => calls.push("clear"));
 
     const firstAttempt = clearUserScopedState();
@@ -125,9 +117,7 @@ describe("user-scoped state cleanup", () => {
 
     expect(clearUserScopedState().ok).toBe(false);
     await Promise.resolve();
-    expect(report).toHaveBeenCalledWith(
-      "Failed to clear user-scoped application state.",
-    );
+    expect(report).toHaveBeenCalledWith("Failed to clear user-scoped application state.");
   });
 
   it("ignores re-entrant cleanup but remains reusable for later transitions", () => {

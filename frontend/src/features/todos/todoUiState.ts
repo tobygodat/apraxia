@@ -1,18 +1,17 @@
-export type TodoLoadState =
-  | { readonly status: "idle" }
-  | { readonly status: "loading" }
-  | { readonly status: "error"; readonly kind: "load_failed" };
+/** The single home for task error copy shown by the board and the Today panel. */
+
+export type TodoLoadStatus = "idle" | "loading" | "ready" | "error";
 
 export type TodoMutationErrorKind =
   | "completion_failed"
   | "delete_failed"
-  | "update_failed";
+  | "update_failed"
+  | "reorder_failed"
+  | "reorder_too_large"
+  | "cancelled";
 
-export function todoLoadErrorCopy(kind: "load_failed"): string {
-  switch (kind) {
-    case "load_failed":
-      return "Tasks could not be loaded. Try again.";
-  }
+export function todoLoadErrorCopy(scope: "Tasks" | "Today" | "Tomorrow"): string {
+  return `${scope} could not be loaded. Try again.`;
 }
 
 export function todoMutationErrorCopy(kind: TodoMutationErrorKind): string {
@@ -23,5 +22,17 @@ export function todoMutationErrorCopy(kind: TodoMutationErrorKind): string {
       return "The task could not be deleted. Try again.";
     case "update_failed":
       return "The task changes were not saved. Your entered details can be retried.";
+    case "reorder_failed":
+      return "That order was not saved. The previous order was restored.";
+    case "reorder_too_large":
+      return "Today has too many tasks to reorder at once.";
+    case "cancelled":
+      return "The change was cancelled. Refresh to confirm its saved state.";
   }
 }
+
+export const TODO_UNDO_COPY = {
+  unavailable: "Undo is no longer available for this task.",
+  interrupted: "The restore was interrupted. Try Undo again.",
+  failed: "The task could not be restored. Try Undo again.",
+} as const;

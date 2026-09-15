@@ -6,15 +6,17 @@ import {
   type GoogleSignInEnvironment,
 } from "./googleSignIn";
 import { createProviderSafeStorage } from "./providerSafeStorage";
+import { ServiceError } from "../lib/serviceError";
 
 type OAuthResult = Awaited<ReturnType<SupabaseClient["auth"]["signInWithOAuth"]>>;
 const authorizationUrl =
   "https://project.supabase.co/auth/v1/authorize?provider=google&code_challenge=challenge&code_challenge_method=s256";
 
 function fixture() {
-  const signInWithOAuth = vi.fn<SupabaseClient["auth"]["signInWithOAuth"]>(
-    async () => ({ data: { provider: "google", url: authorizationUrl }, error: null }),
-  );
+  const signInWithOAuth = vi.fn<SupabaseClient["auth"]["signInWithOAuth"]>(async () => ({
+    data: { provider: "google", url: authorizationUrl },
+    error: null,
+  }));
   const environment: GoogleSignInEnvironment = {
     applicationOrigin: vi.fn(() => "https://orbit.example"),
     supabaseOrigin: vi.fn(() => "https://project.supabase.co"),
@@ -91,7 +93,7 @@ describe("Google application sign-in", () => {
       error: new AuthError("private-provider-token https://secret.example"),
     });
     const error = await fake.port.start(fake.controller.signal).catch((caught: unknown) => caught);
-    expect(error).toEqual(new Error(GOOGLE_SIGN_IN_ERROR));
+    expect(error).toEqual(new ServiceError("unavailable", GOOGLE_SIGN_IN_ERROR));
     expect(error).not.toHaveProperty("cause");
     expect(fake.environment.navigate).not.toHaveBeenCalled();
   });
@@ -116,7 +118,11 @@ describe("Google application sign-in", () => {
   it("does not navigate when cancelled while the SDK prepares its response", async () => {
     const fake = fixture();
     let resolve!: (result: OAuthResult) => void;
-    fake.signInWithOAuth.mockReturnValue(new Promise((next) => { resolve = next; }));
+    fake.signInWithOAuth.mockReturnValue(
+      new Promise((next) => {
+        resolve = next;
+      }),
+    );
     const pending = fake.port.start(fake.controller.signal);
     fake.controller.abort();
     resolve({ data: { provider: "google", url: authorizationUrl }, error: null });
@@ -127,7 +133,11 @@ describe("Google application sign-in", () => {
   it("ignores a late rejected SDK response after cancellation", async () => {
     const fake = fixture();
     let reject!: (reason: unknown) => void;
-    fake.signInWithOAuth.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    fake.signInWithOAuth.mockReturnValue(
+      new Promise((_resolve, next) => {
+        reject = next;
+      }),
+    );
     const pending = fake.port.start(fake.controller.signal);
     fake.controller.abort();
     reject(new Error("private late response"));
@@ -140,10 +150,14 @@ describe("Google application sign-in", () => {
     try {
       const fake = fixture();
       let resolve!: (result: OAuthResult) => void;
-      fake.signInWithOAuth.mockReturnValueOnce(new Promise((next) => { resolve = next; }));
+      fake.signInWithOAuth.mockReturnValueOnce(
+        new Promise((next) => {
+          resolve = next;
+        }),
+      );
       const pending = fake.port.start(fake.controller.signal).catch((error: unknown) => error);
       await vi.advanceTimersByTimeAsync(15_000);
-      expect(await pending).toEqual(new Error(GOOGLE_SIGN_IN_ERROR));
+      expect(await pending).toEqual(new ServiceError("unavailable", GOOGLE_SIGN_IN_ERROR));
       resolve({ data: { provider: "google", url: authorizationUrl }, error: null });
       await Promise.resolve();
       expect(fake.environment.navigate).not.toHaveBeenCalled();
@@ -168,7 +182,12 @@ describe("Google application sign-in", () => {
     const fake = fixture();
     const fetch = vi.fn<typeof globalThis.fetch>();
     const client = createClient("https://project.supabase.co", "public-test-key", {
-      auth: { flowType: "pkce", autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      auth: {
+        flowType: "pkce",
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
       global: { fetch },
     });
     try {
@@ -191,11 +210,15 @@ describe("Google application sign-in", () => {
   it("keeps the retry verifier when an older real-SDK digest finishes after timeout", async () => {
     vi.useFakeTimers();
     const stored = new Map<string, string>();
-    const writes = vi.fn((key: string, value: string) => { stored.set(key, value); });
+    const writes = vi.fn((key: string, value: string) => {
+      stored.set(key, value);
+    });
     const storage = createProviderSafeStorage({
       getItem: (key) => stored.get(key) ?? null,
       setItem: writes,
-      removeItem: (key) => { stored.delete(key); },
+      removeItem: (key) => {
+        stored.delete(key);
+      },
     });
     const fetch = vi.fn<typeof globalThis.fetch>();
     const client = createClient("https://project.supabase.co", "public-test-key", {
@@ -213,17 +236,21 @@ describe("Google application sign-in", () => {
     const digest = globalThis.crypto.subtle.digest.bind(globalThis.crypto.subtle);
     let releaseFirstDigest!: () => void;
     let reachedFirstDigest!: () => void;
-    const firstDigestGate = new Promise<void>((resolve) => { releaseFirstDigest = resolve; });
-    const firstDigestReached = new Promise<void>((resolve) => { reachedFirstDigest = resolve; });
+    const firstDigestGate = new Promise<void>((resolve) => {
+      releaseFirstDigest = resolve;
+    });
+    const firstDigestReached = new Promise<void>((resolve) => {
+      reachedFirstDigest = resolve;
+    });
     let first = true;
-    const digestSpy = vi.spyOn(globalThis.crypto.subtle, "digest").mockImplementation(
-      (algorithm, data) => {
+    const digestSpy = vi
+      .spyOn(globalThis.crypto.subtle, "digest")
+      .mockImplementation((algorithm, data) => {
         if (!first) return digest(algorithm, data);
         first = false;
         reachedFirstDigest();
         return firstDigestGate.then(() => digest(algorithm, data));
-      },
-    );
+      });
 
     try {
       const fake = fixture();
@@ -236,7 +263,7 @@ describe("Google application sign-in", () => {
       const firstVerifier = stored.get("pkce-order-test-code-verifier");
       expect(firstVerifier).toBeTruthy();
       await vi.advanceTimersByTimeAsync(15_000);
-      expect(await olderAttempt).toEqual(new Error(GOOGLE_SIGN_IN_ERROR));
+      expect(await olderAttempt).toEqual(new ServiceError("unavailable", GOOGLE_SIGN_IN_ERROR));
 
       await port.start(new AbortController().signal);
       const retryVerifier = stored.get("pkce-order-test-code-verifier");
@@ -247,7 +274,9 @@ describe("Google application sign-in", () => {
       const verifier: string = JSON.parse(retryVerifier!);
       const hashed = await digest("SHA-256", new TextEncoder().encode(verifier));
       const expectedChallenge = btoa(String.fromCharCode(...new Uint8Array(hashed)))
-        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
       expect(retryUrl.searchParams.get("code_challenge")).toBe(expectedChallenge);
 
       releaseFirstDigest();

@@ -1,43 +1,31 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useRef } from "react";
 import type { ProjectSummary, Todo } from "../../types/domain";
+import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
-import { addSqlDateDays, parseSqlDate } from "./dateDomain";
+import { addSqlDateDays } from "./dateDomain";
+import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
+import type { TodoAnnouncement, TodoMutationResult, TodoUndoNotice } from "./todoController";
 import {
   todoLoadErrorCopy,
   todoMutationErrorCopy,
-  type TodoLoadState,
+  type TodoLoadStatus,
   type TodoMutationErrorKind,
 } from "./todoUiState";
 import "./TodosBoard.css";
 
-export type TodosBoardLoadState = TodoLoadState;
-
-export interface TodoUndoNotice {
-  readonly todoId: string;
-  readonly todoText: string;
-  readonly pending?: boolean;
-  readonly error?: string | null;
-  readonly onUndo: () => void;
-  readonly onDismiss: () => void;
-}
-
-export interface TodoMutationResult {
-  /** Monotonically increasing for each settled mutation in the parent. */
-  readonly sequence: number;
-  readonly todoId: string;
-  readonly action: "complete" | "delete";
-  readonly status: "succeeded" | "failed" | "cancelled";
-}
-
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
-  readonly loadState?: TodosBoardLoadState;
+  readonly loadStatus?: TodoLoadStatus;
   readonly pendingTodoIds?: ReadonlySet<string>;
   readonly projects?: readonly ProjectSummary[];
   readonly mutationResult?: TodoMutationResult | null;
   readonly mutationError?: TodoMutationErrorKind | null;
   readonly undoNotice?: TodoUndoNotice | null;
+  /** Controller-issued live-region text for settled writes and Undo. */
+  readonly announcement?: TodoAnnouncement;
+  readonly onUndoDelete?: () => void;
+  readonly onDismissUndo?: () => void;
   readonly onPreviousWeek: () => void;
   readonly onNextWeek: () => void;
   readonly onToday: () => void;
@@ -55,72 +43,15 @@ interface FocusOwnership {
   focusOwner: HTMLElement | null;
 }
 
-function ArrowIcon({ direction }: { readonly direction: "left" | "right" }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 20 20">
-      <path
-        d={direction === "left" ? "m12.5 5-5 5 5 5" : "m7.5 5 5 5-5 5"}
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 20 20">
-      <path
-        d="M10 4v12M4 10h12"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 20 20">
-      <path
-        d="m5 5 10 10M15 5 5 15"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-const dateHeadingFormatter = new Intl.DateTimeFormat(undefined, {
+const HEADING_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
   weekday: "long",
-  timeZone: "UTC",
-});
-
-const weekRangeFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-});
-
-function dateAtUtcNoon(value: string): Date {
-  const { year, month, day } = parseSqlDate(value);
-  const date = new Date(0);
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCFullYear(year, month - 1, day);
-  return date;
-}
+};
+const RANGE_FORMAT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
 
 function formatDateHeading(value: string, today: string): string {
-  const formatted = dateHeadingFormatter.format(dateAtUtcNoon(value));
+  const formatted = formatTaskDate(value, HEADING_FORMAT);
   if (value === today) return `${formatted} · Today`;
   if (value === addSqlDateDays(today, 1)) return `${formatted} · Tomorrow`;
   return formatted;
@@ -133,16 +64,7 @@ function columnLabel(column: TodoBoardColumn, today: string): string {
 }
 
 function weekRangeLabel(monday: string): string {
-  const sunday = addSqlDateDays(monday, 6);
-  return `${weekRangeFormatter.format(dateAtUtcNoon(monday))} – ${weekRangeFormatter.format(dateAtUtcNoon(sunday))}`;
-}
-
-function dueTimeLabel(value: string): string {
-  const [hour = "00", minute = "00"] = value.split(":");
-  const numericHour = Number(hour);
-  const suffix = numericHour >= 12 ? "PM" : "AM";
-  const displayHour = numericHour % 12 || 12;
-  return `${displayHour}:${minute} ${suffix}`;
+  return `${formatTaskDate(monday, RANGE_FORMAT)} – ${formatTaskDate(addSqlDateDays(monday, 6), RANGE_FORMAT)}`;
 }
 
 function TodoCard({
@@ -191,12 +113,10 @@ function TodoCard({
         {showDueDate || todo.dueTime || projectTitle ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
-              <time dateTime={todo.dueDate}>
-                Due {weekRangeFormatter.format(dateAtUtcNoon(todo.dueDate))}
-              </time>
+              <time dateTime={todo.dueDate}>Due {formatTaskDate(todo.dueDate, RANGE_FORMAT)}</time>
             ) : null}
             {todo.dueTime ? (
-              <time dateTime={todo.dueTime}>{dueTimeLabel(todo.dueTime)}</time>
+              <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
             ) : null}
             {projectTitle ? <span>{projectTitle}</span> : null}
           </div>
@@ -229,12 +149,15 @@ function TodoCard({
 
 export function TodosBoard({
   model,
-  loadState = { status: "idle" },
+  loadStatus = "ready",
   pendingTodoIds = new Set<string>(),
   projects = [],
   mutationResult = null,
   mutationError = null,
   undoNotice = null,
+  announcement = { sequence: 0, message: "" },
+  onUndoDelete,
+  onDismissUndo,
   onPreviousWeek,
   onNextWeek,
   onToday,
@@ -245,37 +168,36 @@ export function TodosBoard({
   onDeleteTodo,
 }: TodosBoardProps) {
   const idBase = useId();
-  const focusRecoveryRef = useRef<{
-    readonly sourceTodoId: string;
-    readonly action: "complete" | "delete";
-    readonly sourceControlId: string;
-    readonly targetIds: readonly string[];
-    readonly announcement: string;
-    readonly resultSequenceAtStart: number;
-    sawPending: boolean;
-    fallbackFocused: boolean;
-    awaitingRollback: boolean;
-  } & FocusOwnership | null>(null);
-  const [mutationAnnouncement, setMutationAnnouncement] = useState({
-    sequence: 0,
-    message: "",
-  });
-  const undoActionRef = useRef<{
-    readonly kind: "restore" | "dismiss";
-    readonly todoId: string;
-    readonly todoText: string;
-  } & FocusOwnership | null>(null);
+  const focusRecoveryRef = useRef<
+    | ({
+        readonly sourceTodoId: string;
+        readonly action: "complete" | "delete";
+        readonly sourceControlId: string;
+        readonly targetIds: readonly string[];
+        readonly resultSequenceAtStart: number;
+        sawPending: boolean;
+        fallbackFocused: boolean;
+        awaitingRollback: boolean;
+      } & FocusOwnership)
+    | null
+  >(null);
+  const undoActionRef = useRef<
+    | ({
+        readonly kind: "restore" | "dismiss";
+        readonly todoId: string;
+      } & FocusOwnership)
+    | null
+  >(null);
   const boardRegionId = `${idBase}-task-region`;
-  const projectTitles = new Map(
-    projects.map((project) => [project.id, project.title] as const),
-  );
+  const projectTitles = new Map(projects.map((project) => [project.id, project.title] as const));
 
-  const todoControlId = (todoId: string) =>
-    `${idBase}-todo-${encodeURIComponent(todoId)}`;
+  const todoControlId = useCallback(
+    (todoId: string) => `${idBase}-todo-${encodeURIComponent(todoId)}`,
+    [idBase],
+  );
   const columnHeadingId = (columnKey: string) =>
     `${idBase}-column-${encodeURIComponent(columnKey)}`;
-  const columnAddId = (columnKey: string) =>
-    `${idBase}-add-${encodeURIComponent(columnKey)}`;
+  const columnAddId = (columnKey: string) => `${idBase}-add-${encodeURIComponent(columnKey)}`;
 
   useLayoutEffect(() => {
     const preserveNewerFocus = (event: FocusEvent) => {
@@ -308,12 +230,8 @@ export function TodosBoard({
     todo: Todo,
     action: "complete" | "delete",
   ) {
-    const adjacentTodo = [
-      column.todos[todoIndex + 1],
-      column.todos[todoIndex - 1],
-    ].find(
-      (candidate) =>
-        candidate !== undefined && !pendingTodoIds.has(candidate.id),
+    const adjacentTodo = [column.todos[todoIndex + 1], column.todos[todoIndex - 1]].find(
+      (candidate) => candidate !== undefined && !pendingTodoIds.has(candidate.id),
     );
     const targetIds = [
       adjacentTodo ? todoControlId(adjacentTodo.id) : null,
@@ -327,10 +245,6 @@ export function TodosBoard({
       action,
       sourceControlId: todoControlId(todo.id),
       targetIds,
-      announcement:
-        action === "delete"
-          ? `${todo.text} deleted. Undo is available.`
-          : `${todo.text} completed.`,
       resultSequenceAtStart: mutationResult?.sequence ?? -1,
       sawPending: false,
       fallbackFocused: false,
@@ -341,10 +255,7 @@ export function TodosBoard({
     };
   }
 
-  function focusFirstAvailable(
-    ownership: FocusOwnership,
-    targetIds: readonly string[],
-  ) {
+  function focusFirstAvailable(ownership: FocusOwnership, targetIds: readonly string[]) {
     const activeElement = document.activeElement;
     if (
       ownership.focusOwner === null ||
@@ -403,8 +314,7 @@ export function TodosBoard({
 
     if (
       hasNewMatchingSettlement &&
-      (mutationResult.status === "failed" ||
-        mutationResult.status === "cancelled")
+      (mutationResult.status === "failed" || mutationResult.status === "cancelled")
     ) {
       if (sourceExists) {
         focusFirstAvailable(recovery, [recovery.sourceControlId]);
@@ -423,21 +333,12 @@ export function TodosBoard({
       .flatMap((column) => column.todos)
       .find((todo) => todo.id === recovery.sourceTodoId);
     const successfulModelState =
-      !sourceExists ||
-      (recovery.action === "complete" && sourceTodo?.completed === true);
+      !sourceExists || (recovery.action === "complete" && sourceTodo?.completed === true);
 
-    if (
-      hasNewMatchingSettlement &&
-      mutationResult.status === "succeeded" &&
-      successfulModelState
-    ) {
+    if (hasNewMatchingSettlement && mutationResult.status === "succeeded" && successfulModelState) {
       if (!sourceExists && !recovery.fallbackFocused) {
         focusFirstAvailable(recovery, recovery.targetIds);
       }
-      setMutationAnnouncement((current) => ({
-        sequence: current.sequence + 1,
-        message: recovery.announcement,
-      }));
       focusRecoveryRef.current = null;
       return;
     }
@@ -470,17 +371,10 @@ export function TodosBoard({
       ...(undoAction.kind === "restore" ? [todoControlId(undoAction.todoId)] : []),
       boardRegionId,
     ]);
-    setMutationAnnouncement((current) => ({
-      sequence: current.sequence + 1,
-      message:
-        undoAction.kind === "restore"
-          ? `${undoAction.todoText} restored.`
-          : "Undo dismissed.",
-    }));
     undoActionRef.current = null;
-  }, [model, undoNotice]);
+  }, [boardRegionId, model, todoControlId, undoNotice]);
 
-  const navigationPending = loadState.status === "loading";
+  const navigationPending = loadStatus === "loading";
 
   return (
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
@@ -519,16 +413,16 @@ export function TodosBoard({
         </nav>
       </header>
 
-      {loadState.status === "error" ? (
+      {loadStatus === "error" ? (
         <div className="todos-board-error" role="alert">
-          <p>{todoLoadErrorCopy(loadState.kind)}</p>
+          <p>{todoLoadErrorCopy("Tasks")}</p>
           <button type="button" onClick={onRetry}>
             Try again
           </button>
         </div>
       ) : null}
 
-      {loadState.status === "loading" ? (
+      {loadStatus === "loading" ? (
         <p className="todos-board-status" role="status">
           Loading tasks…
         </p>
@@ -562,9 +456,7 @@ export function TodosBoard({
                   <h2 id={headingId} tabIndex={-1}>
                     {label}
                   </h2>
-                  <span aria-hidden="true">
-                    {column.todos.length}
-                  </span>
+                  <span aria-hidden="true">{column.todos.length}</span>
                   <span className="todos-board-sr-only">
                     {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
                   </span>
@@ -578,32 +470,20 @@ export function TodosBoard({
                       pending={pendingTodoIds.has(todo.id)}
                       primaryControlId={todoControlId(todo.id)}
                       projectTitle={
-                        todo.projectId
-                          ? (projectTitles.get(todo.projectId) ?? null)
-                          : null
+                        todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null
                       }
                       showDueDate={column.kind === "overdue"}
                       titleId={`${todoControlId(todo.id)}-title`}
                       onToggleComplete={(selectedTodo) => {
                         const started = onToggleComplete(selectedTodo);
                         if (started && !selectedTodo.completed) {
-                          prepareFocusRecovery(
-                            column,
-                            todoIndex,
-                            selectedTodo,
-                            "complete",
-                          );
+                          prepareFocusRecovery(column, todoIndex, selectedTodo, "complete");
                         }
                       }}
                       onEditTodo={onEditTodo}
                       onDeleteTodo={(selectedTodo) => {
                         if (onDeleteTodo(selectedTodo)) {
-                          prepareFocusRecovery(
-                            column,
-                            todoIndex,
-                            selectedTodo,
-                            "delete",
-                          );
+                          prepareFocusRecovery(column, todoIndex, selectedTodo, "delete");
                         }
                       }}
                     />
@@ -629,8 +509,8 @@ export function TodosBoard({
       </div>
 
       <p className="todos-board-sr-only" aria-live="polite" aria-atomic="true">
-        <span key={mutationAnnouncement.sequence}>
-          {mutationAnnouncement.message}
+        <span key={announcement.sequence}>
+          {mutationError || undoNotice?.error ? "" : announcement.message}
         </span>
       </p>
 
@@ -656,10 +536,9 @@ export function TodosBoard({
               undoActionRef.current = {
                 kind: "restore",
                 todoId: undoNotice.todoId,
-                todoText: undoNotice.todoText,
                 focusOwner: focusedElementWithin(event.currentTarget),
               };
-              undoNotice.onUndo();
+              onUndoDelete?.();
             }}
           >
             {undoNotice.pending ? "Restoring…" : "Undo"}
@@ -673,10 +552,9 @@ export function TodosBoard({
               undoActionRef.current = {
                 kind: "dismiss",
                 todoId: undoNotice.todoId,
-                todoText: undoNotice.todoText,
                 focusOwner: focusedElementWithin(event.currentTarget),
               };
-              undoNotice.onDismiss();
+              onDismissUndo?.();
             }}
             aria-label="Dismiss undo"
           >

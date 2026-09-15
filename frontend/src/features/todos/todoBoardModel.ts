@@ -8,7 +8,7 @@ import {
   visibleTodoWeekDates,
 } from "./dateDomain";
 
-export type TodoBoardColumnKind = "inbox" | "overdue" | "date";
+type TodoBoardColumnKind = "inbox" | "overdue" | "date";
 
 export interface TodoBoardColumn {
   readonly key: string;
@@ -79,9 +79,7 @@ export function buildTodoBoardModel(
       kind: "overdue",
       date: null,
       canAdd: false,
-      todos: [...overdue].sort((left, right) =>
-        compareSqlDates(left.dueDate!, right.dueDate!),
-      ),
+      todos: [...overdue].sort((left, right) => compareSqlDates(left.dueDate!, right.dueDate!)),
     },
     ...dates.map<TodoBoardColumn>((date) => ({
       key: date,

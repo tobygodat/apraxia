@@ -1,14 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { AuthChangeEvent, Session, SupabaseClient } from "@supabase/supabase-js";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 
@@ -105,13 +98,17 @@ describe("CloudApp Google sign-in", () => {
     expect(button.getAttribute("aria-busy")).toBe("true");
     expect(button.getAttribute("aria-describedby")).toBe("sign-in-progress");
     expect(screen.getByRole("status").textContent).toBe("Opening Google to sign in securely.");
-    await act(async () => { result.resolve(); await result.promise; });
+    await act(async () => {
+      result.resolve();
+      await result.promise;
+    });
     expect(button.hasAttribute("disabled")).toBe(true);
   });
 
   it("shows a sanitized recoverable failure and allows another attempt", async () => {
     const fake = signedOutClient();
-    const start = vi.fn<GoogleSignInPort["start"]>()
+    const start = vi
+      .fn<GoogleSignInPort["start"]>()
       .mockRejectedValueOnce(new Error("secret-provider-token personal@example.com"))
       .mockResolvedValue(undefined);
     render(
@@ -128,7 +125,9 @@ describe("CloudApp Google sign-in", () => {
     fireEvent.click(retry);
     await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByRole("button", { name: "Opening Google…" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Opening Google…" }).hasAttribute("disabled")).toBe(
+      true,
+    );
   });
 
   it("aborts an unfinished attempt when the app unmounts", async () => {
@@ -145,7 +144,10 @@ describe("CloudApp Google sign-in", () => {
     expect(signal.aborted).toBe(false);
     view.unmount();
     expect(signal.aborted).toBe(true);
-    await act(async () => { result.resolve(); await result.promise; });
+    await act(async () => {
+      result.resolve();
+      await result.promise;
+    });
   });
 
   it("allows retry after returning from Google through the browser page cache", async () => {
@@ -187,7 +189,10 @@ describe("CloudApp Google sign-in", () => {
     expect(oldPort.start.mock.calls[0][0].aborted).toBe(true);
     const button = await screen.findByRole("button", { name: "Continue with Google" });
     expect(button.hasAttribute("disabled")).toBe(false);
-    await act(async () => { oldResult.resolve(); await oldResult.promise; });
+    await act(async () => {
+      oldResult.resolve();
+      await oldResult.promise;
+    });
     expect(button.hasAttribute("disabled")).toBe(false);
     fireEvent.click(button);
     await waitFor(() => expect(nextPort.start).toHaveBeenCalledTimes(1));
@@ -196,7 +201,9 @@ describe("CloudApp Google sign-in", () => {
   it("aborts when a session arrives and ignores a late rejected sign-in response", async () => {
     const fake = signedOutClient();
     let reject!: (error: Error) => void;
-    const result = new Promise<void>((_resolve, nextReject) => { reject = nextReject; });
+    const result = new Promise<void>((_resolve, nextReject) => {
+      reject = nextReject;
+    });
     const start = vi.fn<GoogleSignInPort["start"]>(() => result);
     render(
       <BrowserRouter>
@@ -207,7 +214,10 @@ describe("CloudApp Google sign-in", () => {
     act(() => fake.emit("SIGNED_IN", session()));
     expect(await screen.findByRole("navigation", { name: "Primary navigation" })).toBeTruthy();
     expect(start.mock.calls[0][0].aborted).toBe(true);
-    await act(async () => { reject(new Error("private late error")); await result.catch(() => {}); });
+    await act(async () => {
+      reject(new Error("private late error"));
+      await result.catch(() => {});
+    });
     expect(screen.queryByText(GOOGLE_SIGN_IN_ERROR)).toBeNull();
     expect(screen.queryByRole("button", { name: "Continue with Google" })).toBeNull();
     expect(document.body.textContent).not.toContain("private late error");
@@ -246,7 +256,9 @@ describe("CloudApp sign-out accessibility", () => {
     const signOutButton = await screen.findByRole("button", { name: "sign out" });
     fireEvent.click(signOutButton);
 
-    const panel = screen.getByRole("navigation", { name: "Primary navigation" }).closest(".cloud-shell");
+    const panel = screen
+      .getByRole("navigation", { name: "Primary navigation" })
+      .closest(".cloud-shell");
     expect(panel?.getAttribute("aria-busy")).toBe("true");
     expect(signOutButton.hasAttribute("disabled")).toBe(true);
     expect(screen.getByRole("status").textContent).toContain(

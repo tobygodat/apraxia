@@ -1,12 +1,30 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it } from "vitest";
-import { act, cleanup, fireEvent as rawFireEvent, render, screen, within } from "@testing-library/react";
-import { ClassAssignmentsMock } from "./ClassAssignmentsMock";
+import {
+  act,
+  cleanup,
+  fireEvent as rawFireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import { ClassAssignmentsMock } from "../../qa/ClassAssignmentsMock";
 afterEach(cleanup);
-const fireEvent = Object.fromEntries(Object.entries(rawFireEvent).map(([key, fn]) => [key, async (...args: unknown[]) => {
-  await act(async () => { (fn as (...input: unknown[]) => void)(...args); });
-}])) as unknown as typeof rawFireEvent;
-async function mount() { await act(async () => { render(<ClassAssignmentsMock />); }); }
+const fireEvent = Object.fromEntries(
+  Object.entries(rawFireEvent).map(([key, fn]) => [
+    key,
+    async (...args: unknown[]) => {
+      await act(async () => {
+        (fn as (...input: unknown[]) => void)(...args);
+      });
+    },
+  ]),
+) as unknown as typeof rawFireEvent;
+async function mount() {
+  await act(async () => {
+    render(<ClassAssignmentsMock />);
+  });
+}
 
 async function chooseType(label: string, type: string) {
   await fireEvent.click(screen.getByRole("button", { name: label }));
@@ -47,11 +65,15 @@ it("supports keyboard navigation and dismissal without changing the saved type",
 it("closes the type list with Escape while retaining a new row's draft", async () => {
   await mount();
   await fireEvent.click(screen.getByRole("button", { name: "Add assignment" }));
-  await fireEvent.change(screen.getByLabelText("New assignment"), { target: { value: "Draft worksheet" } });
+  await fireEvent.change(screen.getByLabelText("New assignment"), {
+    target: { value: "Draft worksheet" },
+  });
   await fireEvent.click(screen.getByRole("button", { name: "New type" }));
   await fireEvent.keyDown(document.activeElement!, { key: "Escape" });
   expect(screen.queryByRole("listbox")).toBeNull();
-  expect((screen.getByLabelText("New assignment") as HTMLInputElement).value).toBe("Draft worksheet");
+  expect((screen.getByLabelText("New assignment") as HTMLInputElement).value).toBe(
+    "Draft worksheet",
+  );
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "New type" }));
   await fireEvent.keyDown(document.activeElement!, { key: "Escape" });
   expect(screen.queryByLabelText("New assignment")).toBeNull();
@@ -75,13 +97,18 @@ it("shows plain cells and cancels or commits edits without changing completion",
   expect(screen.getByRole("button", { name: "Edit title for Updated assignment" })).toBeTruthy();
   await fireEvent.click(screen.getByRole("checkbox", { name: "Mark Updated assignment done" }));
   await fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-  expect((screen.getByRole("checkbox", { name: "Mark Updated assignment done" }) as HTMLInputElement).checked).toBe(false);
+  expect(
+    (screen.getByRole("checkbox", { name: "Mark Updated assignment done" }) as HTMLInputElement)
+      .checked,
+  ).toBe(false);
 });
 it("keeps the draft first until Enter saves and Escape discards a new row", async () => {
   await mount();
   await fireEvent.click(screen.getByRole("button", { name: "Add assignment" }));
   expect(within(screen.getAllByRole("row")[1]).getByLabelText("New assignment")).toBeTruthy();
-  await fireEvent.change(screen.getByLabelText("New assignment"), { target: { value: "Read chapter 6" } });
+  await fireEvent.change(screen.getByLabelText("New assignment"), {
+    target: { value: "Read chapter 6" },
+  });
   await fireEvent.click(screen.getByLabelText("New due date"));
   await fireEvent.click(screen.getByRole("button", { name: "Today" }));
   await chooseType("New type", "Reading");
@@ -112,7 +139,9 @@ it("validates a blank name, keeps the draft first through tabbing, and preserves
   const next = screen.getByRole("checkbox", { name: "Mark Problem set 3 done" });
   await act(async () => next.focus());
   expect(document.activeElement).toBe(next);
-  expect(screen.getByRole("button", { name: "Edit type for New worksheet" }).textContent).toBe("Homework");
+  expect(screen.getByRole("button", { name: "Edit type for New worksheet" }).textContent).toBe(
+    "Homework",
+  );
   expect(screen.queryByRole("alert")).toBeNull();
   expect(screen.queryByLabelText("New assignment")).toBeNull();
 });
@@ -127,7 +156,11 @@ it("opens dates in one click, commits a choice immediately, and preserves focus 
   expect(date.textContent).toBe("—");
   expect(document.activeElement).toBe(date);
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(within(screen.getAllByRole("row")[4]).getByRole("button", { name: "Edit title for Problem set 4" })).toBeTruthy();
+  expect(
+    within(screen.getAllByRole("row")[4]).getByRole("button", {
+      name: "Edit title for Problem set 4",
+    }),
+  ).toBeTruthy();
 });
 
 it("retains invalid edits and lets Escape restore the complete original row", async () => {
@@ -140,8 +173,14 @@ it("retains invalid edits and lets Escape restore the complete original row", as
   await fireEvent.blur(name, { relatedTarget: other });
   await fireEvent.click(other);
   expect(screen.getByRole("alert").textContent).toBe("Name required");
-  expect((screen.getByLabelText("Edit title for Problem set 3") as HTMLInputElement).value).toBe("   ");
+  expect((screen.getByLabelText("Edit title for Problem set 3") as HTMLInputElement).value).toBe(
+    "   ",
+  );
   await fireEvent.keyDown(name, { key: "Escape" });
-  expect(screen.getByRole("button", { name: "Edit type for Problem set 3" }).textContent).toBe("Homework");
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Edit title for Problem set 3" }));
+  expect(screen.getByRole("button", { name: "Edit type for Problem set 3" }).textContent).toBe(
+    "Homework",
+  );
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Edit title for Problem set 3" }),
+  );
 });

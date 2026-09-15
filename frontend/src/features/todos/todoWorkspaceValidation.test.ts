@@ -80,10 +80,19 @@ describe("Todo workspace response validation", () => {
     ["missing profile", { ...SNAPSHOT, profile: null }],
     ["invalid profile owner", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, userId: "user-1" } }],
     ["invalid timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "Not/A_Zone" } }],
-    ["offset instead of IANA timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "+01:00" } }],
+    [
+      "offset instead of IANA timezone",
+      { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "+01:00" } },
+    ],
     ["whitespace timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "UTC\n" } }],
-    ["invalid profile timestamp", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, updatedAt: "yesterday" } }],
-    ["invalid project shape", { ...SNAPSHOT, projects: [{ ...SNAPSHOT.projects[0], title: null }] }],
+    [
+      "invalid profile timestamp",
+      { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, updatedAt: "yesterday" } },
+    ],
+    [
+      "invalid project shape",
+      { ...SNAPSHOT, projects: [{ ...SNAPSHOT.projects[0], title: null }] },
+    ],
     ["duplicate projects", { ...SNAPSHOT, projects: [...SNAPSHOT.projects, ...SNAPSHOT.projects] }],
     ["duplicate todos", { ...SNAPSHOT, todos: [TODO, TODO] }],
     ["non-array rows", { ...SNAPSHOT, todos: {} }],
@@ -112,7 +121,9 @@ describe("exact Todo temporal values", () => {
   it("compares equivalent SQL time forms but distinguishes microseconds", () => {
     const todo = { ...TODO, dueTime: "09:00:00.100000" };
     expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.1" })).toBe(true);
-    expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.100001" })).toBe(false);
+    expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.100001" })).toBe(
+      false,
+    );
     expect(todoMatchesDetails(todo, { dueTime: null })).toBe(false);
   });
 
@@ -125,8 +136,17 @@ describe("exact Todo temporal values", () => {
     expect(isDeleteUndoToken(value)).toBe(true);
   });
 
-  it.each([null, undefined, "", "not-a-timestamp", "2026-02-30T12:00:00Z", "2026-09-02T24:00:00Z", "2026-09-02T13:00:00.1234567Z", "2026-09-02T13:00:00Z\n", new Date()])(
-    "rejects an invalid Undo timestamp %j",
-    (value) => expect(isDeleteUndoToken(value)).toBe(false),
+  it.each([
+    null,
+    undefined,
+    "",
+    "not-a-timestamp",
+    "2026-02-30T12:00:00Z",
+    "2026-09-02T24:00:00Z",
+    "2026-09-02T13:00:00.1234567Z",
+    "2026-09-02T13:00:00Z\n",
+    new Date(),
+  ])("rejects an invalid Undo timestamp %j", (value) =>
+    expect(isDeleteUndoToken(value)).toBe(false),
   );
 });

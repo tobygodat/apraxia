@@ -2,12 +2,18 @@
 import { useState } from "react";
 import { afterEach, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { AssignmentDatePicker } from "../features/classes/AssignmentDatePicker";
+import { AssignmentDatePicker } from "./AssignmentDatePicker";
 
 afterEach(cleanup);
 function Example({ initial = "2026-09-13" }: { initial?: string }) {
   const [value, setValue] = useState(initial);
-  return <><AssignmentDatePicker label="Assignment date" value={value} onChange={setValue} /><button>Outside</button><output>{value}</output></>;
+  return (
+    <>
+      <AssignmentDatePicker label="Assignment date" value={value} onChange={setValue} />
+      <button>Outside</button>
+      <output>{value}</output>
+    </>
+  );
 }
 const trigger = () => screen.getByRole("button", { name: "Assignment date" });
 
@@ -16,7 +22,9 @@ it("shows month and day, opens the selected month in one click, and saves a date
   expect(trigger().textContent).toBe("Sep 13");
   fireEvent.click(trigger());
   expect(screen.getByText("Sep 2026")).toBeTruthy();
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Sunday, September 13, 2026" }));
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Sunday, September 13, 2026" }),
+  );
   fireEvent.click(screen.getByRole("button", { name: "Wednesday, September 16, 2026" }));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(trigger().textContent).toBe("Sep 16");
@@ -39,9 +47,13 @@ it("supports arrow navigation through leap day, Escape cancellation, and clearin
   render(<Example initial="2028-02-28" />);
   fireEvent.click(trigger());
   fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Tuesday, February 29, 2028" }));
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Tuesday, February 29, 2028" }),
+  );
   fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Wednesday, March 1, 2028" }));
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Wednesday, March 1, 2028" }),
+  );
   fireEvent.keyDown(document.activeElement!, { key: "Escape" });
   expect(trigger().textContent).toBe("Feb 28");
   expect(document.activeElement).toBe(trigger());

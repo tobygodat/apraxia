@@ -1,0 +1,212 @@
+/* Legacy FastAPI runtime only (VITE_ORBITOS_RUNTIME=legacy). Imported by LegacyApp.tsx;
+   the cloud app never loads these rules. */
+
+.center {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 14px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.navlink {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.navlink:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.navlink.active {
+  background: rgba(110, 168, 254, 0.15);
+  color: var(--accent);
+}
+
+.logout {
+  margin-top: auto;
+}
+
+.content {
+  padding: 32px 40px;
+  max-width: 820px;
+}
+
+.content--wide {
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+}
+
+.orbit-shell {
+  --orbit-bg: #161618;
+  --orbit-line: rgba(255, 255, 255, 0.08);
+  --orbit-text: rgba(255, 255, 255, 0.92);
+  --orbit-muted: rgba(255, 255, 255, 0.46);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--orbit-bg);
+  color: var(--orbit-text);
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.orbit-shell__header {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  min-height: 64px;
+  align-items: center;
+  gap: 28px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--orbit-line);
+  background: var(--orbit-bg);
+}
+
+.orbit-shell__wordmark,
+.orbit-shell__link,
+.orbit-shell__add,
+.orbit-shell__logout {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.orbit-shell__wordmark {
+  width: fit-content;
+  color: #ededed;
+  font-size: 18px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.orbit-shell__nav {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 24px;
+}
+
+.orbit-shell__link,
+.orbit-shell__add,
+.orbit-shell__logout {
+  color: var(--orbit-muted);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: color 160ms ease-out;
+}
+
+.orbit-shell__link:hover,
+.orbit-shell__link.active,
+.orbit-shell__add:hover,
+.orbit-shell__logout:hover {
+  color: var(--orbit-text);
+}
+
+.orbit-shell__link.active::before {
+  content: "• ";
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.orbit-shell__actions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 18px;
+}
+
+.orbit-shell__add {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.orbit-shell__add:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.orbit-shell__logout {
+  padding: 8px 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.orbit-shell__wordmark:focus-visible,
+.orbit-shell__link:focus-visible,
+.orbit-shell__add:focus-visible,
+.orbit-shell__logout:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 5px;
+}
+
+.orbit-shell__content {
+  min-width: 0;
+  min-height: calc(100vh - 64px);
+  flex: 1;
+}
+
+.orbit-shell__content > section:not(.todo-board-page):not(.home-page) {
+  width: min(960px, calc(100% - 72px));
+  margin: 0 auto;
+  padding: 48px 0 64px;
+}
+
+.collection-page__header {
+  margin-bottom: 36px;
+}
+
+.collection-page__header h1 {
+  margin-bottom: 8px;
+}
+
+.collection-page__header p {
+  color: var(--orbit-muted);
+}
+
+.collection-page__header p {
+  margin: 0;
+}
+
+.collection-page__groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.collection-page__groups > section {
+  min-width: 0;
+}

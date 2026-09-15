@@ -40,12 +40,19 @@ const INBOX: Todo = {
 };
 const PROJECT = { id: "44444444-4444-4444-8444-444444444444", title: "Launch" };
 const TOKEN = "2026-09-03T19:00:00.123456Z" as DeleteUndoToken;
-const SNAPSHOT: TodoWorkspaceSnapshot = { profile: PROFILE, projects: [PROJECT], todos: [TODO, INBOX] };
+const SNAPSHOT: TodoWorkspaceSnapshot = {
+  profile: PROFILE,
+  projects: [PROJECT],
+  todos: [TODO, INBOX],
+};
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
-  const promise = new Promise<T>((success, failure) => { resolve = success; reject = failure; });
+  const promise = new Promise<T>((success, failure) => {
+    resolve = success;
+    reject = failure;
+  });
   return { promise, resolve, reject };
 }
 
@@ -62,7 +69,10 @@ function createService(overrides: Partial<TodoService> = {}): TodoService {
     })),
     updateTodoDetails: vi.fn(async (id, input) => ({ ...TODO, id, ...input })),
     setTodoCompleted: vi.fn(async (id, completed) => ({
-      ...TODO, id, completed, completedAt: completed ? "2026-09-03T19:00:00Z" : null,
+      ...TODO,
+      id,
+      completed,
+      completedAt: completed ? "2026-09-03T19:00:00Z" : null,
     })),
     softDeleteTodo: vi.fn(async () => TOKEN),
     restoreTodo: vi.fn(async () => true),
@@ -91,29 +101,39 @@ beforeEach(() => {
   // It is already Friday in UTC, but still Thursday in the profile timezone.
   vi.setSystemTime(new Date("2026-09-04T00:30:00Z"));
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe("TodosWorkspace", () => {
   it("keeps account controls available during loading and derives dates from the loaded profile", async () => {
     const loading = deferred<TodoWorkspaceSnapshot>();
     mount(createService({ loadWorkspace: vi.fn(() => loading.promise) }));
-    expect(screen.getByText("Loading your todos…")).toBeTruthy();
-    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("Loading your tasks…")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     expect(screen.getByRole("button", { name: "account" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Inbox" })).toBeNull();
 
     await act(async () => loading.resolve(SNAPSHOT));
     expect(screen.getByRole("heading", { name: /Thursday, Sep 3.*Today/ })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Overdue" })).getByText(TODO.text)).toBeTruthy();
-    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      within(screen.getByRole("region", { name: "Overdue" })).getByText(TODO.text),
+    ).toBeTruthy();
+    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it("shows only owned load-error copy and supports retry", async () => {
-    const loadWorkspace = vi.fn<TodoService["loadWorkspace"]>()
+    const loadWorkspace = vi
+      .fn<TodoService["loadWorkspace"]>()
       .mockRejectedValueOnce(new Error("private provider response"))
       .mockResolvedValueOnce(SNAPSHOT);
     mount(createService({ loadWorkspace }));
-    expect(await screen.findByText("Couldn’t load your todos. Try again.")).toBeTruthy();
+    expect(await screen.findByText("Tasks could not be loaded. Try again.")).toBeTruthy();
     expect(document.body.textContent).not.toContain("private provider response");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("article", { name: TODO.text })).toBeTruthy();
@@ -126,10 +146,14 @@ describe("TodosWorkspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: `Delete ${INBOX.text}` }));
     const undo = await screen.findByRole("button", { name: "Undo" });
     fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Task" }), { target: { value: "New draft" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
+      target: { value: "New draft" },
+    });
     fireEvent.change(screen.getByLabelText("Due date"), { target: { value: "2026-09-03" } });
     fireEvent.change(screen.getByLabelText("Due time"), { target: { value: "09:30" } });
-    fireEvent.change(screen.getByRole("combobox", { name: "Project" }), { target: { value: PROJECT.id } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Project" }), {
+      target: { value: PROJECT.id },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     expect(await screen.findByRole("article", { name: "New draft" })).toBeTruthy();
@@ -138,7 +162,11 @@ describe("TodosWorkspace", () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBe(undo);
     fireEvent.click(undo);
     expect(await screen.findByRole("article", { name: INBOX.text })).toBeTruthy();
-    expect(service.restoreTodo).toHaveBeenCalledWith(INBOX.id, TOKEN, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(service.restoreTodo).toHaveBeenCalledWith(
+      INBOX.id,
+      TOKEN,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("connects contextual Inbox Add and navigable full weeks to the same form", async () => {
@@ -158,11 +186,17 @@ describe("TodosWorkspace", () => {
   it("completes an overdue todo without rolling its stored due date forward", async () => {
     const service = createService();
     mount(service);
-    const completion = await screen.findByRole("checkbox", { name: `Mark as complete ${TODO.text}` });
+    const completion = await screen.findByRole("checkbox", {
+      name: `Mark as complete ${TODO.text}`,
+    });
     completion.focus();
     fireEvent.click(completion);
     await waitFor(() => expect(screen.queryByRole("article", { name: TODO.text })).toBeNull());
-    expect(service.setTodoCompleted).toHaveBeenCalledWith(TODO.id, true, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(service.setTodoCompleted).toHaveBeenCalledWith(
+      TODO.id,
+      true,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
     expect(screen.queryByRole("article", { name: TODO.text })).toBeNull();
@@ -172,25 +206,46 @@ describe("TodosWorkspace", () => {
     const service = createService();
     mount(service);
     fireEvent.click(await screen.findByRole("button", { name: `Edit ${TODO.text}` }));
-    expect((screen.getByRole("textbox", { name: "Task" }) as HTMLInputElement).value).toBe(TODO.text);
-    fireEvent.change(screen.getByRole("textbox", { name: "Task" }), { target: { value: "Updated brief" } });
+    expect((screen.getByRole("textbox", { name: "Task" }) as HTMLInputElement).value).toBe(
+      TODO.text,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Task" }), {
+      target: { value: "Updated brief" },
+    });
     fireEvent.change(screen.getByLabelText("Due time"), { target: { value: "" } });
     fireEvent.change(screen.getByLabelText("Due date"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(service.updateTodoDetails).toHaveBeenCalledWith(TODO.id, {
-      text: "Updated brief", dueDate: null, dueTime: null, projectId: null,
-    }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
-    expect(within(screen.getByRole("region", { name: "Inbox" })).getByRole("article", { name: "Updated brief" })).toBeTruthy();
+    expect(service.updateTodoDetails).toHaveBeenCalledWith(
+      TODO.id,
+      {
+        text: "Updated brief",
+        dueDate: null,
+        dueTime: null,
+        projectId: null,
+      },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Inbox" })).getByRole("article", {
+        name: "Updated brief",
+      }),
+    ).toBeTruthy();
   });
 
   it("fails closed if a provider returns another profile", async () => {
-    mount(createService({ loadWorkspace: vi.fn(async () => ({
-      ...SNAPSHOT,
-      profile: { ...PROFILE, userId: "66666666-6666-4666-8666-666666666666" },
-    })) }));
-    expect(await screen.findByText("Couldn’t load your todos. Try again.")).toBeTruthy();
+    mount(
+      createService({
+        loadWorkspace: vi.fn(async () => ({
+          ...SNAPSHOT,
+          profile: { ...PROFILE, userId: "66666666-6666-4666-8666-666666666666" },
+        })),
+      }),
+    );
+    expect(await screen.findByText("Tasks could not be loaded. Try again.")).toBeTruthy();
     expect(screen.queryByText(TODO.text)).toBeNull();
-    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 });

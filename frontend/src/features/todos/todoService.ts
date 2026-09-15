@@ -61,9 +61,7 @@ type TodoScheduleUpdate =
  * A details update must name a field and cannot create a time-without-date
  * state at the provider boundary.
  */
-export type UpdateTodoDetailsInput =
-  | TodoTextOrProjectUpdate
-  | TodoScheduleUpdate;
+export type UpdateTodoDetailsInput = TodoTextOrProjectUpdate | TodoScheduleUpdate;
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;
@@ -78,10 +76,7 @@ export interface TodayRankUpdate {
 export interface TodoService {
   loadWorkspace(options: TodoRequestOptions): Promise<TodoWorkspaceSnapshot>;
 
-  createTodo(
-    input: NewTodoInput,
-    options: TodoRequestOptions,
-  ): Promise<Todo>;
+  createTodo(input: NewTodoInput, options: TodoRequestOptions): Promise<Todo>;
 
   updateTodoDetails(
     todoId: UUID,
@@ -89,16 +84,9 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<Todo>;
 
-  setTodoCompleted(
-    todoId: UUID,
-    completed: boolean,
-    options: TodoRequestOptions,
-  ): Promise<Todo>;
+  setTodoCompleted(todoId: UUID, completed: boolean, options: TodoRequestOptions): Promise<Todo>;
 
-  softDeleteTodo(
-    todoId: UUID,
-    options: TodoRequestOptions,
-  ): Promise<DeleteUndoToken>;
+  softDeleteTodo(todoId: UUID, options: TodoRequestOptions): Promise<DeleteUndoToken>;
 
   restoreTodo(
     todoId: UUID,
@@ -106,10 +94,7 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<boolean>;
 
-  loadToday(
-    localDate: LocalDate,
-    options: TodoRequestOptions,
-  ): Promise<readonly TodayTodo[]>;
+  loadToday(localDate: LocalDate, options: TodoRequestOptions): Promise<readonly TodayTodo[]>;
 
   /** The complete eligible ID list is required for the atomic reorder RPC. */
   reorderToday(

@@ -6,10 +6,7 @@ describe("createViteConfig", () => {
   it.each([
     [{}, undefined],
     [{ VITE_ORBITOS_RUNTIME: "cloud" }, undefined],
-    [
-      { VITE_ORBITOS_RUNTIME: "cloud", ORBITOS_CLOUD_DEV: "1" },
-      undefined,
-    ],
+    [{ VITE_ORBITOS_RUNTIME: "cloud", ORBITOS_CLOUD_DEV: "1" }, undefined],
     [
       { VITE_ORBITOS_RUNTIME: "legacy", ORBITOS_CLOUD_DEV: "0" },
       { "/api": "http://127.0.0.1:8000" },
@@ -28,8 +25,8 @@ describe("createViteConfig", () => {
   });
 
   it("fails closed for an invalid runtime instead of guessing a proxy mode", () => {
-    expect(() =>
-      createViteConfig({ VITE_ORBITOS_RUNTIME: "old-api" }),
-    ).toThrow(/either cloud or legacy/);
+    expect(() => createViteConfig({ VITE_ORBITOS_RUNTIME: "old-api" })).toThrow(
+      /either cloud or legacy/,
+    );
   });
 });

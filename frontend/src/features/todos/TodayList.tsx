@@ -1,42 +1,29 @@
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
+import { useCallback, useId, useLayoutEffect, useRef, useState, type DragEvent } from "react";
 import type { TodayTodo, UUID } from "../../types/domain";
-import { parseSqlDate } from "./dateDomain";
-import type { TodayListControllerState } from "./todayListController";
+import { isDocumentFocus } from "../../components/dialog/Dialog";
+import { DragIcon, PlusIcon } from "../../components/icons";
+import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodayDropPlacement } from "./todayListModel";
 import type { MoveDirection } from "./todayOrder";
-import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import type { TodayListDay, TodayListViewState } from "./todoViews";
 import "./TodayList.css";
-
-export type TodayListReturnFocus = () => void;
 
 export interface TodayListProps {
   readonly heading?: string;
-  readonly day?: "Today" | "Tomorrow";
-  readonly onDayChange?: (day: "Today" | "Tomorrow") => void;
-  readonly state: TodayListControllerState;
+  readonly day?: TodayListDay;
+  readonly onDayChange?: (day: TodayListDay) => void;
+  readonly state: TodayListViewState;
   readonly onRetry: () => void;
   readonly onAddTodo: () => void;
   readonly onCompleteTodo: (todoId: UUID) => void;
-  /** Call returnFocus after the edit surface closes, if it does not restore focus itself. */
-  readonly onEditTodo: (
-    todo: TodayTodo,
-    returnFocus?: TodayListReturnFocus,
-  ) => void;
+  /** The edit surface restores focus itself (see Dialog). */
+  readonly onEditTodo: (todo: TodayTodo) => void;
   readonly onDeleteTodo: (todo: TodayTodo) => void;
   readonly onUndoDelete: () => void;
   readonly onDismissUndo: () => void;
   readonly onMoveTodo: (todoId: UUID, direction: MoveDirection) => void;
-  readonly onPlaceTodo: (
-    todoId: UUID,
-    targetTodoId: UUID,
-    placement: TodayDropPlacement,
-  ) => void;
+  readonly onPlaceTodo: (todoId: UUID, targetTodoId: UUID, placement: TodayDropPlacement) => void;
 }
 
 interface DragTarget {
@@ -52,68 +39,9 @@ interface MutationFocusRecovery {
   ownedFocus: HTMLElement;
 }
 
-interface SurfaceFocusRecovery {
-  readonly sourceControl: HTMLElement;
-  surface: Element | null;
-}
-
-function isDocumentFocus(element: Element | null): boolean {
-  return element === null || element === document.body || element === document.documentElement;
-}
-
-const dueDateFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  weekday: "short",
-  timeZone: "UTC",
-});
-
-function dateAtUtcNoon(value: string): Date {
-  const { year, month, day } = parseSqlDate(value);
-  const date = new Date(0);
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCFullYear(year, month - 1, day);
-  return date;
-}
-
-function dueDateLabel(todo: TodayTodo, day: "Today" | "Tomorrow"): string {
+function dueDateLabel(todo: TodayTodo, day: TodayListDay): string {
   const prefix = todo.isOverdue ? "Overdue" : `Due ${day.toLowerCase()}`;
-  return `${prefix} · ${dueDateFormatter.format(dateAtUtcNoon(todo.dueDate))}`;
-}
-
-function dueTimeLabel(value: string): string {
-  const [hour = "00", minute = "00"] = value.split(":");
-  const numericHour = Number(hour);
-  const suffix = numericHour >= 12 ? "PM" : "AM";
-  return `${numericHour % 12 || 12}:${minute} ${suffix}`;
-}
-
-function PlusIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 20 20">
-      <path
-        d="M10 4v12M4 10h12"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function DragIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 16 20">
-      <path
-        d="M5 5h.01M11 5h.01M5 10h.01M11 10h.01M5 15h.01M11 15h.01"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2.4"
-      />
-    </svg>
-  );
+  return `${prefix} · ${formatTaskDate(todo.dueDate)}`;
 }
 
 export function TodayList({
@@ -135,11 +63,9 @@ export function TodayList({
   const draggedTodoIdRef = useRef<UUID | null>(null);
   const dragTargetRef = useRef<DragTarget | null>(null);
   const mutationFocusRef = useRef<MutationFocusRecovery | null>(null);
-  const surfaceFocusRef = useRef<SurfaceFocusRecovery | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget | null>(null);
   const { model } = state;
-  const listLocked =
-    state.loadStatus !== "ready" || state.pendingMutation !== null;
+  const listLocked = state.loadStatus !== "ready" || state.pendingMutation !== null;
   const reorderLocked = listLocked || day === "Tomorrow";
   const scrollId = `${idBase}-scroll`;
   const addTodoId = `${idBase}-add`;
@@ -148,8 +74,10 @@ export function TodayList({
   const undoSummaryId = `${idBase}-undo-summary`;
   const undoLocked = state.pendingMutation !== null || Boolean(state.undoNotice?.pending);
   const deleteLocked = listLocked || state.undoNotice !== null;
-  const completeControlId = (todoId: UUID) =>
-    `${idBase}-complete-${encodeURIComponent(todoId)}`;
+  const completeControlId = useCallback(
+    (todoId: UUID) => `${idBase}-complete-${encodeURIComponent(todoId)}`,
+    [idBase],
+  );
 
   useLayoutEffect(() => {
     const trackNewFocus = (event: FocusEvent) => {
@@ -157,21 +85,11 @@ export function TodayList({
       if (!(target instanceof HTMLElement) || isDocumentFocus(target)) return;
       const mutation = mutationFocusRef.current;
       if (mutation && target !== mutation.ownedFocus) mutationFocusRef.current = null;
-
-      const surface = surfaceFocusRef.current;
-      if (!surface || target === surface.sourceControl) return;
-      const dialog = target.closest('[role="dialog"], dialog');
-      if (dialog && (surface.surface === null || surface.surface === dialog)) {
-        surface.surface = dialog;
-      } else {
-        surfaceFocusRef.current = null;
-      }
     };
     document.addEventListener("focusin", trackNewFocus);
     return () => {
       document.removeEventListener("focusin", trackNewFocus);
       mutationFocusRef.current = null;
-      surfaceFocusRef.current = null;
     };
   }, []);
 
@@ -208,7 +126,8 @@ export function TodayList({
       return;
     }
 
-    const mutationPending = state.pendingMutation?.kind === recovery.kind &&
+    const mutationPending =
+      state.pendingMutation?.kind === recovery.kind &&
       state.pendingMutation.todoId === recovery.sourceTodoId;
     if (sourceStillVisible) {
       if (!mutationPending && state.mutationError) focusControl([recovery.sourceControlId]);
@@ -222,8 +141,16 @@ export function TodayList({
     }
     focusControl([...recovery.targetTodoIds.map(completeControlId), addTodoId]);
     mutationFocusRef.current = null;
-  }, [addTodoId, model.todos, scrollId, state.loadStatus, state.mutationError,
-    state.pendingMutation, state.undoNotice]);
+  }, [
+    addTodoId,
+    completeControlId,
+    model.todos,
+    scrollId,
+    state.loadStatus,
+    state.mutationError,
+    state.pendingMutation,
+    state.undoNotice,
+  ]);
 
   function prepareMutationFocus(
     kind: MutationFocusRecovery["kind"],
@@ -233,9 +160,12 @@ export function TodayList({
   ) {
     const source = document.getElementById(sourceControlId);
     const active = document.activeElement;
-    mutationFocusRef.current = source && active instanceof HTMLElement && (
-      active === source || Boolean(source.closest("article")?.contains(active))
-    ) ? { kind, sourceTodoId: todoId, sourceControlId, targetTodoIds, ownedFocus: active } : null;
+    mutationFocusRef.current =
+      source &&
+      active instanceof HTMLElement &&
+      (active === source || Boolean(source.closest("article")?.contains(active)))
+        ? { kind, sourceTodoId: todoId, sourceControlId, targetTodoIds, ownedFocus: active }
+        : null;
   }
 
   function resetDrag() {
@@ -244,10 +174,7 @@ export function TodayList({
     setDragTarget(null);
   }
 
-  function handleDragOver(
-    event: DragEvent<HTMLElement>,
-    targetTodoId: UUID,
-  ) {
+  function handleDragOver(event: DragEvent<HTMLElement>, targetTodoId: UUID) {
     if (reorderLocked || draggedTodoIdRef.current === null) return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -263,65 +190,28 @@ export function TodayList({
     event.preventDefault();
     const todoId = draggedTodoIdRef.current;
     const placement =
-      dragTargetRef.current?.todoId === targetTodoId
-        ? dragTargetRef.current.placement
-        : "before";
+      dragTargetRef.current?.todoId === targetTodoId ? dragTargetRef.current.placement : "before";
     resetDrag();
     if (!reorderLocked && todoId && todoId !== targetTodoId) {
       onPlaceTodo(todoId, targetTodoId, placement);
     }
   }
 
-  function createReturnFocus(
-    todoIndex: number,
-    sourceControlId: string,
-  ): TodayListReturnFocus {
-    const adjacentTodoIds = [
-      model.todos[todoIndex + 1]?.id,
-      model.todos[todoIndex - 1]?.id,
-    ].filter((todoId): todoId is UUID => Boolean(todoId));
-    const sourceControl = document.getElementById(sourceControlId);
-    const active = document.activeElement;
-    const recovery = sourceControl && active instanceof HTMLElement && (
-      active === sourceControl || Boolean(sourceControl.closest("article")?.contains(active))
-    ) ? { sourceControl, surface: null } : null;
-    surfaceFocusRef.current = recovery;
-
-    return () => {
-      if (!recovery || surfaceFocusRef.current !== recovery) return;
-      const active = document.activeElement;
-      // The closing surface owns its own focus until it has unmounted. Newer
-      // interaction outside that surface permanently cancels this recovery.
-      if (!isDocumentFocus(active) && active !== recovery.sourceControl) return;
-      surfaceFocusRef.current = null;
-      const currentSource = document.getElementById(sourceControlId);
-      if (currentSource) {
-        currentSource.focus();
-        return;
-      }
-
-      const adjacentControl = adjacentTodoIds
-        .map((todoId) => document.getElementById(completeControlId(todoId)))
-        .find((element) => element !== null);
-      (adjacentControl ?? document.getElementById(addTodoId))?.focus();
-    };
-  }
-
   return (
     <section
       className="today-list"
       aria-labelledby={`${idBase}-heading`}
-      aria-busy={
-        state.loadStatus === "loading" || state.pendingMutation !== null || undefined
-      }
+      aria-busy={state.loadStatus === "loading" || state.pendingMutation !== null || undefined}
     >
       <header className="today-list__header">
         <div>
           <h2 id={`${idBase}-heading`}>{heading}</h2>
           <p id={`${idBase}-summary`}>
-            {day === "Tomorrow" ? `${model.todos.length} due tomorrow` : model.todos.length === 0
-              ? "Tasks due today and overdue"
-              : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
+            {day === "Tomorrow"
+              ? `${model.todos.length} due tomorrow`
+              : model.todos.length === 0
+                ? "Tasks due today and overdue"
+                : `${model.overdueCount} overdue · ${model.dueTodayCount} due today`}
           </p>
         </div>
         <button
@@ -336,12 +226,21 @@ export function TodayList({
           <PlusIcon />
           Add task
         </button>
-        {onDayChange && <div className="today-list__day-switch" role="group" aria-label="Task day">
-          {(["Today", "Tomorrow"] as const).map(option => <button
-            key={option} type="button" aria-pressed={day === option}
-            disabled={state.pendingMutation !== null}
-            onClick={() => onDayChange(option)}>{option}</button>)}
-        </div>}
+        {onDayChange && (
+          <div className="today-list__day-switch" role="group" aria-label="Task day">
+            {(["Today", "Tomorrow"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={day === option}
+                disabled={state.pendingMutation !== null}
+                onClick={() => onDayChange(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {state.undoNotice ? (
@@ -406,9 +305,7 @@ export function TodayList({
               const rowClassName = [
                 "today-list-item",
                 todo.isOverdue ? "today-list-item--overdue" : "",
-                isDragTarget
-                  ? `today-list-item--drop-${dragTarget.placement}`
-                  : "",
+                isDragTarget ? `today-list-item--drop-${dragTarget.placement}` : "",
               ]
                 .filter(Boolean)
                 .join(" ");
@@ -435,14 +332,30 @@ export function TodayList({
                   onDragEnd={resetDrag}
                 >
                   <article aria-labelledby={titleId} aria-busy={isPending || undefined}>
-                    {day === "Today" ? <span className="today-list-item__drag" role="button" tabIndex={0} aria-label={`Reorder ${todo.text}`} aria-disabled={listLocked || undefined} title="Drag to reorder, or use Up and Down arrow keys" onKeyDown={event => {
-                      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-                      event.preventDefault();
-                      const direction = event.key === "ArrowUp" ? "up" : "down";
-                      if (!listLocked && (direction === "up" ? index > 0 : index < model.todos.length - 1)) onMoveTodo(todo.id, direction);
-                    }}>
-                      <DragIcon />
-                    </span> : <span aria-hidden="true" />}
+                    {day === "Today" ? (
+                      <span
+                        className="today-list-item__drag"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Reorder ${todo.text}`}
+                        aria-disabled={listLocked || undefined}
+                        title="Drag to reorder, or use Up and Down arrow keys"
+                        onKeyDown={(event) => {
+                          if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                          event.preventDefault();
+                          const direction = event.key === "ArrowUp" ? "up" : "down";
+                          if (
+                            !listLocked &&
+                            (direction === "up" ? index > 0 : index < model.todos.length - 1)
+                          )
+                            onMoveTodo(todo.id, direction);
+                        }}
+                      >
+                        <DragIcon />
+                      </span>
+                    ) : (
+                      <span aria-hidden="true" />
+                    )}
 
                     <label className="today-list-item__check">
                       <input
@@ -452,18 +365,20 @@ export function TodayList({
                         aria-disabled={listLocked || undefined}
                         onChange={() => {
                           if (!listLocked) {
-                            prepareMutationFocus("complete", todo.id, completeControlId(todo.id), [
-                                model.todos[index + 1]?.id,
-                                model.todos[index - 1]?.id,
-                              ].filter((todoId): todoId is UUID => Boolean(todoId)));
+                            prepareMutationFocus(
+                              "complete",
+                              todo.id,
+                              completeControlId(todo.id),
+                              [model.todos[index + 1]?.id, model.todos[index - 1]?.id].filter(
+                                (todoId): todoId is UUID => Boolean(todoId),
+                              ),
+                            );
                             onCompleteTodo(todo.id);
                           }
                         }}
                       />
                       <span aria-hidden="true" />
-                      <span className="today-list-sr-only">
-                        Mark {todo.text} complete
-                      </span>
+                      <span className="today-list-sr-only">Mark {todo.text} complete</span>
                     </label>
 
                     <div className="today-list-item__content">
@@ -471,9 +386,7 @@ export function TodayList({
                       <div className="today-list-item__meta">
                         <time dateTime={todo.dueDate}>{dueDateLabel(todo, day)}</time>
                         {todo.dueTime ? (
-                          <time dateTime={todo.dueTime}>
-                            {dueTimeLabel(todo.dueTime)}
-                          </time>
+                          <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
                         ) : null}
                         {todo.projectTitle ? <span>{todo.projectTitle}</span> : null}
                       </div>
@@ -486,14 +399,13 @@ export function TodayList({
                           type="button"
                           aria-disabled={listLocked || undefined}
                           onClick={() => {
-                            if (!listLocked) {
-                              onEditTodo(todo, createReturnFocus(index, `${titleId}-edit`));
-                            }
+                            if (!listLocked) onEditTodo(todo);
                           }}
                           aria-label={`Edit ${todo.text}`}
                           title="Edit"
                         >
-                          <WorkspaceIcon name="edit" /><span className="today-list-action-label">Edit</span>
+                          <WorkspaceIcon name="edit" />
+                          <span className="today-list-action-label">Edit</span>
                         </button>
                         <button
                           id={`${titleId}-delete`}
@@ -502,17 +414,22 @@ export function TodayList({
                           aria-describedby={state.undoNotice ? undoSummaryId : undefined}
                           onClick={() => {
                             if (!deleteLocked) {
-                              prepareMutationFocus("delete", todo.id, `${titleId}-delete`, [
-                                model.todos[index + 1]?.id,
-                                model.todos[index - 1]?.id,
-                              ].filter((todoId): todoId is UUID => Boolean(todoId)));
+                              prepareMutationFocus(
+                                "delete",
+                                todo.id,
+                                `${titleId}-delete`,
+                                [model.todos[index + 1]?.id, model.todos[index - 1]?.id].filter(
+                                  (todoId): todoId is UUID => Boolean(todoId),
+                                ),
+                              );
                               onDeleteTodo(todo);
                             }
                           }}
                           aria-label={`Delete ${todo.text}`}
                           title="Delete"
                         >
-                          <WorkspaceIcon name="trash" /><span className="today-list-action-label">Delete</span>
+                          <WorkspaceIcon name="trash" />
+                          <span className="today-list-action-label">Delete</span>
                         </button>
                       </div>
                     </div>

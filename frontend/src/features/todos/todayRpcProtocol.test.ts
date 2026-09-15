@@ -73,11 +73,18 @@ function page(
 }
 
 function firstPage(items: readonly WireTodo[], overrides: Record<string, unknown> = {}) {
-  return page(items, { p_local_date: DATE, p_offset: 0, p_limit: 200, p_snapshot_token: null }, TOKEN_A, overrides);
+  return page(
+    items,
+    { p_local_date: DATE, p_offset: 0, p_limit: 200, p_snapshot_token: null },
+    TOKEN_A,
+    overrides,
+  );
 }
 
 function fingerprint(ids: readonly string[]): string {
-  return createHash("sha256").update(ids.map((id) => id.toLowerCase()).join(","), "utf8").digest("hex");
+  return createHash("sha256")
+    .update(ids.map((id) => id.toLowerCase()).join(","), "utf8")
+    .digest("hex");
 }
 
 function receipt(ids: readonly string[], overrides: Record<string, unknown> = {}) {
@@ -93,7 +100,10 @@ function receipt(ids: readonly string[], overrides: Record<string, unknown> = {}
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
-  const promise = new Promise<T>((finish, fail) => { resolve = finish; reject = fail; });
+  const promise = new Promise<T>((finish, fail) => {
+    resolve = finish;
+    reject = fail;
+  });
   return { promise, resolve, reject };
 }
 
@@ -104,45 +114,69 @@ function nextTurn(): Promise<void> {
 afterEach(() => vi.restoreAllMocks());
 
 describe("collectTodaySnapshot", () => {
-  it.each([0, 1, 200, 201, 1001, 2500])("drains exactly %i valid rows in complete 200-row pages", async (count) => {
-    const source = rows(count);
-    const controller = new AbortController();
-    const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request));
+  it.each([0, 1, 200, 201, 1001, 2500])(
+    "drains exactly %i valid rows in complete 200-row pages",
+    async (count) => {
+      const source = rows(count);
+      const controller = new AbortController();
+      const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request));
 
-    const result = await collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal });
+      const result = await collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal });
 
-    expect(result).toHaveLength(count);
-    expect(result.map((todo) => todo.id)).toEqual(source.map((todo) => todo.id));
-    expect(new Set(result.map((todo) => todo.id)).size).toBe(count);
-    const pageCount = Math.max(1, Math.ceil(count / 200));
-    expect(fetchPage).toHaveBeenCalledTimes(pageCount);
-    expect(fetchPage.mock.calls.map(([request]) => request)).toEqual(
-      Array.from({ length: pageCount }, (_, index) => ({
-        p_local_date: DATE,
-        p_offset: index * 200,
-        p_limit: 200,
-        p_snapshot_token: index === 0 ? null : TOKEN_A,
-      })),
-    );
-    expect(fetchPage.mock.calls.every(([, options]) => options.signal === controller.signal)).toBe(true);
-  });
+      expect(result).toHaveLength(count);
+      expect(result.map((todo) => todo.id)).toEqual(source.map((todo) => todo.id));
+      expect(new Set(result.map((todo) => todo.id)).size).toBe(count);
+      const pageCount = Math.max(1, Math.ceil(count / 200));
+      expect(fetchPage).toHaveBeenCalledTimes(pageCount);
+      expect(fetchPage.mock.calls.map(([request]) => request)).toEqual(
+        Array.from({ length: pageCount }, (_, index) => ({
+          p_local_date: DATE,
+          p_offset: index * 200,
+          p_limit: 200,
+          p_snapshot_token: index === 0 ? null : TOKEN_A,
+        })),
+      );
+      expect(
+        fetchPage.mock.calls.every(([, options]) => options.signal === controller.signal),
+      ).toBe(true);
+    },
+  );
 
   it("projects complete Today metadata without rounding dates, times, or timestamps", async () => {
     const item = row(1, {
-      due_date: "2026-08-29", due_time: "09:00:00.123456", is_overdue: true,
-      project_id: uuid(9000), project_title: "Reading group", today_rank: 1024, is_manually_ordered: true,
+      due_date: "2026-08-29",
+      due_time: "09:00:00.123456",
+      is_overdue: true,
+      project_id: uuid(9000),
+      project_title: "Reading group",
+      today_rank: 1024,
+      is_manually_ordered: true,
     });
-    const providerRow = { ...item, user_id: uuid(9999), provider_metadata: { hidden: "not a domain field" } };
+    const providerRow = {
+      ...item,
+      user_id: uuid(9999),
+      provider_metadata: { hidden: "not a domain field" },
+    };
     const result = await collectTodaySnapshot(async () => firstPage([providerRow]), DATE, {
       signal: new AbortController().signal,
     });
-    expect(result).toEqual([{
-      id: item.id, text: item.text, completed: false, completedAt: null,
-      dueDate: item.due_date, dueTime: item.due_time,
-      projectId: item.project_id, projectTitle: item.project_title,
-      todayRank: 1024, isManuallyOrdered: true, isOverdue: true,
-      createdAt: TIMESTAMP, updatedAt: TIMESTAMP,
-    }]);
+    expect(result).toEqual([
+      {
+        id: item.id,
+        text: item.text,
+        completed: false,
+        completedAt: null,
+        dueDate: item.due_date,
+        dueTime: item.due_time,
+        projectId: item.project_id,
+        projectTitle: item.project_title,
+        todayRank: 1024,
+        isManuallyOrdered: true,
+        isOverdue: true,
+        createdAt: TIMESTAMP,
+        updatedAt: TIMESTAMP,
+      },
+    ]);
   });
 
   it("does not publish the first page while a later page is pending or fails", async () => {
@@ -150,9 +184,12 @@ describe("collectTodaySnapshot", () => {
     const later = deferred<unknown>();
     const providerError = new Error("Later page unavailable");
     const onComplete = vi.fn();
-    const fetchPage = vi.fn<FetchTodayPage>((request) => request.p_offset === 0
-      ? Promise.resolve(page(source, request)) : later.promise);
-    const result = collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }).then(onComplete);
+    const fetchPage = vi.fn<FetchTodayPage>((request) =>
+      request.p_offset === 0 ? Promise.resolve(page(source, request)) : later.promise,
+    );
+    const result = collectTodaySnapshot(fetchPage, DATE, {
+      signal: new AbortController().signal,
+    }).then(onComplete);
     const rejection = expect(result).rejects.toBe(providerError);
     await nextTurn();
     expect(fetchPage).toHaveBeenCalledTimes(2);
@@ -187,8 +224,9 @@ describe("collectTodaySnapshot", () => {
     ["extra items beyond total", firstPage(rows(1), { items: rows(2) })],
   ])("rejects %s without restarting", async (_label, response) => {
     const fetchPage = vi.fn<FetchTodayPage>(async () => response);
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
     expect(fetchPage).toHaveBeenCalledOnce();
   });
 
@@ -213,35 +251,43 @@ describe("collectTodaySnapshot", () => {
     ["missing update timestamp", { ...row(1), updated_at: undefined }],
   ])("rejects a malformed %s without exposing any rows", async (_label, item) => {
     const fetchPage = vi.fn<FetchTodayPage>(async () => firstPage(rows(1), { items: [item] }));
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
     expect(fetchPage).toHaveBeenCalledOnce();
   });
 
-  it.each(["within a page", "across pages"])("rejects case-insensitive duplicate UUIDs %s", async (position) => {
-    const source = position === "within a page" ? rows(2) : rows(201);
-    source[source.length - 1] = row(1, { id: uuid(1).toUpperCase() });
-    const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request));
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
-    expect(fetchPage).toHaveBeenCalledTimes(position === "within a page" ? 1 : 2);
-  });
+  it.each(["within a page", "across pages"])(
+    "rejects case-insensitive duplicate UUIDs %s",
+    async (position) => {
+      const source = position === "within a page" ? rows(2) : rows(201);
+      source[source.length - 1] = row(1, { id: uuid(1).toUpperCase() });
+      const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request));
+      await expect(
+        collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+      ).rejects.toThrow(INVALID_RESPONSE);
+      expect(fetchPage).toHaveBeenCalledTimes(position === "within a page" ? 1 : 2);
+    },
+  );
 
   it.each(["within a page", "across pages"])("rejects out-of-order rows %s", async (position) => {
     const source = position === "within a page" ? rows(2) : rows(201);
     source[source.length - 1] = row(9000, { due_date: "2026-09-02", is_overdue: true });
     const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request));
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
     expect(fetchPage).toHaveBeenCalledTimes(position === "within a page" ? 1 : 2);
   });
 
   it("rejects a truncated final page instead of returning a partial snapshot", async () => {
     const source = rows(201);
-    const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request, TOKEN_A,
-      request.p_offset === 200 ? { items: [] } : {}));
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    const fetchPage = vi.fn<FetchTodayPage>(async (request) =>
+      page(source, request, TOKEN_A, request.p_offset === 200 ? { items: [] } : {}),
+    );
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
     expect(fetchPage).toHaveBeenCalledTimes(2);
   });
 
@@ -256,15 +302,26 @@ describe("collectTodaySnapshot", () => {
         if (attempt > 1) return page(newRows, request, TOKEN_C);
         if (request.p_offset === 0) return page(oldRows, request);
         if (change === "typed snapshot error") throw new TodaySnapshotChangedError();
-        return page(oldRows, request, change === "token mismatch" ? TOKEN_B : TOKEN_A,
-          change === "count mismatch" ? { total_count: 402 } : {});
+        return page(
+          oldRows,
+          request,
+          change === "token mismatch" ? TOKEN_B : TOKEN_A,
+          change === "count mismatch" ? { total_count: 402 } : {},
+        );
       });
 
-      const result = await collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal });
+      const result = await collectTodaySnapshot(fetchPage, DATE, {
+        signal: new AbortController().signal,
+      });
 
       expect(result.map((todo) => todo.id)).toEqual(newRows.map((todo) => todo.id));
       expect(fetchPage.mock.calls.map(([request]) => request.p_offset)).toEqual([0, 200, 0, 200]);
-      expect(fetchPage.mock.calls.map(([request]) => request.p_snapshot_token)).toEqual([null, TOKEN_A, null, TOKEN_C]);
+      expect(fetchPage.mock.calls.map(([request]) => request.p_snapshot_token)).toEqual([
+        null,
+        TOKEN_A,
+        null,
+        TOKEN_C,
+      ]);
     },
   );
 
@@ -276,9 +333,13 @@ describe("collectTodaySnapshot", () => {
       if (attempt < 3 && request.p_offset === 200) throw new TodaySnapshotChangedError();
       return page(attempt < 3 ? rows(201, attempt * 1000) : source, request);
     });
-    const result = await collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal });
+    const result = await collectTodaySnapshot(fetchPage, DATE, {
+      signal: new AbortController().signal,
+    });
     expect(result.map((todo) => todo.id)).toEqual(source.map((todo) => todo.id));
-    expect(fetchPage.mock.calls.map(([request]) => request.p_offset)).toEqual([0, 200, 0, 200, 0, 200]);
+    expect(fetchPage.mock.calls.map(([request]) => request.p_offset)).toEqual([
+      0, 200, 0, 200, 0, 200,
+    ]);
   });
 
   it.each(["typed snapshot error", "token mismatch", "count mismatch"])(
@@ -288,12 +349,19 @@ describe("collectTodaySnapshot", () => {
       const fetchPage = vi.fn<FetchTodayPage>(async (request) => {
         if (request.p_offset === 0) return page(source, request);
         if (change === "typed snapshot error") throw new TodaySnapshotChangedError();
-        return page(source, request, change === "token mismatch" ? TOKEN_B : TOKEN_A,
-          change === "count mismatch" ? { total_count: 402 } : {});
+        return page(
+          source,
+          request,
+          change === "token mismatch" ? TOKEN_B : TOKEN_A,
+          change === "count mismatch" ? { total_count: 402 } : {},
+        );
       });
-      await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-        .rejects.toBeInstanceOf(TodaySnapshotChangedError);
-      expect(fetchPage.mock.calls.map(([request]) => request.p_offset)).toEqual([0, 200, 0, 200, 0, 200]);
+      await expect(
+        collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+      ).rejects.toBeInstanceOf(TodaySnapshotChangedError);
+      expect(fetchPage.mock.calls.map(([request]) => request.p_offset)).toEqual([
+        0, 200, 0, 200, 0, 200,
+      ]);
     },
   );
 
@@ -302,17 +370,28 @@ describe("collectTodaySnapshot", () => {
     Object.assign(new Error("Changed by name only"), { name: "TodaySnapshotChangedError" }),
     { code: "40001", message: "Only the adapter may classify this provider error" },
   ])("does not retry an unclassified provider failure", async (failure) => {
-    const fetchPage = vi.fn<FetchTodayPage>(async () => { throw failure; });
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal })).rejects.toBe(failure);
+    const fetchPage = vi.fn<FetchTodayPage>(async () => {
+      throw failure;
+    });
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toBe(failure);
     expect(fetchPage).toHaveBeenCalledOnce();
   });
 
   it("does not treat a malformed changed-count envelope as a retryable snapshot", async () => {
     const source = rows(201);
-    const fetchPage = vi.fn<FetchTodayPage>(async (request) => page(source, request, TOKEN_A,
-      request.p_offset === 200 ? { total_count: 199, items: [] } : {}));
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    const fetchPage = vi.fn<FetchTodayPage>(async (request) =>
+      page(
+        source,
+        request,
+        TOKEN_A,
+        request.p_offset === 200 ? { total_count: 199, items: [] } : {},
+      ),
+    );
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
     expect(fetchPage).toHaveBeenCalledTimes(2);
   });
 
@@ -320,46 +399,59 @@ describe("collectTodaySnapshot", () => {
     const controller = new AbortController();
     controller.abort();
     const fetchPage = vi.fn<FetchTodayPage>();
-    await expect(collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal }))
-      .rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: "AbortError" });
     expect(fetchPage).not.toHaveBeenCalled();
   });
 
-  it.each(["resolve", "reject"] as const)("settles cancellation despite an ignored signal and observes late provider %s", async (settlement) => {
-    const controller = new AbortController();
-    const provider = deferred<unknown>();
-    const fetchPage = vi.fn<FetchTodayPage>(() => provider.promise);
-    const unhandled = vi.fn();
-    process.on("unhandledRejection", unhandled);
-    try {
-      const outcome = collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal })
-        .then(() => "unexpected success", (error: unknown) => error);
-      controller.abort();
-      expect(await Promise.race([outcome, nextTurn().then(() => "still pending")]))
-        .toMatchObject({ name: "AbortError" });
-      if (settlement === "resolve") provider.resolve(firstPage(rows(201)));
-      else provider.reject(new TodaySnapshotChangedError());
-      await nextTurn();
-      expect(fetchPage).toHaveBeenCalledOnce();
-      expect(unhandled).not.toHaveBeenCalled();
-    } finally {
-      process.removeListener("unhandledRejection", unhandled);
-    }
-  });
+  it.each(["resolve", "reject"] as const)(
+    "settles cancellation despite an ignored signal and observes late provider %s",
+    async (settlement) => {
+      const controller = new AbortController();
+      const provider = deferred<unknown>();
+      const fetchPage = vi.fn<FetchTodayPage>(() => provider.promise);
+      const unhandled = vi.fn();
+      process.on("unhandledRejection", unhandled);
+      try {
+        const outcome = collectTodaySnapshot(fetchPage, DATE, { signal: controller.signal }).then(
+          () => "unexpected success",
+          (error: unknown) => error,
+        );
+        controller.abort();
+        expect(await Promise.race([outcome, nextTurn().then(() => "still pending")])).toMatchObject(
+          { name: "AbortError" },
+        );
+        if (settlement === "resolve") provider.resolve(firstPage(rows(201)));
+        else provider.reject(new TodaySnapshotChangedError());
+        await nextTurn();
+        expect(fetchPage).toHaveBeenCalledOnce();
+        expect(unhandled).not.toHaveBeenCalled();
+      } finally {
+        process.removeListener("unhandledRejection", unhandled);
+      }
+    },
+  );
 });
 
 describe("verifyTodayReorderReceipt", () => {
   it("verifies SHA-256 of lowercase comma-joined IDs and returns their requested order", async () => {
     const ids = Object.freeze([uuid(3).toUpperCase(), uuid(1), uuid(2)]);
     const response = Object.freeze(receipt(ids));
-    const result = await verifyTodayReorderReceipt(response, DATE, ids, { signal: new AbortController().signal });
+    const result = await verifyTodayReorderReceipt(response, DATE, ids, {
+      signal: new AbortController().signal,
+    });
     expect(result).toEqual(ids.map((todoId, index) => ({ todoId, todayRank: (index + 1) * 1024 })));
     expect(ids).toEqual([uuid(3).toUpperCase(), uuid(1), uuid(2)]);
   });
 
   it("returns every one of 1001 reordered IDs with exact 1024-spaced ranks", async () => {
-    const ids = rows(1001).map((todo) => todo.id).reverse();
-    const result = await verifyTodayReorderReceipt(receipt(ids), DATE, ids, { signal: new AbortController().signal });
+    const ids = rows(1001)
+      .map((todo) => todo.id)
+      .reverse();
+    const result = await verifyTodayReorderReceipt(receipt(ids), DATE, ids, {
+      signal: new AbortController().signal,
+    });
     expect(result).toHaveLength(1001);
     expect(result).toEqual(ids.map((todoId, index) => ({ todoId, todayRank: (index + 1) * 1024 })));
     expect(result[1000]).toEqual({ todoId: ids[1000], todayRank: 1_025_024 });
@@ -367,8 +459,12 @@ describe("verifyTodayReorderReceipt", () => {
 
   it("accepts the empty-order SHA-256 receipt without inventing a rank", async () => {
     const response = receipt([]);
-    expect(response.order_fingerprint).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    await expect(verifyTodayReorderReceipt(response, DATE, [], { signal: new AbortController().signal })).resolves.toEqual([]);
+    expect(response.order_fingerprint).toBe(
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    );
+    await expect(
+      verifyTodayReorderReceipt(response, DATE, [], { signal: new AbortController().signal }),
+    ).resolves.toEqual([]);
   });
 
   it.each([
@@ -381,22 +477,41 @@ describe("verifyTodayReorderReceipt", () => {
     ["wrong rank step", receipt([uuid(1)], { rank_step: 1 })],
     ["string rank step", receipt([uuid(1)], { rank_step: "1024" })],
     ["wrong fingerprint", receipt([uuid(1)], { order_fingerprint: TOKEN_A })],
-    ["uppercase fingerprint", receipt([uuid(1)], { order_fingerprint: fingerprint([uuid(1)]).toUpperCase() })],
+    [
+      "uppercase fingerprint",
+      receipt([uuid(1)], { order_fingerprint: fingerprint([uuid(1)]).toUpperCase() }),
+    ],
     ["short fingerprint", receipt([uuid(1)], { order_fingerprint: "a".repeat(63) })],
     ["non-string fingerprint", receipt([uuid(1)], { order_fingerprint: 123 })],
   ])("rejects a %s", async (_label, response) => {
-    await expect(verifyTodayReorderReceipt(response, DATE, [uuid(1)], { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      verifyTodayReorderReceipt(response, DATE, [uuid(1)], {
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toThrow(INVALID_RESPONSE);
   });
 
-  it.each(["reversed", "no separators", "uppercase IDs"])("rejects a hash made from %s instead of canonical saved order", async (method) => {
-    const ids = [uuid(1).toUpperCase(), uuid(2)];
-    const input = method === "reversed" ? [...ids].reverse().map((id) => id.toLowerCase()).join(",")
-      : method === "no separators" ? ids.map((id) => id.toLowerCase()).join("") : ids.join(",");
-    const response = receipt(ids, { order_fingerprint: createHash("sha256").update(input).digest("hex") });
-    await expect(verifyTodayReorderReceipt(response, DATE, ids, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
-  });
+  it.each(["reversed", "no separators", "uppercase IDs"])(
+    "rejects a hash made from %s instead of canonical saved order",
+    async (method) => {
+      const ids = [uuid(1).toUpperCase(), uuid(2)];
+      const input =
+        method === "reversed"
+          ? [...ids]
+              .reverse()
+              .map((id) => id.toLowerCase())
+              .join(",")
+          : method === "no separators"
+            ? ids.map((id) => id.toLowerCase()).join("")
+            : ids.join(",");
+      const response = receipt(ids, {
+        order_fingerprint: createHash("sha256").update(input).digest("hex"),
+      });
+      await expect(
+        verifyTodayReorderReceipt(response, DATE, ids, { signal: new AbortController().signal }),
+      ).rejects.toThrow(INVALID_RESPONSE);
+    },
+  );
 
   it.each([
     ["duplicate IDs", [uuid(1), uuid(1)]],
@@ -405,49 +520,70 @@ describe("verifyTodayReorderReceipt", () => {
     ["newline-suffixed ID", [`${uuid(1)}\n`]],
     ["leading whitespace ID", [` ${uuid(1)}`]],
   ])("rejects %s even when the receipt hashes that input", async (_label, ids) => {
-    await expect(verifyTodayReorderReceipt(receipt(ids), DATE, ids, { signal: new AbortController().signal }))
-      .rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      verifyTodayReorderReceipt(receipt(ids), DATE, ids, { signal: new AbortController().signal }),
+    ).rejects.toThrow(INVALID_RESPONSE);
   });
 
   it("rejects a sparse ID array rather than silently omitting holes", async () => {
     const ids = Array<string>(1);
-    await expect(verifyTodayReorderReceipt({
-      local_date: DATE, applied_count: 1, rank_step: 1024, order_fingerprint: fingerprint([]),
-    }, DATE, ids, { signal: new AbortController().signal })).rejects.toThrow(INVALID_RESPONSE);
+    await expect(
+      verifyTodayReorderReceipt(
+        {
+          local_date: DATE,
+          applied_count: 1,
+          rank_step: 1024,
+          order_fingerprint: fingerprint([]),
+        },
+        DATE,
+        ids,
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow(INVALID_RESPONSE);
   });
 
   it("does not start hashing after cancellation", async () => {
     const controller = new AbortController();
     controller.abort();
     const digest = vi.spyOn(crypto.subtle, "digest");
-    await expect(verifyTodayReorderReceipt(receipt([uuid(1)]), DATE, [uuid(1)], { signal: controller.signal }))
-      .rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      verifyTodayReorderReceipt(receipt([uuid(1)]), DATE, [uuid(1)], { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: "AbortError" });
     expect(digest).not.toHaveBeenCalled();
   });
 
-  it.each(["resolve", "reject"] as const)("settles cancellation during hashing and observes its late %s", async (settlement) => {
-    const controller = new AbortController();
-    const pendingDigest = deferred<ArrayBuffer>();
-    const digest = vi.spyOn(crypto.subtle, "digest").mockReturnValue(pendingDigest.promise);
-    const ids = [uuid(2).toUpperCase(), uuid(1)];
-    const unhandled = vi.fn();
-    process.on("unhandledRejection", unhandled);
-    try {
-      const outcome = verifyTodayReorderReceipt(receipt(ids), DATE, ids, { signal: controller.signal })
-        .then(() => "unexpected success", (error: unknown) => error);
-      expect(digest).toHaveBeenCalledOnce();
-      expect(digest.mock.calls[0]![0]).toBe("SHA-256");
-      expect(new TextDecoder().decode(digest.mock.calls[0]![1] as Uint8Array))
-        .toBe(ids.map((id) => id.toLowerCase()).join(","));
-      controller.abort();
-      expect(await Promise.race([outcome, nextTurn().then(() => "still pending")]))
-        .toMatchObject({ name: "AbortError" });
-      if (settlement === "resolve") pendingDigest.resolve(new ArrayBuffer(32));
-      else pendingDigest.reject(new Error("Late digest failure"));
-      await nextTurn();
-      expect(unhandled).not.toHaveBeenCalled();
-    } finally {
-      process.removeListener("unhandledRejection", unhandled);
-    }
-  });
+  it.each(["resolve", "reject"] as const)(
+    "settles cancellation during hashing and observes its late %s",
+    async (settlement) => {
+      const controller = new AbortController();
+      const pendingDigest = deferred<ArrayBuffer>();
+      const digest = vi.spyOn(crypto.subtle, "digest").mockReturnValue(pendingDigest.promise);
+      const ids = [uuid(2).toUpperCase(), uuid(1)];
+      const unhandled = vi.fn();
+      process.on("unhandledRejection", unhandled);
+      try {
+        const outcome = verifyTodayReorderReceipt(receipt(ids), DATE, ids, {
+          signal: controller.signal,
+        }).then(
+          () => "unexpected success",
+          (error: unknown) => error,
+        );
+        expect(digest).toHaveBeenCalledOnce();
+        expect(digest.mock.calls[0]![0]).toBe("SHA-256");
+        expect(new TextDecoder().decode(digest.mock.calls[0]![1] as Uint8Array)).toBe(
+          ids.map((id) => id.toLowerCase()).join(","),
+        );
+        controller.abort();
+        expect(await Promise.race([outcome, nextTurn().then(() => "still pending")])).toMatchObject(
+          { name: "AbortError" },
+        );
+        if (settlement === "resolve") pendingDigest.resolve(new ArrayBuffer(32));
+        else pendingDigest.reject(new Error("Late digest failure"));
+        await nextTurn();
+        expect(unhandled).not.toHaveBeenCalled();
+      } finally {
+        process.removeListener("unhandledRejection", unhandled);
+      }
+    },
+  );
 });
