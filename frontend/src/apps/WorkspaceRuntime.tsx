@@ -100,7 +100,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     const timer = window.setTimeout(() => {
       void Promise.allSettled([
         todoService.loadWorkspace({ signal }),
-        collectionService.listProjects({ status: "active", mediaType: "all", offset: 0, signal }),
+        collectionService.listProjects({ offset: 0, signal }),
         collectionService.listIdeas({ status: "all", mediaType: "all", offset: 0, signal }),
         collectionService.listMedia({ status: "all", mediaType: "all", offset: 0, signal }),
       ]);

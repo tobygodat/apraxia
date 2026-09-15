@@ -8,6 +8,7 @@ import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
 import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
+import { WorkspaceRuntime } from "./WorkspaceRuntime";
 
 afterEach(cleanup);
 const todo: Todo = {
@@ -70,6 +71,45 @@ async function openSearch(query: string) {
   fireEvent.change(input, { target: { value: query } });
 }
 describe("Main workspace integration", () => {
+  it("reuses the runtime project preload when opening Projects and returning to it", async () => {
+    const f = fixture();
+    const listProjects = vi.fn().mockResolvedValue([
+      {
+        id: "garden-project",
+        title: "Garden plans",
+        description: "Make space for herbs",
+        status: "someday",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+    render(
+      <MemoryRouter initialEntries={["/media"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={{
+            ...f.props.todoService,
+            loadWorkspace: vi.fn().mockResolvedValue({}),
+          }}
+          collectionService={{
+            ...f.props.collectionService,
+            listProjects,
+            listIdeas: vi.fn().mockResolvedValue([]),
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("No books or movies in this view.");
+    await waitFor(() => expect(listProjects).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("Garden plans");
+    fireEvent.click(screen.getByRole("link", { name: "media" }));
+    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("Garden plans");
+    expect(listProjects).toHaveBeenCalledTimes(1);
+  });
+
   it("reuses a preloaded collection while navigating away and back", async () => {
     const f = fixture();
     const listIdeas = vi.fn().mockResolvedValue([idea]);
