@@ -30,7 +30,7 @@ diagnosing an old failure as current.
 For routine development, use Node.js 22; Docker is not required:
 
 ```bash
-npm ci
+npm ci # New worktree or changed lockfile only.
 npm run dev:web
 ```
 
@@ -40,11 +40,13 @@ URL parameters, and what the fixtures can and cannot prove are documented in
 [QA fixtures](docs/QA_FIXTURES.md). Fixtures do not verify database
 persistence, Google sync, OAuth, or hosted configuration.
 
-Run `npm run verify` for type checks, tests, the production build, and the
-browser secret scan. GitHub Actions runs **App checks** and **Database checks**
-on pull requests and pushes to `main`; both must pass before release. The
-database job uses a temporary Supabase instance on the runner and publishes
-regenerated types as its `database-types` artifact.
+Use focused checks while editing and one local pre-push check; see
+[fast local feedback](docs/CLOUD_DEVELOPMENT.md#fast-local-feedback). GitHub
+Actions runs full app verification through `npm run verify`. **App checks** and
+**Database checks** must pass for the release commit. Database CI skips execution
+for documented docs/style-only diffs; otherwise it uses temporary Supabase and
+publishes regenerated types as its `database-types` artifact. Full local
+verification is required for dependency/build/CI changes or to reproduce failures.
 
 ## Documentation
 

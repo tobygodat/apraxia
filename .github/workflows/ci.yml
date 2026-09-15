@@ -33,16 +33,25 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Determine whether database execution is needed
+        id: scope
+        run: node scripts/ci-database-scope.mjs
       - run: npm ci
+        if: steps.scope.outputs.required != 'false'
       # Use the same complete suite locally before pushing database changes.
       # All resets and migration rewinds target disposable local Supabase.
       - name: Verify database (reproduce locally with npm run verify:db)
+        id: verify
+        if: steps.scope.outputs.required != 'false'
         run: npm run verify:db
       - name: Upload generated database types
+        if: steps.scope.outputs.required != 'false'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: database-types
@@ -50,5 +59,5 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Stop disposable Supabase
-        if: always()
+        if: always() && steps.verify.outcome != 'skipped' && steps.verify.outcome != ''
         run: npx supabase stop --no-backup

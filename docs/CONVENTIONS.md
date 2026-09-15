@@ -92,11 +92,14 @@ pgTAP, where they run against real Postgres.
 
 `.editorconfig`, Prettier (`.prettierrc`), ESLint (`eslint.config.js`), and
 `knip` (`knip.json`) are in place. `npm run lint` runs ESLint then
-`prettier --check`, and it is part of `npm run verify`; `npm run format`
-rewrites, and `npm run knip` reports unused files, exports, and dependencies.
+`prettier --check`, and it is part of `npm run verify`;
+`npm run format -- <file> [<file> ...]` formats explicit paths, and `npm run knip`
+reports unused files, exports, and dependencies.
 
 - Prettier owns layout: 100 columns, two-space indent, double quotes,
-  semicolons, trailing commas. Do not hand-format; run `npm run format`.
+  semicolons, trailing commas. Do not hand-format; use
+  `npm run format -- <changed-file>`. Avoid repository-wide formatting for a
+  scoped change.
   Markdown and `supabase/**/*.sql` are excluded, so keep prose hand-wrapped.
 - ESLint uses `typescript-eslint`'s recommended (not type-checked) preset plus
   `eslint-plugin-react-hooks`. The React Compiler rules that the 2026-09-14
