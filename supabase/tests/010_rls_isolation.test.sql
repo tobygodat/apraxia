@@ -57,21 +57,6 @@ values
     'b0000000-0000-4000-8000-000000000001'
   );
 
-insert into public.media (id, user_id, media_type, title)
-values
-  (
-    'a0000000-0000-4000-8000-000000000004',
-    '11111111-1111-4111-8111-111111111111',
-    'book',
-    'A book'
-  ),
-  (
-    'b0000000-0000-4000-8000-000000000004',
-    '22222222-2222-4222-8222-222222222222',
-    'movie',
-    'B movie'
-  );
-
 insert into public.google_calendar_connections (id, user_id)
 values
   (
@@ -130,7 +115,7 @@ select ok(
   not exists (
     select 1
     from (
-      values ('projects'), ('todos'), ('ideas'), ('media')
+      values ('projects'), ('todos'), ('ideas')
     ) as content_table (table_name)
     cross join (
       values ('INSERT'), ('UPDATE')
@@ -165,8 +150,6 @@ select bag_eq(
     union all
     select 'ideas', user_id from public.ideas
     union all
-    select 'media', user_id from public.media
-    union all
     select 'connections', user_id from public.google_calendar_connections
     union all
     select 'preferences', user_id from public.google_calendar_preferences
@@ -177,7 +160,6 @@ select bag_eq(
       ('projects', '11111111-1111-4111-8111-111111111111'::uuid),
       ('todos', '11111111-1111-4111-8111-111111111111'::uuid),
       ('ideas', '11111111-1111-4111-8111-111111111111'::uuid),
-      ('media', '11111111-1111-4111-8111-111111111111'::uuid),
       ('connections', '11111111-1111-4111-8111-111111111111'::uuid),
       ('preferences', '11111111-1111-4111-8111-111111111111'::uuid)
   $$,
@@ -207,8 +189,6 @@ select bag_eq(
     union all
     select 'ideas', user_id from public.ideas
     union all
-    select 'media', user_id from public.media
-    union all
     select 'connections', user_id from public.google_calendar_connections
     union all
     select 'preferences', user_id from public.google_calendar_preferences
@@ -219,7 +199,6 @@ select bag_eq(
       ('projects', '22222222-2222-4222-8222-222222222222'::uuid),
       ('todos', '22222222-2222-4222-8222-222222222222'::uuid),
       ('ideas', '22222222-2222-4222-8222-222222222222'::uuid),
-      ('media', '22222222-2222-4222-8222-222222222222'::uuid),
       ('connections', '22222222-2222-4222-8222-222222222222'::uuid),
       ('preferences', '22222222-2222-4222-8222-222222222222'::uuid)
   $$,

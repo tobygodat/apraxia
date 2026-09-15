@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { api } from "../api/client";
 import Layout from "../components/Layout";
 import Login from "../components/Login";
-import Media from "../pages/Media";
 import OrbitHome from "../pages/OrbitHome";
 import Projects from "../pages/Projects";
 import Todos from "../pages/Todos";
@@ -36,11 +35,8 @@ export default function LegacyApp() {
         <Route index element={<OrbitHome />} />
         <Route path="/todos" element={<Todos />} />
         <Route path="/ideas" element={<Writing />} />
-        <Route path="/media" element={<Media />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/writing" element={<Navigate to="/ideas" replace />} />
-        <Route path="/books" element={<Navigate to="/media" replace />} />
-        <Route path="/movies" element={<Navigate to="/media" replace />} />
       </Route>
     </Routes>
   );

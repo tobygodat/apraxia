@@ -7,6 +7,7 @@ import type { DeleteUndoToken, Profile, TodayTodo, Todo } from "../../types/doma
 import { asSqlDate } from "./dateDomain";
 import type { TodoService } from "./todoService";
 import { TodoController, TodoMutationError, useTodoController } from "./todoController";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 
 const PROFILE: Profile = {
   userId: "11111111-1111-4111-8111-111111111111",
@@ -145,6 +146,107 @@ describe("TodoController loads", () => {
     expect(state.today.todos[0]!.projectTitle).toBe(PROJECT.title);
     expect(state.today.todos.filter((row) => row.isOverdue)).toHaveLength(1);
     expect(service.loadToday).toHaveBeenCalledWith(TODAY, expect.anything());
+  });
+
+  it("seeds ready workspace and Today state from a warmed navigation cache with no loading status", async () => {
+    const { service: source } = fixture();
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "todos",
+      ["loadWorkspace", "loadToday"],
+      [],
+    ) as unknown as TodoService;
+    // Warm the cache the way an earlier visit or a prefetch would.
+    await service.loadWorkspace({ signal: new AbortController().signal });
+    await service.loadToday(TODAY, { signal: new AbortController().signal });
+    const loadWorkspaceCalls = vi.mocked(source.loadWorkspace).mock.calls.length;
+    const loadTodayCalls = vi.mocked(source.loadToday).mock.calls.length;
+
+    const controller = new TodoController(service, { workspace: true, today: true });
+    // Seeded synchronously at construction, before any load runs.
+    expect(controller.getSnapshot().workspaceStatus).toBe("ready");
+    expect(ids(controller.getSnapshot().todos)).toEqual(ids([OVERDUE, DUE_TODAY, INBOX]));
+
+    const setLocalDate = controller.setLocalDate(TODAY);
+    // Seeded synchronously inside setLocalDate, before its own loadToday resolves.
+    expect(controller.getSnapshot().todayStatus).toBe("ready");
+    expect(ids(controller.getSnapshot().today.todos)).toEqual([OVERDUE.id, DUE_TODAY.id]);
+    expect(await setLocalDate).toBe(true);
+    expect(controller.getSnapshot().todayStatus).toBe("ready");
+
+    // The underlying reads still ran in the background but stayed cache-fresh.
+    expect(source.loadWorkspace).toHaveBeenCalledTimes(loadWorkspaceCalls);
+    expect(source.loadToday).toHaveBeenCalledTimes(loadTodayCalls);
+  });
+
+  it("re-seeds ready state from the navigation cache after a StrictMode stop/start cycle", async () => {
+    const { service: source } = fixture();
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "todos",
+      ["loadWorkspace", "loadToday"],
+      [],
+    ) as unknown as TodoService;
+    await service.loadWorkspace({ signal: new AbortController().signal });
+    await service.loadToday(TODAY, { signal: new AbortController().signal });
+
+    const controller = new TodoController(service, { workspace: true, today: true });
+    await controller.setLocalDate(TODAY);
+    expect(controller.getSnapshot().workspaceStatus).toBe("ready");
+    expect(controller.getSnapshot().todayStatus).toBe("ready");
+
+    // StrictMode's mount/unmount/mount replays stop() then start() on the same
+    // instance before any effect re-runs loadWorkspace/setLocalDate.
+    controller.stop();
+    expect(controller.getSnapshot().workspaceStatus).toBe("idle");
+    expect(controller.getSnapshot().profile).toBeNull();
+
+    controller.start();
+    expect(controller.getSnapshot().workspaceStatus).toBe("ready");
+    expect(controller.getSnapshot().todayStatus).toBe("ready");
+    expect(controller.getSnapshot().profile).toEqual(PROFILE);
+    expect(ids(controller.getSnapshot().todos)).toEqual(ids([OVERDUE, DUE_TODAY, INBOX]));
+    expect(ids(controller.getSnapshot().today.todos)).toEqual([OVERDUE.id, DUE_TODAY.id]);
+  });
+
+  it("keeps workspaceLoaded/todayLoaded true through a background refresh after the first snapshot", async () => {
+    const { controller, service } = await ready();
+    expect(controller.getSnapshot().workspaceLoaded).toBe(true);
+    expect(controller.getSnapshot().todayLoaded).toBe(true);
+
+    const workspaceReload = controller.loadWorkspace();
+    // The refresh flips status back to loading, but the row must stay hidden:
+    // loaded never resets once a snapshot has been applied.
+    expect(controller.getSnapshot().workspaceStatus).toBe("loading");
+    expect(controller.getSnapshot().workspaceLoaded).toBe(true);
+    await workspaceReload;
+    expect(controller.getSnapshot().workspaceLoaded).toBe(true);
+
+    const todayReload = controller.loadToday();
+    expect(controller.getSnapshot().todayStatus).toBe("loading");
+    expect(controller.getSnapshot().todayLoaded).toBe(true);
+    await todayReload;
+    expect(controller.getSnapshot().todayLoaded).toBe(true);
+    expect(service.loadWorkspace).toHaveBeenCalled();
+  });
+
+  it("starts with workspaceLoaded/todayLoaded false on a cold load and resets them on stop()", async () => {
+    const { service } = fixture();
+    const controller = new TodoController(service);
+    expect(controller.getSnapshot().workspaceLoaded).toBe(false);
+    expect(controller.getSnapshot().todayLoaded).toBe(false);
+    const load = controller.loadWorkspace();
+    expect(controller.getSnapshot().workspaceStatus).toBe("loading");
+    expect(controller.getSnapshot().workspaceLoaded).toBe(false);
+    await load;
+    expect(controller.getSnapshot().workspaceLoaded).toBe(true);
+    controller.stop();
+    expect(controller.getSnapshot().workspaceLoaded).toBe(false);
+    expect(controller.getSnapshot().todayLoaded).toBe(false);
   });
 
   it("fails closed on malformed provider rows without exposing provider text", async () => {
@@ -556,5 +658,51 @@ describe("useTodoController", () => {
     expect(service.loadToday).toHaveBeenCalledTimes(1);
     expect(service.loadWorkspace).not.toHaveBeenCalled();
     render(<div />);
+  });
+
+  it("never seeds or loads the workspace slice for a Today-only controller, and refresh() skips it", async () => {
+    const { service } = fixture();
+    const { result } = renderHook(() =>
+      useTodoController(service, "account-a", { localDate: asSqlDate(TODAY) }),
+    );
+    await waitFor(() => expect(result.current.state.todayStatus).toBe("ready"));
+    expect(result.current.state.workspaceStatus).toBe("idle");
+    expect(service.loadWorkspace).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.controller.refresh();
+    });
+    expect(service.loadWorkspace).not.toHaveBeenCalled();
+    expect(result.current.state.workspaceStatus).toBe("idle");
+  });
+
+  it("keeps a warm Today cache seeded-only through StrictMode stop/start and issues one live load after replay", async () => {
+    const { service: source } = fixture();
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "todos",
+      ["loadWorkspace", "loadToday"],
+      [],
+    ) as unknown as TodoService;
+    await service.loadToday(TODAY, { signal: new AbortController().signal });
+
+    const controller = new TodoController(service, { workspace: false, today: true });
+    await controller.setLocalDate(TODAY);
+    vi.mocked(source.loadToday).mockClear();
+
+    // StrictMode replays stop() then start() on the same instance.
+    controller.stop();
+    // The cache entry may have been invalidated by another tab/write while stopped.
+    cache.invalidate();
+    controller.start();
+    expect(controller.getSnapshot().todayStatus).toBe("ready");
+
+    // The re-running setLocalDate effect requests the same date: because the
+    // re-seeded slice is cache-seeded-only (never confirmed by a live load
+    // since the stop/start), this must still issue exactly one live read.
+    await controller.setLocalDate(TODAY);
+    expect(source.loadToday).toHaveBeenCalledTimes(1);
   });
 });

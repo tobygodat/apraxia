@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Todo } from "../../types/domain";
 import { buildTodoBoardModel } from "./todoBoardModel";
 import { TodosBoard, type TodosBoardProps } from "./TodosBoard";
+import { ColdLoadGate } from "../../apps/coldLoad";
 
 const TODO: Todo = {
   id: "todo-one",
@@ -158,6 +159,24 @@ describe("TodosBoard", () => {
     expect(inbox.closest("article")?.getAttribute("aria-busy")).toBe("true");
   });
 
+  it("stays cold-load pending until the board has loaded, then reveals", async () => {
+    const { container, rerender } = render(
+      <ColdLoadGate>
+        <TodosBoard {...props({ loadStatus: "loading", loaded: false })} />
+      </ColdLoadGate>,
+    );
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+    rerender(
+      <ColdLoadGate>
+        <TodosBoard {...props({ loadStatus: "ready", loaded: true })} />
+      </ColdLoadGate>,
+    );
+    // The gate defers its reveal to a rAF/timeout check that pending is still zero.
+    await waitFor(() =>
+      expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+    );
+  });
+
   it("shows loading, mutation errors, and the announcement live region", () => {
     const view = render(
       <TodosBoard
@@ -169,6 +188,8 @@ describe("TodosBoard", () => {
     );
     expect(screen.getByRole("status").textContent).toContain("Loading tasks");
     expect(screen.getByText("Prepare review completed.")).toBeTruthy();
+    view.rerender(<TodosBoard {...props({ loadStatus: "loading", loaded: true })} />);
+    expect(screen.queryByText("Loading tasks…")).toBeNull();
     view.rerender(
       <TodosBoard
         {...props({

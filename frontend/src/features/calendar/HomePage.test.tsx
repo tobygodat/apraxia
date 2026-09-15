@@ -7,6 +7,8 @@ import type { TodoService } from "../todos/todoService";
 import { CalendarPanel, HomePage, WeekGrid } from "./HomePage";
 import type { AllDayCalendarEvent, CalendarEvent, WeekViewModel } from "../../types/domain";
 import { addSqlDateDays } from "../todos/dateDomain";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 afterEach(cleanup);
 it("loads Sunday through Saturday in the profile timezone and keeps navigation and Today aligned", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -159,6 +161,35 @@ it("loads Today while Calendar status is still pending", async () => {
   expect(screen.getByText("Loading your week…")).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
 });
+it("stays cold-load pending until the week resolves, then reveals", async () => {
+  let resolveWeek: ((week: WeekViewModel) => void) | undefined;
+  const service = {
+    status: async () => ({ connectionState: "connected" }),
+    week: () =>
+      new Promise<WeekViewModel>((resolve) => {
+        resolveWeek = resolve;
+      }),
+  } as unknown as CalendarService;
+  const { container } = render(
+    <MemoryRouter>
+      <ColdLoadGate>
+        <CalendarPanel service={service} timezone="UTC" />
+      </ColdLoadGate>
+    </MemoryRouter>,
+  );
+  expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+  resolveWeek?.({
+    range: { sunday: "2026-09-06", saturday: "2026-09-12" },
+    timezone: "UTC",
+    events: [],
+    partialErrors: [],
+    visibleCalendars: [],
+  });
+  await waitFor(() =>
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+  );
+});
+
 it("preserves a loaded week on refresh failure, then hides it when navigating", async () => {
   const week = vi.fn(async (sunday: string) => ({
     range: { sunday, saturday: sunday },
@@ -198,6 +229,167 @@ it("preserves a loaded week on refresh failure, then hides it when navigating", 
   week.mockImplementationOnce(() => new Promise(() => {}));
   fireEvent.click(screen.getByRole("button", { name: "Next week" }));
   expect(screen.queryByRole("button", { name: /Coffee with Sam/ })).toBeNull();
+});
+
+it("renders a warmed week immediately from a navigation cache with no loading flash", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));
+  try {
+    const week = vi.fn(async (sunday: string): Promise<WeekViewModel> => ({
+      range: { sunday, saturday: addSqlDateDays(sunday, 6) },
+      timezone: "UTC",
+      events: [
+        {
+          kind: "timed",
+          calendarId: "primary",
+          eventId: "event",
+          title: "Coffee with Sam",
+          startAt: `${sunday}T09:00:00Z`,
+          endAt: `${sunday}T10:00:00Z`,
+          startTimeZone: null,
+          endTimeZone: null,
+          calendarColor: { background: null, foreground: null },
+          googleEventUrl: "https://calendar.google.com",
+        },
+      ],
+      partialErrors: [],
+      visibleCalendars: [],
+    }));
+    const source = {
+      status: async () => ({ connectionState: "connected" }),
+      week,
+    } as unknown as CalendarService;
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "calendar",
+      ["status", "week"],
+      [],
+    ) as unknown as CalendarService;
+    // Warm the cache the way an earlier navigation to this week would.
+    await service.status();
+    await service.week("2026-09-06");
+    render(
+      <MemoryRouter>
+        <CalendarPanel service={service} timezone="UTC" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: /Coffee with Sam/ })).toBeTruthy();
+    expect(screen.queryByText("Loading your week…")).toBeNull();
+    expect(screen.queryByText("Refreshing your week…")).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("does not seed a week cached under a different timezone", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));
+  try {
+    const week = vi.fn(async (sunday: string): Promise<WeekViewModel> => ({
+      range: { sunday, saturday: addSqlDateDays(sunday, 6) },
+      timezone: "America/New_York",
+      events: [],
+      partialErrors: [],
+      visibleCalendars: [],
+    }));
+    const source = {
+      status: async () => ({ connectionState: "connected" }),
+      week,
+    } as unknown as CalendarService;
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "calendar",
+      ["status", "week"],
+      [],
+    ) as unknown as CalendarService;
+    // Warm the cache for the same sunday but a different timezone.
+    await service.status();
+    await service.week("2026-09-06");
+    render(
+      <MemoryRouter>
+        <CalendarPanel service={service} timezone="UTC" />
+      </MemoryRouter>,
+    );
+    // The seeded week is for a different timezone, so it must not be shown;
+    // the panel should load instead of flashing the wrong week's data.
+    expect(screen.getByText("Loading your week…")).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("never shows Refreshing your week during an invalidation-driven revision bump, and keeps the week rendered", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));
+  try {
+    let resolveSecond: ((week: WeekViewModel) => void) | undefined;
+    let call = 0;
+    const visibleCalendars = [
+      {
+        calendarId: "work",
+        displayName: "Work calendar",
+        color: { background: null, foreground: null },
+        isVisible: true,
+      },
+    ] as const;
+    const week = vi.fn(async (sunday: string): Promise<WeekViewModel> => {
+      call += 1;
+      if (call === 1) {
+        return {
+          range: { sunday, saturday: addSqlDateDays(sunday, 6) },
+          timezone: "UTC",
+          events: [],
+          partialErrors: [],
+          visibleCalendars,
+        };
+      }
+      return new Promise((resolve) => {
+        resolveSecond = resolve;
+      });
+    });
+    const source = {
+      status: async () => ({ connectionState: "connected" }),
+      week,
+    } as unknown as CalendarService;
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "calendar",
+      ["status", "week"],
+      [],
+    ) as unknown as CalendarService;
+    await service.status();
+    await service.week("2026-09-06");
+    render(
+      <MemoryRouter>
+        <CalendarPanel service={{ ...service, invalidate: cache.invalidate }} timezone="UTC" />
+      </MemoryRouter>,
+    );
+    await screen.findByText("No events this week.");
+    expect(screen.queryByText("Refreshing your week…")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    // Background refresh with a visible week is silent: no "Refreshing your
+    // week…" message, and the previously loaded week stays on screen while
+    // the refetch is in flight.
+    await waitFor(() => expect(resolveSecond).toBeDefined());
+    expect(screen.queryByText("Refreshing your week…")).toBeNull();
+    expect(screen.getByText("No events this week.")).toBeTruthy();
+    resolveSecond?.({
+      range: { sunday: "2026-09-06", saturday: "2026-09-12" },
+      timezone: "UTC",
+      events: [],
+      partialErrors: [],
+      visibleCalendars,
+    });
+    await waitFor(() => expect(screen.queryByText("Refreshing your week…")).toBeNull());
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("shows the all-day row only while an all-day event overlaps the displayed week", () => {

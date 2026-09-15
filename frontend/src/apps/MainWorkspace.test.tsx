@@ -6,7 +6,9 @@ import type { CollectionService } from "../features/collections/collectionServic
 import type { CalendarService } from "../features/calendar/calendarService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
-import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
+import { localToday } from "../features/todos/dateDomain";
+import { startOfWeekSunday } from "../features/calendar/eventLayout";
+import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 
@@ -33,7 +35,7 @@ const idea: Idea = {
 };
 function fixture(userId = "user-a") {
   const createTodo = vi.fn().mockResolvedValue(todo);
-  const listMedia = vi.fn().mockResolvedValue([]);
+  const listProjects = vi.fn().mockResolvedValue([]);
   const search = vi.fn().mockResolvedValue([]);
   const getTodo = vi.fn().mockResolvedValue(todo);
   const getIdea = vi.fn().mockResolvedValue(idea);
@@ -43,7 +45,7 @@ function fixture(userId = "user-a") {
     signOutStatus: "idle",
     onSignOut: vi.fn().mockResolvedValue(undefined),
     todoService: { createTodo } as unknown as TodoService,
-    collectionService: { listMedia, search, getTodo, getIdea } as unknown as CollectionService,
+    collectionService: { listProjects, search, getTodo, getIdea } as unknown as CollectionService,
     calendarService: {} as CalendarService,
     workspaceData: {
       projects,
@@ -52,14 +54,14 @@ function fixture(userId = "user-a") {
         .mockResolvedValue({ userId, timezone: "America/New_York", createdAt: "", updatedAt: "" }),
     },
   };
-  return { props, createTodo, listMedia, search, getTodo, getIdea, projects };
+  return { props, createTodo, listProjects, search, getTodo, getIdea, projects };
 }
 function RouteWitness() {
   return <output aria-label="Current route">{useLocation().pathname}</output>;
 }
 function mount(props: MainWorkspaceProps) {
   return render(
-    <MemoryRouter initialEntries={["/media"]}>
+    <MemoryRouter initialEntries={["/projects"]}>
       <MainWorkspace {...props} />
       <RouteWitness />
     </MemoryRouter>,
@@ -71,6 +73,39 @@ async function openSearch(query: string) {
   fireEvent.change(input, { target: { value: query } });
 }
 describe("Main workspace integration", () => {
+  it("removes Media navigation, creation, and the old route", async () => {
+    const f = fixture();
+    render(
+      <MemoryRouter initialEntries={["/media"]}>
+        <MainWorkspace {...f.props} />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /media/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "+ add" }));
+    expect(await screen.findByRole("button", { name: "Idea" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Project" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Media" })).toBeNull();
+  });
+
+  it("mounts a route synchronously with no Suspense fallback once its chunk was preloaded", async () => {
+    // Warm the route chunk the way WorkspaceRuntime's idle-time preload
+    // does, and wait for it to actually resolve before mounting.
+    await preloadWorkspaceChunks();
+    const f = fixture();
+    mount(f.props);
+    // No `act()`/`findBy*` wait: if the route's chunk had suspended, only
+    // the tiny Suspense fallback (its sr-only status text) would be in the
+    // DOM right after render(), and none of CollectionPage's own markup.
+    // With the chunk preloaded, CollectionPage itself mounts synchronously
+    // on the very first commit instead — its heading proves that, even
+    // though its own data load (a separate, still-async `listProjects`
+    // call) hasn't resolved yet and legitimately shows its own "Loading…"
+    // row in the meantime.
+    expect(screen.getByRole("heading", { name: "Projects" })).toBeTruthy();
+    await screen.findByText("No projects in this view.");
+  });
+
   it("reuses the runtime project preload when opening Projects and returning to it", async () => {
     const f = fixture();
     const listProjects = vi.fn().mockResolvedValue([
@@ -84,7 +119,7 @@ describe("Main workspace integration", () => {
       },
     ]);
     render(
-      <MemoryRouter initialEntries={["/media"]}>
+      <MemoryRouter initialEntries={["/ideas"]}>
         <WorkspaceRuntime
           {...f.props}
           todoService={{
@@ -99,12 +134,12 @@ describe("Main workspace integration", () => {
         />
       </MemoryRouter>,
     );
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No ideas yet. Keep your first thought here.");
     await waitFor(() => expect(listProjects).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("link", { name: "projects" }));
     await screen.findByText("Garden plans");
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "ideas" }));
+    await screen.findByText("No ideas yet. Keep your first thought here.");
     fireEvent.click(screen.getByRole("link", { name: "projects" }));
     await screen.findByText("Garden plans");
     expect(listProjects).toHaveBeenCalledTimes(1);
@@ -117,42 +152,40 @@ describe("Main workspace integration", () => {
       { ...f.props.collectionService, listIdeas },
       new NavigationCache(),
       "collections",
-      ["listMedia", "listIdeas"],
+      ["listProjects", "listIdeas"],
       [],
     );
-    await service.listMedia({
-      status: "all",
-      mediaType: "all",
+    await service.listProjects({
       offset: 0,
       signal: new AbortController().signal,
     });
     mount({ ...f.props, collectionService: service });
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("link", { name: "ideas" }));
     await screen.findByText("Garden thought");
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
-    expect(f.listMedia).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("No projects in this view.");
+    expect(f.listProjects).toHaveBeenCalledTimes(1);
     expect(listIdeas).toHaveBeenCalledTimes(1);
   });
 
-  it("captures a Todo from Media, stays on Media, and refreshes visible data once", async () => {
+  it("captures a Todo from Projects, stays on Projects, and refreshes visible data once", async () => {
     const f = fixture();
     mount(f.props);
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
     fireEvent.click(screen.getByRole("button", { name: "Task" }));
     fireEvent.change(screen.getByLabelText("Task"), { target: { value: todo.text } });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     await screen.findByText("Task added");
-    expect(screen.getByLabelText("Current route").textContent).toBe("/media");
+    expect(screen.getByLabelText("Current route").textContent).toBe("/projects");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(f.createTodo).toHaveBeenCalledTimes(1);
     expect(f.createTodo).toHaveBeenCalledWith(
       expect.objectContaining({ text: todo.text, dueDate: null }),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    await waitFor(() => expect(f.listMedia).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(f.listProjects).toHaveBeenCalledTimes(2));
     expect(f.projects).toHaveBeenCalledTimes(2);
   });
 
@@ -186,14 +219,14 @@ describe("Main workspace integration", () => {
       expect((restored as HTMLInputElement).value).toBe("match");
       expect(screen.getByRole("button", { name: /Search match/ })).toBeTruthy();
       expect(f.search).toHaveBeenCalledTimes(1);
-      expect(screen.getByLabelText("Current route").textContent).toBe("/media");
+      expect(screen.getByLabelText("Current route").textContent).toBe("/projects");
     },
   );
 
   it("keeps Ctrl+K closed while the Add dialog is open", async () => {
     const f = fixture();
     mount(f.props);
-    await screen.findByText("No books or movies in this view.");
+    await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
     await screen.findByRole("dialog", { name: "Add to orbitOS" });
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
@@ -224,8 +257,8 @@ describe("Main workspace integration", () => {
         .getByRole("main")
         .contains(screen.getByText("No ideas yet. Keep your first thought here.")),
     ).toBe(true);
-    fireEvent.click(screen.getByRole("link", { name: "media" }));
-    await screen.findByText("No books or movies in this view.");
+    fireEvent.click(screen.getByRole("link", { name: "projects" }));
+    await screen.findByText("No projects in this view.");
     expect(document.activeElement).toBe(screen.getByRole("main"));
   });
 
@@ -263,5 +296,98 @@ describe("Main workspace integration", () => {
     expect(screen.queryByText("Private idea")).toBeNull();
     expect(screen.queryByText(idea.body)).toBeNull();
     expect(next.search).not.toHaveBeenCalled();
+  });
+
+  it("preloads appearance and Home's calendar/today reads once at startup from another route", async () => {
+    const f = fixture();
+    const load = vi.fn().mockResolvedValue({ title: "Studio", coverImage: null });
+    const loadToday = vi.fn().mockResolvedValue([]);
+    const status = vi.fn().mockResolvedValue({ connectionState: "connected" });
+    const week = vi.fn().mockResolvedValue({
+      range: { sunday: "2026-09-06" },
+      timezone: "America/New_York",
+      events: [],
+      partialErrors: [],
+      visibleCalendars: [],
+    });
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={
+            {
+              ...f.props.todoService,
+              loadToday,
+              loadWorkspace: vi.fn().mockResolvedValue({}),
+            } as unknown as TodoService
+          }
+          collectionService={
+            {
+              ...f.props.collectionService,
+              listIdeas: vi.fn().mockResolvedValue([]),
+            } as unknown as CollectionService
+          }
+          calendarService={{ status, week } as unknown as CalendarService}
+          workspaceData={{ ...f.props.workspaceData, homeAppearance: { load, save: vi.fn() } }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("No projects in this view.");
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+    expect(load).toHaveBeenCalledWith("user-a", expect.any(AbortSignal));
+    const today = localToday("America/New_York");
+    const sunday = startOfWeekSunday(today);
+    await waitFor(() => expect(loadToday).toHaveBeenCalledTimes(1));
+    expect(loadToday).toHaveBeenCalledWith(today, { signal: expect.any(AbortSignal) });
+    await waitFor(() => expect(status).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(week).toHaveBeenCalledTimes(1));
+    expect(week).toHaveBeenCalledWith(sunday, expect.any(AbortSignal));
+  });
+
+  it("prefetches each listed project's detail reads at startup", async () => {
+    const f = fixture();
+    const projectA = {
+      id: "garden-project",
+      title: "Garden plans",
+      description: "Make space for herbs",
+      status: "someday",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const projectB = { ...projectA, id: "kitchen-project", title: "Kitchen remodel" };
+    const listProjects = vi.fn().mockResolvedValue([projectA, projectB]);
+    const getProject = vi.fn().mockResolvedValue(projectA);
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={{
+            ...f.props.todoService,
+            loadWorkspace: vi.fn().mockResolvedValue({}),
+          }}
+          collectionService={{
+            ...f.props.collectionService,
+            listProjects,
+            getProject,
+            projectTodos,
+            listIdeas,
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("Garden plans");
+    await waitFor(() => expect(getProject).toHaveBeenCalledTimes(2));
+    expect(getProject).toHaveBeenCalledWith(projectA.id);
+    expect(getProject).toHaveBeenCalledWith(projectB.id);
+    expect(projectTodos).toHaveBeenCalledWith(projectA.id, 0);
+    expect(projectTodos).toHaveBeenCalledWith(projectB.id, 0);
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectA.id, offset: 0 }),
+    );
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectB.id, offset: 0 }),
+    );
   });
 });

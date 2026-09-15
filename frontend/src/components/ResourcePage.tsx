@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 
-// Generic read + delete list for the simpler sections (writing/books/movies/
+// Generic read + delete list for the simpler sections (writing/
 // drafts). Todos has its own richer page. `primary` renders the row's label.
 export default function ResourcePage<T extends { id: number }>({
   title,

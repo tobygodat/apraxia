@@ -1,4 +1,5 @@
 import { useCallback, useId, useLayoutEffect, useRef, useState, type DragEvent } from "react";
+import { useColdLoad } from "../../apps/coldLoad";
 import type { TodayTodo, UUID } from "../../types/domain";
 import { isDocumentFocus } from "../../components/dialog/Dialog";
 import { DragIcon, PlusIcon } from "../../components/icons";
@@ -67,6 +68,7 @@ export function TodayList({
   const mutationFocusRef = useRef<MutationFocusRecovery | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget | null>(null);
   const { model } = state;
+  useColdLoad(state.loadStatus === "loading" && !state.loaded);
   const listLocked = state.loadStatus !== "ready" || state.pendingMutation !== null;
   const reorderLocked = listLocked || day === "Tomorrow";
   const scrollId = `${idBase}-scroll`;
@@ -254,8 +256,8 @@ export function TodayList({
         </a>
       ) : null}
 
-      {state.loadStatus === "loading" ? (
-        <p className="today-list__status" role="status">
+      {state.loadStatus === "loading" && !state.loaded ? (
+        <p className="cloud-shell__sr-only" role="status">
           Loading {day}…
         </p>
       ) : null}

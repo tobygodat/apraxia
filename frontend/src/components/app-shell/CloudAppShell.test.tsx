@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
 
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
+import { ColdLoadGate, useColdLoad } from "../../apps/coldLoad";
 import { CloudAppShell } from "./CloudAppShell";
 import {
   WorkspacePreferencesProvider,
@@ -63,7 +65,6 @@ describe("CloudAppShell", () => {
       "home",
       "tasks",
       "ideas",
-      "media",
       "projects",
       "classes",
     ]);
@@ -71,7 +72,6 @@ describe("CloudAppShell", () => {
       "/",
       "/todos",
       "/ideas",
-      "/media",
       "/projects",
       "/classes",
     ]);
@@ -248,5 +248,104 @@ describe("CloudAppShell", () => {
 
     expect(shell?.getAttribute("data-sidebar-collapsed")).toBe("true");
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeTruthy();
+  });
+});
+
+describe("CloudAppShell loading bar", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("stays hidden before the delay, appears after, and hides once revealed", () => {
+    // Force the gate's setTimeout(0) fallback for its deferred reveal check,
+    // so it advances deterministically alongside the bar's own fake timers.
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    vi.stubGlobal("cancelAnimationFrame", undefined);
+    vi.useFakeTimers();
+    let releasePending: (() => void) | undefined;
+    function Gated() {
+      const [pending, setPending] = useState(true);
+      useColdLoad(pending);
+      releasePending = () => setPending(false);
+      return null;
+    }
+    const { container } = renderShell({
+      children: (
+        <ColdLoadGate>
+          <Gated />
+        </ColdLoadGate>
+      ),
+    });
+    const bar = () => container.querySelector(".cloud-shell__loading-bar");
+
+    expect(bar()).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(149);
+    });
+    expect(bar()).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(bar()).toBeTruthy();
+
+    act(() => {
+      releasePending?.();
+    });
+    // Reveal is deferred to the next frame, so the bar is still up right away...
+    expect(bar()).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+    expect(bar()).toBeNull();
+  });
+
+  it("never shows the bar for a gate that reveals before the delay elapses", () => {
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    vi.stubGlobal("cancelAnimationFrame", undefined);
+    vi.useFakeTimers();
+    const { container } = renderShell({
+      children: (
+        <ColdLoadGate>
+          <p>ready immediately</p>
+        </ColdLoadGate>
+      ),
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(container.querySelector(".cloud-shell__loading-bar")).toBeNull();
+  });
+
+  it("keeps the bar visible after a timeout reveal while the gate is still pending", () => {
+    vi.stubGlobal("requestAnimationFrame", undefined);
+    vi.stubGlobal("cancelAnimationFrame", undefined);
+    vi.useFakeTimers();
+    function StuckGated() {
+      useColdLoad(true);
+      return null;
+    }
+    const { container } = renderShell({
+      children: (
+        <ColdLoadGate timeoutMs={500}>
+          <StuckGated />
+        </ColdLoadGate>
+      ),
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(container.querySelector(".cloud-shell__loading-bar")).toBeTruthy();
+
+    act(() => {
+      // Gate's timeout fires and reveals its content, but the child never
+      // stops registering as pending (a genuinely stuck load).
+      vi.advanceTimersByTime(500 - 150);
+    });
+    expect(container.querySelector(".cloud-shell__loading-bar")).toBeTruthy();
   });
 });

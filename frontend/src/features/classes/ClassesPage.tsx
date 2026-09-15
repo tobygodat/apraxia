@@ -14,6 +14,8 @@ import { readLegacyClasses, type Course, type ClassService } from "./classServic
 import { SavedClassNotes } from "./SavedClassNotes";
 import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { peekRead } from "../../apps/navigationCache";
+import { useColdLoad } from "../../apps/coldLoad";
 
 export function ClassesPage({
   userId,
@@ -35,8 +37,15 @@ export function ClassesPage({
   /** Task forms list classes by name; a create or rename refreshes those choices. */
   onClassesChanged?: () => void;
 }) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [cachedCourses] = useState(() =>
+    classService ? peekRead(classService, "list", userId, new AbortController().signal) : undefined,
+  );
+  const [courses, setCourses] = useState<Course[]>(cachedCourses ?? []);
+  const [loaded, setLoaded] = useState(cachedCourses !== undefined);
+  // Tracks whether a real snapshot (seeded from cache, or resolved from
+  // list()) exists, so a genuinely empty class list doesn't flash "Loading
+  // classes…" on refresh just because courses.length is 0.
+  const hasSnapshot = useRef(cachedCourses !== undefined);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [reload, setReload] = useState(0);
@@ -45,9 +54,11 @@ export function ClassesPage({
   const pending = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const course = courses.find((c) => c.id === courseId);
+  useColdLoad(!loaded && !error);
   useEffect(() => {
     const controller = new AbortController();
-    setLoaded(false);
+    // Don't flash the loading state when a cached list is already seeded/present.
+    setLoaded(hasSnapshot.current);
     setError("");
     setWarning("");
     void (async () => {
@@ -69,6 +80,7 @@ export function ClassesPage({
       const rows = await classService.list(userId, controller.signal);
       if (!controller.signal.aborted) {
         setCourses(rows);
+        hasSnapshot.current = true;
         setLoaded(true);
       }
     })().catch((cause) => {
@@ -125,7 +137,11 @@ export function ClassesPage({
       {!loaded ? (
         <>
           <h1>Classes</h1>
-          {!error && <p role="status">Loading classes…</p>}
+          {!error && (
+            <p className="cloud-shell__sr-only" role="status">
+              Loading classes…
+            </p>
+          )}
         </>
       ) : courseId && !course ? (
         <>

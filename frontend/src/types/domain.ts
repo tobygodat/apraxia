@@ -4,9 +4,7 @@ export type LocalTime = string;
 type Timestamp = string;
 
 export type ProjectStatus = "active" | "someday" | "completed" | "archived";
-export type MediaType = "book" | "movie";
-export type MediaStatus = "saved" | "in_progress" | "finished";
-type OrbitRecordType = "todo" | "idea" | "media" | "project";
+type OrbitRecordType = "todo" | "idea" | "project";
 type GoogleCalendarConnectionState = "connected" | "reconnect_required" | "disconnected";
 
 /** Browser-safe calendar colors. No Google event body or credential data belongs here. */
@@ -166,19 +164,6 @@ export interface Idea {
   updatedAt: Timestamp;
 }
 
-export interface MediaItem {
-  id: UUID;
-  mediaType: MediaType;
-  title: string;
-  creator: string | null;
-  releaseYear: number | null;
-  status: MediaStatus;
-  rating: number | null;
-  notes: string | null;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
 export interface NewProjectInput {
   title: string;
   description?: string | null;
@@ -202,16 +187,6 @@ export interface NewIdeaInput {
   title?: string | null;
   body: string;
   projectId?: UUID | null;
-}
-
-export interface NewMediaInput {
-  mediaType: MediaType;
-  title: string;
-  creator?: string | null;
-  releaseYear?: number | null;
-  status?: MediaStatus;
-  rating?: number | null;
-  notes?: string | null;
 }
 
 export interface TodayTodo {

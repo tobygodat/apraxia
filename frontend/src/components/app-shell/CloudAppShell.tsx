@@ -3,14 +3,43 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
 import { useWorkspacePreferences } from "../../apps/workspacePreferences";
+import { useColdLoadState } from "../../apps/coldLoad";
 import { WorkspaceIcon } from "../WorkspaceIcon";
 import "./CloudAppShell.css";
+
+/** Delay before showing the indeterminate bar, so fast loads never flash it. */
+const LOADING_BAR_DELAY_MS = 150;
+
+/**
+ * Thin indeterminate progress bar fixed to the top of the shell. Shown only
+ * once any mounted cold-load gate has been loading for at least
+ * `LOADING_BAR_DELAY_MS`, and hidden once nothing is loading any more —
+ * including a stuck load that revealed its content via its timeout but is
+ * still fetching, so the bar keeps running rather than the app going quiet.
+ * Purely decorative: pages already announce their own loading/ready state,
+ * so this stays out of the accessibility tree.
+ */
+function LoadingBar() {
+  const { pending } = useColdLoadState();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!pending) {
+      setVisible(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setVisible(true), LOADING_BAR_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [pending]);
+
+  if (!visible) return null;
+  return <div className="cloud-shell__loading-bar" aria-hidden="true" />;
+}
 
 const PRIMARY_DESTINATIONS = [
   { to: "/", label: "Home", icon: "home", end: true },
   { to: "/todos", label: "Tasks", icon: "todos", end: false },
   { to: "/ideas", label: "Ideas", icon: "ideas", end: false },
-  { to: "/media", label: "Media", icon: "media", end: false },
   { to: "/projects", label: "Projects", icon: "projects", end: false },
   { to: "/classes", label: "Classes", icon: "classes", end: false },
 ] as const;
@@ -129,6 +158,7 @@ export function CloudAppShell({
       aria-busy={signOutStatus === "pending"}
       data-sidebar-collapsed={collapsed ? "true" : undefined}
     >
+      <LoadingBar />
       <a className="cloud-shell__skip-link" href="#cloud-main-content">
         Skip to main content
       </a>

@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionPage } from "./CollectionPage";
+import { ColdLoadGate } from "../../apps/coldLoad";
 import type { CollectionService } from "./collectionService";
 import type { TodoService } from "../todos/todoService";
 import { WorkspaceContext, type WorkspaceStore } from "../../apps/workspaceStore";
 import type { ProjectSummary } from "../../types/domain";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 afterEach(cleanup);
 type PageProps = Parameters<typeof CollectionPage>[0] & {
   projects?: readonly ProjectSummary[];
@@ -117,26 +119,6 @@ describe("Collection pages", () => {
     expect(listIdeas).toHaveBeenCalledWith(expect.objectContaining({ offset: 50 }));
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
   });
-  it("keeps Media filters independent and passes them to the list service", async () => {
-    const listMedia = vi.fn().mockResolvedValue([]);
-    render(
-      <Page
-        kind="media"
-        service={{ listMedia } as unknown as CollectionService}
-        todoService={{} as TodoService}
-        projects={[]}
-        onChanged={vi.fn()}
-      />,
-    );
-    await screen.findByText("No books or movies in this view.");
-    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "movie" } });
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "finished" } });
-    await waitFor(() =>
-      expect(listMedia).toHaveBeenLastCalledWith(
-        expect.objectContaining({ mediaType: "movie", status: "finished", offset: 0 }),
-      ),
-    );
-  });
   it("shows project tasks and ideas and deletes only the selected project with Undo", async () => {
     const project = {
       id: "p",
@@ -172,7 +154,9 @@ describe("Collection pages", () => {
     const projectTodos = vi
       .fn()
       .mockResolvedValue([{ id: "t", text: "Finished action", completed: true, dueDate: null }]);
-    const listIdeas = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi
+      .fn()
+      .mockResolvedValue([{ id: "i", title: "Keep this", body: "Keep this", projectId: "p" }]);
     render(
       <Page
         kind="project"
@@ -184,6 +168,10 @@ describe("Collection pages", () => {
       />,
     );
     await screen.findByRole("button", { name: "Show completed (1)" });
+    expect(screen.getByText("Keep this")).toBeTruthy();
+    expect(
+      screen.queryAllByText("Home").filter((el) => el.closest(".collection-meta")),
+    ).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Add idea" }));
     expect((screen.getByLabelText("Project (optional)") as HTMLSelectElement).value).toBe("p");
   });
@@ -217,6 +205,93 @@ describe("Collection pages", () => {
     ).toBe("true");
     fireEvent.click(toggle);
     expect(screen.queryByRole("button", { name: "Finished action" })).toBeNull();
+  });
+  it("settles the row with a strike before completing an open task", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const openTask = { id: "t", text: "Draft the plan", completed: false, dueDate: null };
+    const completedTask = { id: "t", text: "Draft the plan", completed: true, dueDate: null };
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValueOnce([openTask])
+      .mockResolvedValueOnce([completedTask]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    let resolveCompleted: (() => void) | undefined;
+    const setTodoCompleted = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCompleted = resolve;
+        }),
+    );
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{ setTodoCompleted } as unknown as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const checkbox = await screen.findByRole("checkbox", { name: "Complete Draft the plan" });
+    vi.useFakeTimers();
+    fireEvent.click(checkbox);
+    expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBe("true");
+    expect(setTodoCompleted).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(setTodoCompleted).toHaveBeenCalledWith("t", true, expect.anything());
+    expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBe("true");
+    vi.useRealTimers();
+    await act(async () => {
+      resolveCompleted?.();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(projectTodos).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      const reopened = screen.getByRole("checkbox", {
+        name: "Reopen Draft the plan",
+        hidden: true,
+      });
+      expect(reopened.closest(".collection-task")?.getAttribute("data-settling")).toBeNull();
+    });
+  });
+  it("does not show a Loading status while project content is still visible after completing a task", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const openTask = { id: "t", text: "Draft the plan", completed: false, dueDate: null };
+    const completedTask = { id: "t", text: "Draft the plan", completed: true, dueDate: null };
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValueOnce([openTask])
+      .mockResolvedValueOnce([completedTask]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    const setTodoCompleted = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{ setTodoCompleted } as unknown as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const checkbox = await screen.findByRole("checkbox", { name: "Complete Draft the plan" });
+    vi.useFakeTimers();
+    fireEvent.click(checkbox);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
+    await waitFor(() => expect(projectTodos).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
   });
   it("lists projects of every saved status without classifications or a status filter", async () => {
     const records = ["active", "someday", "completed", "archived"].map((status, index) => ({
@@ -255,5 +330,258 @@ describe("Collection pages", () => {
     await screen.findByRole("heading", { name: "Reading room" });
     expect(screen.queryByText("Saved.")).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("renders project detail immediately from a warmed navigation cache with no Loading flash", async () => {
+    const project = {
+      id: "p",
+      title: "Home",
+      description: null,
+      status: "active",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const openTask = { id: "t", text: "Draft the plan", completed: false, dueDate: null };
+    const source = {
+      getProject: vi.fn().mockResolvedValue(project),
+      projectTodos: vi.fn().mockResolvedValue([openTask]),
+      listIdeas: vi.fn().mockResolvedValue([]),
+    } as unknown as CollectionService;
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      source,
+      cache,
+      "collection",
+      ["getProject", "projectTodos", "listIdeas"],
+      [],
+    ) as unknown as CollectionService;
+    // Warm the cache the way an earlier visit or a prefetch would.
+    await service.getProject("p");
+    await service.projectTodos("p", 0);
+    await service.listIdeas({ projectId: "p", offset: 0 });
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={service}
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
+    expect(screen.getByText("Draft the plan")).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
+  });
+  it("renders the Tasks/Ideas section frame immediately on a cold detail open with no Loading row and no counts", async () => {
+    let resolveProject: ((value: unknown) => void) | undefined;
+    const getProject = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveProject = resolve;
+        }),
+    );
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    // Cold detail: the numeric counts are withheld until real data lands.
+    expect(screen.getByRole("heading", { name: "Tasks" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ideas" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Tasks \d/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Ideas \d/ })).toBeNull();
+    const status = screen.getByText("Loading…");
+    expect(status.className).toContain("cloud-shell__sr-only");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(
+      (screen.getByRole("button", { name: "Edit project" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    await act(async () => {
+      resolveProject?.({ id: "p", title: "Home", description: null, status: "active" });
+      await Promise.resolve();
+    });
+    // Warm render: counts return once the detail has loaded.
+    expect(screen.getByRole("heading", { name: "Tasks 0" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ideas 0" })).toBeTruthy();
+  });
+  it("shows the workspace project title instead of Project while a cold detail load is in flight", async () => {
+    let resolveProject: ((value: unknown) => void) | undefined;
+    const getProject = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveProject = resolve;
+        }),
+    );
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Project" })).toBeNull();
+    await act(async () => {
+      resolveProject?.({ id: "p", title: "Home", description: null, status: "active" });
+      await Promise.resolve();
+    });
+  });
+  it("prefetches project detail reads after a short hover debounce", async () => {
+    const project = {
+      id: "p",
+      title: "Home",
+      description: null,
+      status: "active",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const listProjects = vi.fn().mockResolvedValue([project]);
+    const getProject = vi.fn().mockResolvedValue(project);
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        service={
+          { listProjects, getProject, projectTodos, listIdeas } as unknown as CollectionService
+        }
+        todoService={{} as TodoService}
+        projects={[]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const openButton = await screen.findByRole("button", { name: "Home" });
+    vi.useFakeTimers();
+    fireEvent.pointerEnter(openButton);
+    fireEvent.pointerEnter(openButton);
+    fireEvent.pointerEnter(openButton);
+    expect(getProject).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120);
+    });
+    vi.useRealTimers();
+    expect(getProject).toHaveBeenCalledTimes(1);
+    expect(getProject).toHaveBeenCalledWith("p");
+    expect(projectTodos).toHaveBeenCalledWith("p", 0);
+    expect(listIdeas).toHaveBeenCalledWith({ projectId: "p", offset: 0 });
+  });
+  it("cancels the hover prefetch when the pointer leaves before the debounce fires", async () => {
+    const project = {
+      id: "p",
+      title: "Home",
+      description: null,
+      status: "active",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const listProjects = vi.fn().mockResolvedValue([project]);
+    const getProject = vi.fn().mockResolvedValue(project);
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        service={
+          { listProjects, getProject, projectTodos, listIdeas } as unknown as CollectionService
+        }
+        todoService={{} as TodoService}
+        projects={[]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const openButton = await screen.findByRole("button", { name: "Home" });
+    vi.useFakeTimers();
+    fireEvent.pointerEnter(openButton);
+    fireEvent.pointerLeave(openButton);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    vi.useRealTimers();
+    expect(getProject).not.toHaveBeenCalled();
+  });
+  it("clears settling when the task refetch fails, so the row does not stay struck", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const openTask = { id: "t", text: "Draft the plan", completed: false, dueDate: null };
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValueOnce([openTask])
+      .mockRejectedValueOnce(new Error("network"));
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    const setTodoCompleted = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{ setTodoCompleted } as unknown as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const checkbox = await screen.findByRole("checkbox", { name: "Complete Draft the plan" });
+    vi.useFakeTimers();
+    fireEvent.click(checkbox);
+    expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBe("true");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    vi.useRealTimers();
+    await waitFor(() => expect(projectTodos).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBeNull();
+    });
+  });
+  it("holds the cold-load gate while the list loads and releases it once rows resolve", async () => {
+    let resolveRows: ((value: unknown) => void) | undefined;
+    const listProjects = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveRows = resolve;
+        }),
+    );
+    const { container } = render(
+      <ColdLoadGate>
+        <Page
+          kind="project"
+          service={{ listProjects } as unknown as CollectionService}
+          todoService={{} as TodoService}
+        />
+      </ColdLoadGate>,
+    );
+    const gate = container.querySelector(".cold-load");
+    expect(gate?.getAttribute("data-cold")).toBe("true");
+    await act(async () => {
+      resolveRows?.([]);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
+  });
+  it("releases the cold-load gate immediately when the list load fails", async () => {
+    const listProjects = vi.fn().mockRejectedValue(new Error("boom"));
+    const { container } = render(
+      <ColdLoadGate>
+        <Page
+          kind="project"
+          service={{ listProjects } as unknown as CollectionService}
+          todoService={{} as TodoService}
+        />
+      </ColdLoadGate>,
+    );
+    const gate = container.querySelector(".cold-load");
+    await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
   });
 });

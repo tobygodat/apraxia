@@ -5,7 +5,6 @@ import type {
   CalendarPreference,
   GoogleCalendarConnectionStatus,
   NewIdeaInput,
-  NewMediaInput,
   NewProjectInput,
   NewTodoInput,
   ProjectSummary,
@@ -107,7 +106,6 @@ describe("shared domain contracts", () => {
 
     expectTypeOf<HasUserId<NewTodoInput>>().toEqualTypeOf<false>();
     expectTypeOf<HasUserId<NewIdeaInput>>().toEqualTypeOf<false>();
-    expectTypeOf<HasUserId<NewMediaInput>>().toEqualTypeOf<false>();
     expectTypeOf<HasUserId<NewProjectInput>>().toEqualTypeOf<false>();
   });
 

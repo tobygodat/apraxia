@@ -69,15 +69,8 @@ must be active), `source`, `legacy_id`, `deleted_at`, timestamps, and a
 `search_vector` over title and body. Browser insert and update cover `title`,
 `body`, `project_id`.
 
-### `public.media`
-
-`id`, `user_id`, `media_type` (`book | movie`), `title` (not blank), `creator`,
-`release_year`, `status` (`saved | in_progress | finished`), `rating`, `notes`,
-`source`, `legacy_id`, `deleted_at`, timestamps, and a `search_vector` over
-title, creator, and notes. Browser insert and update cover every content column.
-
-Projects, ideas, and media are what the UI calls **collections**: one
-`collectionService` in `frontend/src/features/collections/` serves all three
+Projects and ideas are what the UI calls **collections**: one
+`collectionService` in `frontend/src/features/collections/` serves both
 because they share the same policy shape, soft-delete contract, and search
 projection.
 
@@ -109,7 +102,7 @@ public.soft_delete_record(p_record_type, p_record_id) -> timestamptz
 public.restore_record(p_record_type, p_record_id, p_deleted_at) -> boolean
 ```
 
-`p_record_type` is `public.orbitos_record_type`: `todo`, `idea`, `media`, or
+`p_record_type` is `public.orbitos_record_type`: `todo`, `idea`, or
 `project`. The returned `timestamptz` **is** the undo token. Contract:
 
 - Keep the token as the exact string the database returned. `domain.ts` brands it
@@ -168,3 +161,10 @@ Covered by `supabase/tests/030_soft_delete_restore.test.sql`.
 defined in [Today data protocol](TODAY_DATA_PROTOCOL.md); the SQL is in
 `supabase/migrations/20260902000400_today_pagination.sql`. Do not write
 `today_rank` directly: the browser has no grant for it.
+
+## Retired Media data
+
+The forward-only `remove_media` migration removes the Media table, enums, and
+RPC branches. Existing rows are retained as JSON in `private.retired_media`,
+with RLS and no API grants or policies. This backup is not used by the app.
+Historical migrations and legacy Python source/data remain for recovery.

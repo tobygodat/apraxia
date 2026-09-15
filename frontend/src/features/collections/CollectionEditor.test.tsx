@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Idea, MediaItem, Project } from "../../types/domain";
+import type { Idea, Project } from "../../types/domain";
 import { CollectionEditor } from "./CollectionEditor";
 import { ideaTitle, type CollectionService } from "./collectionService";
 afterEach(cleanup);
@@ -112,39 +112,6 @@ describe("Collection editor", () => {
     expect((screen.getByLabelText("Idea") as HTMLTextAreaElement).value).toBe("Remember this");
     fireEvent.click(screen.getByRole("button", { name: "Add idea" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
-  });
-  it("preserves a previously stored rating outside the new whole-star choices", async () => {
-    const item: MediaItem = {
-      id: "film",
-      title: "Film",
-      mediaType: "movie",
-      creator: null,
-      releaseYear: null,
-      status: "saved",
-      rating: 8.5,
-      notes: null,
-      createdAt: "",
-      updatedAt: "",
-    };
-    const saveMedia = vi.fn().mockResolvedValue(item);
-    render(
-      <CollectionEditor
-        kind="media"
-        record={item}
-        projects={[]}
-        service={{ saveMedia } as unknown as CollectionService}
-        onSaved={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "A film" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    await waitFor(() =>
-      expect(saveMedia).toHaveBeenCalledWith(
-        expect.objectContaining({ rating: 8.5, title: "A film" }),
-        "film",
-      ),
-    );
   });
   it("does not notify a removed editor when a pending write finishes", async () => {
     let resolve!: (value: Idea) => void;

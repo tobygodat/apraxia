@@ -7,6 +7,8 @@ import type { AuthIdentity } from "../../auth/authPort";
 import type { DeleteUndoToken, Profile, Todo } from "../../types/domain";
 import type { TodoService, TodoWorkspaceSnapshot } from "./todoService";
 import { TodosWorkspace } from "./TodosWorkspace";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 
 const IDENTITY: AuthIdentity = {
   userId: "11111111-1111-4111-8111-111111111111",
@@ -108,6 +110,27 @@ afterEach(() => {
 });
 
 describe("TodosWorkspace", () => {
+  it("stays cold-load pending until the workspace has loaded, then reveals", async () => {
+    const loading = deferred<TodoWorkspaceSnapshot>();
+    const service = createService({ loadWorkspace: vi.fn(() => loading.promise) });
+    const { container } = render(
+      <MemoryRouter initialEntries={["/todos"]}>
+        <ColdLoadGate>
+          <TodosWorkspace
+            service={service}
+            identity={IDENTITY}
+            workspaceSessionKey="account-a"
+            onSignOut={vi.fn(async () => undefined)}
+            signOutStatus="idle"
+          />
+        </ColdLoadGate>
+      </MemoryRouter>,
+    );
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+    await act(async () => loading.resolve(SNAPSHOT));
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull();
+  });
+
   it("keeps account controls available during loading and derives dates from the loaded profile", async () => {
     const loading = deferred<TodoWorkspaceSnapshot>();
     mount(createService({ loadWorkspace: vi.fn(() => loading.promise) }));
@@ -248,5 +271,22 @@ describe("TodosWorkspace", () => {
     expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+  });
+
+  it("renders the board immediately from a warmed navigation cache with no loading flash", async () => {
+    const loadWorkspace = vi.fn(async () => SNAPSHOT);
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      createService({ loadWorkspace }),
+      cache,
+      "todos",
+      ["loadWorkspace", "loadToday"],
+      [],
+    ) as unknown as TodoService;
+    // Warm the cache the way an earlier visit or a prefetch would.
+    await service.loadWorkspace({ signal: new AbortController().signal });
+    mount(service);
+    expect(screen.queryByText("Loading your tasks…")).toBeNull();
+    expect(screen.getByRole("article", { name: TODO.text })).toBeTruthy();
   });
 });

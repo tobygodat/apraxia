@@ -67,19 +67,6 @@
   opacity: 0.5;
   cursor: wait;
 }
-.collection-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-.collection-filters label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #ada9a3;
-  font-size: 12px;
-}
 .collection-list {
   list-style: none;
   padding: 0;
@@ -312,55 +299,240 @@
   color: white;
 }
 
+/* Project detail: sections share one rule system. The section header's bottom
+   rule doubles as the list's top rule, so headings, rows, and empty states
+   all sit on the same rhythm. */
+.collection-section__count {
+  margin-left: 8px;
+  color: #ada9a3;
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.collection-page .collection-section__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin: 0 -8px 0 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-control, 5px);
+  background: transparent;
+  color: #ada9a3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.collection-section__add .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+.collection-page .collection-section__add:hover:not(:disabled) {
+  background: #292929;
+  color: #f0efed;
+}
 .collection-page--project .collection-section {
   margin-top: 32px;
+}
+.collection-page--project .collection-section + .collection-section {
+  margin-top: 40px;
+}
+.collection-page--project .collection-section header {
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #383838;
+}
+.collection-page--project .collection-section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+.collection-page--project .collection-section__count {
+  margin-left: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+.collection-page--project .collection-list {
+  margin: 0;
+  border-top: 0;
+}
+.collection-page--project .collection-empty {
+  margin: 0;
+  padding: 13px 0;
+  border-bottom: 1px solid #383838;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .collection-page--project .collection-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-top: 12px;
 }
 .collection-page--project .collection-button .workspace-icon {
   width: 14px;
   height: 14px;
 }
+.collection-page--project .collection-row {
+  padding: 10px 0;
+}
+.collection-page--project .collection-open {
+  padding: 0;
+}
 .collection-page--project .collection-preview {
   max-width: 72ch;
 }
-.collection-page--project .collection-row:hover,
-.collection-page--project .collection-task:hover {
-  background: var(--cloud-shell-surface);
+.collection-page--project .collection-task {
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+}
+.collection-page--project .collection-task-check {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+  margin-top: 1px;
+}
+.collection-page--project .collection-task-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 3px 0;
+}
+.collection-page--project .collection-task-text:hover {
+  color: #fff;
+}
+.collection-page--project .collection-task-text[data-completed="true"]:hover {
+  color: #ada9a3;
+}
+.collection-page--project .collection-task-text .collection-meta {
+  display: inline;
+  margin: 0;
+  line-height: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .collection-page--project .collection-delete,
 .collection-page--project .collection-row-action {
-  width: 32px;
-  height: 32px;
-  flex-basis: 32px;
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  opacity: 0;
+  transition:
+    opacity 140ms ease-out,
+    background-color 140ms ease-out;
 }
-.collection-page--project .collection-task-check {
-  height: 32px;
+.collection-page--project .collection-task:hover .collection-delete,
+.collection-page--project .collection-task:hover .collection-row-action,
+.collection-page--project .collection-task:focus-within .collection-delete,
+.collection-page--project .collection-task:focus-within .collection-row-action,
+.collection-page--project .collection-row:hover .collection-delete,
+.collection-page--project .collection-row:focus-within .collection-delete {
+  opacity: 1;
 }
-.collection-page--project .collection-task-text {
-  padding-top: 6px;
+.collection-page--project .collection-completed {
+  margin-top: 0;
 }
 .collection-page--project .collection-back {
   min-height: 32px;
 }
+@media (prefers-reduced-motion: reduce) {
+  .collection-page--project .collection-delete,
+  .collection-page--project .collection-row-action {
+    transition: none;
+  }
+}
 @media (pointer: coarse) {
   .collection-page--project .collection-delete,
-  .collection-page--project .collection-row-action,
+  .collection-page--project .collection-row-action {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    opacity: 1;
+  }
   .collection-page--project .collection-task-check {
     width: 44px;
     height: 44px;
     flex-basis: 44px;
+    margin-top: 0;
   }
   .collection-page--project .collection-task-text {
     padding-top: 12px;
   }
   .collection-page--project .collection-back,
   .collection-page--project .collection-button,
+  .collection-page--project .collection-section__add,
   .collection-page--project .collection-completed__toggle {
     min-height: 44px;
   }
+}
+
+/* Project detail: transient status rows share the section rule rhythm. */
+.collection-page--project .collection-notice,
+.collection-page--project > .collection-meta[role="status"] {
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid #383838;
+  color: #ada9a3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Completing a task: the strike draws across the title, then the row settles
+   out before it moves to the completed group. */
+.collection-page--project .collection-task-title {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1px;
+  transition:
+    background-size 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 280ms ease-out;
+}
+.collection-page--project .collection-task[data-settling] .collection-task-title {
+  color: #ada9a3;
+  background-size: 100% 1px;
+}
+.collection-page--project .collection-task[data-settling] .collection-meta {
+  transition: opacity 200ms ease-out 120ms;
+  opacity: 0.5;
+}
+.collection-page--project .collection-task {
+  transition: opacity 180ms ease-in 260ms;
+}
+.collection-page--project .collection-task[data-settling] {
+  opacity: 0.45;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collection-page--project .collection-task,
+  .collection-page--project .collection-task-title,
+  .collection-page--project .collection-task[data-settling] .collection-meta {
+    transition: none;
+  }
+}
+.collection-page--project .collection-notice {
+  gap: 12px;
+}
+.collection-page .collection-notice__undo {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  background: none;
+  color: #f0efed;
+  font-size: 13px;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: #575757;
+}
+.collection-page .collection-notice__undo:hover:not(:disabled) {
+  text-decoration-color: #f0efed;
 }

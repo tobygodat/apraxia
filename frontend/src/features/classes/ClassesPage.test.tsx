@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ClassesPage } from "./ClassesPage";
 import { createClassPersistenceFixture } from "../../qa/classPersistenceFixture";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 vi.mock("./PdfReader", () => ({
   default: ({ file, showTools }: { file: File; showTools: boolean }) => (
     <div data-testid="reader">
@@ -99,6 +101,100 @@ it("starts a new account empty rather than creating a default class", async () =
   expect(
     await screen.findByText("No classes yet. Add a class to save assignments and notes."),
   ).toBeTruthy();
+});
+it("renders classes immediately from a warmed cache with no loading flash", async () => {
+  const data = createClassPersistenceFixture();
+  const cache = new NavigationCache();
+  const classService = cacheNavigationService(
+    data.classes,
+    cache,
+    "classes",
+    ["list"],
+    ["create", "rename", "importLegacy"],
+  );
+  await classService.list("user-a", new AbortController().signal);
+  render(
+    <MemoryRouter>
+      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole("heading", { name: "MATH3012" })).toBeTruthy();
+  expect(screen.queryByText("Loading classes…")).toBeNull();
+});
+it("renders an empty warmed cache immediately with no loading flash", async () => {
+  const data = createClassPersistenceFixture(true);
+  const cache = new NavigationCache();
+  const classService = cacheNavigationService(
+    data.classes,
+    cache,
+    "classes",
+    ["list"],
+    ["create", "rename", "importLegacy"],
+  );
+  await classService.list("user-a", new AbortController().signal);
+  render(
+    <MemoryRouter>
+      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByText("No classes yet. Add a class to save assignments and notes."),
+  ).toBeTruthy();
+  expect(screen.queryByText("Loading classes…")).toBeNull();
+});
+it("shows the loading placeholder with a cold cache", async () => {
+  const data = createClassPersistenceFixture();
+  const cache = new NavigationCache();
+  const classService = cacheNavigationService(
+    data.classes,
+    cache,
+    "classes",
+    ["list"],
+    ["create", "rename", "importLegacy"],
+  );
+  render(
+    <MemoryRouter>
+      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText("Loading classes…")).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "MATH3012" })).toBeTruthy();
+});
+it("holds the cold-load gate while classes load and releases it once resolved", async () => {
+  const data = createClassPersistenceFixture();
+  let resolveList: ((value: Awaited<ReturnType<typeof data.classes.list>>) => void) | undefined;
+  vi.spyOn(data.classes, "list").mockReturnValue(
+    new Promise((resolve) => {
+      resolveList = resolve;
+    }),
+  );
+  const { container } = render(
+    <MemoryRouter>
+      <ColdLoadGate>
+        <ClassesPage userId="user-a" classService={data.classes} noteService={data.notes} />
+      </ColdLoadGate>
+    </MemoryRouter>,
+  );
+  const gate = container.querySelector(".cold-load");
+  expect(gate?.getAttribute("data-cold")).toBe("true");
+  await act(async () => {
+    resolveList?.([]);
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
+});
+it("releases the cold-load gate immediately when classes fail to load", async () => {
+  const data = createClassPersistenceFixture();
+  vi.spyOn(data.classes, "list").mockRejectedValue(new Error("boom"));
+  const { container } = render(
+    <MemoryRouter>
+      <ColdLoadGate>
+        <ClassesPage userId="user-a" classService={data.classes} noteService={data.notes} />
+      </ColdLoadGate>
+    </MemoryRouter>,
+  );
+  const gate = container.querySelector(".cold-load");
+  await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
 });
 it("uses todo-backed assignments in the class detail while retaining the inline editor", async () => {
   const { createFixtureAssignments } = await import("../../qa/ClassAssignmentsMock");
