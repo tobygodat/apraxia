@@ -6,7 +6,9 @@ import type { CollectionService } from "../features/collections/collectionServic
 import type { CalendarService } from "../features/calendar/calendarService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
-import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
+import { localToday } from "../features/todos/dateDomain";
+import { startOfWeekSunday } from "../features/calendar/eventLayout";
+import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 
@@ -84,6 +86,24 @@ describe("Main workspace integration", () => {
     expect(await screen.findByRole("button", { name: "Idea" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Project" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Media" })).toBeNull();
+  });
+
+  it("mounts a route synchronously with no Suspense fallback once its chunk was preloaded", async () => {
+    // Warm the route chunk the way WorkspaceRuntime's idle-time preload
+    // does, and wait for it to actually resolve before mounting.
+    await preloadWorkspaceChunks();
+    const f = fixture();
+    mount(f.props);
+    // No `act()`/`findBy*` wait: if the route's chunk had suspended, only
+    // the tiny Suspense fallback (its sr-only status text) would be in the
+    // DOM right after render(), and none of CollectionPage's own markup.
+    // With the chunk preloaded, CollectionPage itself mounts synchronously
+    // on the very first commit instead — its heading proves that, even
+    // though its own data load (a separate, still-async `listProjects`
+    // call) hasn't resolved yet and legitimately shows its own "Loading…"
+    // row in the meantime.
+    expect(screen.getByRole("heading", { name: "Projects" })).toBeTruthy();
+    await screen.findByText("No projects in this view.");
   });
 
   it("reuses the runtime project preload when opening Projects and returning to it", async () => {
@@ -276,5 +296,98 @@ describe("Main workspace integration", () => {
     expect(screen.queryByText("Private idea")).toBeNull();
     expect(screen.queryByText(idea.body)).toBeNull();
     expect(next.search).not.toHaveBeenCalled();
+  });
+
+  it("preloads appearance and Home's calendar/today reads once at startup from another route", async () => {
+    const f = fixture();
+    const load = vi.fn().mockResolvedValue({ title: "Studio", coverImage: null });
+    const loadToday = vi.fn().mockResolvedValue([]);
+    const status = vi.fn().mockResolvedValue({ connectionState: "connected" });
+    const week = vi.fn().mockResolvedValue({
+      range: { sunday: "2026-09-06" },
+      timezone: "America/New_York",
+      events: [],
+      partialErrors: [],
+      visibleCalendars: [],
+    });
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={
+            {
+              ...f.props.todoService,
+              loadToday,
+              loadWorkspace: vi.fn().mockResolvedValue({}),
+            } as unknown as TodoService
+          }
+          collectionService={
+            {
+              ...f.props.collectionService,
+              listIdeas: vi.fn().mockResolvedValue([]),
+            } as unknown as CollectionService
+          }
+          calendarService={{ status, week } as unknown as CalendarService}
+          workspaceData={{ ...f.props.workspaceData, homeAppearance: { load, save: vi.fn() } }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("No projects in this view.");
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+    expect(load).toHaveBeenCalledWith("user-a", expect.any(AbortSignal));
+    const today = localToday("America/New_York");
+    const sunday = startOfWeekSunday(today);
+    await waitFor(() => expect(loadToday).toHaveBeenCalledTimes(1));
+    expect(loadToday).toHaveBeenCalledWith(today, { signal: expect.any(AbortSignal) });
+    await waitFor(() => expect(status).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(week).toHaveBeenCalledTimes(1));
+    expect(week).toHaveBeenCalledWith(sunday, expect.any(AbortSignal));
+  });
+
+  it("prefetches each listed project's detail reads at startup", async () => {
+    const f = fixture();
+    const projectA = {
+      id: "garden-project",
+      title: "Garden plans",
+      description: "Make space for herbs",
+      status: "someday",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const projectB = { ...projectA, id: "kitchen-project", title: "Kitchen remodel" };
+    const listProjects = vi.fn().mockResolvedValue([projectA, projectB]);
+    const getProject = vi.fn().mockResolvedValue(projectA);
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={{
+            ...f.props.todoService,
+            loadWorkspace: vi.fn().mockResolvedValue({}),
+          }}
+          collectionService={{
+            ...f.props.collectionService,
+            listProjects,
+            getProject,
+            projectTodos,
+            listIdeas,
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("Garden plans");
+    await waitFor(() => expect(getProject).toHaveBeenCalledTimes(2));
+    expect(getProject).toHaveBeenCalledWith(projectA.id);
+    expect(getProject).toHaveBeenCalledWith(projectB.id);
+    expect(projectTodos).toHaveBeenCalledWith(projectA.id, 0);
+    expect(projectTodos).toHaveBeenCalledWith(projectB.id, 0);
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectA.id, offset: 0 }),
+    );
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectB.id, offset: 0 }),
+    );
   });
 });

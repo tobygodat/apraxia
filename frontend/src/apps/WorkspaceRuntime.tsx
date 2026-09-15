@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { registerUserStateResetter } from "../auth/userState";
-import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
+import { primeCoverImage } from "../features/calendar/HomeHeader";
+import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 
 /** Shared by the authenticated app and local QA, including navigation timing. */
@@ -41,16 +42,14 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     [props.collectionService, cache],
   );
   const calendarService = useMemo(
-    () => ({
-      ...cacheNavigationService(
-        props.calendarService,
+    () =>
+      cacheNavigationService(
+        { ...props.calendarService, invalidate: cache.invalidate },
         cache,
         "calendar",
         ["status", "calendars", "week"],
         ["connect", "disconnect", "setVisibility"],
       ),
-      invalidate: cache.invalidate,
-    }),
     [props.calendarService, cache],
   );
   const workspaceData = useMemo(
@@ -62,7 +61,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
             props.workspaceData.classes,
             cache,
             "classes",
-            [],
+            ["list"],
             ["create", "rename", "importLegacy"],
           )
         : undefined,
@@ -73,6 +72,15 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
             "assignments",
             [],
             ["create", "update", "remove", "restore"],
+          )
+        : undefined,
+      homeAppearance: props.workspaceData.homeAppearance
+        ? cacheNavigationService(
+            props.workspaceData.homeAppearance,
+            cache,
+            "homeAppearance",
+            ["load"],
+            ["save"],
           )
         : undefined,
     }),
@@ -91,15 +99,42 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     const timer = window.setTimeout(() => {
       void Promise.allSettled([
         todoService.loadWorkspace({ signal }),
-        collectionService.listProjects({ offset: 0, signal }),
+        collectionService.listProjects({ offset: 0, signal }).then((projects) => {
+          if (typeof collectionService.getProject !== "function") return;
+          const targets = projects.slice(0, 24);
+          void Promise.allSettled(
+            targets.flatMap((project) => [
+              collectionService.getProject(project.id),
+              collectionService.projectTodos(project.id, 0),
+              collectionService.listIdeas({ projectId: project.id, offset: 0, signal }),
+            ]),
+          );
+        }),
         collectionService.listIdeas({ offset: 0, signal }),
+        workspaceData.homeAppearance?.load(props.identity.userId, signal).then((appearance) => {
+          if (appearance.coverImage) primeCoverImage(appearance.coverImage);
+        }),
       ]);
     }, 100);
+    let idleHandle: number | undefined;
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window.requestIdleCallback === "function") {
+      // A timeout guarantees this still runs within 2s under sustained
+      // main-thread activity, where an idle period might otherwise never
+      // arrive.
+      idleHandle = window.requestIdleCallback(() => preloadWorkspaceChunks(), { timeout: 2000 });
+    } else {
+      idleTimer = setTimeout(() => preloadWorkspaceChunks(), 1500);
+    }
     return () => {
       clearTimeout(timer);
       controller.abort();
+      if (idleHandle !== undefined && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (idleTimer !== undefined) clearTimeout(idleTimer);
     };
-  }, [todoService, collectionService]);
+  }, [todoService, collectionService, workspaceData, props.identity.userId]);
   return (
     <MainWorkspace
       {...props}

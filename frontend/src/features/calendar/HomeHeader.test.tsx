@@ -1,11 +1,39 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { HomeHeader } from "./HomeHeader";
+import { HomeHeader, decodedCoverSize, primeCoverImage } from "./HomeHeader";
 import { prepareCover, validateAppearance, type HomeAppearanceService } from "./homeAppearance";
 import { coverImageLayout } from "./coverLayout";
-import { createRef } from "react";
+import { createRef, useState, type MutableRefObject } from "react";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 afterEach(cleanup);
+
+// Mirrors HomePage's callback-ref pattern: `pageElement` must be populated
+// from the very first render so HomeHeader's layout effect can apply cover
+// geometry in the first commit instead of a render behind.
+function PageHost({
+  service,
+  outRef,
+}: {
+  service: HomeAppearanceService;
+  outRef: MutableRefObject<HTMLDivElement | null>;
+}) {
+  const [page, setPage] = useState<HTMLDivElement | null>(null);
+  outRef.current = page;
+  return (
+    <div
+      ref={(node) => {
+        setPage(node);
+        outRef.current = node;
+      }}
+      style={{ padding: "0px" }}
+    >
+      <HomeHeader userId="owner" service={service} pageElement={page} />
+      <div>Workspace</div>
+    </div>
+  );
+}
 
 it("saves title and cover removal together, preserving the draft after failure", async () => {
   const service: HomeAppearanceService = {
@@ -31,6 +59,25 @@ it("saves title and cover removal together, preserving the draft after failure",
     expect.any(AbortSignal),
   );
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+it("renders the cover on first paint from a warmed navigation cache, no collapsed flash", async () => {
+  const load = vi.fn(async () => ({ title: "Studio", coverImage: "data:image/png;base64,AAAA" }));
+  const source: HomeAppearanceService = { load, save: vi.fn() };
+  const cache = new NavigationCache();
+  const service = cacheNavigationService(
+    source,
+    cache,
+    "homeAppearance",
+    ["load"],
+    ["save"],
+  ) as unknown as HomeAppearanceService;
+  // Warm the cache the way an earlier navigation to Home would.
+  await service.load("owner", new AbortController().signal);
+  render(<HomeHeader userId="owner" service={service} />);
+  expect(screen.getByRole("heading", { name: "Studio" })).toBeTruthy();
+  expect(
+    (screen.getByRole("button", { name: "Customize page" }) as HTMLButtonElement).disabled,
+  ).toBe(false);
 });
 it("discards late account loads and keeps personalization failure separate from the workspace", async () => {
   let resolve!: (value: { title: string; coverImage: null }) => void;
@@ -165,17 +212,12 @@ it("reveals top and bottom edges, fits portrait covers, and hides the collapsed 
   expect(coverImageLayout(1000, 64, 600, 1000, 600).opacity).toBe(0);
 });
 it("starts with a compact cover and uses native scrolling with a reduced-motion button path", async () => {
-  const page = createRef<HTMLDivElement>();
+  const page = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
   const service: HomeAppearanceService = {
     load: async () => ({ title: "Studio", coverImage: "data:image/png;base64,AAAA" }),
     save: vi.fn(),
   };
-  const { container } = render(
-    <div ref={page} style={{ padding: "0px" }}>
-      <HomeHeader userId="owner" service={service} scrollRef={page} />
-      <div>Workspace</div>
-    </div>,
-  );
+  const { container } = render(<PageHost service={service} outRef={page} />);
   await screen.findByRole("heading", { name: "Studio" });
   Object.defineProperties(page.current!, {
     clientHeight: { value: 800 },
@@ -201,6 +243,122 @@ it("starts with a compact cover and uses native scrolling with a reduced-motion 
   expect(screen.getByRole("heading", { name: "Studio" })).toBeTruthy();
   match.mockRestore();
   scrollTo.mockRestore();
+});
+it("applies cover geometry on the first commit for a warm revisit, no intermediate flash", async () => {
+  // Relies on the previous test having already decoded and cached the
+  // dimensions for this same data URL, mirroring a real revisit.
+  const page = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+  const service: HomeAppearanceService = {
+    load: async () => ({ title: "Studio", coverImage: "data:image/png;base64,AAAA" }),
+    save: vi.fn(),
+  };
+  const cache = new NavigationCache();
+  const wrapped = cacheNavigationService(
+    service,
+    cache,
+    "homeAppearanceRevisit",
+    ["load"],
+    ["save"],
+  ) as unknown as HomeAppearanceService;
+  await wrapped.load("owner", new AbortController().signal);
+  const { container } = render(<PageHost service={wrapped} outRef={page} />);
+  await screen.findByRole("heading", { name: "Studio" });
+  Object.defineProperties(page.current!, {
+    clientHeight: { value: 800 },
+    clientWidth: { value: 1000 },
+  });
+  // No fireEvent.load here: the cached decoded size should already be in
+  // effect, so the cover geometry (page classed, custom properties set) is
+  // applied by HomeHeader's layout effect without waiting on a decode event.
+  expect(page.current!.classList.contains("home-page--cover")).toBe(true);
+  const frame = container.querySelector(".home-header__frame") as HTMLElement;
+  expect(frame.style.height).toBe("180px");
+});
+it("caps the decoded cover size cache with FIFO eviction", async () => {
+  decodedCoverSize.clear();
+  for (let i = 0; i < 5; i++) {
+    const coverImage = `data:image/png;base64,COVER${i}`;
+    const service: HomeAppearanceService = {
+      load: async () => ({ title: "Studio", coverImage }),
+      save: vi.fn(),
+    };
+    const { container, unmount } = render(<HomeHeader userId="owner" service={service} />);
+    await screen.findByRole("heading", { name: "Studio" });
+    const img = container.querySelector("img.home-header__cover") as HTMLImageElement;
+    Object.defineProperty(img, "naturalWidth", { value: 100 + i, configurable: true });
+    Object.defineProperty(img, "naturalHeight", { value: 50 + i, configurable: true });
+    fireEvent.load(img);
+    unmount();
+  }
+  expect(decodedCoverSize.size).toBe(4);
+  expect(decodedCoverSize.has("data:image/png;base64,COVER0")).toBe(false);
+  for (let i = 1; i < 5; i++) {
+    expect(decodedCoverSize.has(`data:image/png;base64,COVER${i}`)).toBe(true);
+  }
+});
+it("primeCoverImage decodes a cover ahead of the header mounting it", () => {
+  decodedCoverSize.clear();
+  const src = "data:image/png;base64,PRIMED";
+  const instances: { onload: (() => void) | null; src: string }[] = [];
+  class FakeImage {
+    onload: (() => void) | null = null;
+    naturalWidth = 320;
+    naturalHeight = 240;
+    src = "";
+    constructor() {
+      instances.push(this);
+    }
+  }
+  vi.stubGlobal("Image", FakeImage as unknown as typeof Image);
+  try {
+    primeCoverImage(src);
+    expect(instances).toHaveLength(1);
+    expect(instances[0].src).toBe(src);
+    instances[0].onload?.();
+    expect(decodedCoverSize.get(src)).toEqual({ width: 320, height: 240 });
+    // Already decoded: a second call must not create another Image.
+    primeCoverImage(src);
+    expect(instances).toHaveLength(1);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+it("stays cold-load pending until the cover image decodes, then reveals", async () => {
+  // happy-dom resolves a data-URL <img> synchronously on mount instead of
+  // waiting for a real decode, so the auto-dispatched "load" event is
+  // swallowed here to observe the gate's pending state before the image
+  // is (manually) reported ready, mirroring a real browser's timing.
+  const originalDispatch = HTMLImageElement.prototype.dispatchEvent;
+  const dispatchSpy = vi
+    .spyOn(HTMLImageElement.prototype, "dispatchEvent")
+    .mockImplementation(function (this: HTMLImageElement, event: Event) {
+      if (event.type === "load") return true;
+      return originalDispatch.call(this, event);
+    });
+  try {
+    const service: HomeAppearanceService = {
+      load: async () => ({ title: "Studio", coverImage: "data:image/png;base64,COLD" }),
+      save: vi.fn(),
+    };
+    const { container } = render(
+      <ColdLoadGate>
+        <HomeHeader userId="owner" service={service} />
+      </ColdLoadGate>,
+    );
+    await screen.findByRole("heading", { name: "Studio" });
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+    const image = container.querySelector("img.home-header__cover") as HTMLImageElement;
+    Object.defineProperty(image, "naturalWidth", { value: 200, configurable: true });
+    Object.defineProperty(image, "naturalHeight", { value: 100, configurable: true });
+    dispatchSpy.mockRestore();
+    fireEvent.load(image);
+    // The gate defers its reveal to a rAF/timeout check that pending is still zero.
+    await waitFor(() =>
+      expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+    );
+  } finally {
+    dispatchSpy.mockRestore();
+  }
 });
 it("rejects remote URLs, SVG, excessive names, and unsupported uploads", async () => {
   for (const coverImage of [

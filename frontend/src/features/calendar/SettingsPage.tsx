@@ -7,6 +7,8 @@ import type {
 import type { CalendarService } from "./calendarService";
 import "./calendar.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { peekRead } from "../../apps/navigationCache";
+import { useColdLoad } from "../../apps/coldLoad";
 
 export function SettingsPage({
   calendarService: service,
@@ -17,9 +19,13 @@ export function SettingsPage({
   profile: Profile;
   onSignOut: () => void | Promise<void>;
 }) {
-  const [status, setStatus] = useState<GoogleCalendarConnectionStatus | null>(null);
-  const [calendars, setCalendars] = useState<CalendarPreference[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedStatus = peekRead(service, "status");
+  const [status, setStatus] = useState<GoogleCalendarConnectionStatus | null>(cachedStatus ?? null);
+  const [calendars, setCalendars] = useState<CalendarPreference[]>(
+    (cachedStatus?.connectionState === "connected" ? peekRead(service, "calendars") : undefined) ??
+      [],
+  );
+  const [loading, setLoading] = useState(cachedStatus === undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -57,6 +63,7 @@ export function SettingsPage({
     }
   };
   const connected = status?.connectionState === "connected";
+  useColdLoad(loading && status === null && !error);
   return (
     <section className="calendar-settings" aria-labelledby="calendar-settings-title">
       <h1 id="calendar-settings-title">Settings</h1>
@@ -68,8 +75,10 @@ export function SettingsPage({
           Home.
         </p>
 
-        {loading ? (
-          <p role="status">Loading Calendar settings…</p>
+        {loading && status === null ? (
+          <p className="cloud-shell__sr-only" role="status">
+            Loading Calendar settings…
+          </p>
         ) : (
           <>
             <p>

@@ -1,4 +1,5 @@
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -18,6 +19,8 @@ import "./TodosBoard.css";
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
   readonly loadStatus?: TodoLoadStatus;
+  /** True once the board has ever received a workspace snapshot. */
+  readonly loaded?: boolean;
   readonly pendingTodoIds?: ReadonlySet<string>;
   readonly projects?: readonly ProjectSummary[];
   readonly mutationResult?: TodoMutationResult | null;
@@ -163,6 +166,7 @@ function TodoCard({
 export function TodosBoard({
   model: fullModel,
   loadStatus = "ready",
+  loaded = false,
   pendingTodoIds = new Set<string>(),
   projects = [],
   mutationResult = null,
@@ -403,6 +407,7 @@ export function TodosBoard({
   }, [boardRegionId, model, todoControlId, undoNotice]);
 
   const navigationPending = loadStatus === "loading";
+  useColdLoad(loadStatus === "loading" && !loaded);
 
   return (
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
@@ -464,8 +469,8 @@ export function TodosBoard({
         </div>
       ) : null}
 
-      {loadStatus === "loading" ? (
-        <p className="todos-board-status" role="status">
+      {loadStatus === "loading" && !loaded ? (
+        <p className="cloud-shell__sr-only" role="status">
           Loading tasks…
         </p>
       ) : null}

@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  createElement,
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
 import {
   Link,
   Outlet,
@@ -20,7 +28,9 @@ import {
 import { SearchDialog } from "../components/search/SearchDialog";
 import type { TodoService } from "../features/todos/todoService";
 import { TodoEditDialog } from "../features/todos/TodoFormDialog";
+import { localToday } from "../features/todos/dateDomain";
 import type { CalendarService } from "../features/calendar/calendarService";
+import { startOfWeekSunday } from "../features/calendar/eventLayout";
 import { CollectionEditor } from "../features/collections/CollectionEditor";
 import type {
   CollectionKind,
@@ -28,28 +38,82 @@ import type {
   CollectionService,
 } from "../features/collections/collectionService";
 import type { DriveService } from "../features/classes/driveService";
+import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
 import { WorkspaceDialog } from "./WorkspaceDialog";
 import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
 import "./workspace.css";
 
+/**
+ * Wraps a route chunk loader so a route whose chunk was already resolved by
+ * `preload()` mounts synchronously with the real component — no `React.lazy`
+ * suspend, so no `Suspense` fallback commit and no cold-load gate for it.
+ * `React.lazy` itself still owns the fallback path for a route visited
+ * before its `preload()` (or the promise it started) has resolved: the
+ * dynamic import is deduped by the module specifier, so calling `load()`
+ * again here is cheap, not a second fetch.
+ */
+function preloadable<P extends object>(
+  load: () => Promise<{ default: ComponentType<P> }>,
+): { preload(): Promise<void>; Component: ComponentType<P> } {
+  let Resolved: ComponentType<P> | undefined;
+  const Lazy = lazy(load);
+  // `Lazy` (a `LazyExoticComponent<ComponentType<P>>`) is functionally a
+  // `ComponentType<P>` at runtime but isn't structurally recognized as one
+  // by JSX/`createElement`'s generic prop checking; the cast reflects that,
+  // not a real type hole.
+  const Component: ComponentType<P> = (props: P) =>
+    createElement((Resolved ?? Lazy) as ComponentType<P>, props);
+  const preload = (): Promise<void> =>
+    load().then((module) => {
+      Resolved = module.default;
+    });
+  return { preload, Component };
+}
+
 // Route-level chunks: calendar (Temporal polyfill), classes (pdfjs), todos board, collections.
-const HomePage = lazy(() =>
-  import("../features/calendar/HomePage").then((m) => ({ default: m.HomePage })),
-);
-const SettingsPage = lazy(() =>
-  import("../features/calendar/SettingsPage").then((m) => ({ default: m.SettingsPage })),
-);
-const TodosWorkspaceContent = lazy(() =>
+// Each call names its prop type explicitly via a type-only dynamic import
+// query (erased at build time, no extra bundling): letting `preloadable`'s
+// type parameter infer purely from the loader's return type hits a known
+// TypeScript generic-inference limitation for a type used in both a
+// function's parameter and its result.
+const homeChunk = preloadable<
+  Parameters<(typeof import("../features/calendar/HomePage"))["HomePage"]>[0]
+>(() => import("../features/calendar/HomePage").then((m) => ({ default: m.HomePage })));
+const settingsChunk = preloadable<
+  Parameters<(typeof import("../features/calendar/SettingsPage"))["SettingsPage"]>[0]
+>(() => import("../features/calendar/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const todosChunk = preloadable<
+  Parameters<(typeof import("../features/todos/TodosWorkspace"))["TodosWorkspaceContent"]>[0]
+>(() =>
   import("../features/todos/TodosWorkspace").then((m) => ({ default: m.TodosWorkspaceContent })),
 );
-const ClassesPage = lazy(() =>
-  import("../features/classes/ClassesPage").then((m) => ({ default: m.ClassesPage })),
-);
-const CollectionPage = lazy(() =>
+const classesChunk = preloadable<
+  Parameters<(typeof import("../features/classes/ClassesPage"))["ClassesPage"]>[0]
+>(() => import("../features/classes/ClassesPage").then((m) => ({ default: m.ClassesPage })));
+const collectionChunk = preloadable<
+  Parameters<(typeof import("../features/collections/CollectionPage"))["CollectionPage"]>[0]
+>(() =>
   import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage })),
 );
+
+const HomePage = homeChunk.Component;
+const SettingsPage = settingsChunk.Component;
+const TodosWorkspaceContent = todosChunk.Component;
+const ClassesPage = classesChunk.Component;
+const CollectionPage = collectionChunk.Component;
+
+/** Warms the route chunks so navigation doesn't wait on network once data is cached. */
+export function preloadWorkspaceChunks(): Promise<void> {
+  return Promise.all([
+    homeChunk.preload(),
+    settingsChunk.preload(),
+    todosChunk.preload(),
+    classesChunk.preload(),
+    collectionChunk.preload(),
+  ]).then(() => undefined);
+}
 
 export interface MainWorkspaceProps {
   identity: AuthIdentity;
@@ -76,6 +140,46 @@ export function MainWorkspace(props: MainWorkspaceProps) {
   );
 }
 
+/**
+ * Warms the Home page's calendar/today reads once the profile (and its
+ * timezone) is known, so a first visit to Home from another route finds
+ * the navigation cache already seeded instead of showing loading placeholders.
+ * Skips entirely when Home is already the current route: HomePage's own
+ * effects own that request there.
+ */
+function HomeDataPreload({
+  todoService,
+  calendarService,
+}: Pick<MainWorkspaceProps, "todoService" | "calendarService">) {
+  const { profile } = useWorkspace();
+  const location = useLocation();
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !profile || location.pathname === "/") return undefined;
+    started.current = true;
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const today = localToday(profile.timezone);
+    const sunday = startOfWeekSunday(today);
+    const tasks: Promise<unknown>[] = [];
+    if (typeof todoService.loadToday === "function")
+      tasks.push(todoService.loadToday(today, { signal }));
+    if (typeof calendarService.status === "function")
+      tasks.push(
+        calendarService
+          .status(signal)
+          .then((status) =>
+            status?.connectionState === "connected"
+              ? calendarService.week(sunday, signal)
+              : undefined,
+          ),
+      );
+    void Promise.allSettled(tasks);
+    return () => controller.abort();
+  }, [profile, location.pathname, todoService, calendarService]);
+  return null;
+}
+
 function WorkspaceCapture(props: MainWorkspaceProps) {
   const { projects, classes, invalidate } = useWorkspace();
   const [notice, setNotice] = useState("");
@@ -91,6 +195,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
         return undefined;
       }}
     >
+      <HomeDataPreload todoService={props.todoService} calendarService={props.calendarService} />
       <Routes>
         <Route element={<WorkspaceLayout {...props} notice={notice} setNotice={setNotice} />}>
           <Route element={<WorkspaceContent />}>
@@ -126,9 +231,20 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
   );
 }
 
+/** Suspense fallback: stays invisible under the cold-load gate, sr-only status only. */
+function RouteSuspenseFallback() {
+  useColdLoad(true);
+  return (
+    <p className="cloud-shell__sr-only" role="status" aria-live="polite">
+      Loading…
+    </p>
+  );
+}
+
 /** Nested outlet inside the shell's main region: project warning plus lazy page chunks. */
 function WorkspaceContent() {
   const { projectError, invalidate } = useWorkspace();
+  const location = useLocation();
   return (
     <>
       {projectError && (
@@ -136,21 +252,18 @@ function WorkspaceContent() {
           Project or class choices couldn’t load. <button onClick={invalidate}>Try again</button>
         </p>
       )}
-      <Suspense
-        fallback={
-          <section className="workspace-page">
-            <p role="status">Loading…</p>
-          </section>
-        }
-      >
-        <Outlet />
-      </Suspense>
+      <ColdLoadGate key={location.pathname}>
+        <Suspense fallback={<RouteSuspenseFallback />}>
+          <Outlet />
+        </Suspense>
+      </ColdLoadGate>
     </>
   );
 }
 
 function ProfilePlaceholder({ title }: { title: string }) {
   const { profileError, retryProfile } = useWorkspace();
+  useColdLoad(!profileError);
   return (
     <section className="workspace-page">
       <h1>{title}</h1>
@@ -160,7 +273,9 @@ function ProfilePlaceholder({ title }: { title: string }) {
           <button onClick={retryProfile}>Try again</button>
         </div>
       ) : (
-        <p role="status">Loading your workspace…</p>
+        <p className="cloud-shell__sr-only" role="status" aria-live="polite">
+          Loading your workspace…
+        </p>
       )}
     </section>
   );

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
+import { useColdLoad } from "../../apps/coldLoad";
 import { CloudAppShell, type CloudAppShellProps } from "../../components/app-shell/CloudAppShell";
 import {
   GlobalAddTodoController,
@@ -34,6 +35,7 @@ export function TodosWorkspace(props: TodosWorkspaceProps) {
 }
 
 function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+  useColdLoad(!failed);
   return (
     <section className="todos-board-page" aria-labelledby="todos-loading-heading">
       <header className="todos-board-toolbar">
@@ -47,7 +49,7 @@ function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () =>
           </button>
         </div>
       ) : (
-        <p className="todos-board-status" role="status">
+        <p className="cloud-shell__sr-only" role="status">
           Loading your tasks…
         </p>
       )}
@@ -80,10 +82,9 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
   const binding = useTodoController(props.service, props.workspaceSessionKey, { workspace: true });
   const { state, controller } = binding;
   const profile = state.profile;
-  const ready =
-    state.workspaceStatus === "ready" &&
-    profile !== null &&
-    profile.userId === props.identity.userId;
+  // Once a workspace snapshot has loaded (seeded from cache or fetched), keep the
+  // board mounted through a background refresh instead of flashing the placeholder.
+  const ready = profile !== null && profile.userId === props.identity.userId;
 
   if (!ready || profile === null) {
     const failed =
@@ -152,6 +153,7 @@ function ReadyTodosBoard({
       <TodosBoard
         model={model}
         loadStatus={state.workspaceStatus}
+        loaded={state.workspaceLoaded}
         projects={state.projects}
         pendingTodoIds={state.pendingTodoIds}
         mutationResult={state.mutationResult}

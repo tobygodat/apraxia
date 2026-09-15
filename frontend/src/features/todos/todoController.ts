@@ -21,7 +21,13 @@ import {
   type TodayListModel,
 } from "./todayListModel";
 import type { MoveDirection } from "./todayOrder";
-import type { TodoRequestOptions, TodoService, UpdateTodoDetailsInput } from "./todoService";
+import type {
+  TodoRequestOptions,
+  TodoService,
+  TodoWorkspaceSnapshot,
+  UpdateTodoDetailsInput,
+} from "./todoService";
+import { peekRead } from "../../apps/navigationCache";
 import { TODO_UNDO_COPY, type TodoLoadStatus, type TodoMutationErrorKind } from "./todoUiState";
 import {
   isDeleteUndoToken,
@@ -63,6 +69,10 @@ export interface TodoAnnouncement {
 export interface TodoControllerState {
   readonly workspaceStatus: TodoLoadStatus;
   readonly todayStatus: TodoLoadStatus;
+  /** True once a workspace snapshot has ever been applied (cache seed or live load). */
+  readonly workspaceLoaded: boolean;
+  /** True once a Today snapshot has ever been applied (cache seed or live load). */
+  readonly todayLoaded: boolean;
   readonly profile: Profile | null;
   readonly projects: readonly ProjectSummary[];
   readonly classes: readonly ClassSummary[];
@@ -191,6 +201,12 @@ function withAbort<T>(request: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
+/** Which slices this controller instance is responsible for loading. Static per mount. */
+export interface TodoControllerViewFlags {
+  readonly workspace: boolean;
+  readonly today: boolean;
+}
+
 /**
  * Provider-neutral task state for one authenticated session. The board and the
  * Today panel are views over the same load, optimistic mutate, delete/Undo, and
@@ -202,6 +218,8 @@ export class TodoController {
   private active = true;
   private localDate: SqlDate | null = null;
   private confirmed: Slices = { todos: [], todayRows: [] };
+  /** True once a slice has only ever been cache-seeded, never confirmed by a live load. */
+  private seededOnly = { workspace: false, today: false };
   private readonly loads: Record<
     "workspace" | "today",
     { abort: AbortController | null; revision: number }
@@ -227,8 +245,43 @@ export class TodoController {
     { readonly sequence: number; readonly todo: Todo }
   >();
 
-  constructor(private readonly service: TodoService) {
+  constructor(
+    private readonly service: TodoService,
+    private readonly view: TodoControllerViewFlags = { workspace: false, today: false },
+  ) {
     this.state = TodoController.initialState();
+    if (this.view.workspace) this.seedWorkspaceFromCache();
+  }
+
+  /** Render ready content on first paint when a navigation cache already has this read. */
+  private seedWorkspaceFromCache(): void {
+    // The live call is `loadWorkspace({ signal })`; navigationCache strips the
+    // signal but keeps the (now empty) options object, so match its shape here.
+    const cached = peekRead(this.service, "loadWorkspace", {} as TodoRequestOptions);
+    if (!cached) return;
+    const snapshot = readTodoWorkspaceSnapshot(cached);
+    if (!snapshot) return;
+    this.applyWorkspaceSnapshot(snapshot, this.creationSequence, false);
+  }
+
+  /** Same seeding for the Today slice; requires the date the caller is about to view. */
+  private seedTodayFromCache(requestDate: SqlDate): boolean {
+    if (!this.view.today) return false;
+    // Mirror the live call's args (`loadToday(date, { signal })`) so the peek key matches.
+    const cached = peekRead(this.service, "loadToday", requestDate, {} as TodoRequestOptions);
+    if (!cached) return false;
+    try {
+      const rows = readTodayRows(cached, requestDate);
+      this.confirmed = { ...this.confirmed, todayRows: rows };
+      this.seededOnly = { ...this.seededOnly, today: true };
+      this.publish(
+        { todos: this.state.todos, todayRows: rows },
+        { todayStatus: "ready", todayLoaded: true },
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private static initialState(): TodoControllerState {
@@ -238,6 +291,8 @@ export class TodoController {
       profile: null,
       projects: [],
       classes: [],
+      workspaceLoaded: false,
+      todayLoaded: false,
       todos: [],
       today: buildTodayListModel([], PLACEHOLDER_DATE),
       pending: [],
@@ -269,8 +324,17 @@ export class TodoController {
   }
 
   /** Explicit lifecycle restart supports React Strict Mode effect replay. */
+  /**
+   * Re-seed from a still-warm navigation cache on restart. StrictMode's
+   * mount/unmount/mount cycle runs `stop()` (wiping state to idle) before this
+   * runs, so without re-seeding here the board would flash "Loading" on every
+   * dev-mode visit even though the cache already has the answer.
+   */
   readonly start = (): void => {
     this.active = true;
+    if (this.view.workspace && this.state.workspaceStatus === "idle") this.seedWorkspaceFromCache();
+    if (this.view.today && this.localDate !== null && this.state.todayStatus === "idle")
+      this.seedTodayFromCache(this.localDate);
   };
 
   /** Disable retained callbacks and clear account-specific transient data. */
@@ -290,6 +354,7 @@ export class TodoController {
     this.undo = null;
     this.recentCreates.clear();
     this.confirmed = { todos: [], todayRows: [] };
+    this.seededOnly = { workspace: false, today: false };
     this.replace({
       ...TodoController.initialState(),
       today: buildTodayListModel([], this.localDate ?? PLACEHOLDER_DATE),
@@ -387,6 +452,26 @@ export class TodoController {
     return next;
   }
 
+  /** Shared by a live load and cache seeding: publish a validated workspace snapshot. */
+  private applyWorkspaceSnapshot(
+    snapshot: TodoWorkspaceSnapshot,
+    startedAt: number,
+    live: boolean,
+  ): void {
+    this.seededOnly = { ...this.seededOnly, workspace: !live };
+    this.replace({ workspaceStatus: "ready", workspaceLoaded: true });
+    const slices = this.mergeRecentCreates(
+      { todos: snapshot.todos, todayRows: this.state.today.todos },
+      startedAt,
+    );
+    this.confirmed = { ...this.confirmed, todos: slices.todos };
+    this.publish(slices, {
+      profile: snapshot.profile,
+      projects: snapshot.projects,
+      classes: snapshot.classes,
+    });
+  }
+
   readonly loadWorkspace = async (): Promise<boolean> => {
     const abort = this.beginLoad("workspace");
     if (!abort) return false;
@@ -401,17 +486,7 @@ export class TodoController {
       const snapshot = readTodoWorkspaceSnapshot(response);
       if (!snapshot) throw new RangeError("Invalid workspace response.");
       this.loads.workspace.abort = null;
-      this.replace({ workspaceStatus: "ready" });
-      const slices = this.mergeRecentCreates(
-        { todos: snapshot.todos, todayRows: this.state.today.todos },
-        startedAt,
-      );
-      this.confirmed = { ...this.confirmed, todos: slices.todos };
-      this.publish(slices, {
-        profile: snapshot.profile,
-        projects: snapshot.projects,
-        classes: snapshot.classes,
-      });
+      this.applyWorkspaceSnapshot(snapshot, startedAt, true);
       return true;
     } catch {
       if (!this.isCurrentLoad("workspace", abort)) return false;
@@ -435,17 +510,21 @@ export class TodoController {
     }
   }
 
-  readonly loadToday = async (): Promise<boolean> => {
+  readonly loadToday = async (skipLoadingState = false): Promise<boolean> => {
     if (this.localDate === null) return false;
     const abort = this.beginLoad("today");
     if (!abort) return false;
-    this.replace({ todayStatus: "loading" });
+    if (!skipLoadingState) this.replace({ todayStatus: "loading" });
     try {
       const rows = await this.fetchToday(abort.signal);
       if (!this.isCurrentLoad("today", abort)) return false;
       this.loads.today.abort = null;
       this.confirmed = { ...this.confirmed, todayRows: rows };
-      this.publish({ todos: this.state.todos, todayRows: rows }, { todayStatus: "ready" });
+      this.seededOnly = { ...this.seededOnly, today: false };
+      this.publish(
+        { todos: this.state.todos, todayRows: rows },
+        { todayStatus: "ready", todayLoaded: true },
+      );
       return true;
     } catch {
       if (!this.isCurrentLoad("today", abort)) return false;
@@ -463,13 +542,18 @@ export class TodoController {
   readonly setLocalDate = async (localDate: LocalDate): Promise<boolean> => {
     if (!this.active) return false;
     const next = asSqlDate(localDate);
-    if (next === this.localDate) return this.state.todayStatus === "idle" ? this.loadToday() : true;
+    if (next === this.localDate) {
+      if (this.state.todayStatus === "idle") return this.loadToday();
+      if (this.seededOnly.today) return this.loadToday(true);
+      return true;
+    }
     this.localDate = next;
     this.loads.today.abort?.abort();
     this.loads.today.abort = null;
     this.confirmed = { ...this.confirmed, todayRows: rebaseRows(this.confirmed.todayRows, next) };
     this.publish({ todos: this.state.todos, todayRows: rebaseRows(this.state.today.todos, next) });
-    return this.loadToday();
+    const seeded = this.seedTodayFromCache(next);
+    return this.loadToday(seeded);
   };
 
   /** Reload every loaded slice after an external write; deferred behind a pending write. */
@@ -882,8 +966,14 @@ export function useTodoController(
     throw new RangeError("Tasks require an authenticated session scope.");
   }
   // Lifecycle key only: never passed to a provider as a user ID.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- sessionKey is a reset key: an account swap must replace the controller.
-  const controller = useMemo(() => new TodoController(service), [service, sessionKey]);
+  // View flags are captured once per mount: useTodoController's `workspace` and
+  // `localDate` options are treated as static for the life of this controller
+  // instance, matching the sessionKey reset-key contract below.
+  const controller = useMemo(
+    () => new TodoController(service, { workspace, today: localDate !== null }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sessionKey is a reset key: an account swap must replace the controller; view flags are static per mount.
+    [service, sessionKey],
+  );
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.getSnapshot,
