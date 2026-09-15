@@ -21,7 +21,7 @@
     "test:watch": "vitest",
     "test:related": "vitest related --run",
     "check:bundle": "node scripts/check-browser-bundle.mjs",
-    "verify:quick": "npm run typecheck && npm test",
+    "verify:quick": "npm run typecheck && npm test -- --maxWorkers=4",
     "verify": "npm run typecheck && npm test && npm run build && npm run check:bundle",
     "verify:db": "npm run db:start && npm run db:verify && npm run db:rewind:verify && npm run db:test:oauth-concurrency && npm run db:test:todos-http && npm run db:types && npm run typecheck",
     "db:start": "supabase start",

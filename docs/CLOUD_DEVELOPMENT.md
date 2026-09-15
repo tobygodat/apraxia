@@ -48,7 +48,9 @@ git config --local core.hooksPath .githooks
 For a linked worktree with `extensions.worktreeConfig` already enabled, use
 `git config --worktree core.hooksPath .githooks` to enable it only there.
 
-The hook runs `verify:quick` and rejects the push on failure. It does not install
+The hook runs `verify:quick` and rejects the push on failure. The quick suite
+limits Vitest to four workers to reduce local contention with Docker and editors.
+It does not install
 dependencies or start Docker. Preserve/integrate existing custom hooks instead
 of replacing them. Local hooks provide early feedback; CI remains the release
 gate. They can be bypassed and do not prove the final deployed app works.
