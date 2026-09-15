@@ -1,0 +1,391 @@
+/* Ledger theme: the ruled planner-spread redesign. Shared rules live in
+   TodosBoard.css; everything here is scoped under .todos-board-page--ledger. */
+
+.todos-board-page--ledger {
+  --todos-board-line: rgba(255, 255, 255, 0.1);
+  --todos-board-line-strong: rgba(255, 255, 255, 0.2);
+  --todos-board-surface: #1c1c1c;
+  --todos-board-surface-raised: #222222;
+  --todos-board-text: rgba(255, 255, 255, 0.93);
+  --todos-board-muted: rgba(255, 255, 255, 0.62);
+  --todos-board-faint: rgba(255, 255, 255, 0.52);
+  --todos-board-today: #8b9bff;
+  min-width: 0;
+  min-height: calc(100vh - 64px);
+  padding: var(--workspace-page-top, 36px) 0 64px;
+  margin: 0;
+  color: var(--todos-board-text);
+  background: #1a1a1a;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+.todos-board-page--ledger ::selection {
+  background: rgba(139, 155, 255, 0.35);
+}
+
+.todos-board-page--ledger .todos-board-range {
+  margin: 10px 0 0;
+  color: var(--todos-board-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.todos-board-page--ledger .todos-board-scroll {
+  position: relative;
+  padding: 0 var(--workspace-page-inset, 32px) 24px;
+  outline: none;
+}
+
+.todos-board-page--ledger .todos-board-scroll:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.88);
+  outline-offset: 3px;
+}
+
+.todos-board-page--ledger .todos-board-week {
+  --todos-board-tracks: 6;
+  display: grid;
+  grid-template-columns: repeat(var(--todos-board-tracks), minmax(0, 1fr));
+  column-gap: 28px;
+  row-gap: 40px;
+  animation: todos-board-week-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes todos-board-week-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.todos-board-page--ledger .todos-board-track {
+  min-width: 0;
+}
+
+.todos-board-page--ledger .todos-board-track:has(.todos-board-column--stacked) {
+  display: grid;
+  grid-template-rows: auto auto;
+  row-gap: 36px;
+}
+
+.todos-board-page--ledger .todos-board-column {
+  min-width: 0;
+}
+
+.todos-board-page--ledger .todos-board-card__due--past {
+  display: inline;
+}
+
+.todos-board-page--ledger .todos-board-column__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  transition: border-color 120ms ease-out;
+}
+
+.todos-board-page--ledger .todos-board-column__tasks,
+.todos-board-page--ledger .todos-board-inbox__tasks {
+  transition: background 120ms ease-out;
+}
+
+.todos-board-page--ledger .todos-board-column--drop .todos-board-column__header {
+  border-bottom-color: rgba(255, 255, 255, 0.7);
+}
+
+.todos-board-page--ledger .todos-board-column--drop .todos-board-column__tasks {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.todos-board-page--ledger .todos-board-inbox--drop h2 {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.todos-board-page--ledger .todos-board-inbox--drop .todos-board-inbox__tasks {
+  background-color: rgba(255, 255, 255, 0.025);
+}
+
+.todos-board-page--ledger .todos-board-column--today .todos-board-column__header {
+  border-bottom-color: var(--todos-board-today);
+}
+
+.todos-board-page--ledger .todos-board-column__header h2 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.todos-board-page--ledger .todos-board-column__date {
+  font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--todos-board-text);
+}
+
+.todos-board-page--ledger .todos-board-column--today .todos-board-column__date {
+  color: var(--todos-board-today);
+}
+
+.todos-board-page--ledger .todos-board-column__weekday {
+  margin-left: auto;
+  font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.todos-board-page--ledger .todos-board-column--today .todos-board-column__weekday {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.todos-board-page--ledger .todos-board-column__tasks {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+.todos-board-page--ledger .todos-board-card {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  cursor: grab;
+  transition:
+    background 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 120ms;
+}
+
+.todos-board-page--ledger .todos-board-card--dragging {
+  opacity: 0.45;
+}
+
+.todos-board-page--ledger .todos-board-card:hover,
+.todos-board-page--ledger .todos-board-card:focus-within {
+  background: #262626;
+}
+
+.todos-board-page--ledger .todos-board-card__check {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.todos-board-page--ledger .todos-board-card__check > span[aria-hidden="true"] {
+  width: 15px;
+  height: 15px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 4px;
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+}
+
+.todos-board-page--ledger
+  .todos-board-card:hover
+  .todos-board-card__check
+  > span[aria-hidden="true"],
+.todos-board-page--ledger
+  .todos-board-card:focus-within
+  .todos-board-card__check
+  > span[aria-hidden="true"] {
+  opacity: 1;
+}
+
+.todos-board-page--ledger .todos-board-card__check input:checked + span {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 4px var(--todos-board-surface);
+}
+
+.todos-board-page--ledger .todos-board-card__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1px 8px;
+  min-width: 0;
+  padding: 6px 0;
+}
+
+.todos-board-page--ledger .todos-board-card__body p {
+  min-width: 0;
+  overflow-wrap: break-word;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.todos-board-page--ledger .todos-board-card__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 9px;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 0;
+  color: var(--todos-board-muted);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.todos-board-page--ledger .todos-board-add {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 12px;
+  transition:
+    color 120ms ease-out,
+    background 120ms ease-out;
+}
+
+.todos-board-page--ledger .todos-board-add:hover,
+.todos-board-page--ledger .todos-board-add:focus-visible {
+  color: var(--todos-board-muted);
+  background: #2b2b2b;
+}
+
+.todos-board-page--ledger .todos-board-slot {
+  min-height: 42px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.todos-board-page--ledger .todos-board-inbox {
+  margin-top: 56px;
+}
+
+.todos-board-page--ledger .todos-board-inbox h2 {
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.todos-board-page--ledger .todos-board-inbox__tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  column-gap: 28px;
+  align-content: start;
+  align-items: start;
+  grid-auto-rows: minmax(41px, auto);
+  min-height: 123px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 40px,
+    rgba(255, 255, 255, 0.08) 40px 41px
+  );
+}
+
+.todos-board-page--ledger .todos-board-card__actions {
+  opacity: 0;
+}
+
+.todos-board-page--ledger .todos-board-filter select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--todos-board-line);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--todos-board-text);
+  font: inherit;
+  font-size: 11px;
+}
+
+.todos-board-page--ledger .todos-board-filter select:hover {
+  border-color: var(--todos-board-line-strong);
+}
+
+.todos-board-page--ledger .todos-board-filter select:focus-visible {
+  outline: 2px solid #f0efed;
+  outline-offset: 3px;
+}
+
+.todos-board-page--ledger .todos-board-card__metadata > .todo-source-chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  font-size: 11px;
+  color: var(--todos-board-muted);
+}
+
+@media (max-width: 1180px) {
+  .todos-board-page--ledger .todos-board-week {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .todos-board-page--ledger .todos-board-week {
+    grid-template-columns: 1fr;
+  }
+
+  .todos-board-page--ledger .todos-board-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .todos-board-page--ledger .todos-board-slot ~ .todos-board-slot {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todos-board-page--ledger .todos-board-week,
+  .todos-board-page--ledger .todos-board-card,
+  .todos-board-page--ledger .todos-board-card__actions,
+  .todos-board-page--ledger .todos-board-card__check > span[aria-hidden="true"],
+  .todos-board-page--ledger .todos-board-add,
+  .todos-board-page--ledger .todos-board-column__header,
+  .todos-board-page--ledger .todos-board-column__tasks,
+  .todos-board-page--ledger .todos-board-inbox__tasks {
+    transition: none;
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .todos-board-page--ledger .todos-board-column,
+  .todos-board-page--ledger .todos-board-card,
+  .todos-board-page--ledger .todos-board-add,
+  .todos-board-page--ledger .todos-board-nav button,
+  .todos-board-page--ledger .todos-board-error,
+  .todos-board-page--ledger .todos-board-error button,
+  .todos-board-page--ledger .todos-board-undo,
+  .todos-board-page--ledger .todos-board-undo button {
+    border: 1px solid CanvasText;
+  }
+}

@@ -3,6 +3,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { CalendarService } from "./calendarService";
 import { SettingsPage } from "./SettingsPage";
+import {
+  WorkspacePreferencesProvider,
+  createMemoryWorkspacePreferencesStore,
+} from "../../apps/workspacePreferences";
 afterEach(cleanup);
 it("keeps the saved visibility when an update fails", async () => {
   const service = {
@@ -26,4 +30,24 @@ it("keeps the saved visibility when an update fails", async () => {
   await screen.findByText("Calendar visibility was not saved. Try again.");
   expect((toggle as HTMLInputElement).checked).toBe(true);
   expect(service.setVisibility).toHaveBeenCalledWith("calendar", false);
+});
+
+it("saves the selected theme preference when Ledger is chosen", async () => {
+  const service = {
+    status: async () => ({ connectionState: "disconnected" }),
+    calendars: async () => [],
+  } as unknown as CalendarService;
+  const store = createMemoryWorkspacePreferencesStore({ theme: "classic" });
+  render(
+    <WorkspacePreferencesProvider store={store}>
+      <SettingsPage
+        calendarService={service}
+        profile={{ userId: "user", timezone: "UTC", createdAt: "", updatedAt: "" }}
+        onSignOut={() => {}}
+      />
+    </WorkspacePreferencesProvider>,
+  );
+  const ledgerRadio = await screen.findByRole("radio", { name: /Ledger/ });
+  fireEvent.click(ledgerRadio);
+  expect(store.read().theme).toBe("ledger");
 });

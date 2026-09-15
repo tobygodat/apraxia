@@ -168,6 +168,16 @@ function ReadyTodosBoard({
         onToggleComplete={(todo) => controller.setCompleted(todo.id, !todo.completed)}
         onEditTodo={setEditingTodo}
         onDeleteTodo={(todo) => controller.deleteTodo(todo.id)}
+        onRescheduleTodo={(todo, dueDate) => {
+          void controller
+            .updateDetails(
+              todo.id,
+              dueDate === null ? { dueDate: null, dueTime: null } : { dueDate },
+              undefined,
+              "reschedule",
+            )
+            .catch(() => {});
+        }}
         onUndoDelete={() => {
           controller.undoDelete();
         }}

@@ -39,6 +39,7 @@ function props(overrides: Partial<TodosBoardProps> = {}): TodosBoardProps {
   return {
     model: model(),
     projects: [{ id: "project-a", title: "Launch" }],
+    theme: "ledger",
     onPreviousWeek: vi.fn(),
     onNextWeek: vi.fn(),
     onToday: vi.fn(),
@@ -106,7 +107,8 @@ describe("TodosBoard", () => {
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings.slice(0, 2)).toEqual(["Inbox", expect.stringContaining("· Today")]);
+    expect(headings[0]).toEqual(expect.stringContaining("· Today"));
+    expect(headings[headings.length - 1]).toEqual("Inbox");
     expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
     // The current week starts at today (Wednesday): Wed through Sun.
     expect(headings).toHaveLength(1 + 5);
@@ -294,4 +296,79 @@ it("filters all sources across Inbox and date columns and labels source chips", 
     }
   }
   expect(screen.getByText("Due Sep 1").className).toContain("--past");
+});
+
+describe("TodosBoard drag to reschedule", () => {
+  function dataTransferStub() {
+    const store = new Map<string, string>();
+    return {
+      types: [] as string[],
+      effectAllowed: "none",
+      dropEffect: "none",
+      setData(type: string, value: string) {
+        store.set(type, value);
+        if (!this.types.includes(type)) this.types.push(type);
+      },
+      getData(type: string) {
+        return store.get(type) ?? "";
+      },
+    };
+  }
+
+  it("reschedules a row dropped onto a different day column", () => {
+    const callbacks = props({ onRescheduleTodo: vi.fn() });
+    render(<TodosBoard {...callbacks} />);
+    const row = screen.getByText(TODO.text).closest("article")!;
+    const dataTransfer = dataTransferStub();
+    fireEvent.dragStart(row, { dataTransfer });
+    const targetHeading = screen.getAllByRole("heading", { level: 2 })[1]!;
+    const targetColumn = targetHeading.closest("section")!;
+    fireEvent.dragOver(targetColumn, { dataTransfer });
+    fireEvent.drop(targetColumn, { dataTransfer });
+    expect(callbacks.onRescheduleTodo).toHaveBeenCalledOnce();
+    const [droppedTodo, dueDate] = (callbacks.onRescheduleTodo as ReturnType<typeof vi.fn>).mock
+      .calls[0]!;
+    expect(droppedTodo.id).toBe(TODO.id);
+    expect(dueDate).not.toBeNull();
+    expect(dueDate).not.toBe(TODO.dueDate);
+  });
+
+  it("reschedules a row dropped onto the Inbox as null", () => {
+    const callbacks = props({ onRescheduleTodo: vi.fn() });
+    render(<TodosBoard {...callbacks} />);
+    const row = screen.getByText(TODO.text).closest("article")!;
+    const dataTransfer = dataTransferStub();
+    fireEvent.dragStart(row, { dataTransfer });
+    const inboxSection = screen.getByRole("heading", { name: "Inbox" }).closest("section")!;
+    fireEvent.dragOver(inboxSection, { dataTransfer });
+    fireEvent.drop(inboxSection, { dataTransfer });
+    expect(callbacks.onRescheduleTodo).toHaveBeenCalledWith(
+      expect.objectContaining({ id: TODO.id }),
+      null,
+    );
+  });
+
+  it("does not reschedule when dropped on the same column", () => {
+    const callbacks = props({ onRescheduleTodo: vi.fn() });
+    render(<TodosBoard {...callbacks} />);
+    const row = screen.getByText(TODO.text).closest("article")!;
+    const dataTransfer = dataTransferStub();
+    fireEvent.dragStart(row, { dataTransfer });
+    const ownColumn = row.closest("section")!;
+    fireEvent.dragOver(ownColumn, { dataTransfer });
+    fireEvent.drop(ownColumn, { dataTransfer });
+    expect(callbacks.onRescheduleTodo).not.toHaveBeenCalled();
+  });
+});
+
+it("renders the classic theme with Inbox first and a count badge", () => {
+  render(<TodosBoard {...props({ theme: "classic" })} />);
+  const headings = screen
+    .getAllByRole("heading", { level: 2 })
+    .map((heading) => heading.textContent);
+  expect(headings[0]).toEqual("Inbox");
+  expect(headings.some((heading) => heading?.includes("· Today"))).toBe(true);
+  const today = screen.getByRole("region", { name: /· Today$/ });
+  const badge = within(today).getByText(/^\d+$/, { selector: "span[aria-hidden]" });
+  expect(badge).toBeTruthy();
 });
