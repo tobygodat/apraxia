@@ -32,6 +32,20 @@ function rememberCoverSize(src: string, size: { width: number; height: number })
 
 registerUserStateResetter(() => decodedCoverSize.clear());
 
+/**
+ * Decodes a cover image ahead of the header ever mounting it, so a startup
+ * preload can populate `decodedCoverSize` before the first paint of Home.
+ * Guarded for non-browser environments (SSR/tests without a DOM `Image`).
+ */
+export function primeCoverImage(src: string): void {
+  if (typeof Image === "undefined" || decodedCoverSize.has(src)) return;
+  const image = new Image();
+  image.onload = () => {
+    rememberCoverSize(src, { width: image.naturalWidth, height: image.naturalHeight });
+  };
+  image.src = src;
+}
+
 interface HomeHeaderProps {
   service?: HomeAppearanceService;
   userId: string;

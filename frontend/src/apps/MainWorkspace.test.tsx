@@ -6,6 +6,8 @@ import type { CollectionService } from "../features/collections/collectionServic
 import type { CalendarService } from "../features/calendar/calendarService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
+import { localToday } from "../features/todos/dateDomain";
+import { startOfWeekSunday } from "../features/calendar/eventLayout";
 import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
@@ -276,5 +278,51 @@ describe("Main workspace integration", () => {
     expect(screen.queryByText("Private idea")).toBeNull();
     expect(screen.queryByText(idea.body)).toBeNull();
     expect(next.search).not.toHaveBeenCalled();
+  });
+
+  it("preloads appearance and Home's calendar/today reads once at startup from another route", async () => {
+    const f = fixture();
+    const load = vi.fn().mockResolvedValue({ title: "Studio", coverImage: null });
+    const loadToday = vi.fn().mockResolvedValue([]);
+    const status = vi.fn().mockResolvedValue({ connectionState: "connected" });
+    const week = vi.fn().mockResolvedValue({
+      range: { sunday: "2026-09-06" },
+      timezone: "America/New_York",
+      events: [],
+      partialErrors: [],
+      visibleCalendars: [],
+    });
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={
+            {
+              ...f.props.todoService,
+              loadToday,
+              loadWorkspace: vi.fn().mockResolvedValue({}),
+            } as unknown as TodoService
+          }
+          collectionService={
+            {
+              ...f.props.collectionService,
+              listIdeas: vi.fn().mockResolvedValue([]),
+            } as unknown as CollectionService
+          }
+          calendarService={{ status, week } as unknown as CalendarService}
+          workspaceData={{ ...f.props.workspaceData, homeAppearance: { load, save: vi.fn() } }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("No projects in this view.");
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+    expect(load).toHaveBeenCalledWith("user-a", expect.any(AbortSignal));
+    const today = localToday("America/New_York");
+    const sunday = startOfWeekSunday(today);
+    await waitFor(() => expect(loadToday).toHaveBeenCalledTimes(1));
+    expect(loadToday).toHaveBeenCalledWith(today, { signal: expect.any(AbortSignal) });
+    await waitFor(() => expect(status).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(week).toHaveBeenCalledTimes(1));
+    expect(week).toHaveBeenCalledWith(sunday, expect.any(AbortSignal));
   });
 });

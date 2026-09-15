@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { registerUserStateResetter } from "../auth/userState";
+import { primeCoverImage } from "../features/calendar/HomeHeader";
 import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 
@@ -100,6 +101,9 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
         todoService.loadWorkspace({ signal }),
         collectionService.listProjects({ offset: 0, signal }),
         collectionService.listIdeas({ offset: 0, signal }),
+        workspaceData.homeAppearance?.load(props.identity.userId, signal).then((appearance) => {
+          if (appearance.coverImage) primeCoverImage(appearance.coverImage);
+        }),
       ]);
     }, 100);
     let idleHandle: number | undefined;
@@ -117,7 +121,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
       }
       if (idleTimer !== undefined) clearTimeout(idleTimer);
     };
-  }, [todoService, collectionService]);
+  }, [todoService, collectionService, workspaceData, props.identity.userId]);
   return (
     <MainWorkspace
       {...props}

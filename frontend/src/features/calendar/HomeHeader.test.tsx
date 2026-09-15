@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { HomeHeader, decodedCoverSize } from "./HomeHeader";
+import { HomeHeader, decodedCoverSize, primeCoverImage } from "./HomeHeader";
 import { prepareCover, validateAppearance, type HomeAppearanceService } from "./homeAppearance";
 import { coverImageLayout } from "./coverLayout";
 import { createRef, useState, type MutableRefObject } from "react";
@@ -293,6 +293,33 @@ it("caps the decoded cover size cache with FIFO eviction", async () => {
   expect(decodedCoverSize.has("data:image/png;base64,COVER0")).toBe(false);
   for (let i = 1; i < 5; i++) {
     expect(decodedCoverSize.has(`data:image/png;base64,COVER${i}`)).toBe(true);
+  }
+});
+it("primeCoverImage decodes a cover ahead of the header mounting it", () => {
+  decodedCoverSize.clear();
+  const src = "data:image/png;base64,PRIMED";
+  const instances: { onload: (() => void) | null; src: string }[] = [];
+  class FakeImage {
+    onload: (() => void) | null = null;
+    naturalWidth = 320;
+    naturalHeight = 240;
+    src = "";
+    constructor() {
+      instances.push(this);
+    }
+  }
+  vi.stubGlobal("Image", FakeImage as unknown as typeof Image);
+  try {
+    primeCoverImage(src);
+    expect(instances).toHaveLength(1);
+    expect(instances[0].src).toBe(src);
+    instances[0].onload?.();
+    expect(decodedCoverSize.get(src)).toEqual({ width: 320, height: 240 });
+    // Already decoded: a second call must not create another Image.
+    primeCoverImage(src);
+    expect(instances).toHaveLength(1);
+  } finally {
+    vi.unstubAllGlobals();
   }
 });
 it("rejects remote URLs, SVG, excessive names, and unsupported uploads", async () => {

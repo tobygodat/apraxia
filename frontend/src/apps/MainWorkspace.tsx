@@ -20,7 +20,9 @@ import {
 import { SearchDialog } from "../components/search/SearchDialog";
 import type { TodoService } from "../features/todos/todoService";
 import { TodoEditDialog } from "../features/todos/TodoFormDialog";
+import { localToday } from "../features/todos/dateDomain";
 import type { CalendarService } from "../features/calendar/calendarService";
+import { startOfWeekSunday } from "../features/calendar/eventLayout";
 import { CollectionEditor } from "../features/collections/CollectionEditor";
 import type {
   CollectionKind,
@@ -86,6 +88,46 @@ export function MainWorkspace(props: MainWorkspaceProps) {
   );
 }
 
+/**
+ * Warms the Home page's calendar/today reads once the profile (and its
+ * timezone) is known, so a first visit to Home from another route finds
+ * the navigation cache already seeded instead of showing loading placeholders.
+ * Skips entirely when Home is already the current route: HomePage's own
+ * effects own that request there.
+ */
+function HomeDataPreload({
+  todoService,
+  calendarService,
+}: Pick<MainWorkspaceProps, "todoService" | "calendarService">) {
+  const { profile } = useWorkspace();
+  const location = useLocation();
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !profile || location.pathname === "/") return undefined;
+    started.current = true;
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const today = localToday(profile.timezone);
+    const sunday = startOfWeekSunday(today);
+    const tasks: Promise<unknown>[] = [];
+    if (typeof todoService.loadToday === "function")
+      tasks.push(todoService.loadToday(today, { signal }));
+    if (typeof calendarService.status === "function")
+      tasks.push(
+        calendarService
+          .status(signal)
+          .then((status) =>
+            status?.connectionState === "connected"
+              ? calendarService.week(sunday, signal)
+              : undefined,
+          ),
+      );
+    void Promise.allSettled(tasks);
+    return () => controller.abort();
+  }, [profile, location.pathname, todoService, calendarService]);
+  return null;
+}
+
 function WorkspaceCapture(props: MainWorkspaceProps) {
   const { projects, classes, invalidate } = useWorkspace();
   const [notice, setNotice] = useState("");
@@ -101,6 +143,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
         return undefined;
       }}
     >
+      <HomeDataPreload todoService={props.todoService} calendarService={props.calendarService} />
       <Routes>
         <Route element={<WorkspaceLayout {...props} notice={notice} setNotice={setNotice} />}>
           <Route element={<WorkspaceContent />}>
