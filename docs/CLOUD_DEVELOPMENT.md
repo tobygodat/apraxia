@@ -8,15 +8,14 @@ is optional for full-stack debugging; the deployed app never depends on it.
 ## Daily development without Docker
 
 ```bash
-npm ci
+npm ci # New worktree or changed lockfile only.
 npm run dev:web
 ```
 
 Open `http://localhost:5173/qa/workspace.html` to check fictional UI flows; see
 [QA fixtures](QA_FIXTURES.md) for scenarios, parameters, and their limits.
-Run `npm run verify` locally for types, lint and formatting, unit/contract tests,
-build, and the browser secret scan. Open a pull request to run the complete CI
-suite.
+Keep the dev server and focused test watcher running through revisions. Follow
+the [local feedback loop](#fast-local-feedback); CI runs full app verification.
 
 ## Test suites
 
@@ -64,17 +63,26 @@ read those from the deployment logs.
 ## Fast local feedback
 
 Install dependencies once with `npm ci`; repeat when the lockfile changes.
-Use the smallest relevant check while editing, then verify the complete change
-before pushing. These commands use the same tools as CI:
+Reuse the task's worktree, dev server, browser session, and test watcher. Confirm
+an existing server belongs to this checkout; use a free port for independent work.
+For a small change, inspect the relevant code, implement, verify, and finish.
+Use a plan when uncertainty or scope warrants it, and read supporting docs only
+when relevant. The change-to-check table in [AGENTS.md](../AGENTS.md#verification)
+defines the local iteration scope.
 
 ```powershell
 # Keep the relevant tests running while editing (omit the path for all tests).
 npm run test:watch -- frontend/src/path/to/example.test.ts
 # One-shot tests that import a changed source file, directly or indirectly.
 npm run test:related -- frontend/src/path/to/source.ts
-# Types, lint, formatting, and all unit/contract tests, without rebuilding the production bundle.
+# Typecheck only the affected side while editing.
+npm run typecheck --workspace=frontend
+npm run typecheck:server
+# Format only explicit changed files; replace these example paths.
+npm run format -- frontend/src/path/to/source.ts
+# One pre-push check: types, lint, formatting, and all unit/contract tests.
 npm run verify:quick
-# Complete app check before release, including production build and secret scan.
+# Full app verification for dependencies/build/CI changes, or to reproduce CI.
 npm run verify
 ```
 
@@ -83,7 +91,26 @@ they do not replace full checks for configuration, migrations, dynamic imports,
 or broad refactors. A specific failure can also be rerun with
 `npm test -- path/to/failing.test.ts` or `npm run typecheck`.
 
-Enable the repository's fast pre-push gate once per clone, provided you do not
+### One local check, then CI
+
+For code changes, run `verify:quick` once before pushing, or let the optional
+pre-push hook run it. Do not manually run it immediately before a hooked push.
+A successful `verify` includes those checks; it also builds and scans the bundle.
+When full app checks are needed and the hook is enabled, run `npm run build`
+and `npm run check:bundle`, then let the push supply `verify:quick`; together
+these perform the full app checks without repeating the quick suite.
+Documentation-only work needs consistency and diff checks locally; the optional
+hook remains a full check on every push if enabled.
+
+Require successful **App checks** and **Database checks** for the commit being
+released. CI's full `verify` is sufficient app verification for that commit;
+do not also run the identical full suite locally solely for release. Changes
+to source, dependencies, environment, or build configuration invalidate relevant
+earlier results. Test environment-specific concerns with the intended configuration,
+and check the deployed flow after release. A passing local check does not replace
+the required CI statuses or authenticated checks for data/provider changes.
+
+Enable the optional pre-push gate once per clone, provided you do not
 already have a custom hooks path:
 
 ```powershell
@@ -93,14 +120,16 @@ git config --local core.hooksPath .githooks
 For a linked worktree with `extensions.worktreeConfig` already enabled, use
 `git config --worktree core.hooksPath .githooks` to enable it only there.
 
-The hook runs `verify:quick` and rejects the push on failure. The quick suite
-limits Vitest to four workers to reduce local contention with Docker and editors.
+The hook runs `verify:quick` and rejects the push on failure. Both `verify:quick`
+and `verify` limit Vitest to four workers to reduce contention and timing failures
+on machines with many logical CPUs. A focused `test:watch` remains the edit loop.
 It does not install
 dependencies or start Docker. Preserve/integrate existing custom hooks instead
 of replacing them. Local hooks provide early feedback; CI remains the release
 gate. They can be bypassed and do not prove the final deployed app works.
 
-For database/auth changes and broad rewrites, start Docker and run:
+For changes affecting database/auth/data contracts (including refactors of them),
+or to reproduce a database CI failure, use disposable local Supabase and run:
 
 ```powershell
 npm run verify:db
@@ -114,10 +143,47 @@ commit it when the schema changed. Keep Supabase running between attempts;
 `npm run db:stop` stops it when finished. All worktrees share this project's
 local container/ports: run database checks from only one checkout at a time.
 
-After a failure, rerun the failing subcommand while fixing it; run the full
-relevant suite once the fix is ready. Do not repeat `npm ci`, start/stop Docker,
-or push just to discover whether a local fix worked. If a check cannot run
-locally, report the missing prerequisite or CI-only difference explicitly.
+After a failure, rerun the failing subcommand while fixing it, then complete any
+remaining required checks. Once they pass, broaden or repeat only for changed
+inputs, failures, or unresolved concerns. Do not repeat `npm ci`, start/stop
+Docker, or push just to discover whether a local fix worked. If a check cannot
+run locally, report the missing prerequisite or CI-only difference explicitly.
+
+## Using Codex and GPT-6 Astra
+
+Official guidance reviewed on 2026-09-15. The validation table and CI allowlist
+are orbitOS policy choices applying that guidance; OpenAI does not prescribe
+these particular commands or file filters.
+
+- Give Codex the goal, relevant files/errors, constraints, and an observable
+  completion condition. For example: "Fix the calendar label in the existing
+  component. Done when it fits at both affected widths and the relevant checks
+  pass." Use Plan mode for difficult or ambiguous work, and review the final diff.
+- Match reasoning effort to the task and compare results: Low for narrow changes,
+  Medium/High for harder work or debugging, and Extra High for demanding extended
+  tasks. More reasoning is not a universal speed improvement. These are task
+  choices, not an instruction to change everyone's saved model settings.
+
+Source: [OpenAI's Codex best practices](https://learn.chatgpt.com/guides/best-practices).
+
+- Periodically audit overlapping skills and stale instructions. Keep skill
+  descriptions specific, and load supporting material only when its workflow
+  applies. The available catalog currently exposes both `impeccable` and
+  `impeccable:impeccable`; inspect whether both are needed before changing global
+  installations. This repository change does not manage installed plugins.
+- Keep repository instructions focused on consequential constraints and where to
+  find relevant context. Define completion so Astra continues through verification
+  and fixes rather than stopping at the first implementation. Keep routine local
+  fixture checks authorized without repeated permission requests.
+
+Source: [OpenAI Developers: Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
+
+- Astra responds strongly to instruction boundaries. Preserve explicit user scope,
+  explain the exact skill instruction if it blocks work, and calibrate tests to
+  the change. Set delegation expectations explicitly when requesting parallel
+  agent work; this workflow does not require subagents for routine edits.
+
+Source: [Official Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices).
 
 ## GitHub Actions
 
@@ -130,6 +196,19 @@ workflow exists on the default branch).
   migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
+
+The **Database checks** job always reports a status. Its scope step skips database
+execution only when every changed path is root `AGENTS.md`, `README.md`,
+`PRODUCT.md`, or `DESIGN.md`, a Markdown file under `docs/`, or CSS under
+`frontend/src/`. It records the decision in the run summary. Everything else,
+including mixed changes, dependencies, CI/configuration, data/auth code, and
+unknown paths, runs the full suite. Manual dispatch always runs the suite.
+
+`scripts/ci-database-scope.mjs` compares the PR merge base to the checked-out
+commit, or the complete before/after range for a push. Both paths of a rename
+count. Missing history, invalid event data, and empty diffs fall back to the full
+suite. Checkout fetches full history for this comparison. A docs/style skip
+does not install dependencies, start Supabase, or generate database types.
 
 The workflow needs no repository secrets, production credentials, or separate
 hosted Supabase project. The CLI version comes from the lockfile. CI performs no
@@ -158,6 +237,12 @@ and [Supabase's CI testing workflow](https://supabase.com/docs/guides/deployment
 Install a Docker-compatible runtime (Docker Desktop with WSL 2 on Windows).
 Vercel/Supabase account access is needed when linking hosted projects.
 
+Use Docker only for work requiring containers. Check `docker info` and reuse a
+running engine. Otherwise run `docker desktop start` once and wait for
+`docker info` to succeed; a startup timeout alone does not mean startup failed.
+Inspect logs before retrying. Do not force-kill Docker, shut down WSL, restart
+Docker as routine cleanup, or automatically reset/delete its data.
+
 ```bash
 npm ci
 cp .env.cloud.example .env.local
@@ -180,12 +265,13 @@ fictional UI fixtures; see the root README.
 | Command | What it does |
 | --- | --- |
 | `npm run lint` | `eslint .` then `prettier --check .`; part of `npm run verify`. |
-| `npm run format` | Rewrites the tree with Prettier. |
+| `npm run format -- <file> [<file> ...]` | Formats only the supplied files with Prettier. |
 | `npm run knip` | Reports unused files, exports, types, and dependencies. |
 
 Configuration lives in `eslint.config.js`, `.prettierrc`/`.prettierignore`, and
 `knip.json`. `knip` is not in `verify` because a new export is often added a
-commit before its caller; run it before opening a pull request.
+commit before its caller; run it for export/dependency cleanup or an unused-code
+concern, rather than every unrelated pull request.
 
 ## Focused local database checks
 
@@ -238,12 +324,17 @@ the `route`, `scenario`, and `drive` parameters, what persists across reload,
 and which fixture service stands in for which real service are documented in
 [QA fixtures](QA_FIXTURES.md).
 
-For calendar and appearance changes, inspect the `realistic`, `dense`,
-`portrait`, and no-cover (`typical`) cases at the actual desktop window size and
-at a smaller desktop window. Check colors, adjacent and overlapping events,
-visible times and truncation, event details, cover expand/collapse and crop,
-navigation away and back, and reload. Use Customize page to run a chosen local
-image through the real upload preparation and crop UI.
+Inspect the affected flow in `realistic`. Add scenarios according to what changed:
+
+| Changed behavior | Additional checks |
+| --- | --- |
+| Calendar geometry, overlap, density, or truncation | `dense`; relevant long/adjacent/overlapping events and visible times. |
+| Cover or surrounding layout | `portrait` and no-cover `typical`; expand/collapse where affected. |
+| Responsive/shared layout | Actual desktop and a smaller viewport; the relevant scenario matrix once when the change is complete. |
+| Persistence, initialization, or navigation | Navigate away/back and reload; use the real app for account persistence. |
+| Upload preparation or crop controls | Run an image through the actual upload/crop flow. |
+
+Do not repeat unaffected scenarios for every copy or isolated styling revision.
 
 Fixture checks are insufficient evidence for data-dependent or
 provider-dependent changes. Before deploying those, also check the normal

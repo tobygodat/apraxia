@@ -1,6 +1,6 @@
 #!/bin/sh
-# Fast feedback before starting hosted CI. Full verification remains required
-# before release; database work also needs npm run verify:db locally.
+# This is the local pre-push check; do not also run it manually before a push.
+# CI supplies full app verification. Database/auth work also needs verify:db locally.
 set -eu
 cd "$(git rev-parse --show-toplevel)"
 npm run verify:quick

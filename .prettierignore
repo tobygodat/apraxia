@@ -5,6 +5,9 @@ frontend/public
 package-lock.json
 uv.lock
 
+# Generated local Impeccable hook state, not source.
+.impeccable/hook.cache.json
+
 # Preserved legacy Python source (AGENTS.md: keep as-is).
 /src/
 
