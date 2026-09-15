@@ -30,6 +30,10 @@ const descriptions = {
 };
 const titleOf = (kind: CollectionKind, r: CollectionRecord) =>
   kind === "idea" ? ideaTitle(r as Idea) : r.title || "Untitled";
+const reducedMotion = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
@@ -63,6 +67,7 @@ export function CollectionPage(props: Props) {
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [settling, setSettling] = useState<string | null>(null);
   const busyRef = useRef(false);
   const mounted = useRef(true);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -209,12 +214,21 @@ export function CollectionPage(props: Props) {
       setBusy(false);
     }
   }
+  async function settleAndComplete(task: Todo) {
+    if (task.completed || reducedMotion()) return complete(task);
+    setSettling(task.id);
+    await new Promise((r) => setTimeout(r, 420));
+    if (!mounted.current) return;
+    setSettling(null);
+    await complete(task);
+  }
+  const detail = kind === "project" && Boolean(recordId);
   function renderRow(k: CollectionKind, r: CollectionRecord) {
     const p = k === "idea" ? projects.find((p) => p.id === (r as Idea).projectId) : null;
     const preview =
       k === "idea" ? ideaPreview(r as Idea) : k === "project" ? (r as Project).description : null;
     const metadata =
-      k === "idea"
+      k === "idea" && !detail
         ? p?.title
         : k === "media"
           ? [
@@ -253,14 +267,18 @@ export function CollectionPage(props: Props) {
   }
   function renderTask(task: Todo) {
     return (
-      <div className="collection-task" key={task.id}>
+      <div
+        className="collection-task"
+        key={task.id}
+        data-settling={settling === task.id || undefined}
+      >
         <label className="collection-task-check">
           <input
             type="checkbox"
-            checked={task.completed}
+            checked={task.completed || settling === task.id}
             disabled={busy}
             aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.text}`}
-            onChange={() => void complete(task)}
+            onChange={() => void settleAndComplete(task)}
           />
         </label>
         <button
@@ -268,7 +286,7 @@ export function CollectionPage(props: Props) {
           data-completed={task.completed}
           onClick={() => setEditingTask(task)}
         >
-          {task.text}
+          <span className="collection-task-title">{task.text}</span>
           {task.dueDate && (
             <span className="collection-meta">
               <time dateTime={task.dueDate}>{formatTaskDate(task.dueDate)}</time>
@@ -301,8 +319,8 @@ export function CollectionPage(props: Props) {
       </div>
     );
   }
-  const detail = kind === "project" && Boolean(recordId);
   const completedTasks = tasks.filter((t) => t.completed);
+  const openTasks = tasks.filter((t) => !t.completed);
   return (
     <section className={`collection-page${kind === "project" ? " collection-page--project" : ""}`}>
       {detail && (
@@ -377,11 +395,15 @@ export function CollectionPage(props: Props) {
           </label>
         </div>
       )}
-      {notice && (
+      {notice && !detail && (
         <div className="collection-notice" role="status">
           {notice}
           {undo && (
-            <button className="collection-button" disabled={busy} onClick={() => void restore()}>
+            <button
+              className="collection-notice__undo"
+              disabled={busy}
+              onClick={() => void restore()}
+            >
               Undo deletion
             </button>
           )}
@@ -403,16 +425,18 @@ export function CollectionPage(props: Props) {
           <>
             <section className="collection-section">
               <header>
-                <h2>Tasks</h2>
-                <button className="collection-button" onClick={() => setComposer(true)}>
+                <h2>
+                  Tasks <span className="collection-section__count">{openTasks.length}</span>
+                </h2>
+                <button className="collection-section__add" onClick={() => setComposer(true)}>
                   <WorkspaceIcon name="plus" />
                   Add task
                 </button>
               </header>
-              {tasks.filter((t) => !t.completed).map(renderTask)}
-              {!loading && !tasks.some((t) => !t.completed) && (
+              {openTasks.map(renderTask)}
+              {!loading && !openTasks.length && (
                 <p className="collection-empty">
-                  No incomplete tasks. Add the next action when you’re ready.
+                  No open tasks. Add the next action when you’re ready.
                 </p>
               )}
               {completedTasks.length > 0 && (
@@ -447,16 +471,20 @@ export function CollectionPage(props: Props) {
             </section>
             <section className="collection-section">
               <header>
-                <h2>Ideas</h2>
+                <h2>
+                  Ideas <span className="collection-section__count">{ideas.length}</span>
+                </h2>
                 <button
-                  className="collection-button"
+                  className="collection-section__add"
                   onClick={() => setEditor({ kind: "idea", projectId: project.id })}
                 >
                   <WorkspaceIcon name="plus" />
                   Add idea
                 </button>
               </header>
-              <ul className="collection-list">{ideas.map((i) => renderRow("idea", i))}</ul>
+              {ideas.length > 0 && (
+                <ul className="collection-list">{ideas.map((i) => renderRow("idea", i))}</ul>
+              )}
               {!loading && !ideas.length && (
                 <p className="collection-empty">
                   No ideas here yet. Keep supporting thoughts with this project.

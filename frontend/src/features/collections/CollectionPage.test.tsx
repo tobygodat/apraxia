@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionPage } from "./CollectionPage";
 import type { CollectionService } from "./collectionService";
@@ -172,7 +172,9 @@ describe("Collection pages", () => {
     const projectTodos = vi
       .fn()
       .mockResolvedValue([{ id: "t", text: "Finished action", completed: true, dueDate: null }]);
-    const listIdeas = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi
+      .fn()
+      .mockResolvedValue([{ id: "i", title: "Keep this", body: "Keep this", projectId: "p" }]);
     render(
       <Page
         kind="project"
@@ -184,6 +186,10 @@ describe("Collection pages", () => {
       />,
     );
     await screen.findByRole("button", { name: "Show completed (1)" });
+    expect(screen.getByText("Keep this")).toBeTruthy();
+    expect(
+      screen.queryAllByText("Home").filter((el) => el.closest(".collection-meta")),
+    ).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Add idea" }));
     expect((screen.getByLabelText("Project (optional)") as HTMLSelectElement).value).toBe("p");
   });
@@ -217,6 +223,36 @@ describe("Collection pages", () => {
     ).toBe("true");
     fireEvent.click(toggle);
     expect(screen.queryByRole("button", { name: "Finished action" })).toBeNull();
+  });
+  it("settles the row with a strike before completing an open task", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValue([{ id: "t", text: "Draft the plan", completed: false, dueDate: null }]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    const setTodoCompleted = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{ setTodoCompleted } as unknown as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    const checkbox = await screen.findByRole("checkbox", { name: "Complete Draft the plan" });
+    vi.useFakeTimers();
+    fireEvent.click(checkbox);
+    expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBe("true");
+    expect(setTodoCompleted).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(setTodoCompleted).toHaveBeenCalledWith("t", true, expect.anything());
+    vi.useRealTimers();
   });
   it("lists projects of every saved status without classifications or a status filter", async () => {
     const records = ["active", "someday", "completed", "archived"].map((status, index) => ({
