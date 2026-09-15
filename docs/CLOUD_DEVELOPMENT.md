@@ -185,6 +185,20 @@ Source: [OpenAI Developers: Rethinking skills and prompts for GPT-6 Astra](https
 
 Source: [Official Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices).
 
+## Windows Git path support
+
+Codex checkpoint refs can exceed Windows' traditional path limit even when the
+worktree path is short: their files live under the shared repository's `.git`.
+For this checkout, 269-character paths appeared as broken refs while their tree
+objects were intact. `git -c core.longpaths=true fsck --full --no-reflogs
+--no-dangling` and fetch both succeeded with long-path support enabled.
+
+Enable it once per Windows clone with `git config --local core.longpaths true`;
+linked worktrees inherit this repository setting. If this error recurs, inspect
+the ref and object and test long-path support before deleting checkpoint refs.
+Verify the repair with normal `git fetch origin` and `git fsck --full
+--no-reflogs --no-dangling`. This does not require changing GitHub settings.
+
 ## GitHub Actions
 
 `.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual
