@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Idea, MediaItem } from "../../types/domain";
+import type { Idea, MediaItem, Project } from "../../types/domain";
 import { CollectionEditor } from "./CollectionEditor";
 import { ideaTitle, type CollectionService } from "./collectionService";
 afterEach(cleanup);
@@ -14,6 +14,63 @@ const idea: Idea = {
   updatedAt: "",
 };
 describe("Collection editor", () => {
+  it.each(["active", "someday", "completed", "archived"] as const)(
+    "keeps a saved %s project intact while editing without a classification field",
+    async (status) => {
+      const record: Project = {
+        id: "p",
+        title: "Home",
+        description: "Make space",
+        status,
+        createdAt: "",
+        updatedAt: "",
+      };
+      const saveProject = vi.fn().mockResolvedValue(record);
+      render(
+        <CollectionEditor
+          kind="project"
+          record={record}
+          projects={[]}
+          service={{ saveProject } as unknown as CollectionService}
+          onSaved={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.queryByLabelText("Status")).toBeNull();
+      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
+      fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+      await waitFor(() =>
+        expect(saveProject).toHaveBeenCalledWith(
+          { title: "Reading room", description: "Make space", status },
+          "p",
+        ),
+      );
+    },
+  );
+  it("creates a project from title and description alone", async () => {
+    const saveProject = vi.fn().mockResolvedValue({ id: "p" });
+    render(
+      <CollectionEditor
+        kind="project"
+        projects={[]}
+        service={{ saveProject } as unknown as CollectionService}
+        onSaved={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText("Status")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
+    fireEvent.change(screen.getByLabelText("Description (optional)"), {
+      target: { value: "Make space" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add project" }));
+    await waitFor(() =>
+      expect(saveProject).toHaveBeenCalledWith(
+        { title: "Reading room", description: "Make space", status: "active" },
+        undefined,
+      ),
+    );
+  });
   it("preserves titleless ideas and unavailable project associations on an unrelated edit", async () => {
     const saveIdea = vi.fn().mockResolvedValue(idea);
     const onSaved = vi.fn();

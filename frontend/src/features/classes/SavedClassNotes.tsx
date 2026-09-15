@@ -151,7 +151,7 @@ export function SavedClassNotes({
       </p>
       {busy && <p role="status">{busy}</p>}
       {error && (
-        <div className="classes-note-error">
+        <div className="workspace-error classes-note-error">
           <p role="alert">{error}</p>
           {draft ? (
             <button disabled={!!busy} onClick={() => void upload(draft.file, draft.value)}>

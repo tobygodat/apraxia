@@ -24,7 +24,7 @@
   overflow-wrap: anywhere;
 }
 .drive-source .drive-open-button {
-  min-height: 40px;
+  min-height: 38px;
   flex-shrink: 0;
 }
 .drive-inline-error {
@@ -44,7 +44,7 @@
   display: grid;
   place-items: center;
   width: 36px;
-  height: 40px;
+  height: 38px;
   cursor: pointer;
   list-style: none;
   border-radius: 4px;
@@ -85,5 +85,14 @@
   .drive-source .drive-open-button {
     margin-left: 28px;
     flex: 1;
+  }
+}
+@media (pointer: coarse) {
+  .drive-source .drive-open-button {
+    min-height: 44px;
+  }
+  .drive-menu summary {
+    width: 44px;
+    height: 44px;
   }
 }
