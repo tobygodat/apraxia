@@ -19,8 +19,7 @@
 
 - Continue the invoked design skill through revisions. Honor Impeccable's saved
   code-first preference: use existing components and fictional data in local QA.
-  Standalone HTML/inline visualizations need an explicit request. State the target
-  route and preview location before editing.
+  State the target route and preview location before editing.
 
 - Develop locally and release to the existing personal Vercel/Supabase app;
   no separate Preview environment or commercial launch process.
@@ -47,8 +46,8 @@ changes. Avoid tests that only restate low-impact copy or styling changes.
 | Dependencies/build/CI configuration | Full app checks before pushing; see guide for hook reuse. |
 
 - Frontend QA: reuse/start `npm run dev:web`, inspect the affected flow at
-  `http://localhost:5173/qa/workspace.html` (or a free port), and open the preview
-  in the browser panel. Use `realistic`; add `dense` for calendar geometry/text,
+  `http://localhost:5173/qa/workspace.html` (or a free port).
+  Use `realistic`; add `dense` for calendar geometry/text,
   `portrait`/`typical` for covers, reload for persistence/initialization. Broader
   shared-layout QA runs once at completion; details in `docs/CLOUD_DEVELOPMENT.md`.
 - Before pushing code, run `npm run verify:quick` once, manually or through the
@@ -69,6 +68,10 @@ changes. Avoid tests that only restate low-impact copy or styling changes.
 
 ## References
 
+- When Docker is needed on this Windows machine, agents manage startup and stale
+  sockets using `$env:USERPROFILE\docker-migration\Start-DockerVmm.ps1`. Follow
+  [the Docker procedure](docs/CLOUD_DEVELOPMENT.md#agent-managed-docker-startup-on-this-windows-machine);
+  reuse a healthy engine and do not ask the user to perform routine cleanup.
 - Run commands from the repository root. Frontend: `npm run dev:web`; local full
   stack: `npm run dev`. Setup, checks, Docker, release, and official Codex guidance:
   `docs/CLOUD_DEVELOPMENT.md`. Status: `README.md`.
