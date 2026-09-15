@@ -248,11 +248,13 @@ and [Supabase's CI testing workflow](https://supabase.com/docs/guides/deployment
 
 ## Optional full-stack local setup
 
-Install a Docker-compatible runtime (Docker Desktop with WSL 2 on Windows).
+Install a Docker-compatible runtime. This Windows machine uses Docker Desktop's
+Docker VMM backend with the startup workaround below.
 Vercel/Supabase account access is needed when linking hosted projects.
 
 Use Docker only for work requiring containers. Check `docker info` and reuse a
-running engine. Otherwise run `docker desktop start` once and wait for
+running engine. On this Windows machine, follow the helper procedure below.
+On other machines, run `docker desktop start` once and wait for
 `docker info` to succeed; a startup timeout alone does not mean startup failed.
 Inspect logs before retrying. Do not force-kill Docker, shut down WSL, restart
 Docker as routine cleanup, or automatically reset/delete its data.
@@ -273,6 +275,43 @@ credentials. The first Vercel run may require account/project linking.
 The local app normally uses `http://127.0.0.1:3000`; `/api/health` should identify
 `orbitos-cloud` and `vercel-function`. `npm run dev:web` runs Vite alone for
 fictional UI fixtures; see the root README.
+
+### Agent-managed Docker startup on this Windows machine
+
+Agents are responsible for starting Docker and handling stale sockets. Do not
+delegate these steps to the user. Docker remains optional for frontend work.
+
+Before `npm run db:start`, `npm run dev`, or local database checks:
+
+1. Check whether the Docker engine responds to `docker info`. Reuse a healthy
+   running engine; do not restart it or rename active sockets unnecessarily.
+2. If Docker needs to start, verify that `com.docker.backend` and
+   `com.docker.sailor` have exited. If a restart is needed, stop Docker with
+   `docker desktop stop`; use `docker desktop stop --force` only if shutdown is
+   stuck, and verify process exit before proceeding. Account for any unrelated
+   running containers before stopping the engine.
+3. Run the existing helper, which preserves known stale socket files by renaming
+   them before launching Docker:
+
+   ```powershell
+   & "$env:USERPROFILE\docker-migration\Start-DockerVmm.ps1"
+   ```
+
+4. Verify `docker info`, then run the required project command. After starting
+   Supabase, check container health and database readiness.
+
+Use the helper for each start after shutdown, including agent-initiated restarts,
+rather than calling `docker desktop start` directly or launching the GUI. If the
+helper is missing or rejects the runtime layout, inspect the local recovery notes
+at `$env:USERPROFILE\docker-migration\VMM-DIAGNOSIS.md` and report the specific
+blocker; do not bypass its checks or ask the user to perform routine cleanup.
+
+The active runtime is under `$env:USERPROFILE\docker-runtime`, reached through
+directory junctions at Docker's original paths. Preserve those junctions, VHDX
+files, volumes, exports, and backup directories. Stale-socket handling is not
+permission to prune Docker data, reset Docker, or delete the runtime directory.
+This workaround is specific to this machine; it is not a CI or other-host setup
+requirement.
 
 ## Lint, format, and unused code
 
