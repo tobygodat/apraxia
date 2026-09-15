@@ -7,7 +7,7 @@ import {
   visibleTodoWeekDates,
 } from "./dateDomain";
 
-export type TodoBoardColumnKind = "inbox" | "date";
+type TodoBoardColumnKind = "inbox" | "date";
 
 export interface TodoBoardColumn {
   readonly key: string;
@@ -58,6 +58,7 @@ export function buildTodoBoardModel(
   const isCurrentWeek = validMonday === startOfWeekMonday(validToday);
 
   const inbox = todos.filter((todo) => todo.dueDate === null);
+
   const columns: TodoBoardColumn[] = [
     {
       key: "inbox",
@@ -71,16 +72,19 @@ export function buildTodoBoardModel(
       kind: "date",
       date,
       canAdd: true,
-      todos: todos.filter((todo) => {
-        if (todo.dueDate === null) return false;
-        if (isCurrentWeek && date === validToday && !todo.completed) {
-          return compareSqlDates(todo.dueDate, validToday) <= 0;
-        }
-
-        // Incomplete historical tasks appear only under Today.
-        return todo.dueDate === date &&
-          (todo.completed || compareSqlDates(date, validToday) >= 0);
-      }).sort((left, right) => compareSqlDates(left.dueDate!, right.dueDate!)),
+      todos: todos
+        .filter((todo) => {
+          if (todo.dueDate === null) return false;
+          if (isCurrentWeek && date === validToday && !todo.completed) {
+            return compareSqlDates(todo.dueDate, validToday) <= 0;
+          }
+          // Incomplete historical tasks appear only under Today. Completed ones
+          // remain visible when the user deliberately navigates that week.
+          return (
+            todo.dueDate === date && (todo.completed || compareSqlDates(date, validToday) >= 0)
+          );
+        })
+        .sort((left, right) => compareSqlDates(left.dueDate!, right.dueDate!)),
     })),
   ];
 

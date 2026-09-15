@@ -1,0 +1,16 @@
+node_modules
+/dist
+frontend/dist
+frontend/public
+package-lock.json
+uv.lock
+
+# Preserved legacy Python source (AGENTS.md: keep as-is).
+/src/
+
+# Supabase CLI scratch and SQL (formatted by the database tooling, not Prettier).
+supabase/.temp
+supabase/**/*.sql
+
+# Prose stays hand-wrapped.
+*.md

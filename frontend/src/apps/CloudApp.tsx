@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { useLocation } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth, type AnonymousReason } from "../auth/AuthProvider";
 import { RequireAuth } from "../auth/RequireAuth";
 import type { AuthIdentity } from "../auth/authPort";
@@ -17,11 +17,16 @@ import type { TodoService } from "../features/todos/todoService";
 import { createSupabaseTodoService } from "../features/todos/supabaseTodoService";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 import { createWorkspaceData } from "./workspaceData";
-import { DriveCallback } from './DriveCallback';
-import { createDriveService } from '../features/classes/driveService';
-import { CalendarCallback } from "./CalendarCallback";
+import { createDriveService } from "../features/classes/driveService";
 import { createCollectionService } from "../features/collections/collectionService";
 import { createCalendarService } from "../features/calendar/calendarService";
+
+const DriveCallback = lazy(() =>
+  import("./DriveCallback").then((m) => ({ default: m.DriveCallback })),
+);
+const CalendarCallback = lazy(() =>
+  import("./CalendarCallback").then((m) => ({ default: m.CalendarCallback })),
+);
 
 function AuthFrame({
   eyebrow,
@@ -72,8 +77,8 @@ function CleanupError() {
   return (
     <AuthFrame eyebrow="Account boundary" title="The previous workspace could not close safely">
       <p className="auth-card__copy" role="alert">
-        orbitOS has kept every private workspace closed because local user state
-        could not be cleared. Try the cleanup again before continuing.
+        orbitOS has kept every private workspace closed because local user state could not be
+        cleared. Try the cleanup again before continuing.
       </p>
       <button className="auth-card__button" type="button" onClick={retryCleanup}>
         Retry secure cleanup
@@ -89,9 +94,7 @@ function SignedOut({
   readonly reason: AnonymousReason;
   readonly signInPort: GoogleSignInPort;
 }) {
-  const [signInStatus, setSignInStatus] = useState<"idle" | "pending" | "error">(
-    "idle",
-  );
+  const [signInStatus, setSignInStatus] = useState<"idle" | "pending" | "error">("idle");
   const attemptRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -150,9 +153,7 @@ function SignedOut({
         type="button"
         disabled={signInStatus === "pending"}
         aria-busy={signInStatus === "pending"}
-        aria-describedby={
-          signInStatus === "pending" ? "sign-in-progress" : undefined
-        }
+        aria-describedby={signInStatus === "pending" ? "sign-in-progress" : undefined}
         onClick={() => void signIn()}
       >
         {signInStatus === "pending" ? "Opening Google…" : "Continue with Google"}
@@ -166,8 +167,8 @@ function SignedOut({
         </p>
       ) : null}
       <p className="auth-card__note">
-        Calendar access is separate; signing in does not connect it. No personal
-        records are loaded while signed out.
+        Calendar access is separate; signing in does not connect it. No personal records are loaded
+        while signed out.
       </p>
     </AuthFrame>
   );
@@ -183,9 +184,7 @@ function CloudConfigurationError({ error }: { readonly error: unknown }) {
     <AuthFrame eyebrow="Cloud setup" title={title}>
       <p className="auth-card__copy" role="alert">
         {environmentError
-          ? "Configure " +
-            error.variables.join(" and ") +
-            ", then restart the app."
+          ? "Configure " + error.variables.join(" and ") + ", then restart the app."
           : "Check this browser’s storage access, then reload the app."}{" "}
         No personal records were requested.
       </p>
@@ -193,22 +192,50 @@ function CloudConfigurationError({ error }: { readonly error: unknown }) {
   );
 }
 
-function CloudWorkspace({ identity, service, client }: {
+function CloudWorkspace({
+  identity,
+  service,
+  client,
+}: {
   readonly identity: AuthIdentity;
   readonly service: TodoService;
   readonly client: SupabaseClient<Database>;
 }) {
   const { state, signOut } = useAuth();
-  const location = useLocation();
   const collectionService = useMemo(() => createCollectionService(client), [client]);
   const calendarService = useMemo(() => createCalendarService(client), [client]);
   const driveService = useMemo(() => createDriveService(client), [client]);
   const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
-  if (location.pathname === "/drive/callback") return <DriveCallback client={client} userId={identity.userId} />;
   const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
-  if (location.pathname === "/calendar/callback") return <CalendarCallback client={client} userId={identity.userId} />;
-  return <WorkspaceRuntime identity={identity} signOutStatus={signOutStatus} onSignOut={signOut}
-    todoService={service} collectionService={collectionService} calendarService={calendarService} driveService={driveService} workspaceData={workspaceData} />;
+  return (
+    <Suspense fallback={<RestoringSession />}>
+      <Routes>
+        <Route
+          path="/drive/callback"
+          element={<DriveCallback client={client} userId={identity.userId} />}
+        />
+        <Route
+          path="/calendar/callback"
+          element={<CalendarCallback client={client} userId={identity.userId} />}
+        />
+        <Route
+          path="/*"
+          element={
+            <WorkspaceRuntime
+              identity={identity}
+              signOutStatus={signOutStatus}
+              onSignOut={signOut}
+              todoService={service}
+              collectionService={collectionService}
+              calendarService={calendarService}
+              driveService={driveService}
+              workspaceData={workspaceData}
+            />
+          }
+        />
+      </Routes>
+    </Suspense>
+  );
 }
 export function ConfiguredCloudApp({
   client,
@@ -232,7 +259,14 @@ export function ConfiguredCloudApp({
         cleanupError={<CleanupError />}
         anonymous={(reason) => <SignedOut reason={reason} signInPort={signInPort} />}
       >
-        {(identity) => <CloudWorkspace key={identity.userId} identity={identity} service={service} client={client} />}
+        {(identity) => (
+          <CloudWorkspace
+            key={identity.userId}
+            identity={identity}
+            service={service}
+            client={client}
+          />
+        )}
       </RequireAuth>
     </AuthProvider>
   );

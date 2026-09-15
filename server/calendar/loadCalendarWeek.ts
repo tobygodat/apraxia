@@ -1,24 +1,33 @@
-import { Temporal } from "@js-temporal/polyfill";
-
 import type {
-  CalendarEvent, CalendarPartialError, CalendarPreference,
-  VisibleCalendarMetadata, WeekViewModel,
+  CalendarEvent,
+  CalendarPartialError,
+  CalendarPreference,
+  VisibleCalendarMetadata,
+  WeekViewModel,
 } from "../../frontend/src/types/domain.js";
-import { normalizeGoogleEvent } from "./normalizeGoogleEvent.js";
+import type { normalizeGoogleEvent } from "./normalizeGoogleEvent.js";
+import { loadTemporal } from "./temporal.js";
 import {
-  buildCalendarWeekWindow, CalendarWeekRequestError, type CalendarWeekWindow,
+  buildCalendarWeekWindow,
+  CalendarWeekRequestError,
+  type CalendarWeekWindow,
 } from "./weekWindow.js";
 
 export const CALENDAR_PAGE_SIZE = 250;
-export const CALENDAR_MAX_PAGES = 100;
-export const CALENDAR_CONCURRENCY = 3;
+const CALENDAR_MAX_PAGES = 100;
+const CALENDAR_CONCURRENCY = 3;
 export const CALENDAR_LOAD_TIMEOUT_MS = 20_000;
 /** Request only display data; descriptions and attendee data are not needed. */
 export const CALENDAR_EVENT_FIELDS =
   "nextPageToken,items(id,status,summary,location,colorId,eventLabelId,htmlLink,start(date,dateTime,timeZone),end(date,dateTime,timeZone),recurrence,recurringEventId)";
 
+/** Supplied by the lazily loaded Temporal polyfill and event normalizer. */
+type InstantCompare = (left: string, right: string) => number;
+type NormalizeEvent = typeof normalizeGoogleEvent;
+
 export type CalendarSelection = Pick<
-  CalendarPreference, "calendarId" | "displayName" | "color" | "isVisible"
+  CalendarPreference,
+  "calendarId" | "displayName" | "color" | "isVisible"
 > & {
   /** Fresh Google Calendar metadata, loaded server-side, not a browser choice. */
   readonly timeZone: string;
@@ -91,7 +100,10 @@ interface CalendarToLoad {
   readonly sourceWindow: CalendarWeekWindow | null;
 }
 
-function visibleSelections(values: readonly CalendarSelection[], sunday: unknown): CalendarToLoad[] {
+function visibleSelections(
+  values: readonly CalendarSelection[],
+  sunday: unknown,
+): CalendarToLoad[] {
   if (!Array.isArray(values)) throw new CalendarWeekRequestError();
   const ids = new Set<string>();
   const result: CalendarToLoad[] = [];
@@ -99,22 +111,34 @@ function visibleSelections(values: readonly CalendarSelection[], sunday: unknown
     value === null || (typeof value === "string" && /^#[\da-f]{6}$/i.test(value));
 
   for (const value of values) {
-    if (!record(value) || typeof value.calendarId !== "string" ||
-      value.calendarId.trim().length === 0 || /[\u0000-\u001f\u007f]/.test(value.calendarId) ||
-      typeof value.displayName !== "string" || value.displayName.trim().length === 0 ||
-      typeof value.isVisible !== "boolean" || !record(value.color) ||
-      !color(value.color.background) || !color(value.color.foreground) ||
-      ids.has(value.calendarId)) {
+    if (
+      !record(value) ||
+      typeof value.calendarId !== "string" ||
+      value.calendarId.trim().length === 0 ||
+      // eslint-disable-next-line no-control-regex -- deliberately rejects control characters in untrusted provider input.
+      /[\u0000-\u001f\u007f]/.test(value.calendarId) ||
+      typeof value.displayName !== "string" ||
+      value.displayName.trim().length === 0 ||
+      typeof value.isVisible !== "boolean" ||
+      !record(value.color) ||
+      !color(value.color.background) ||
+      !color(value.color.foreground) ||
+      ids.has(value.calendarId)
+    ) {
       throw new CalendarWeekRequestError();
     }
     ids.add(value.calendarId);
     if (!value.isVisible) continue;
     let sourceWindow: CalendarWeekWindow | null = null;
-    try { sourceWindow = buildCalendarWeekWindow(sunday, value.timeZone); }
-    catch { /* Invalid upstream metadata fails this calendar, never its peers. */ }
+    try {
+      sourceWindow = buildCalendarWeekWindow(sunday, value.timeZone);
+    } catch {
+      /* Invalid upstream metadata fails this calendar, never its peers. */
+    }
     result.push({
       metadata: {
-        calendarId: value.calendarId, displayName: value.displayName,
+        calendarId: value.calendarId,
+        displayName: value.displayName,
         color: { background: value.color.background, foreground: value.color.foreground },
         isVisible: true,
       },
@@ -129,9 +153,11 @@ function readPage(value: unknown): { items: readonly unknown[]; nextPageToken?: 
     throw new IncompleteCalendarError();
   }
   const items: readonly unknown[] = value.items ?? [];
-  if (items.length > CALENDAR_PAGE_SIZE ||
+  if (
+    items.length > CALENDAR_PAGE_SIZE ||
     (value.nextPageToken !== undefined &&
-      (typeof value.nextPageToken !== "string" || value.nextPageToken.trim().length === 0))) {
+      (typeof value.nextPageToken !== "string" || value.nextPageToken.trim().length === 0))
+  ) {
     throw new IncompleteCalendarError();
   }
   // Sparse arrays cannot come from JSON and should not become false empty rows.
@@ -141,16 +167,25 @@ function readPage(value: unknown): { items: readonly unknown[]; nextPageToken?: 
   return { items, nextPageToken: value.nextPageToken as string | undefined };
 }
 
-function overlapsWeek(event: CalendarEvent, window: CalendarWeekWindow): boolean {
+function overlapsWeek(
+  event: CalendarEvent,
+  window: CalendarWeekWindow,
+  compare: InstantCompare,
+): boolean {
   if (event.kind === "all_day") {
-    return event.startDate < window.endDateExclusive && event.endDateExclusive > window.range.sunday;
+    return (
+      event.startDate < window.endDateExclusive && event.endDateExclusive > window.range.sunday
+    );
   }
-  return Temporal.Instant.compare(event.startAt, window.timeMax) < 0 &&
-    Temporal.Instant.compare(event.endAt, window.timeMin) > 0;
+  return compare(event.startAt, window.timeMax) < 0 && compare(event.endAt, window.timeMin) > 0;
 }
 
-type FailureCode = "calendar_unavailable" | "reconnect_required" |
-  "calendar_incomplete" | "calendar_invalid_events" | "calendar_timeout";
+type FailureCode =
+  | "calendar_unavailable"
+  | "reconnect_required"
+  | "calendar_incomplete"
+  | "calendar_invalid_events"
+  | "calendar_timeout";
 
 function partialError(calendar: VisibleCalendarMetadata, code: FailureCode): CalendarPartialError {
   const messages: Record<FailureCode, string> = {
@@ -161,8 +196,11 @@ function partialError(calendar: VisibleCalendarMetadata, code: FailureCode): Cal
     calendar_timeout: "This calendar took too long to load. Try again.",
   };
   return {
-    calendarId: calendar.calendarId, calendarDisplayName: calendar.displayName,
-    code, userMessage: messages[code], retryable: code !== "reconnect_required",
+    calendarId: calendar.calendarId,
+    calendarDisplayName: calendar.displayName,
+    code,
+    userMessage: messages[code],
+    retryable: code !== "reconnect_required",
   };
 }
 
@@ -177,6 +215,8 @@ async function collectCalendar(
   sourceWindow: CalendarWeekWindow,
   fetchPage: FetchCalendarEventPage,
   signal: AbortSignal,
+  compare: InstantCompare,
+  normalize: NormalizeEvent,
 ): Promise<CalendarResult> {
   const events: CalendarEvent[] = [];
   const eventIds = new Set<string>();
@@ -186,25 +226,34 @@ async function collectCalendar(
   // Google uses the source calendar's timezone to filter all-day dates. The
   // union prevents date-line calendars from losing a Sunday/Saturday record;
   // overlapsWeek still limits the returned model to the selected display week.
-  const timeMin = Temporal.Instant.compare(window.timeMin, sourceWindow.timeMin) < 0 ?
-    window.timeMin : sourceWindow.timeMin;
-  const timeMax = Temporal.Instant.compare(window.timeMax, sourceWindow.timeMax) > 0 ?
-    window.timeMax : sourceWindow.timeMax;
+  const timeMin =
+    compare(window.timeMin, sourceWindow.timeMin) < 0 ? window.timeMin : sourceWindow.timeMin;
+  const timeMax =
+    compare(window.timeMax, sourceWindow.timeMax) > 0 ? window.timeMax : sourceWindow.timeMax;
 
   for (let pageNumber = 0; pageNumber < CALENDAR_MAX_PAGES; pageNumber += 1) {
     checkActive(signal);
     const request: CalendarEventPageRequest = {
-      calendarId: calendar.calendarId, timeMin, timeMax,
-      timeZone: window.timezone, maxResults: CALENDAR_PAGE_SIZE, singleEvents: true,
-      showDeleted: false, orderBy: "startTime", fields: CALENDAR_EVENT_FIELDS,
+      calendarId: calendar.calendarId,
+      timeMin,
+      timeMax,
+      timeZone: window.timezone,
+      maxResults: CALENDAR_PAGE_SIZE,
+      singleEvents: true,
+      showDeleted: false,
+      orderBy: "startTime",
+      fields: CALENDAR_EVENT_FIELDS,
       ...(pageToken === undefined ? {} : { pageToken }),
     };
     const response = await awaitActive(fetchPage(request, { signal }), signal);
     checkActive(signal);
     const page = readPage(response);
     for (const raw of page.items) {
-      const result = normalizeGoogleEvent(raw, calendar);
-      if (result.status === "invalid") { invalidEvents = true; continue; }
+      const result = normalize(raw, calendar);
+      if (result.status === "invalid") {
+        invalidEvents = true;
+        continue;
+      }
       if (result.status === "cancelled") {
         // A cancellation arriving after the live instance is a changed page set,
         // not permission to show the stale earlier copy as a complete calendar.
@@ -216,7 +265,7 @@ async function collectCalendar(
       }
       if (eventIds.has(result.event.eventId)) throw new IncompleteCalendarError();
       eventIds.add(result.event.eventId);
-      if (overlapsWeek(result.event, window)) events.push(result.event);
+      if (overlapsWeek(result.event, window, compare)) events.push(result.event);
     }
     if (page.nextPageToken === undefined) {
       return {
@@ -247,8 +296,15 @@ export async function loadCalendarWeek(
   options: { readonly signal: AbortSignal },
 ): Promise<WeekViewModel> {
   checkActive(options.signal);
+  // Both modules are loaded here, not at module scope, so connect, callback,
+  // status, disconnect and event writes never pay for the Temporal polyfill.
+  const [Temporal, { normalizeGoogleEvent: normalize }] = await Promise.all([
+    loadTemporal(),
+    import("./normalizeGoogleEvent.js"),
+  ]);
   const window = buildCalendarWeekWindow(input.sunday, input.timezone);
   const selections = visibleSelections(input.calendars, input.sunday);
+  const compare: InstantCompare = (left, right) => Temporal.Instant.compare(left, right);
   const scope = new AbortController();
   const cancel = () => scope.abort();
   options.signal.addEventListener("abort", cancel, { once: true });
@@ -266,13 +322,24 @@ export async function loadCalendarWeek(
         continue;
       }
       try {
-        results[index] = await collectCalendar(calendar, window, sourceWindow, fetchPage, scope.signal);
+        results[index] = await collectCalendar(
+          calendar,
+          window,
+          sourceWindow,
+          fetchPage,
+          scope.signal,
+          compare,
+          normalize,
+        );
       } catch (error) {
         checkActive(options.signal);
-        const code = scope.signal.aborted ? "calendar_timeout" :
-          error instanceof IncompleteCalendarError ? "calendar_incomplete" :
-            error instanceof CalendarProviderError && error.code === "reconnect_required" ?
-              "reconnect_required" : "calendar_unavailable";
+        const code = scope.signal.aborted
+          ? "calendar_timeout"
+          : error instanceof IncompleteCalendarError
+            ? "calendar_incomplete"
+            : error instanceof CalendarProviderError && error.code === "reconnect_required"
+              ? "reconnect_required"
+              : "calendar_unavailable";
         // Discard earlier pages from this calendar after an incomplete load.
         results[index] = { events: [], error: partialError(calendar, code) };
       }
@@ -280,13 +347,16 @@ export async function loadCalendarWeek(
   };
 
   try {
-    await Promise.all(Array.from({ length: Math.min(CALENDAR_CONCURRENCY, selections.length) }, worker));
+    await Promise.all(
+      Array.from({ length: Math.min(CALENDAR_CONCURRENCY, selections.length) }, worker),
+    );
     checkActive(options.signal);
     return {
-      range: window.range, timezone: window.timezone,
+      range: window.range,
+      timezone: window.timezone,
       visibleCalendars: selections.map((selection) => selection.metadata),
       events: results.flatMap((result) => result.events),
-      partialErrors: results.flatMap((result) => result.error ? [result.error] : []),
+      partialErrors: results.flatMap((result) => (result.error ? [result.error] : [])),
     };
   } finally {
     clearTimeout(timeout);

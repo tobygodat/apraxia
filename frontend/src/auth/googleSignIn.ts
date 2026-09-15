@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSecureHttpOrigin } from "../../../shared/supabaseEnvironment";
 import { getBrowserEnvironment } from "../config/browserEnv";
+import { ServiceError } from "../lib/serviceError";
 
 type OAuthClient = {
   readonly auth: Pick<SupabaseClient["auth"], "signInWithOAuth">;
@@ -36,12 +37,8 @@ export function createGoogleSignInPort(
       let stopWaiting: (() => void) | undefined;
 
       try {
-        const applicationOrigin = normalizeSecureHttpOrigin(
-          environment.applicationOrigin(),
-        );
-        const supabaseOrigin = normalizeSecureHttpOrigin(
-          environment.supabaseOrigin(),
-        );
+        const applicationOrigin = normalizeSecureHttpOrigin(environment.applicationOrigin());
+        const supabaseOrigin = normalizeSecureHttpOrigin(environment.supabaseOrigin());
         if (!applicationOrigin || !supabaseOrigin) throw new Error();
 
         const interrupted = new Promise<never>((_resolve, reject) => {
@@ -90,7 +87,7 @@ export function createGoogleSignInPort(
         if (signal.aborted) return;
         // Provider errors can contain URLs or credentials. Do not retain them
         // as a cause, log them, or expose them to application state.
-        throw new Error(GOOGLE_SIGN_IN_ERROR);
+        throw new ServiceError("unavailable", GOOGLE_SIGN_IN_ERROR);
       } finally {
         stopWaiting?.();
       }

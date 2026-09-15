@@ -10,7 +10,11 @@ export interface VerifiedSession {
 
 export class SessionVerificationError extends Error {
   constructor(readonly code: "unauthenticated" | "auth_unavailable") {
-    super(code === "unauthenticated" ? "Sign in to continue." : "Sign-in verification is temporarily unavailable.");
+    super(
+      code === "unauthenticated"
+        ? "Sign in to continue."
+        : "Sign-in verification is temporarily unavailable.",
+    );
     this.name = "SessionVerificationError";
   }
 }
@@ -41,7 +45,9 @@ function discardResponse(response: Response): void {
 
 /** Bound both fetch and individual stream reads, even if they ignore signals. */
 function whileActive<T>(
-  operation: Promise<T>, signal: AbortSignal, discardLate?: (value: T) => void,
+  operation: Promise<T>,
+  signal: AbortSignal,
+  discardLate?: (value: T) => void,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     let settled = false;
@@ -53,32 +59,45 @@ function whileActive<T>(
     };
     if (signal.aborted) abort();
     else signal.addEventListener("abort", abort, { once: true });
-    operation.then((value) => {
-      signal.removeEventListener("abort", abort);
-      if (settled || signal.aborted) {
-        abort();
-        try { discardLate?.(value); } catch { /* Never expose cleanup errors. */ }
-        return;
-      }
-      settled = true;
-      resolve(value);
-    }, () => {
-      signal.removeEventListener("abort", abort);
-      if (settled) return;
-      settled = true;
-      reject(unavailable());
-    });
+    operation.then(
+      (value) => {
+        signal.removeEventListener("abort", abort);
+        if (settled || signal.aborted) {
+          abort();
+          try {
+            discardLate?.(value);
+          } catch {
+            /* Never expose cleanup errors. */
+          }
+          return;
+        }
+        settled = true;
+        resolve(value);
+      },
+      () => {
+        signal.removeEventListener("abort", abort);
+        if (settled) return;
+        settled = true;
+        reject(unavailable());
+      },
+    );
   });
 }
 
 async function readUser(response: Response, signal: AbortSignal): Promise<unknown> {
   const contentType = response.headers.get("content-type");
-  if (contentType === null ||
+  if (
+    contentType === null ||
     !/^application\/json(?:\s*;\s*charset=(?:utf-8|"utf-8"))?\s*$/i.test(contentType) ||
-    response.body === null) throw unavailable();
+    response.body === null
+  )
+    throw unavailable();
   const contentLength = response.headers.get("content-length");
-  if (contentLength !== null &&
-    (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_BODY_BYTES)) throw unavailable();
+  if (
+    contentLength !== null &&
+    (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_BODY_BYTES)
+  )
+    throw unavailable();
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -94,7 +113,10 @@ async function readUser(response: Response, signal: AbortSignal): Promise<unknow
       if (++reads > MAX_BODY_BYTES + 1) throw unavailable();
       const part = await whileActive(reader.read(), signal);
       checkActive(signal);
-      if (part.done) { complete = true; break; }
+      if (part.done) {
+        complete = true;
+        break;
+      }
       if (!(part.value instanceof Uint8Array)) throw unavailable();
       bytes += part.value.byteLength;
       if (bytes > MAX_BODY_BYTES) throw unavailable();
@@ -105,21 +127,33 @@ async function readUser(response: Response, signal: AbortSignal): Promise<unknow
   } finally {
     if (!complete) void reader.cancel().catch(() => undefined);
     // A cancelled pending read settles without waiting for underlying cleanup.
-    try { reader.releaseLock(); } catch { /* Nothing sensitive is retained. */ }
+    try {
+      reader.releaseLock();
+    } catch {
+      /* Nothing sensitive is retained. */
+    }
   }
 }
 
 function verifiedProjection(value: unknown): VerifiedSession {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw unavailable();
   const user = value as Record<string, unknown>;
-  if (typeof user.id !== "string" || !UUID.test(user.id) ||
+  if (
+    typeof user.id !== "string" ||
+    !UUID.test(user.id) ||
     user.id === "00000000-0000-0000-0000-000000000000" ||
-    typeof user.role !== "string" || typeof user.is_anonymous !== "boolean") throw unavailable();
+    typeof user.role !== "string" ||
+    typeof user.is_anonymous !== "boolean"
+  )
+    throw unavailable();
 
   // Current Supabase User JSON always includes is_anonymous. Missing fields
   // are not evidence of a permanent account or a compatibility fallback.
-  if (user.role !== "authenticated" || user.is_anonymous ||
-    (user.deleted_at !== undefined && user.deleted_at !== null)) {
+  if (
+    user.role !== "authenticated" ||
+    user.is_anonymous ||
+    (user.deleted_at !== undefined && user.deleted_at !== null)
+  ) {
     throw new SessionVerificationError("unauthenticated");
   }
   return Object.freeze({ userId: user.id.toLowerCase() });
@@ -144,15 +178,25 @@ export async function verifySupabaseSession(
     const credential = request.headers.get("authorization");
     // Fetch Headers combines duplicates with commas, excluded by this grammar.
     // Accept the case-insensitive scheme, exactly one separator, and one token.
-    if (credential === null || credential.length > MAX_BEARER_LENGTH ||
-      !/^Bearer [A-Za-z0-9._~+\/-]+=*$/i.test(credential)) {
+    if (
+      credential === null ||
+      credential.length > MAX_BEARER_LENGTH ||
+      !/^Bearer [A-Za-z0-9._~+/-]+=*$/i.test(credential)
+    ) {
       throw new SessionVerificationError("unauthenticated");
     }
     const origin = normalizeSecureHttpOrigin(configuration.SUPABASE_URL);
     const publicKey = normalizeBrowserSafeSupabaseKey(configuration.SUPABASE_ANON_KEY);
     const timeoutMs = options.timeoutMs ?? DEADLINE_MS;
-    if (origin === null || publicKey === null || /[^\x21-\x7e]/.test(publicKey) ||
-      !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > DEADLINE_MS) throw unavailable();
+    if (
+      origin === null ||
+      publicKey === null ||
+      /[^\x21-\x7e]/.test(publicKey) ||
+      !Number.isInteger(timeoutMs) ||
+      timeoutMs < 1 ||
+      timeoutMs > DEADLINE_MS
+    )
+      throw unavailable();
 
     const endpoint = `${origin}/auth/v1/user`;
     request.signal.addEventListener("abort", abort, { once: true });
@@ -164,13 +208,20 @@ export async function verifySupabaseSession(
       return transport(endpoint, {
         method: "GET",
         headers: { apikey: publicKey, Authorization: credential, Accept: "application/json" },
-        redirect: "error", cache: "no-store", credentials: "omit", signal: scope.signal,
+        redirect: "error",
+        cache: "no-store",
+        credentials: "omit",
+        signal: scope.signal,
       });
     });
     response = await whileActive(pendingResponse, scope.signal, discardResponse);
     checkActive(scope.signal);
-    if (!(response instanceof Response) || response.redirected ||
-      (response.url !== "" && response.url !== endpoint)) throw unavailable();
+    if (
+      !(response instanceof Response) ||
+      response.redirected ||
+      (response.url !== "" && response.url !== endpoint)
+    )
+      throw unavailable();
     if (response.status === 401 || response.status === 403) {
       throw new SessionVerificationError("unauthenticated");
     }

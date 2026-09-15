@@ -30,9 +30,5 @@ function subscribeToLocalDateClock(onStoreChange: () => void): () => void {
 export function useLocalToday(timeZone: string): SqlDate {
   const getSnapshot = useCallback(() => localToday(timeZone), [timeZone]);
 
-  return useSyncExternalStore(
-    subscribeToLocalDateClock,
-    getSnapshot,
-    getSnapshot,
-  );
+  return useSyncExternalStore(subscribeToLocalDateClock, getSnapshot, getSnapshot);
 }

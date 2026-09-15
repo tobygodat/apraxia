@@ -1,14 +1,6 @@
 import type { LocalDate, TodayTodo, UUID } from "../../types/domain";
-import {
-  asSqlDate,
-  compareSqlDates,
-  type SqlDate,
-} from "./dateDomain";
-import {
-  assignTodayRanks,
-  sortTodayTodos,
-  type MoveDirection,
-} from "./todayOrder";
+import { asSqlDate, compareSqlDates, type SqlDate } from "./dateDomain";
+import { assignTodayRanks, sortTodayTodos, type MoveDirection } from "./todayOrder";
 import type { TodayRankUpdate } from "./todoService";
 
 export interface TodayListModel {
@@ -32,7 +24,7 @@ function assertTodayTodo(todo: TodayTodo, localDate: SqlDate): void {
   if (dueDateComparison > 0) {
     throw new RangeError("Today cannot contain a future todo.");
   }
-  if (todo.isOverdue !== (dueDateComparison < 0)) {
+  if (todo.isOverdue !== dueDateComparison < 0) {
     throw new RangeError("Today due-date status must match the local date.");
   }
   if (todo.isManuallyOrdered !== (todo.todayRank !== null)) {
@@ -105,16 +97,13 @@ export function placeTodayListTodo(
   const next = [...todos];
   const [source] = next.splice(sourceIndex, 1);
   const remainingTargetIndex = next.findIndex((todo) => todo.id === targetTodoId);
-  const insertionIndex =
-    placement === "after" ? remainingTargetIndex + 1 : remainingTargetIndex;
+  const insertionIndex = placement === "after" ? remainingTargetIndex + 1 : remainingTargetIndex;
   next.splice(insertionIndex, 0, source!);
   return next;
 }
 
 /** Apply the same optimistic rank spacing as the atomic reorder RPC. */
-export function applyOptimisticTodayRanks(
-  todos: readonly TodayTodo[],
-): readonly TodayTodo[] {
+export function applyOptimisticTodayRanks(todos: readonly TodayTodo[]): readonly TodayTodo[] {
   const ranks = assignTodayRanks(todos.map((todo) => todo.id));
   return todos.map((todo) => ({
     ...todo,

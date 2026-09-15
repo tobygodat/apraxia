@@ -1,0 +1,13 @@
+/* Structural base only; each caller supplies its own skin class. */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+}
+
+.dialog {
+  outline: none;
+}

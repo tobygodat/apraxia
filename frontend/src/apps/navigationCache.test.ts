@@ -18,7 +18,12 @@ describe("session navigation cache", () => {
     const cache = new NavigationCache();
     const controller = new AbortController();
     let finish!: (value: string) => void;
-    const load = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    const load = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        }),
+    );
     const first = cache.read("page", load, controller.signal);
     const rejected = expect(first).rejects.toMatchObject({ name: "AbortError" });
     const second = cache.read("page", load);
@@ -63,7 +68,13 @@ describe("session navigation cache", () => {
   it("does not reuse an old in-flight result after cleanup", async () => {
     const cache = new NavigationCache();
     let finish!: (value: string) => void;
-    const old = cache.read("page", () => new Promise<string>(resolve => { finish = resolve; }));
+    const old = cache.read(
+      "page",
+      () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        }),
+    );
     await Promise.resolve();
     cache.clear();
     finish("old user");

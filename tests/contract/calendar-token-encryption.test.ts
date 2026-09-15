@@ -18,7 +18,8 @@ const context: TokenEncryptionContext = {
   keyVersion: 7,
 };
 const token = "1//fictional_Refresh-Token.123";
-const knownEnvelope = '{"version":1,"keyVersion":7,"iv":"AAECAwQFBgcICQoL","ciphertext":"di35fayGtnLiL_bn7rsdC_Gz9FzdLzAXXQnLtC9a","tag":"paBUpaABloDW-ouroSVqGQ"}';
+const knownEnvelope =
+  '{"version":1,"keyVersion":7,"iv":"AAECAwQFBgcICQoL","ciphertext":"di35fayGtnLiL_bn7rsdC_Gz9FzdLzAXXQnLtC9a","tag":"paBUpaABloDW-ouroSVqGQ"}';
 const purpose = "orbitos/google-calendar/refresh-token";
 
 interface Envelope {
@@ -64,12 +65,17 @@ function referenceEnvelope(
   aadTuple: unknown[] = [purpose, 1, context.userId, context.connectionId, context.keyVersion],
 ): string {
   const iv = Buffer.from("000102030405060708090a0b", "hex");
-  const cipher = createCipheriv("aes-256-gcm", Buffer.from(key, "base64"), iv, { authTagLength: 16 });
+  const cipher = createCipheriv("aes-256-gcm", Buffer.from(key, "base64"), iv, {
+    authTagLength: 16,
+  });
   cipher.setAAD(Buffer.from(JSON.stringify(aadTuple), "utf8"));
   const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   return JSON.stringify({
-    version: 1, keyVersion: 7, iv: iv.toString("base64url"),
-    ciphertext: ciphertext.toString("base64url"), tag: cipher.getAuthTag().toString("base64url"),
+    version: 1,
+    keyVersion: 7,
+    iv: iv.toString("base64url"),
+    ciphertext: ciphertext.toString("base64url"),
+    tag: cipher.getAuthTag().toString("base64url"),
   });
 }
 
@@ -83,13 +89,27 @@ describe("canonical encryption keys", () => {
   });
 
   it.each([
-    undefined, null, 32, {}, [], new String(key), "", "password".repeat(4),
-    key.slice(0, -1), `${key}=`, ` ${key}`, `${key}\n`, `${key}\r\n`,
-    `${key.slice(0, 10)} ${key.slice(10)}`, key.replace(/8=$/, "9="),
+    undefined,
+    null,
+    32,
+    {},
+    [],
+    new String(key),
+    "",
+    "password".repeat(4),
+    key.slice(0, -1),
+    `${key}=`,
+    ` ${key}`,
+    `${key}\n`,
+    `${key}\r\n`,
+    `${key.slice(0, 10)} ${key.slice(10)}`,
+    key.replace(/8=$/, "9="),
     Buffer.alloc(32, 255).toString("base64url"),
     `${Buffer.alloc(32, 255).toString("base64url")}=`,
-    Buffer.alloc(31).toString("base64"), Buffer.alloc(33).toString("base64"),
-    "A".repeat(64), "A".repeat(1_000_000),
+    Buffer.alloc(31).toString("base64"),
+    Buffer.alloc(33).toString("base64"),
+    "A".repeat(64),
+    "A".repeat(1_000_000),
   ])("rejects noncanonical/incorrectly sized key %# without throwing", (value) => {
     expect(isCanonicalEncryptionKey(value)).toBe(false);
   });
@@ -119,13 +139,21 @@ describe("refresh-token authenticated envelope", () => {
     expect(envelope).not.toContain(context.userId);
     expect(envelope).not.toContain(context.connectionId);
     const decipher = createDecipheriv(
-      "aes-256-gcm", Buffer.from(key, "base64"), Buffer.from(fields.iv, "base64url"), { authTagLength: 16 },
+      "aes-256-gcm",
+      Buffer.from(key, "base64"),
+      Buffer.from(fields.iv, "base64url"),
+      { authTagLength: 16 },
     );
-    decipher.setAAD(Buffer.from(JSON.stringify([purpose, 1, context.userId, context.connectionId, 7])));
+    decipher.setAAD(
+      Buffer.from(JSON.stringify([purpose, 1, context.userId, context.connectionId, 7])),
+    );
     decipher.setAuthTag(Buffer.from(fields.tag, "base64url"));
-    expect(Buffer.concat([
-      decipher.update(Buffer.from(fields.ciphertext, "base64url")), decipher.final(),
-    ]).toString("utf8")).toBe(token);
+    expect(
+      Buffer.concat([
+        decipher.update(Buffer.from(fields.ciphertext, "base64url")),
+        decipher.final(),
+      ]).toString("utf8"),
+    ).toBe(token);
   });
 
   it("generates a fresh secure nonce and ciphertext on every encryption", () => {
@@ -136,22 +164,28 @@ describe("refresh-token authenticated envelope", () => {
       const envelopes = Array.from({ length: 32 }, () => encryptRefreshToken(token, context, key));
       expect(new Set(envelopes.map((entry) => parse(entry).iv)).size).toBe(32);
       expect(new Set(envelopes.map((entry) => parse(entry).ciphertext)).size).toBe(32);
-      for (const envelope of envelopes) expect(decryptRefreshToken(envelope, context, key)).toBe(token);
+      for (const envelope of envelopes)
+        expect(decryptRefreshToken(envelope, context, key)).toBe(token);
       expect(mathRandom).not.toHaveBeenCalled();
     } finally {
       mathRandom.mockRestore();
     }
   });
 
-  it.each(["x", token, "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~", "x".repeat(16 * 1024)])(
-    "preserves an accepted opaque token exactly (case %#)", (input) => {
-      expect(decryptRefreshToken(encryptRefreshToken(input, context, key), context, key)).toBe(input);
-    },
-  );
+  it.each([
+    "x",
+    token,
+    "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+    "x".repeat(16 * 1024),
+  ])("preserves an accepted opaque token exactly (case %#)", (input) => {
+    expect(decryptRefreshToken(encryptRefreshToken(input, context, key), context, key)).toBe(input);
+  });
 
   it("canonicalizes UUID case without changing the supplied context", () => {
     const upper = Object.freeze({
-      userId: context.userId.toUpperCase(), connectionId: context.connectionId.toUpperCase(), keyVersion: 7,
+      userId: context.userId.toUpperCase(),
+      connectionId: context.connectionId.toUpperCase(),
+      keyVersion: 7,
     });
     const before = JSON.stringify(upper);
     expect(decryptRefreshToken(knownEnvelope, upper, key)).toBe(token);
@@ -167,7 +201,13 @@ describe("refresh-token authenticated envelope", () => {
   });
 
   it.each(["iv", "ciphertext", "tag"] as const)("rejects byte tampering in %s", (field) => {
-    failure(() => decryptRefreshToken(changeEnvelope({ [field]: flipByte(parse(knownEnvelope)[field]) }), context, key));
+    failure(() =>
+      decryptRefreshToken(
+        changeEnvelope({ [field]: flipByte(parse(knownEnvelope)[field]) }),
+        context,
+        key,
+      ),
+    );
   });
 
   it("rejects every altered authentication-tag byte", () => {
@@ -175,7 +215,9 @@ describe("refresh-token authenticated envelope", () => {
     for (let index = 0; index < original.length; index += 1) {
       const tag = Buffer.from(original);
       tag[index] = (tag[index] ?? 0) ^ 128;
-      failure(() => decryptRefreshToken(changeEnvelope({ tag: tag.toString("base64url") }), context, key));
+      failure(() =>
+        decryptRefreshToken(changeEnvelope({ tag: tag.toString("base64url") }), context, key),
+      );
     }
   });
 
@@ -189,11 +231,15 @@ describe("refresh-token authenticated envelope", () => {
   });
 
   it("rejects a different valid 256-bit key", () => {
-    failure(() => decryptRefreshToken(knownEnvelope, context, Buffer.alloc(32, 27).toString("base64")));
+    failure(() =>
+      decryptRefreshToken(knownEnvelope, context, Buffer.alloc(32, 27).toString("base64")),
+    );
   });
 
   it("binds keyVersion cryptographically, not just through the envelope equality check", () => {
-    failure(() => decryptRefreshToken(changeEnvelope({ keyVersion: 8 }), { ...context, keyVersion: 8 }, key));
+    failure(() =>
+      decryptRefreshToken(changeEnvelope({ keyVersion: 8 }), { ...context, keyVersion: 8 }, key),
+    );
   });
 
   it.each([
@@ -208,40 +254,81 @@ describe("refresh-token authenticated envelope", () => {
 
 describe("refresh-token input boundaries", () => {
   it.each([
-    undefined, null, 4, {}, [], new String(token), "", " ", "   ", "\t", "\n", "\r\n",
-    " token", "token ", "to ken", "token\n", "to\0ken", "to\x1fken", "to\x7fken",
-    "tökén", "😀", "\ud800", "x".repeat(16 * 1024 + 1),
+    undefined,
+    null,
+    4,
+    {},
+    [],
+    new String(token),
+    "",
+    " ",
+    "   ",
+    "\t",
+    "\n",
+    "\r\n",
+    " token",
+    "token ",
+    "to ken",
+    "token\n",
+    "to\0ken",
+    "to\x1fken",
+    "to\x7fken",
+    "tökén",
+    "😀",
+    "\ud800",
+    "x".repeat(16 * 1024 + 1),
   ])("rejects invalid tokens without trimming/replacing content (case %#)", (input) => {
     failure(() => encryptRefreshToken(input as string, context, key));
   });
 
   it.each([
-    null, undefined, [], {}, { ...context, userId: null }, { ...context, connectionId: null },
+    null,
+    undefined,
+    [],
+    {},
+    { ...context, userId: null },
+    { ...context, connectionId: null },
     { ...context, userId: "aaaaaaaaaaaa4aaa8aaaaaaaaaaaaaaa" },
     { ...context, connectionId: `{${context.connectionId}}` },
-    { ...context, userId: ` ${context.userId}` }, { ...context, userId: `${context.userId}\n` },
-    { ...context, userId: "g".repeat(36) }, { ...context, connectionId: "" },
-    { ...context, keyVersion: 0 }, { ...context, keyVersion: -1 }, { ...context, keyVersion: 1.5 },
-    { ...context, keyVersion: 2_147_483_648 }, { ...context, keyVersion: Number.MAX_SAFE_INTEGER },
-    { ...context, keyVersion: Infinity }, { ...context, keyVersion: NaN }, { ...context, keyVersion: "7" },
+    { ...context, userId: ` ${context.userId}` },
+    { ...context, userId: `${context.userId}\n` },
+    { ...context, userId: "g".repeat(36) },
+    { ...context, connectionId: "" },
+    { ...context, keyVersion: 0 },
+    { ...context, keyVersion: -1 },
+    { ...context, keyVersion: 1.5 },
+    { ...context, keyVersion: 2_147_483_648 },
+    { ...context, keyVersion: Number.MAX_SAFE_INTEGER },
+    { ...context, keyVersion: Infinity },
+    { ...context, keyVersion: NaN },
+    { ...context, keyVersion: "7" },
   ])("rejects invalid binding context for encryption and decryption (case %#)", (owner) => {
     failure(() => encryptRefreshToken(token, owner as TokenEncryptionContext, key));
     failure(() => decryptRefreshToken(knownEnvelope, owner as TokenEncryptionContext, key));
   });
 
   it.each(["not-a-key", key.slice(0, -1), `${key}\n`, key.replace(/8=$/, "9="), null, 4])(
-    "uses the same safe error for invalid encryption/decryption keys (case %#)", (badKey) => {
+    "uses the same safe error for invalid encryption/decryption keys (case %#)",
+    (badKey) => {
       failure(() => encryptRefreshToken(token, context, badKey as string));
       failure(() => decryptRefreshToken(knownEnvelope, context, badKey as string));
     },
   );
 
   it.each([
-    Buffer.from([0]), Buffer.from([0x7f]), Buffer.from([0xff]), Buffer.from(" "),
-    Buffer.from("has space"), Buffer.from("é", "utf8"), Buffer.from([0xc3, 0x28]),
-  ])("rejects even authenticated plaintext violating the opaque token byte contract %#", (plaintext) => {
-    failure(() => decryptRefreshToken(referenceEnvelope(plaintext), context, key));
-  });
+    Buffer.from([0]),
+    Buffer.from([0x7f]),
+    Buffer.from([0xff]),
+    Buffer.from(" "),
+    Buffer.from("has space"),
+    Buffer.from("é", "utf8"),
+    Buffer.from([0xc3, 0x28]),
+  ])(
+    "rejects even authenticated plaintext violating the opaque token byte contract %#",
+    (plaintext) => {
+      failure(() => decryptRefreshToken(referenceEnvelope(plaintext), context, key));
+    },
+  );
 
   it("does not mutate an immutable context or encrypted input on failure", () => {
     const owner = Object.freeze({ ...context });
@@ -254,8 +341,23 @@ describe("refresh-token input boundaries", () => {
 
 describe("strict bounded refresh-token envelope parsing", () => {
   it.each([
-    undefined, null, 1, {}, [], parse(knownEnvelope), new String(knownEnvelope), "", "null", "[]", "true", "1", "{}",
-    "{", `${knownEnvelope}garbage`, ` ${knownEnvelope}`, `${knownEnvelope}\n`,
+    undefined,
+    null,
+    1,
+    {},
+    [],
+    parse(knownEnvelope),
+    new String(knownEnvelope),
+    "",
+    "null",
+    "[]",
+    "true",
+    "1",
+    "{}",
+    "{",
+    `${knownEnvelope}garbage`,
+    ` ${knownEnvelope}`,
+    `${knownEnvelope}\n`,
     JSON.stringify(parse(knownEnvelope), null, 2),
     JSON.stringify(Object.fromEntries(Object.entries(parse(knownEnvelope)).reverse())),
     knownEnvelope.replace('"version":1', '"version":1,"version":1'),
@@ -264,27 +366,50 @@ describe("strict bounded refresh-token envelope parsing", () => {
     knownEnvelope.replace('"version":1', '"version":1.0'),
     knownEnvelope.replace('"iv"', '"i\\u0076"'),
     knownEnvelope.replace('"version":1', '"__proto__":{},"version":1'),
-    "x".repeat(24 * 1024 + 1), "é".repeat(13 * 1024),
+    "x".repeat(24 * 1024 + 1),
+    "é".repeat(13 * 1024),
   ])("rejects invalid/noncanonical serialized JSON (case %#)", (envelope) => {
     failure(() => decryptRefreshToken(envelope, context, key));
   });
 
   it.each([
-    { version: 0 }, { version: 2 }, { version: "1" }, { version: null },
-    { keyVersion: "7" }, { keyVersion: null }, { keyVersion: 8 },
-    { iv: undefined }, { iv: null }, { iv: [] }, { ciphertext: null }, { tag: {} },
-    { algorithm: "aes-256-gcm" }, { token: "private-token-canary" },
+    { version: 0 },
+    { version: 2 },
+    { version: "1" },
+    { version: null },
+    { keyVersion: "7" },
+    { keyVersion: null },
+    { keyVersion: 8 },
+    { iv: undefined },
+    { iv: null },
+    { iv: [] },
+    { ciphertext: null },
+    { tag: {} },
+    { algorithm: "aes-256-gcm" },
+    { token: "private-token-canary" },
     { tag: undefined },
   ])("rejects unknown versions, wrong types, missing or extra fields %#", (overrides) => {
     failure(() => decryptRefreshToken(changeEnvelope(overrides), context, key));
   });
 
-  it.each(["iv", "ciphertext", "tag"] as const)("requires canonical unpadded Base64url for %s", (field) => {
-    const value = parse(knownEnvelope)[field];
-    for (const malformed of ["", `${value}=`, ` ${value}`, `${value}\n`, "AAAA+AAA", "AAAA/AAA", "!!!!", "A"]) {
-      failure(() => decryptRefreshToken(changeEnvelope({ [field]: malformed }), context, key));
-    }
-  });
+  it.each(["iv", "ciphertext", "tag"] as const)(
+    "requires canonical unpadded Base64url for %s",
+    (field) => {
+      const value = parse(knownEnvelope)[field];
+      for (const malformed of [
+        "",
+        `${value}=`,
+        ` ${value}`,
+        `${value}\n`,
+        "AAAA+AAA",
+        "AAAA/AAA",
+        "!!!!",
+        "A",
+      ]) {
+        failure(() => decryptRefreshToken(changeEnvelope({ [field]: malformed }), context, key));
+      }
+    },
+  );
 
   it("rejects nonzero unused Base64url pad bits even if decoding produces the same tag", () => {
     const tag = parse(knownEnvelope).tag;
@@ -312,19 +437,38 @@ describe("strict bounded refresh-token envelope parsing", () => {
         failure(() => decryptRefreshToken("private-envelope-canary", context, key)),
         failure(() => encryptRefreshToken("private-token-canary\n", context, key)),
         failure(() => decryptRefreshToken(knownEnvelope, context, "private-key-canary")),
-        failure(() => decryptRefreshToken(changeEnvelope({ tag: flipByte(parse(knownEnvelope).tag) }), context, key)),
-        failure(() => encryptRefreshToken(token, {
-          ...context, get userId(): string { throw new Error("private-getter-canary"); },
-        }, key)),
+        failure(() =>
+          decryptRefreshToken(
+            changeEnvelope({ tag: flipByte(parse(knownEnvelope).tag) }),
+            context,
+            key,
+          ),
+        ),
+        failure(() =>
+          encryptRefreshToken(
+            token,
+            {
+              ...context,
+              get userId(): string {
+                throw new Error("private-getter-canary");
+              },
+            },
+            key,
+          ),
+        ),
       ];
       for (const value of failures) {
-        expect(`${value.name} ${value.message} ${JSON.stringify(value)}`).not.toMatch(/private-|canary|authenticate|JSON|base64|ciphertext/i);
+        expect(`${value.name} ${value.message} ${JSON.stringify(value)}`).not.toMatch(
+          /private-|canary|authenticate|JSON|base64|ciphertext/i,
+        );
       }
       expect(log).not.toHaveBeenCalled();
       expect(warn).not.toHaveBeenCalled();
       expect(error).not.toHaveBeenCalled();
     } finally {
-      log.mockRestore(); warn.mockRestore(); error.mockRestore();
+      log.mockRestore();
+      warn.mockRestore();
+      error.mockRestore();
     }
   });
 });

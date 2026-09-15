@@ -1,8 +1,58 @@
-.assignment-type-menu { position: fixed; z-index: 1000; width: 176px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; box-sizing: border-box; padding: 6px; border-radius: 8px; background: #242424; color: #f0efed; box-shadow: 0 12px 32px #0008; font: 13px/1.5 "Segoe UI", system-ui, sans-serif; color-scheme: dark; }
-.assignment-type-menu [role=option] { display: block; width: 100%; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.assignment-type-menu [role=option] + [role=option] { margin-top: 2px; }
-.assignment-type-menu [role=option][aria-selected=true] { background: #393836; }
-.assignment-type-menu [role=option]:hover { background: #333; }
-.assignment-type-menu [role=option]:focus-visible { outline: 1px solid #ada9a3; outline-offset: -1px; background: #333; }
-.assignment-type-menu .assignment-type-none { margin-top: 6px; border-top: 1px solid #3c3c3c; border-radius: 0 0 4px 4px; padding-top: 9px; color: #ada9a3; }
-@media(pointer: coarse) { .assignment-type-menu [role=option] { min-height: 44px; } }
+.assignment-type-menu {
+  position: fixed;
+  z-index: 1000;
+  width: 176px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 8px;
+  background: #242424;
+  color: #f0efed;
+  box-shadow: 0 12px 32px #0008;
+  font:
+    13px/1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
+  color-scheme: dark;
+}
+.assignment-type-menu [role="option"] {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.assignment-type-menu [role="option"] + [role="option"] {
+  margin-top: 2px;
+}
+.assignment-type-menu [role="option"][aria-selected="true"] {
+  background: #393836;
+}
+.assignment-type-menu [role="option"]:hover {
+  background: #333;
+}
+.assignment-type-menu [role="option"]:focus-visible {
+  outline: 1px solid #ada9a3;
+  outline-offset: -1px;
+  background: #333;
+}
+.assignment-type-menu .assignment-type-none {
+  margin-top: 6px;
+  border-top: 1px solid #3c3c3c;
+  border-radius: 0 0 4px 4px;
+  padding-top: 9px;
+  color: #ada9a3;
+}
+@media (pointer: coarse) {
+  .assignment-type-menu [role="option"] {
+    min-height: 44px;
+  }
+}

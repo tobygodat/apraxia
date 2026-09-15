@@ -1,8 +1,4 @@
-import type {
-  AuthChangeEvent,
-  Session,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, SupabaseClient } from "@supabase/supabase-js";
 
 import type {
   AuthIdentity,
@@ -15,9 +11,7 @@ import type {
 type GetSessionResult = ReturnType<SupabaseClient["auth"]["getSession"]>;
 type SignOutOptions = Parameters<SupabaseClient["auth"]["signOut"]>[0];
 type SignOutResult = ReturnType<SupabaseClient["auth"]["signOut"]>;
-type AuthSubscription = ReturnType<
-  SupabaseClient["auth"]["onAuthStateChange"]
->;
+type AuthSubscription = ReturnType<SupabaseClient["auth"]["onAuthStateChange"]>;
 
 /** The minimal Supabase surface needed by the auth adapter. */
 export interface SupabaseAuthClient {
@@ -40,10 +34,7 @@ function sanitizeIdentity(session: Session | null): AuthIdentity | null {
   };
 }
 
-function toAuthStateChange(
-  reason: AuthChangeEvent,
-  session: Session | null,
-): AuthStateChange {
+function toAuthStateChange(reason: AuthChangeEvent, session: Session | null): AuthStateChange {
   return {
     identity: sanitizeIdentity(session),
     reason,

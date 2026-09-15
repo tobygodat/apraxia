@@ -78,7 +78,7 @@
   align-items: center;
   gap: 7px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   font-size: 11px;
 }
 
@@ -134,7 +134,7 @@
   flex: 0 0 auto;
   padding: 0 10px;
   border-color: rgba(255, 193, 193, 0.38);
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   color: #ffd4d4;
   font-family: inherit;
   font-size: 10px;
@@ -408,7 +408,7 @@
 .today-list__empty button {
   min-height: 40px;
   padding: 0 13px;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   font-family: inherit;
   font-size: 11px;
 }

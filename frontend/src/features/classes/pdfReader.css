@@ -1,15 +1,179 @@
-.pdf-reader { position: relative; display: flex; flex-direction: column; height: 78dvh; min-height: 320px; }
-.pdf-scroll { flex: 1; min-height: 0; overflow: auto; overflow-anchor: none; background: #303030; scrollbar-color: #777 #303030; }
-.pdf-pages { position: relative; width: 100%; }
-.pdf-page { position: absolute; left: 50%; transform: translateX(-50%); background: white; color: black; box-shadow: 0 2px 8px #0003; overflow: hidden; }
-.pdf-page-content { position: absolute; inset: 0; }
-.pdf-page canvas { display: block; }
-.pdf-page .textLayer { opacity: 1; }
-.pdf-toolbar { position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px 12px; background: #242424; border-bottom: 1px solid #454545; box-shadow: 0 4px 10px #0003; font-size: 12px; }
-.pdf-toolbar form { display: flex; align-items: center; gap: 6px; }
-.pdf-toolbar input { width: 58px; min-height: 32px; padding: 4px; background: #191919; color: #f0efed; border: 1px solid #555; font: inherit; }
-.classes-page .pdf-toolbar button { min-height: 32px; padding: 4px 8px; font-size: 12px; }
-.classes-page .pdf-toolbar button:disabled { opacity: .45; cursor: default; }
-.pdf-message { padding: 32px; font-size: 14px; }
-.pdf-page-error { position: absolute; top: 20px; left: 20px; right: 20px; background: white; color: #8b2828 !important; font-size: 14px; }
-.classes-reader:fullscreen .pdf-reader { flex: 1; height: 0; min-height: 0; }
+/* Minimal pdf.js text-layer rules, extracted from pdfjs-dist/web/pdf_viewer.css.
+   Importing that file pulls in ~230 kB of viewer chrome and data-URI cursors the
+   reader never renders; only the text layer below is needed for selectable text. */
+.textLayer {
+  color-scheme: only light;
+  position: absolute;
+  inset: 0;
+  text-align: initial;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer.highlighting {
+  touch-action: none;
+}
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent {
+  display: contents;
+}
+.textLayer span[role="img"] {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+.textLayer ::selection {
+  background: rgb(0 0 255 / 0.25);
+  background: color-mix(in srgb, AccentColor, transparent 50%);
+  color: transparent;
+}
+.textLayer br::selection {
+  background: transparent;
+}
+.textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.textLayer.selecting .endOfContent {
+  top: 0;
+}
+.textLayerImages {
+  position: absolute;
+  inset: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.textLayerImages canvas {
+  position: absolute;
+  transform-origin: 0% 0%;
+}
+
+.pdf-reader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 78dvh;
+  min-height: 320px;
+}
+.pdf-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-anchor: none;
+  background: #303030;
+  scrollbar-color: #777 #303030;
+}
+.pdf-pages {
+  position: relative;
+  width: 100%;
+}
+.pdf-page {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: black;
+  box-shadow: 0 2px 8px #0003;
+  overflow: hidden;
+}
+.pdf-page-content {
+  position: absolute;
+  inset: 0;
+}
+.pdf-page canvas {
+  display: block;
+}
+.pdf-page .textLayer {
+  opacity: 1;
+}
+.pdf-toolbar {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #242424;
+  border-bottom: 1px solid #454545;
+  box-shadow: 0 4px 10px #0003;
+  font-size: 12px;
+}
+.pdf-toolbar form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pdf-toolbar input {
+  width: 58px;
+  min-height: 32px;
+  padding: 4px;
+  background: #191919;
+  color: #f0efed;
+  border: 1px solid #555;
+  font: inherit;
+}
+.classes-page .pdf-toolbar button {
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.classes-page .pdf-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pdf-message {
+  padding: 32px;
+  font-size: 14px;
+}
+.pdf-page-error {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  background: white;
+  color: #8b2828 !important;
+  font-size: 14px;
+}
+.classes-reader:fullscreen .pdf-reader {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+}

@@ -27,7 +27,8 @@ const SNAPSHOT = {
     createdAt: "2026-09-01T12:00:00Z",
     updatedAt: "2026-09-01T12:00:00+00:00",
   },
-  classes: [], projects: [{ id: "33333333-3333-4333-8333-333333333333", title: "Launch" }],
+  classes: [],
+  projects: [{ id: "33333333-3333-4333-8333-333333333333", title: "Launch" }],
   todos: [TODO],
 };
 
@@ -80,11 +81,20 @@ describe("Todo workspace response validation", () => {
     ["missing profile", { ...SNAPSHOT, profile: null }],
     ["invalid profile owner", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, userId: "user-1" } }],
     ["invalid timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "Not/A_Zone" } }],
-    ["offset instead of IANA timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "+01:00" } }],
+    [
+      "offset instead of IANA timezone",
+      { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "+01:00" } },
+    ],
     ["whitespace timezone", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, timezone: "UTC\n" } }],
-    ["invalid profile timestamp", { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, updatedAt: "yesterday" } }],
-    ["invalid project shape", { ...SNAPSHOT, classes: [], projects: [{ ...SNAPSHOT.projects[0], title: null }] }],
-    ["duplicate projects", { ...SNAPSHOT, classes: [], projects: [...SNAPSHOT.projects, ...SNAPSHOT.projects] }],
+    [
+      "invalid profile timestamp",
+      { ...SNAPSHOT, profile: { ...SNAPSHOT.profile, updatedAt: "yesterday" } },
+    ],
+    [
+      "invalid project shape",
+      { ...SNAPSHOT, projects: [{ ...SNAPSHOT.projects[0], title: null }] },
+    ],
+    ["duplicate projects", { ...SNAPSHOT, projects: [...SNAPSHOT.projects, ...SNAPSHOT.projects] }],
     ["duplicate todos", { ...SNAPSHOT, todos: [TODO, TODO] }],
     ["non-array rows", { ...SNAPSHOT, todos: {} }],
     ["sparse rows", { ...SNAPSHOT, todos: new Array(1) }],
@@ -112,7 +122,9 @@ describe("exact Todo temporal values", () => {
   it("compares equivalent SQL time forms but distinguishes microseconds", () => {
     const todo = { ...TODO, dueTime: "09:00:00.100000" };
     expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.1" })).toBe(true);
-    expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.100001" })).toBe(false);
+    expect(todoMatchesDetails(todo, { dueDate: TODO.dueDate!, dueTime: "09:00:00.100001" })).toBe(
+      false,
+    );
     expect(todoMatchesDetails(todo, { dueTime: null })).toBe(false);
   });
 
@@ -125,18 +137,62 @@ describe("exact Todo temporal values", () => {
     expect(isDeleteUndoToken(value)).toBe(true);
   });
 
-  it.each([null, undefined, "", "not-a-timestamp", "2026-02-30T12:00:00Z", "2026-09-02T24:00:00Z", "2026-09-02T13:00:00.1234567Z", "2026-09-02T13:00:00Z\n", new Date()])(
-    "rejects an invalid Undo timestamp %j",
-    (value) => expect(isDeleteUndoToken(value)).toBe(false),
+  it.each([
+    null,
+    undefined,
+    "",
+    "not-a-timestamp",
+    "2026-02-30T12:00:00Z",
+    "2026-09-02T24:00:00Z",
+    "2026-09-02T13:00:00.1234567Z",
+    "2026-09-02T13:00:00Z\n",
+    new Date(),
+  ])("rejects an invalid Undo timestamp %j", (value) =>
+    expect(isDeleteUndoToken(value)).toBe(false),
   );
 });
 
 it("validates and copies class summaries, preserving case-sensitive class IDs", () => {
-  const classes = [{ id: "Math", name: "Mathematics" }, { id: "math", name: null }];
+  const classes = [
+    { id: "Math", name: "Mathematics" },
+    { id: "math", name: null },
+  ];
   const snapshot = readTodoWorkspaceSnapshot({ ...SNAPSHOT, classes });
   expect(snapshot?.classes).toEqual(classes);
   expect(snapshot?.classes[0]).not.toBe(classes[0]);
-  for (const invalid of [undefined, {}, [null], [{ id: "", name: "Math" }], [{ id: "math", name: 123 }], [classes[0], classes[0]]]) {
+  for (const invalid of [
+    undefined,
+    {},
+    [null],
+    [{ id: "", name: "Math" }],
+    [{ id: "math", name: 123 }],
+    [classes[0], classes[0]],
+  ]) {
     expect(readTodoWorkspaceSnapshot({ ...SNAPSHOT, classes: invalid })).toBeNull();
   }
+});
+
+it("rejects class fields that break the one-parent and class-only type rules", () => {
+  expect(readTodoResponse({ ...TODO, classId: "math", assignmentType: "Quiz" })).toMatchObject({
+    classId: "math",
+    assignmentType: "Quiz",
+  });
+  expect(readTodoResponse({ ...TODO, assignmentType: "Quiz" })).toBeNull();
+  expect(readTodoResponse({ ...TODO, classId: "math", assignmentType: "Lab" })).toBeNull();
+  expect(
+    readTodoResponse({
+      ...TODO,
+      classId: "math",
+      projectId: "33333333-3333-4333-8333-333333333333",
+    }),
+  ).toBeNull();
+  expect(
+    todoMatchesDetails(
+      { ...TODO, classId: "math", assignmentType: "Quiz" },
+      {
+        classId: "art",
+        assignmentType: "Quiz",
+      },
+    ),
+  ).toBe(false);
 });

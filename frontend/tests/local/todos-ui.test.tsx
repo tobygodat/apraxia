@@ -9,8 +9,11 @@ import type { Database } from "../../src/types/database";
 import { ConfiguredCloudApp } from "../../src/apps/CloudApp";
 
 const url = process.env.ORBITOS_LOCAL_API;
-if (url !== "http://127.0.0.1:54321") throw new Error("Only the fixed local Supabase API is supported.");
-const authOptions = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
+if (url !== "http://127.0.0.1:54321")
+  throw new Error("Only the fixed local Supabase API is supported.");
+const authOptions = {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+};
 const admin = createClient<Database>(url, process.env.ORBITOS_LOCAL_SECRET_KEY!, {
   auth: { ...authOptions.auth, storageKey: "local-ui-admin" },
 });
@@ -42,7 +45,11 @@ afterAll(async () => {
 });
 
 function mount() {
-  return render(<MemoryRouter initialEntries={["/todos"]}><ConfiguredCloudApp client={client} /></MemoryRouter>);
+  return render(
+    <MemoryRouter initialEntries={["/todos"]}>
+      <ConfiguredCloudApp client={client} />
+    </MemoryRouter>,
+  );
 }
 
 it("uses the authenticated route for Add, reload, completion, delete/Undo, and sign-out with actual persisted records", async () => {
@@ -51,7 +58,9 @@ it("uses the authenticated route for Add, reload, completion, delete/Undo, and s
   fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
   fireEvent.click(await screen.findByRole("button", { name: "Task" }));
   const dialog = await screen.findByRole("dialog");
-  fireEvent.change(within(dialog).getByLabelText("Task"), { target: { value: "Persisted from the UI" } });
+  fireEvent.change(within(dialog).getByLabelText("Task"), {
+    target: { value: "Persisted from the UI" },
+  });
   fireEvent.click(within(dialog).getByRole("button", { name: "Add task" }));
   await screen.findByText("Persisted from the UI");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -60,6 +69,11 @@ it("uses the authenticated route for Add, reload, completion, delete/Undo, and s
   await screen.findByText("Persisted from the UI");
   fireEvent.click(screen.getByRole("checkbox", { name: "Mark as complete Persisted from the UI" }));
   await screen.findByRole("checkbox", { name: "Mark as incomplete Persisted from the UI" });
+  // Completion is optimistic; row controls stay disabled until the write settles.
+  await waitFor(() => {
+    const button = screen.getByRole("button", { name: "Delete Persisted from the UI" });
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+  });
   fireEvent.click(screen.getByRole("button", { name: "Delete Persisted from the UI" }));
   fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
   await screen.findByText("Persisted from the UI");

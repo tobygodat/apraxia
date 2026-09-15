@@ -6,19 +6,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const repositoryRoot = process.cwd();
-const scannerPath = path.join(
-  repositoryRoot,
-  "scripts",
-  "check-browser-bundle.mjs",
-);
+const scannerPath = path.join(repositoryRoot, "scripts", "check-browser-bundle.mjs");
 
-async function runScanner(
-  contents: string,
-  environment: Record<string, string> = {},
-) {
-  const temporaryRoot = await mkdtemp(
-    path.join(tmpdir(), "orbitos-browser-bundle-"),
-  );
+async function runScanner(contents: string, environment: Record<string, string> = {}) {
+  const temporaryRoot = await mkdtemp(path.join(tmpdir(), "orbitos-browser-bundle-"));
   const bundleDirectory = path.join(temporaryRoot, "frontend", "dist");
 
   try {
@@ -44,9 +35,9 @@ async function runScanner(
 
 describe("browser bundle policy", () => {
   it("allows browser-safe Supabase key formats", async () => {
-    const anonJwt = `header.${Buffer.from(
-      JSON.stringify({ role: "anon" }),
-    ).toString("base64url")}.signature`;
+    const anonJwt = `header.${Buffer.from(JSON.stringify({ role: "anon" })).toString(
+      "base64url",
+    )}.signature`;
     const result = await runScanner(
       `const publishable = "sb_publishable_example"; const anon = "${anonJwt}";`,
       { VITE_SUPABASE_ANON_KEY: "sb_publishable_example" },
@@ -57,9 +48,9 @@ describe("browser bundle policy", () => {
 
   it.each([
     "sb_secret_do-not-bundle-this",
-    `header.${Buffer.from(
-      JSON.stringify({ role: "service_role" }),
-    ).toString("base64url")}.signature`,
+    `header.${Buffer.from(JSON.stringify({ role: "service_role" })).toString(
+      "base64url",
+    )}.signature`,
   ])("rejects an unsafe configured browser key without echoing it", async (key) => {
     const result = await runScanner("const clean = true;", {
       SUPABASE_SERVICE_ROLE_KEY: "a-different-server-secret",
@@ -73,9 +64,9 @@ describe("browser bundle policy", () => {
 
   it.each([
     "sb_secret_embedded-canary",
-    `header.${Buffer.from(
-      JSON.stringify({ role: "service_role" }),
-    ).toString("base64url")}.signature`,
+    `header.${Buffer.from(JSON.stringify({ role: "service_role" })).toString(
+      "base64url",
+    )}.signature`,
   ])("rejects an embedded privileged key without echoing it", async (key) => {
     const result = await runScanner(`const leaked = "${key}";`);
 

@@ -10,16 +10,12 @@ export type TodayOrderableTodo = Pick<
 export type MoveDirection = "up" | "down";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LOCAL_TIME_PATTERN =
-  /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,6})?)?$/;
+const LOCAL_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,6})?)?$/;
 const RFC_3339_TIMESTAMP_PATTERN =
   /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(?:\.(\d{1,6}))?(Z|([+-])([01]\d|2[0-3]):([0-5]\d))$/;
 const MICROSECONDS_PER_SECOND = 1_000_000n;
 
-function compareNullableTime(
-  left: string | null,
-  right: string | null,
-): number {
+function compareNullableTime(left: string | null, right: string | null): number {
   if (left === right) return 0;
   if (left === null) return 1;
   if (right === null) return -1;
@@ -73,10 +69,7 @@ function assertTodayOrderableTodo(todo: TodayOrderableTodo): void {
   if (todo.dueTime !== null && !LOCAL_TIME_PATTERN.test(todo.dueTime)) {
     throw new RangeError("Today todos require valid due times.");
   }
-  if (
-    todo.todayRank !== null &&
-    (!Number.isSafeInteger(todo.todayRank) || todo.todayRank <= 0)
-  ) {
+  if (todo.todayRank !== null && (!Number.isSafeInteger(todo.todayRank) || todo.todayRank <= 0)) {
     throw new RangeError("Today todos require valid manual ranks.");
   }
   timestampToEpochMicroseconds(todo.createdAt);
@@ -91,10 +84,7 @@ function compareId(left: string, right: string): number {
  * Mirrors the database Today order for optimistic UI and deterministic tests.
  * Existing manual ranks stay ahead of newly eligible, unranked todos.
  */
-export function compareTodayTodos(
-  left: TodayOrderableTodo,
-  right: TodayOrderableTodo,
-): number {
+export function compareTodayTodos(left: TodayOrderableTodo, right: TodayOrderableTodo): number {
   assertTodayOrderableTodo(left);
   assertTodayOrderableTodo(right);
 
@@ -102,11 +92,7 @@ export function compareTodayTodos(
   const rightIsRanked = right.todayRank !== null;
   if (leftIsRanked !== rightIsRanked) return leftIsRanked ? -1 : 1;
 
-  if (
-    left.todayRank !== null &&
-    right.todayRank !== null &&
-    left.todayRank !== right.todayRank
-  ) {
+  if (left.todayRank !== null && right.todayRank !== null && left.todayRank !== right.todayRank) {
     return left.todayRank - right.todayRank;
   }
 
@@ -122,50 +108,16 @@ export function compareTodayTodos(
   return compareId(left.id, right.id);
 }
 
-export function sortTodayTodos<T extends TodayOrderableTodo>(
-  todos: readonly T[],
-): T[] {
+export function sortTodayTodos<T extends TodayOrderableTodo>(todos: readonly T[]): T[] {
   for (const todo of todos) assertTodayOrderableTodo(todo);
   return [...todos].sort(compareTodayTodos);
-}
-
-/**
- * Shared pointer/keyboard move primitive. At a boundary it preserves the same
- * array reference so callers can avoid an unnecessary optimistic write.
- */
-export function moveTodayTodo<T extends { readonly id: string }>(
-  todos: readonly T[],
-  todoId: string,
-  direction: MoveDirection,
-): readonly T[] {
-  const currentIndex = todos.findIndex((todo) => todo.id === todoId);
-  if (currentIndex < 0) {
-    throw new RangeError("The todo is no longer in Today.");
-  }
-
-  const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-  if (nextIndex < 0 || nextIndex >= todos.length) return todos;
-
-  const next = [...todos];
-  [next[currentIndex], next[nextIndex]] = [next[nextIndex]!, next[currentIndex]!];
-  return next;
-}
-
-export function todayTodoIds<T extends { readonly id: string }>(
-  todos: readonly T[],
-): string[] {
-  assertSafeRankCount(todos.length);
-  const ids = todos.map((todo) => todo.id);
-  assertUniqueIds(ids);
-  return ids;
 }
 
 function assertSafeRankCount(count: number): void {
   // This is a numeric representation bound, not a product/list-size cap.
   // Checking the final rank also proves every preceding 1024-spaced rank is
   // exactly representable by the browser's number-based domain contract.
-  if (!Number.isSafeInteger(count) || count < 0 ||
-    !Number.isSafeInteger(count * TODAY_RANK_STEP)) {
+  if (!Number.isSafeInteger(count) || count < 0 || !Number.isSafeInteger(count * TODAY_RANK_STEP)) {
     throw new RangeError("Today order requires safe integer ranks.");
   }
 }
@@ -173,23 +125,16 @@ function assertSafeRankCount(count: number): void {
 function assertUniqueIds(ids: readonly string[]): void {
   // Helpers remain generic for in-memory callers; real UUID payloads must not
   // contain two spellings of the same PostgreSQL UUID. Preserve original keys.
-  const identities = ids.map((id) => UUID_PATTERN.test(id) ? id.toLowerCase() : id);
+  const identities = ids.map((id) => (UUID_PATTERN.test(id) ? id.toLowerCase() : id));
   if (new Set(identities).size !== ids.length) {
     throw new RangeError("Today cannot contain duplicate todo IDs.");
   }
 }
 
 /** Matches the rank spacing assigned by the reorder_today_todos RPC. */
-export function assignTodayRanks(
-  orderedTodoIds: readonly string[],
-): ReadonlyMap<string, number> {
+export function assignTodayRanks(orderedTodoIds: readonly string[]): ReadonlyMap<string, number> {
   assertSafeRankCount(orderedTodoIds.length);
   assertUniqueIds(orderedTodoIds);
 
-  return new Map(
-    orderedTodoIds.map((todoId, index) => [
-      todoId,
-      (index + 1) * TODAY_RANK_STEP,
-    ]),
-  );
+  return new Map(orderedTodoIds.map((todoId, index) => [todoId, (index + 1) * TODAY_RANK_STEP]));
 }

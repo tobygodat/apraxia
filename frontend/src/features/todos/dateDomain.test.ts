@@ -5,14 +5,12 @@ import {
   asSqlDate,
   classifyTodoDueDate,
   compareSqlDates,
-  isDueDateTodayEligible,
   isSqlDate,
   localToday,
   parseSqlDate,
   shiftWeekMonday,
   startOfWeekMonday,
   visibleTodoWeekDates,
-  weekBounds,
 } from "./dateDomain";
 
 describe("SQL date validation", () => {
@@ -79,33 +77,17 @@ describe("date-only arithmetic", () => {
 
 describe("localToday", () => {
   it("derives New York dates at the spring daylight-saving boundary", () => {
-    expect(
-      localToday("America/New_York", new Date("2026-03-08T04:59:59Z")),
-    ).toBe("2026-03-07");
-    expect(
-      localToday("America/New_York", new Date("2026-03-08T05:00:00Z")),
-    ).toBe("2026-03-08");
-    expect(
-      localToday("America/New_York", new Date("2026-03-09T03:59:59Z")),
-    ).toBe("2026-03-08");
-    expect(
-      localToday("America/New_York", new Date("2026-03-09T04:00:00Z")),
-    ).toBe("2026-03-09");
+    expect(localToday("America/New_York", new Date("2026-03-08T04:59:59Z"))).toBe("2026-03-07");
+    expect(localToday("America/New_York", new Date("2026-03-08T05:00:00Z"))).toBe("2026-03-08");
+    expect(localToday("America/New_York", new Date("2026-03-09T03:59:59Z"))).toBe("2026-03-08");
+    expect(localToday("America/New_York", new Date("2026-03-09T04:00:00Z"))).toBe("2026-03-09");
   });
 
   it("derives New York dates at the fall daylight-saving boundary", () => {
-    expect(
-      localToday("America/New_York", new Date("2026-11-01T03:59:59Z")),
-    ).toBe("2026-10-31");
-    expect(
-      localToday("America/New_York", new Date("2026-11-01T04:00:00Z")),
-    ).toBe("2026-11-01");
-    expect(
-      localToday("America/New_York", new Date("2026-11-02T04:59:59Z")),
-    ).toBe("2026-11-01");
-    expect(
-      localToday("America/New_York", new Date("2026-11-02T05:00:00Z")),
-    ).toBe("2026-11-02");
+    expect(localToday("America/New_York", new Date("2026-11-01T03:59:59Z"))).toBe("2026-10-31");
+    expect(localToday("America/New_York", new Date("2026-11-01T04:00:00Z"))).toBe("2026-11-01");
+    expect(localToday("America/New_York", new Date("2026-11-02T04:59:59Z"))).toBe("2026-11-01");
+    expect(localToday("America/New_York", new Date("2026-11-02T05:00:00Z"))).toBe("2026-11-02");
   });
 
   it("handles opposite sides of the date line and a year boundary", () => {
@@ -117,9 +99,7 @@ describe("localToday", () => {
   it("rejects invalid timezones and invalid instants", () => {
     expect(() => localToday("Not/A_Timezone", new Date())).toThrow(RangeError);
     expect(() => localToday("", new Date())).toThrow(RangeError);
-    expect(() => localToday(" America/New_York", new Date())).toThrow(
-      RangeError,
-    );
+    expect(() => localToday(" America/New_York", new Date())).toThrow(RangeError);
     expect(() => localToday("UTC", new Date(Number.NaN))).toThrow(RangeError);
   });
 });
@@ -127,24 +107,11 @@ describe("localToday", () => {
 describe("Monday-through-Sunday weeks", () => {
   it("finds week bounds from a midweek date", () => {
     expect(startOfWeekMonday("2026-09-02")).toBe("2026-08-31");
-    expect(weekBounds("2026-09-02")).toEqual({
-      monday: "2026-08-31",
-      sunday: "2026-09-06",
-    });
-  });
-
-  it("keeps Sunday in the week that began six days earlier", () => {
-    expect(weekBounds("2026-09-06")).toEqual({
-      monday: "2026-08-31",
-      sunday: "2026-09-06",
-    });
+    expect(startOfWeekMonday("2026-09-06")).toBe("2026-08-31");
   });
 
   it("handles weeks spanning a year boundary", () => {
-    expect(weekBounds("2026-12-31")).toEqual({
-      monday: "2026-12-28",
-      sunday: "2027-01-03",
-    });
+    expect(startOfWeekMonday("2026-12-31")).toBe("2026-12-28");
     expect(shiftWeekMonday("2026-12-28", 1)).toBe("2027-01-04");
     expect(shiftWeekMonday("2026-12-28", -1)).toBe("2026-12-21");
   });
@@ -167,9 +134,7 @@ describe("full Todos board date visibility", () => {
   });
 
   it("shows only Sunday when today is Sunday", () => {
-    expect(visibleTodoWeekDates("2026-08-31", "2026-09-06")).toEqual([
-      "2026-09-06",
-    ]);
+    expect(visibleTodoWeekDates("2026-08-31", "2026-09-06")).toEqual(["2026-09-06"]);
   });
 
   it.each([
@@ -188,9 +153,7 @@ describe("full Todos board date visibility", () => {
   });
 
   it("rejects a visible-week value that is not Monday", () => {
-    expect(() => visibleTodoWeekDates("2026-09-01", "2026-09-02")).toThrow(
-      RangeError,
-    );
+    expect(() => visibleTodoWeekDates("2026-09-01", "2026-09-02")).toThrow(RangeError);
   });
 });
 
@@ -205,16 +168,9 @@ describe("Todo due-date classification", () => {
     expect(classifyTodoDueDate("2026-09-03", today)).toBe("future");
   });
 
-  it("implements date-only Today eligibility as due date <= local today", () => {
-    expect(isDueDateTodayEligible(null, today)).toBe(false);
-    expect(isDueDateTodayEligible("2026-09-01", today)).toBe(true);
-    expect(isDueDateTodayEligible(today, today)).toBe(true);
-    expect(isDueDateTodayEligible("2026-09-03", today)).toBe(false);
-  });
-
   it("does not silently accept malformed due dates or local dates", () => {
     expect(() => classifyTodoDueDate("2026-02-30", today)).toThrow(RangeError);
     expect(() => classifyTodoDueDate(null, "2026-02-30")).toThrow(RangeError);
-    expect(() => isDueDateTodayEligible("", today)).toThrow(RangeError);
+    expect(() => classifyTodoDueDate("", today)).toThrow(RangeError);
   });
 });

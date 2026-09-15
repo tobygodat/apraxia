@@ -1,12 +1,25 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
-import { buildCalendarWeekWindow, CalendarWeekRequestError } from "../../server/calendar/weekWindow";
+import { loadTemporal } from "../../server/calendar/temporal";
+import {
+  assertCalendarWeekSunday,
+  buildCalendarWeekWindow,
+  CalendarWeekRequestError,
+} from "../../server/calendar/weekWindow";
 
 function hoursBetween(start: string, end: string): number {
-  return Number(Temporal.Instant.from(end).epochNanoseconds - Temporal.Instant.from(start).epochNanoseconds)
-    / 3_600_000_000_000;
+  return (
+    Number(
+      Temporal.Instant.from(end).epochNanoseconds - Temporal.Instant.from(start).epochNanoseconds,
+    ) / 3_600_000_000_000
+  );
 }
+
+// Handlers await the lazily loaded polyfill before any window is built.
+beforeAll(async () => {
+  await loadTemporal();
+});
 
 describe("Calendar civil-week window", () => {
   it("returns a complete Sunday-Saturday range and exclusive next Sunday", () => {
@@ -50,14 +63,16 @@ describe("Calendar civil-week window", () => {
     expect(window.timeMin).toBe("2026-11-01T04:00:00Z");
     expect(window.timeMax).toBe("2026-11-08T05:00:00Z");
     expect(hoursBetween(window.timeMin, window.timeMax)).toBe(169);
-    const repeatedMidnight = Temporal.Instant.from(window.timeMin).add({ hours: 1 })
+    const repeatedMidnight = Temporal.Instant.from(window.timeMin)
+      .add({ hours: 1 })
       .toZonedDateTimeISO(window.timezone);
     expect(repeatedMidnight.toPlainDate().toString()).toBe(window.range.sunday);
     expect(repeatedMidnight.hour).toBe(0);
   });
 
   it.each(["UTC", "Etc/UTC", "US/Eastern", "america/new_york", "Etc/GMT+12"])(
-    "retains the safely validated named zone %s", (timezone) => {
+    "retains the safely validated named zone %s",
+    (timezone) => {
       const window = buildCalendarWeekWindow("2026-08-30", timezone);
       expect(window.timezone).toBe(timezone);
       expect(window.timeMin).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
@@ -72,38 +87,82 @@ describe("Calendar civil-week window", () => {
     ["9999-12-19", "9999-12-25", "9999-12-26"],
   ])("supports the civil-date boundary week %s", (sunday, saturday, endDateExclusive) => {
     expect(buildCalendarWeekWindow(sunday, "UTC")).toEqual({
-      range: { sunday, saturday }, timezone: "UTC", endDateExclusive,
-      timeMin: `${sunday}T00:00:00Z`, timeMax: `${endDateExclusive}T00:00:00Z`,
+      range: { sunday, saturday },
+      timezone: "UTC",
+      endDateExclusive,
+      timeMin: `${sunday}T00:00:00Z`,
+      timeMax: `${endDateExclusive}T00:00:00Z`,
     });
   });
 
   it.each([
-    undefined, null, 20260831, {}, [], new Date("2026-08-31T00:00:00Z"),
-    "", "2026-8-31", "20260831", "2026-08-31\n", " 2026-08-31", "2026-08-31 ",
-    "2026-08-31T00:00:00", "2026-08-31[UTC]", "2026-08-31[u-ca=hebrew]",
-    "2026-08-31", "2026-09-01", "2026-02-30", "2025-02-29", "2026-00-01", "2026-13-01",
-    "0000-01-03", "+010000-01-03", "10000-01-03", "-000001-01-01", "9999-12-26",
+    undefined,
+    null,
+    20260831,
+    {},
+    [],
+    new Date("2026-08-31T00:00:00Z"),
+    "",
+    "2026-8-31",
+    "20260831",
+    "2026-08-31\n",
+    " 2026-08-31",
+    "2026-08-31 ",
+    "2026-08-31T00:00:00",
+    "2026-08-31[UTC]",
+    "2026-08-31[u-ca=hebrew]",
+    "2026-08-31",
+    "2026-09-01",
+    "2026-02-30",
+    "2025-02-29",
+    "2026-00-01",
+    "2026-13-01",
+    "0000-01-03",
+    "+010000-01-03",
+    "10000-01-03",
+    "-000001-01-01",
+    "9999-12-26",
   ])("rejects malformed, non-Sunday, or unrepresentable week input %#", (sunday) => {
     expect(() => buildCalendarWeekWindow(sunday, "UTC")).toThrow(CalendarWeekRequestError);
   });
 
   it.each([
-    undefined, null, {}, [], 0, "", " ", "UTC\n", " UTC", "UTC ",
-    "+05:30", "-04:00", "+0530", "+05", "Z", "2026-08-31T00:00:00+01:00[Europe/Paris]",
-    "Not/A_Real_Zone", "America//New_York", "../America/New_York", "America/New_York?secret=value",
-    "America/New_York\u0000", "A".repeat(256),
+    undefined,
+    null,
+    {},
+    [],
+    0,
+    "",
+    " ",
+    "UTC\n",
+    " UTC",
+    "UTC ",
+    "+05:30",
+    "-04:00",
+    "+0530",
+    "+05",
+    "Z",
+    "2026-08-31T00:00:00+01:00[Europe/Paris]",
+    "Not/A_Real_Zone",
+    "America//New_York",
+    "../America/New_York",
+    "America/New_York?secret=value",
+    "America/New_York\u0000",
+    "A".repeat(256),
   ])("rejects unsupported timezone input %#", (timezone) => {
     expect(() => buildCalendarWeekWindow("2026-08-30", timezone)).toThrow(CalendarWeekRequestError);
   });
 
   it("rejects a Sunday whose exclusive end falls outside the supported years", () => {
-    expect(() => buildCalendarWeekWindow("9999-12-26", "Asia/Kathmandu"))
-      .toThrow(CalendarWeekRequestError);
+    expect(() => buildCalendarWeekWindow("9999-12-26", "Asia/Kathmandu")).toThrow(
+      CalendarWeekRequestError,
+    );
   });
 
   it("never echoes untrusted input or underlying Temporal diagnostics", () => {
     for (const [sunday, timezone] of [
-      ["private-calendar-input", "UTC"], ["2026-08-30", "private-calendar-timezone"],
+      ["private-calendar-input", "UTC"],
+      ["2026-08-30", "private-calendar-timezone"],
       ["2026-02-30", "UTC"],
     ]) {
       try {
@@ -117,5 +176,33 @@ describe("Calendar civil-week window", () => {
         expect(String(error)).not.toContain("private-calendar");
       }
     }
+  });
+});
+
+describe("Civil-date pre-check without the polyfill", () => {
+  it("accepts a well-formed Sunday", () => {
+    expect(assertCalendarWeekSunday("2026-08-30")).toBe("2026-08-30");
+  });
+
+  it.each([
+    undefined,
+    null,
+    20260830,
+    {},
+    "",
+    "2026-8-30",
+    "20260830",
+    " 2026-08-30",
+    "2026-08-30 ",
+    "2026-08-30T00:00:00",
+    "2026-08-31",
+    "2026-02-30",
+    "2025-02-29",
+    "2026-00-04",
+    "2026-13-04",
+    "0000-01-02",
+    "10000-01-03",
+  ])("rejects malformed or non-Sunday input %#", (sunday) => {
+    expect(() => assertCalendarWeekSunday(sunday)).toThrow(CalendarWeekRequestError);
   });
 });

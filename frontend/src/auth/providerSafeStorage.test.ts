@@ -101,10 +101,7 @@ describe("createProviderSafeStorage", () => {
     expect(result).toContain("supabase-access-token");
     expect(result).toContain("supabase-refresh-token");
     expect(underlying.storage.setItem).toHaveBeenCalledOnce();
-    expect(underlying.storage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEY,
-      result,
-    );
+    expect(underlying.storage.setItem).toHaveBeenCalledWith(STORAGE_KEY, result);
   });
 
   it("supports async reads, rewrites, writes, and removals", async () => {

@@ -16,15 +16,20 @@ const PRIVATE_ERROR = "private upstream bearer token and event body";
 
 function calendar(calendarId = "focus@example.test", extra: Partial<Selection> = {}): Selection {
   return {
-    calendarId, displayName: `Calendar ${calendarId}`,
-    color: { background: "#336699", foreground: "#ffffff" }, isVisible: true, timeZone: TIMEZONE,
+    calendarId,
+    displayName: `Calendar ${calendarId}`,
+    color: { background: "#336699", foreground: "#ffffff" },
+    isVisible: true,
+    timeZone: TIMEZONE,
     ...extra,
   };
 }
 
 function timedEvent(eventId = "event1", extra: Record<string, unknown> = {}) {
   return {
-    id: eventId, status: "confirmed", summary: `Event ${eventId}`,
+    id: eventId,
+    status: "confirmed",
+    summary: `Event ${eventId}`,
     htmlLink: "https://www.google.com/calendar/event?eid=ZXZlbnQx",
     start: { dateTime: "2026-09-07T09:00:00-04:00", timeZone: TIMEZONE },
     end: { dateTime: "2026-09-07T10:00:00-04:00", timeZone: TIMEZONE },
@@ -39,7 +44,10 @@ function input(calendars: readonly Selection[] = [calendar()]) {
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
   return { promise, resolve, reject };
 }
 
@@ -47,7 +55,9 @@ function fetcher(implementation: FetchCalendarEventPage = async () => ({ items: 
   return vi.fn<FetchCalendarEventPage>(implementation);
 }
 
-function options() { return { signal: new AbortController().signal }; }
+function options() {
+  return { signal: new AbortController().signal };
+}
 
 afterEach(() => {
   vi.useRealTimers();
@@ -61,16 +71,29 @@ describe("Calendar week loader request boundary", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     const [request, requestOptions] = fetch.mock.calls[0]!;
     expect(request).toMatchObject({
-      calendarId: "focus@example.test", timeZone: TIMEZONE,
-      maxResults: 250, singleEvents: true, showDeleted: false, orderBy: "startTime",
+      calendarId: "focus@example.test",
+      timeZone: TIMEZONE,
+      maxResults: 250,
+      singleEvents: true,
+      showDeleted: false,
+      orderBy: "startTime",
       fields: expect.any(String),
     });
     expect(new Date(request.timeMin).toISOString()).toBe("2026-09-06T04:00:00.000Z");
     expect(new Date(request.timeMax).toISOString()).toBe("2026-09-13T04:00:00.000Z");
-    expect(Object.keys(request).sort()).toEqual([
-      "calendarId", "fields", "maxResults", "orderBy", "showDeleted",
-      "singleEvents", "timeMax", "timeMin", "timeZone",
-    ].sort());
+    expect(Object.keys(request).sort()).toEqual(
+      [
+        "calendarId",
+        "fields",
+        "maxResults",
+        "orderBy",
+        "showDeleted",
+        "singleEvents",
+        "timeMax",
+        "timeMin",
+        "timeZone",
+      ].sort(),
+    );
     expect(request.fields).toContain("nextPageToken");
     for (const field of ["items", "id", "summary", "htmlLink", "start", "end", "status"]) {
       expect(request.fields).toContain(field);
@@ -81,8 +104,11 @@ describe("Calendar week loader request boundary", () => {
     expect(result.timezone).toBe(TIMEZONE);
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({
-      eventId: "event1", calendarId: "focus@example.test", kind: "timed",
-      startAt: "2026-09-07T09:00:00-04:00", endAt: "2026-09-07T10:00:00-04:00",
+      eventId: "event1",
+      calendarId: "focus@example.test",
+      kind: "timed",
+      startAt: "2026-09-07T09:00:00-04:00",
+      endAt: "2026-09-07T10:00:00-04:00",
     });
     expect(result.partialErrors).toEqual([]);
   });
@@ -100,42 +126,66 @@ describe("Calendar week loader request boundary", () => {
 
   it("projects visible metadata without owner or private extra fields and without retaining mutable colors", async () => {
     const selected = {
-      ...calendar(), user_id: "private-owner", accessToken: "private-token",
+      ...calendar(),
+      user_id: "private-owner",
+      accessToken: "private-token",
       color: { background: "#336699", foreground: "#ffffff", privateColor: "private-color" },
     };
     const fetch = fetcher(async () => ({ items: [timedEvent()] }));
-    const result = await loadCalendarWeek(input([selected, calendar("hidden@example.test", { isVisible: false })]), fetch, options());
-    expect(result.visibleCalendars).toEqual([{
-      calendarId: "focus@example.test", displayName: "Calendar focus@example.test",
-      color: { background: "#336699", foreground: "#ffffff" }, isVisible: true,
-    }]);
+    const result = await loadCalendarWeek(
+      input([selected, calendar("hidden@example.test", { isVisible: false })]),
+      fetch,
+      options(),
+    );
+    expect(result.visibleCalendars).toEqual([
+      {
+        calendarId: "focus@example.test",
+        displayName: "Calendar focus@example.test",
+        color: { background: "#336699", foreground: "#ffffff" },
+        isVisible: true,
+      },
+    ]);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(result)).not.toMatch(/private-owner|private-token|private-color|user_id|accessToken/);
+    expect(JSON.stringify(result)).not.toMatch(
+      /private-owner|private-token|private-color|user_id|accessToken/,
+    );
     selected.color.background = "#000000";
     expect(result.visibleCalendars[0]?.color.background).toBe("#336699");
     expect(result.events[0]?.calendarColor.background).toBe("#336699");
   });
 
   it.each([
-    { sunday: "2026-09-07" }, { sunday: "2026-02-30" }, { sunday: null },
-    { timezone: "Not/A_Timezone" }, { timezone: null },
+    { sunday: "2026-09-07" },
+    { sunday: "2026-02-30" },
+    { sunday: null },
+    { timezone: "Not/A_Timezone" },
+    { timezone: null },
   ])("rejects an invalid week request before fetching: %j", async (invalid) => {
     const fetch = fetcher();
-    await expect(loadCalendarWeek({ ...input(), ...invalid }, fetch, options())).rejects.toMatchObject({
+    await expect(
+      loadCalendarWeek({ ...input(), ...invalid }, fetch, options()),
+    ).rejects.toMatchObject({
       name: "CalendarWeekRequestError",
     });
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it.each([
-    { calendarId: "" }, { calendarId: " " }, { calendarId: null },
-    { displayName: "" }, { displayName: null }, { isVisible: "yes" },
-    { color: null }, { color: { background: "url(private)", foreground: "#ffffff" } },
+    { calendarId: "" },
+    { calendarId: " " },
+    { calendarId: null },
+    { displayName: "" },
+    { displayName: null },
+    { isVisible: "yes" },
+    { color: null },
+    { color: { background: "url(private)", foreground: "#ffffff" } },
     { color: { background: "#336699" } },
   ])("rejects invalid selection fields before any calendar starts: %j", async (invalid) => {
     const fetch = fetcher();
     const selection = { ...calendar("invalid@example.test"), ...invalid } as Selection;
-    await expect(loadCalendarWeek(input([calendar(), selection]), fetch, options())).rejects.toMatchObject({
+    await expect(
+      loadCalendarWeek(input([calendar(), selection]), fetch, options()),
+    ).rejects.toMatchObject({
       name: "CalendarWeekRequestError",
     });
     expect(fetch).not.toHaveBeenCalled();
@@ -143,25 +193,40 @@ describe("Calendar week loader request boundary", () => {
 
   it("rejects duplicate calendar selections including a hidden duplicate", async () => {
     const fetch = fetcher();
-    await expect(loadCalendarWeek(input([calendar(), calendar(undefined, { isVisible: false })]), fetch, options()))
-      .rejects.toMatchObject({ name: "CalendarWeekRequestError" });
+    await expect(
+      loadCalendarWeek(
+        input([calendar(), calendar(undefined, { isVisible: false })]),
+        fetch,
+        options(),
+      ),
+    ).rejects.toMatchObject({ name: "CalendarWeekRequestError" });
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it.each([undefined, null, "Not/A_Timezone"])("isolates a missing or invalid source timezone without fetching that calendar: %s", async (timeZone) => {
-    const bad = { ...calendar("bad-zone@example.test"), timeZone } as unknown as Selection;
-    const fetch = fetcher(async () => ({ items: [timedEvent()] }));
-    const result = await loadCalendarWeek(input([bad, calendar()]), fetch, options());
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch.mock.calls[0]![0].calendarId).toBe("focus@example.test");
-    expect(result.events.map((event) => event.calendarId)).toEqual(["focus@example.test"]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({
-      calendarId: "bad-zone@example.test", code: "calendar_unavailable", retryable: true,
-    })]);
-  });
+  it.each([undefined, null, "Not/A_Timezone"])(
+    "isolates a missing or invalid source timezone without fetching that calendar: %s",
+    async (timeZone) => {
+      const bad = { ...calendar("bad-zone@example.test"), timeZone } as unknown as Selection;
+      const fetch = fetcher(async () => ({ items: [timedEvent()] }));
+      const result = await loadCalendarWeek(input([bad, calendar()]), fetch, options());
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch.mock.calls[0]![0].calendarId).toBe("focus@example.test");
+      expect(result.events.map((event) => event.calendarId)).toEqual(["focus@example.test"]);
+      expect(result.partialErrors).toEqual([
+        expect.objectContaining({
+          calendarId: "bad-zone@example.test",
+          code: "calendar_unavailable",
+          retryable: true,
+        }),
+      ]);
+    },
+  );
 
   it("does not require source timezone metadata for a hidden calendar", async () => {
-    const hidden = { ...calendar("hidden@example.test", { isVisible: false }), timeZone: undefined } as unknown as Selection;
+    const hidden = {
+      ...calendar("hidden@example.test", { isVisible: false }),
+      timeZone: undefined,
+    } as unknown as Selection;
     const fetch = fetcher();
     const result = await loadCalendarWeek(input([hidden]), fetch, options());
     expect(result.visibleCalendars).toEqual([]);
@@ -171,64 +236,98 @@ describe("Calendar week loader request boundary", () => {
 
   it.each([
     {
-      profileZone: "Etc/GMT+12", sourceZone: "Pacific/Kiritimati",
-      paddingStart: "2026-09-06T01:00:00+14:00", paddingEnd: "2026-09-06T02:00:00+14:00",
+      profileZone: "Etc/GMT+12",
+      sourceZone: "Pacific/Kiritimati",
+      paddingStart: "2026-09-06T01:00:00+14:00",
+      paddingEnd: "2026-09-06T02:00:00+14:00",
     },
     {
-      profileZone: "Pacific/Kiritimati", sourceZone: "Etc/GMT+12",
-      paddingStart: "2026-09-12T22:00:00-12:00", paddingEnd: "2026-09-12T23:00:00-12:00",
+      profileZone: "Pacific/Kiritimati",
+      sourceZone: "Etc/GMT+12",
+      paddingStart: "2026-09-12T22:00:00-12:00",
+      paddingEnd: "2026-09-12T23:00:00-12:00",
     },
-  ])("covers both calendar weeks across the date line but filters timed padding: $profileZone / $sourceZone", async ({
-    profileZone, sourceZone, paddingStart, paddingEnd,
-  }) => {
-    const fetch = fetcher(async () => ({ items: [
-      timedEvent("event1", { start: { date: "2026-09-06" }, end: { date: "2026-09-07" } }),
-      timedEvent("event2", { start: { date: "2026-09-12" }, end: { date: "2026-09-13" } }),
-      timedEvent("event3", {
-        start: { dateTime: paddingStart, timeZone: sourceZone },
-        end: { dateTime: paddingEnd, timeZone: sourceZone },
-      }),
-    ] }));
-    const result = await loadCalendarWeek({
-      ...input([calendar(undefined, { timeZone: sourceZone })]), timezone: profileZone,
-    }, fetch, options());
-    const request = fetch.mock.calls[0]![0];
-    expect(new Date(request.timeMin).toISOString()).toBe("2026-09-05T10:00:00.000Z");
-    expect(new Date(request.timeMax).toISOString()).toBe("2026-09-13T12:00:00.000Z");
-    expect(request.timeZone).toBe(profileZone);
-    expect(result.events.map((event) => event.eventId)).toEqual(["event1", "event2"]);
-    expect(result.events).toEqual([
-      expect.objectContaining({ kind: "all_day", startDate: "2026-09-06", endDateExclusive: "2026-09-07" }),
-      expect.objectContaining({ kind: "all_day", startDate: "2026-09-12", endDateExclusive: "2026-09-13" }),
-    ]);
-    expect(result.partialErrors).toEqual([]);
-  });
+  ])(
+    "covers both calendar weeks across the date line but filters timed padding: $profileZone / $sourceZone",
+    async ({ profileZone, sourceZone, paddingStart, paddingEnd }) => {
+      const fetch = fetcher(async () => ({
+        items: [
+          timedEvent("event1", { start: { date: "2026-09-06" }, end: { date: "2026-09-07" } }),
+          timedEvent("event2", { start: { date: "2026-09-12" }, end: { date: "2026-09-13" } }),
+          timedEvent("event3", {
+            start: { dateTime: paddingStart, timeZone: sourceZone },
+            end: { dateTime: paddingEnd, timeZone: sourceZone },
+          }),
+        ],
+      }));
+      const result = await loadCalendarWeek(
+        {
+          ...input([calendar(undefined, { timeZone: sourceZone })]),
+          timezone: profileZone,
+        },
+        fetch,
+        options(),
+      );
+      const request = fetch.mock.calls[0]![0];
+      expect(new Date(request.timeMin).toISOString()).toBe("2026-09-05T10:00:00.000Z");
+      expect(new Date(request.timeMax).toISOString()).toBe("2026-09-13T12:00:00.000Z");
+      expect(request.timeZone).toBe(profileZone);
+      expect(result.events.map((event) => event.eventId)).toEqual(["event1", "event2"]);
+      expect(result.events).toEqual([
+        expect.objectContaining({
+          kind: "all_day",
+          startDate: "2026-09-06",
+          endDateExclusive: "2026-09-07",
+        }),
+        expect.objectContaining({
+          kind: "all_day",
+          startDate: "2026-09-12",
+          endDateExclusive: "2026-09-13",
+        }),
+      ]);
+      expect(result.partialErrors).toEqual([]);
+    },
+  );
 });
 
 describe("Calendar week loader paging and isolation", () => {
   it("uses both zones across different DST schedules and preserves boundary-spanning events", async () => {
-    const fetch = fetcher(async () => ({ items: [
-      timedEvent("spanning", { start: { date: "2026-03-21" }, end: { date: "2026-03-23" } }),
-      timedEvent("nextweek", { start: { date: "2026-03-29" }, end: { date: "2026-03-30" } }),
-      timedEvent("endsatstart", {
-        start: { dateTime: "2026-03-22T03:00:00Z" }, end: { dateTime: "2026-03-22T04:00:00Z" },
-      }),
-      timedEvent("overlap", {
-        start: { dateTime: "2026-03-22T03:59:00Z" }, end: { dateTime: "2026-03-22T04:01:00Z" },
-      }),
-      timedEvent("startsatend", {
-        start: { dateTime: "2026-03-29T04:00:00Z" }, end: { dateTime: "2026-03-29T05:00:00Z" },
-      }),
-    ] }));
-    const result = await loadCalendarWeek({
-      sunday: "2026-03-22", timezone: "America/New_York",
-      calendars: [calendar(undefined, { timeZone: "Europe/London" })],
-    }, fetch, options());
+    const fetch = fetcher(async () => ({
+      items: [
+        timedEvent("spanning", { start: { date: "2026-03-21" }, end: { date: "2026-03-23" } }),
+        timedEvent("nextweek", { start: { date: "2026-03-29" }, end: { date: "2026-03-30" } }),
+        timedEvent("endsatstart", {
+          start: { dateTime: "2026-03-22T03:00:00Z" },
+          end: { dateTime: "2026-03-22T04:00:00Z" },
+        }),
+        timedEvent("overlap", {
+          start: { dateTime: "2026-03-22T03:59:00Z" },
+          end: { dateTime: "2026-03-22T04:01:00Z" },
+        }),
+        timedEvent("startsatend", {
+          start: { dateTime: "2026-03-29T04:00:00Z" },
+          end: { dateTime: "2026-03-29T05:00:00Z" },
+        }),
+      ],
+    }));
+    const result = await loadCalendarWeek(
+      {
+        sunday: "2026-03-22",
+        timezone: "America/New_York",
+        calendars: [calendar(undefined, { timeZone: "Europe/London" })],
+      },
+      fetch,
+      options(),
+    );
     expect(fetch.mock.calls[0]![0]).toMatchObject({
-      timeMin: "2026-03-22T00:00:00Z", timeMax: "2026-03-29T04:00:00Z",
+      timeMin: "2026-03-22T00:00:00Z",
+      timeMax: "2026-03-29T04:00:00Z",
     });
     expect(result.events.map((event) => event.eventId)).toEqual(["spanning", "overlap"]);
-    expect(result.events[0]).toMatchObject({ startDate: "2026-03-21", endDateExclusive: "2026-03-23" });
+    expect(result.events[0]).toMatchObject({
+      startDate: "2026-03-21",
+      endDateExclusive: "2026-03-23",
+    });
     expect(result.partialErrors).toEqual([]);
   });
 
@@ -240,7 +339,9 @@ describe("Calendar week loader paging and isolation", () => {
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(fetch.mock.calls.map(([request]) => request.pageToken)).toEqual([
-      undefined, "opaque/+=:page-2", "opaque/+=:page-3",
+      undefined,
+      "opaque/+=:page-2",
+      "opaque/+=:page-3",
     ]);
     expect(result.events.map((event) => event.eventId)).toEqual(["event1"]);
     expect(result.partialErrors).toEqual([]);
@@ -249,19 +350,28 @@ describe("Calendar week loader paging and isolation", () => {
   it("retains normal and all-day events from every successful page", async () => {
     const fetch = fetcher()
       .mockResolvedValueOnce({ items: [timedEvent("event1")], nextPageToken: "next" })
-      .mockResolvedValueOnce({ items: [timedEvent("event2", {
-        start: { date: "2026-09-08" }, end: { date: "2026-09-10" },
-      })] });
+      .mockResolvedValueOnce({
+        items: [
+          timedEvent("event2", {
+            start: { date: "2026-09-08" },
+            end: { date: "2026-09-10" },
+          }),
+        ],
+      });
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(result.events).toHaveLength(2);
     expect(result.events[1]).toMatchObject({
-      kind: "all_day", startDate: "2026-09-08", endDateExclusive: "2026-09-10",
+      kind: "all_day",
+      startDate: "2026-09-08",
+      endDateExclusive: "2026-09-10",
     });
     expect(result.partialErrors).toEqual([]);
   });
 
   it("bounds concurrent calendars to three while each calendar pages sequentially", async () => {
-    const calendars = Array.from({ length: 5 }, (_, index) => calendar(`calendar${index}@example.test`));
+    const calendars = Array.from({ length: 5 }, (_, index) =>
+      calendar(`calendar${index}@example.test`),
+    );
     const pending: Array<{ calendarId: string; page: ReturnType<typeof deferred<unknown>> }> = [];
     const activeCalendars = new Set<string>();
     let peak = 0;
@@ -295,27 +405,42 @@ describe("Calendar week loader paging and isolation", () => {
     const fetch = fetcher(async () => ({ items: [timedEvent("event1")] }));
     const result = await loadCalendarWeek(input(calendars), fetch, options());
     expect(result.events.map((event) => [event.calendarId, event.eventId])).toEqual([
-      ["one@example.test", "event1"], ["two@example.test", "event1"],
+      ["one@example.test", "event1"],
+      ["two@example.test", "event1"],
     ]);
     expect(result.partialErrors).toEqual([]);
   });
 
   it.each([
-    null, [], "private page content", { items: null }, { items: {} },
-    { items: new Array(1) }, { items: Array.from({ length: 251 }, (_, index) => timedEvent(`event${index}`)) },
-    { items: [], nextPageToken: "" }, { items: [], nextPageToken: null },
+    null,
+    [],
+    "private page content",
+    { items: null },
+    { items: {} },
+    { items: new Array(1) },
+    { items: Array.from({ length: 251 }, (_, index) => timedEvent(`event${index}`)) },
+    { items: [], nextPageToken: "" },
+    { items: [], nextPageToken: null },
     { items: [], nextPageToken: 42 },
   ])("discards only a calendar with a malformed page: %j", async (badPage) => {
     const fetch = fetcher(async (request) => {
       if (request.calendarId === "good@example.test") return { items: [timedEvent("event2")] };
       return request.pageToken ? badPage : { items: [timedEvent("event1")], nextPageToken: "next" };
     });
-    const result = await loadCalendarWeek(input([calendar(), calendar("good@example.test")]), fetch, options());
+    const result = await loadCalendarWeek(
+      input([calendar(), calendar("good@example.test")]),
+      fetch,
+      options(),
+    );
     expect(result.events.map((event) => event.eventId)).toEqual(["event2"]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({
-      calendarId: "focus@example.test", code: "calendar_incomplete", retryable: true,
-      userMessage: expect.any(String),
-    })]);
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({
+        calendarId: "focus@example.test",
+        code: "calendar_incomplete",
+        retryable: true,
+        userMessage: expect.any(String),
+      }),
+    ]);
     expect(JSON.stringify(result)).not.toContain("private page content");
     expect(result.visibleCalendars).toHaveLength(2);
   });
@@ -328,31 +453,44 @@ describe("Calendar week loader paging and isolation", () => {
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(result.events).toEqual([]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({ code: "calendar_incomplete" })]);
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({ code: "calendar_incomplete" }),
+    ]);
   });
 
-  it.each([false, true])("rejects duplicate instance IDs within or across pages (across=%s)", async (acrossPages) => {
-    const fetch = fetcher();
-    if (acrossPages) {
-      fetch.mockResolvedValueOnce({ items: [timedEvent()], nextPageToken: "next" })
-        .mockResolvedValueOnce({ items: [timedEvent()] });
-    } else fetch.mockResolvedValueOnce({ items: [timedEvent(), timedEvent()] });
-    const result = await loadCalendarWeek(input(), fetch, options());
-    expect(result.events).toEqual([]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({ code: "calendar_incomplete" })]);
-  });
+  it.each([false, true])(
+    "rejects duplicate instance IDs within or across pages (across=%s)",
+    async (acrossPages) => {
+      const fetch = fetcher();
+      if (acrossPages) {
+        fetch
+          .mockResolvedValueOnce({ items: [timedEvent()], nextPageToken: "next" })
+          .mockResolvedValueOnce({ items: [timedEvent()] });
+      } else fetch.mockResolvedValueOnce({ items: [timedEvent(), timedEvent()] });
+      const result = await loadCalendarWeek(input(), fetch, options());
+      expect(result.events).toEqual([]);
+      expect(result.partialErrors).toEqual([
+        expect.objectContaining({ code: "calendar_incomplete" }),
+      ]);
+    },
+  );
 
-  it.each([false, true])("rejects contradictory live/cancelled duplicate instances (cancelledFirst=%s)", async (cancelledFirst) => {
-    const cancelled = { id: "event1", status: "cancelled" };
-    const first = cancelledFirst ? cancelled : timedEvent();
-    const second = cancelledFirst ? timedEvent() : cancelled;
-    const fetch = fetcher()
-      .mockResolvedValueOnce({ items: [first], nextPageToken: "next" })
-      .mockResolvedValueOnce({ items: [second] });
-    const result = await loadCalendarWeek(input(), fetch, options());
-    expect(result.events).toEqual([]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({ code: "calendar_incomplete" })]);
-  });
+  it.each([false, true])(
+    "rejects contradictory live/cancelled duplicate instances (cancelledFirst=%s)",
+    async (cancelledFirst) => {
+      const cancelled = { id: "event1", status: "cancelled" };
+      const first = cancelledFirst ? cancelled : timedEvent();
+      const second = cancelledFirst ? timedEvent() : cancelled;
+      const fetch = fetcher()
+        .mockResolvedValueOnce({ items: [first], nextPageToken: "next" })
+        .mockResolvedValueOnce({ items: [second] });
+      const result = await loadCalendarWeek(input(), fetch, options());
+      expect(result.events).toEqual([]);
+      expect(result.partialErrors).toEqual([
+        expect.objectContaining({ code: "calendar_incomplete" }),
+      ]);
+    },
+  );
 
   it("accepts exactly 100 complete pages", async () => {
     const fetch = fetcher(async (request) => {
@@ -374,34 +512,54 @@ describe("Calendar week loader paging and isolation", () => {
       const pageNumber = request.pageToken === undefined ? 1 : Number(request.pageToken);
       return { items: [timedEvent(`event${pageNumber}`)], nextPageToken: String(pageNumber + 1) };
     });
-    const result = await loadCalendarWeek(input([calendar(), calendar("good@example.test")]), fetch, options());
-    expect(fetch.mock.calls.filter(([request]) => request.calendarId === "focus@example.test")).toHaveLength(100);
+    const result = await loadCalendarWeek(
+      input([calendar(), calendar("good@example.test")]),
+      fetch,
+      options(),
+    );
+    expect(
+      fetch.mock.calls.filter(([request]) => request.calendarId === "focus@example.test"),
+    ).toHaveLength(100);
     expect(result.events.map((event) => event.calendarId)).toEqual(["good@example.test"]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({
-      calendarId: "focus@example.test", code: "calendar_incomplete", retryable: true,
-    })]);
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({
+        calendarId: "focus@example.test",
+        code: "calendar_incomplete",
+        retryable: true,
+      }),
+    ]);
   });
 });
 
 describe("Calendar week loader partial errors", () => {
   it("skips invalid individual events, reports a safe warning, and silently skips cancellation", async () => {
-    const fetch = fetcher(async () => ({ items: [
-      timedEvent("event1"),
-      timedEvent("event2", { htmlLink: "javascript:privateEventBody()" }),
-      { id: "event3", status: "cancelled" },
-    ] }));
+    const fetch = fetcher(async () => ({
+      items: [
+        timedEvent("event1"),
+        timedEvent("event2", { htmlLink: "javascript:privateEventBody()" }),
+        { id: "event3", status: "cancelled" },
+      ],
+    }));
     const result = await loadCalendarWeek(input(), fetch, options());
     expect(result.events.map((event) => event.eventId)).toEqual(["event1"]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({
-      calendarId: "focus@example.test", code: "calendar_invalid_events", userMessage: expect.any(String),
-    })]);
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({
+        calendarId: "focus@example.test",
+        code: "calendar_invalid_events",
+        userMessage: expect.any(String),
+      }),
+    ]);
     expect(JSON.stringify(result)).not.toContain("privateEventBody");
   });
 
   it("does not label normal cancelled entries as invalid events", async () => {
-    const result = await loadCalendarWeek(input(), fetcher(async () => ({
-      items: [{ id: "event1", status: "cancelled" }],
-    })), options());
+    const result = await loadCalendarWeek(
+      input(),
+      fetcher(async () => ({
+        items: [{ id: "event1", status: "cancelled" }],
+      })),
+      options(),
+    );
     expect(result.events).toEqual([]);
     expect(result.partialErrors).toEqual([]);
   });
@@ -411,31 +569,53 @@ describe("Calendar week loader partial errors", () => {
       if (request.calendarId === "bad@example.test") throw new Error(PRIVATE_ERROR);
       return { items: [timedEvent()] };
     });
-    const result = await loadCalendarWeek(input([calendar(), calendar("bad@example.test")]), fetch, options());
+    const result = await loadCalendarWeek(
+      input([calendar(), calendar("bad@example.test")]),
+      fetch,
+      options(),
+    );
     expect(result.events.map((event) => event.calendarId)).toEqual(["focus@example.test"]);
-    expect(result.partialErrors).toEqual([expect.objectContaining({
-      calendarId: "bad@example.test", calendarDisplayName: "Calendar bad@example.test",
-      code: "calendar_unavailable", retryable: true, userMessage: expect.any(String),
-    })]);
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({
+        calendarId: "bad@example.test",
+        calendarDisplayName: "Calendar bad@example.test",
+        code: "calendar_unavailable",
+        retryable: true,
+        userMessage: expect.any(String),
+      }),
+    ]);
     expect(JSON.stringify(result)).not.toContain(PRIVATE_ERROR);
   });
 
   it.each([
-    ["reconnect_required", false], ["calendar_unavailable", true],
+    ["reconnect_required", false],
+    ["calendar_unavailable", true],
   ] as const)("maps typed %s errors without leaking exception details", async (code, retryable) => {
     const error = new CalendarProviderError(code);
     error.message = PRIVATE_ERROR;
-    const result = await loadCalendarWeek(input(), fetcher(async () => { throw error; }), options());
+    const result = await loadCalendarWeek(
+      input(),
+      fetcher(async () => {
+        throw error;
+      }),
+      options(),
+    );
     expect(result.events).toEqual([]);
     expect(result.partialErrors).toEqual([expect.objectContaining({ code, retryable })]);
     expect(JSON.stringify(result)).not.toContain(PRIVATE_ERROR);
   });
 
   it("does not mistake an upstream AbortError for caller cancellation", async () => {
-    const result = await loadCalendarWeek(input(), fetcher(async () => {
-      throw new DOMException(PRIVATE_ERROR, "AbortError");
-    }), options());
-    expect(result.partialErrors).toEqual([expect.objectContaining({ code: "calendar_unavailable" })]);
+    const result = await loadCalendarWeek(
+      input(),
+      fetcher(async () => {
+        throw new DOMException(PRIVATE_ERROR, "AbortError");
+      }),
+      options(),
+    );
+    expect(result.partialErrors).toEqual([
+      expect.objectContaining({ code: "calendar_unavailable" }),
+    ]);
     expect(JSON.stringify(result)).not.toContain(PRIVATE_ERROR);
   });
 });
@@ -454,9 +634,12 @@ describe("Calendar week loader cancellation and deadline", () => {
   it("rejects promptly during ignored cancellation and never returns false partial success", async () => {
     const abort = new AbortController();
     const stalled = deferred<unknown>();
-    const fetch = fetcher(async (request) => request.calendarId === "good@example.test"
-      ? { items: [timedEvent()] } : stalled.promise);
-    const loading = loadCalendarWeek(input([calendar("good@example.test"), calendar()]), fetch, { signal: abort.signal });
+    const fetch = fetcher(async (request) =>
+      request.calendarId === "good@example.test" ? { items: [timedEvent()] } : stalled.promise,
+    );
+    const loading = loadCalendarWeek(input([calendar("good@example.test"), calendar()]), fetch, {
+      signal: abort.signal,
+    });
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     abort.abort(new Error(PRIVATE_ERROR));
     await expect(loading).rejects.toMatchObject({ name: "AbortError" });
@@ -472,9 +655,13 @@ describe("Calendar week loader cancellation and deadline", () => {
     vi.useFakeTimers();
     expect(CALENDAR_LOAD_TIMEOUT_MS).toBe(20_000);
     const pending = deferred<unknown>();
-    const calendars = [calendar("good@example.test"), ...Array.from({ length: 4 }, (_, index) => calendar(`slow${index}@example.test`))];
-    const fetch = fetcher(async (request) => request.calendarId === "good@example.test"
-      ? { items: [timedEvent()] } : pending.promise);
+    const calendars = [
+      calendar("good@example.test"),
+      ...Array.from({ length: 4 }, (_, index) => calendar(`slow${index}@example.test`)),
+    ];
+    const fetch = fetcher(async (request) =>
+      request.calendarId === "good@example.test" ? { items: [timedEvent()] } : pending.promise,
+    );
     const loading = loadCalendarWeek(input(calendars), fetch, options());
     await vi.advanceTimersByTimeAsync(0);
     expect(fetch).toHaveBeenCalledTimes(4);
@@ -482,7 +669,9 @@ describe("Calendar week loader cancellation and deadline", () => {
     const result = await loading;
     expect(result.events.map((event) => event.calendarId)).toEqual(["good@example.test"]);
     expect(result.partialErrors).toHaveLength(4);
-    expect(result.partialErrors.every((error) => error.code === "calendar_timeout" && error.retryable)).toBe(true);
+    expect(
+      result.partialErrors.every((error) => error.code === "calendar_timeout" && error.retryable),
+    ).toBe(true);
     expect(new Set(result.partialErrors.map((error) => error.calendarId))).toEqual(
       new Set(calendars.slice(1).map((selection) => selection.calendarId)),
     );

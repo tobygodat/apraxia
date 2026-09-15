@@ -9,13 +9,22 @@ browser storage. The single Class name field and continuous PDF reader remain.
 | Table | Identity | Contents |
 | --- | --- | --- |
 | `classes` | `(user_id, id)` | Name, creation time, update revision |
-| `class_assignments` | UUID `id` | Class, title, SQL date, type, completion |
+| `todos` (with `class_id`) | UUID `id` | Assignment text, optional date and time, type, completion, soft delete |
 | `class_notes` | UUID `id` | Class, filename, source, upload state |
+| `class_assignments` | UUID `id` | Read-only backup of pre-aggregation rows; browser writes revoked |
 
-Assignments and notes reference `classes(user_id, id)` through composite foreign
-keys. A parent must exist in the same account. Owner RLS applies independently
-on all three tables. Browser column grants prevent changing owners, class
-relationships, and server-managed upload completion.
+Since `20260914000100_assignment_todos.sql` an assignment is an ordinary todo
+whose `class_id` references `classes(user_id, id)` (`on delete set null`), with
+a class-only `assignment_type`. The Classes page keeps its inline table but
+reads and writes through `createTodoAssignmentService`, an adapter over the todo
+service, so assignments appear on Tasks and Home, gain optional times, and are
+deleted through the shared soft-delete RPC with Undo. See
+[Task aggregation roadmap](TASK_AGGREGATION_ROADMAP.md) and
+[Workspace data model](WORKSPACE_DATA_MODEL.md#publictodos). Notes reference
+`classes(user_id, id)` through a composite foreign key with no `on delete`
+action. A parent must exist in the same account. Owner RLS applies
+independently on every table. Browser column grants prevent changing owners,
+class relationships, and server-managed upload completion.
 
 Class IDs remain text to preserve existing URLs and assignment relationships,
 including `math3012`. New IDs are UUID strings. Names are labels, not identities:
@@ -23,9 +32,21 @@ ordinary UI edits reject duplicates, but migration preserves distinct legacy
 IDs even when their labels match. Classes recovered from existing assignments
 may temporarily have a null name; new user creates and renames require a name.
 
-Assignments retain their existing IDs, date-only due dates, completion, and
-Undo behavior. They remain independent of Tasks. No terms, grades, sharing,
-rich-text editing, or new delete flows are introduced.
+Migrated assignments kept their IDs, original date-only due dates, and
+completion; no due time was invented. No terms, grades, sharing, or rich-text
+editing are introduced.
+
+## Deletion
+
+`20260914000300_class_deletes.sql` adds owner-scoped `delete` policies for
+`classes`, `class_notes`, and the matching `class-pdfs` objects. Deleting a
+class detaches its tasks (their `class_id` and `assignment_type` clear; the
+tasks survive) but is refused with `23503` while the class still has notes.
+Delete the Storage object before its note row: the object policy authorizes an
+object only while its reserving note exists. Reservations abandoned for more
+than a day are collected by the `service_role`-only
+`private.reap_abandoned_class_pdfs()`. The `class_assignments` backup is not
+deletable from the browser.
 
 ## Browser-data migration
 
@@ -118,9 +139,10 @@ account data; realtime subscriptions are not required for persistence.
 
 ## Verification and release
 
-Embedded database tests cover backfill with existing assignments, shared legacy
-IDs across accounts, transactional import, stale names, foreign keys, RLS,
-private object access, immutable objects, and upload finalization. Service and UI
+Embedded database tests cover backfill with existing assignments, the
+assignment-to-todo copy and its idempotence, shared legacy IDs across accounts,
+transactional import, stale names, foreign keys, RLS, private object access,
+immutable objects, and upload finalization. Service and UI
 tests cover stable retries, wrong-file rejection, load failures, and reopening.
 Supabase pgTAP adds managed database coverage; embedded Storage metadata tests
 do not prove the Storage HTTP service uploaded any real bytes.
