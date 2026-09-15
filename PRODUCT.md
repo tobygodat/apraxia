@@ -15,7 +15,7 @@ Friends' access is a future product direction, not a claim of launch readiness.
 ## Product Purpose
 
 Reduce the mental overhead of capturing, organizing, and acting on everyday
-information. Tasks, projects, ideas, media, and class notes belong in one
+information. Tasks, projects, ideas, and class notes belong in one
 desktop-first workspace, with Calendar and Today supporting daily planning.
 Additional modules are planned; their scope remains undecided.
 
@@ -32,7 +32,7 @@ AGENTS.md.
 
 ## Capabilities and Constraints
 
-- Existing workspace areas include Todos, Projects, Ideas, Media, Calendar,
+- Existing workspace areas include Todos, Projects, Ideas, Calendar,
   and a Classes/course-notes skeleton.
 - Classes supports saved notes, local PDF preview, and Google Drive notes
   through Google's native Picker, with a separate Drive consent. Hosted setup

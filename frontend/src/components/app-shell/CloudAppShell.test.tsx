@@ -59,7 +59,6 @@ describe("CloudAppShell", () => {
       "home",
       "tasks",
       "ideas",
-      "media",
       "projects",
       "classes",
     ]);
@@ -67,7 +66,6 @@ describe("CloudAppShell", () => {
       "/",
       "/todos",
       "/ideas",
-      "/media",
       "/projects",
       "/classes",
     ]);

@@ -9,7 +9,6 @@ const PRIMARY_DESTINATIONS = [
   { to: "/", label: "Home", icon: "home", end: true },
   { to: "/todos", label: "Tasks", icon: "todos", end: false },
   { to: "/ideas", label: "Ideas", icon: "ideas", end: false },
-  { to: "/media", label: "Media", icon: "media", end: false },
   { to: "/projects", label: "Projects", icon: "projects", end: false },
   { to: "/classes", label: "Classes", icon: "classes", end: false },
 ] as const;

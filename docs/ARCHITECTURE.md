@@ -26,7 +26,7 @@ flowchart LR
 
 ## Path 1: browser to Supabase
 
-Todos, projects, ideas, media, home appearance, classes, and notes are read and
+Todos, projects, ideas, home appearance, classes, and notes are read and
 written by `supabase-js` in the browser using the signed-in user's JWT. Class
 assignments are todos with a `class_id`; the Classes page reads and writes them
 through an adapter over the todo service (see

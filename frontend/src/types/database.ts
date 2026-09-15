@@ -317,60 +317,6 @@ export type Database = {
           },
         ];
       };
-      media: {
-        Row: {
-          created_at: string;
-          creator: string | null;
-          deleted_at: string | null;
-          id: string;
-          legacy_id: string | null;
-          media_type: Database["public"]["Enums"]["media_type"];
-          notes: string | null;
-          rating: number | null;
-          release_year: number | null;
-          search_vector: unknown;
-          source: Database["public"]["Enums"]["record_source"];
-          status: Database["public"]["Enums"]["media_status"];
-          title: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          creator?: string | null;
-          deleted_at?: string | null;
-          id?: string;
-          legacy_id?: string | null;
-          media_type: Database["public"]["Enums"]["media_type"];
-          notes?: string | null;
-          rating?: number | null;
-          release_year?: number | null;
-          search_vector?: unknown;
-          source?: Database["public"]["Enums"]["record_source"];
-          status?: Database["public"]["Enums"]["media_status"];
-          title: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Update: {
-          created_at?: string;
-          creator?: string | null;
-          deleted_at?: string | null;
-          id?: string;
-          legacy_id?: string | null;
-          media_type?: Database["public"]["Enums"]["media_type"];
-          notes?: string | null;
-          rating?: number | null;
-          release_year?: number | null;
-          search_vector?: unknown;
-          source?: Database["public"]["Enums"]["record_source"];
-          status?: Database["public"]["Enums"]["media_status"];
-          title?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       profiles: {
         Row: {
           created_at: string;
@@ -707,9 +653,7 @@ export type Database = {
     };
     Enums: {
       google_calendar_connection_state: "connected" | "reconnect_required" | "disconnected";
-      media_status: "saved" | "in_progress" | "finished";
-      media_type: "book" | "movie";
-      orbitos_record_type: "todo" | "idea" | "media" | "project";
+      orbitos_record_type: "todo" | "idea" | "project";
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
     };
@@ -837,9 +781,7 @@ export const Constants = {
   public: {
     Enums: {
       google_calendar_connection_state: ["connected", "reconnect_required", "disconnected"],
-      media_status: ["saved", "in_progress", "finished"],
-      media_type: ["book", "movie"],
-      orbitos_record_type: ["todo", "idea", "media", "project"],
+      orbitos_record_type: ["todo", "idea", "project"],
       project_status: ["active", "someday", "completed", "archived"],
       record_source: ["manual", "migration"],
     },

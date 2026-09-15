@@ -72,7 +72,6 @@ select ok(
         ('public.projects'),
         ('public.todos'),
         ('public.ideas'),
-        ('public.media'),
         ('public.google_calendar_connections'),
         ('public.google_calendar_preferences')
     ) as application_table (relation_name)

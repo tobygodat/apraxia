@@ -107,7 +107,6 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="projects" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="projects/:id" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="ideas" element={<CollectionRoute {...props} kind="idea" />} />
-            <Route path="media" element={<CollectionRoute {...props} kind="media" />} />
             <Route path="classes" element={<ClassesRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
             <Route path="settings" element={<SettingsRoute {...props} />} />
@@ -286,10 +285,7 @@ function WorkspaceLayout({
       setEditingTodo(todo);
     } else {
       const kind = result.recordType;
-      const record =
-        kind === "idea"
-          ? await props.collectionService.getIdea(result.recordId)
-          : await props.collectionService.getMedia(result.recordId);
+      const record = await props.collectionService.getIdea(result.recordId);
       if (!alive.current) return;
       setEditor({ kind, record, fromSearch: true });
     }
@@ -315,7 +311,7 @@ function WorkspaceLayout({
             >
               Task
             </button>
-            {(["idea", "media", "project"] as const).map((kind) => (
+            {(["idea", "project"] as const).map((kind) => (
               <button
                 key={kind}
                 onClick={() => {

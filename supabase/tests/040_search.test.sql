@@ -46,16 +46,6 @@ values
     '2026-01-01 06:00:00+00'
   );
 
-insert into public.media (id, user_id, media_type, title, notes, updated_at)
-values (
-  'a4000000-0000-4000-8000-000000000004',
-  '11111111-1111-4111-8111-111111111111',
-  'book',
-  'Needle media',
-  'Review later',
-  '2026-01-01 03:00:00+00'
-);
-
 insert into public.projects (id, user_id, title, description, updated_at)
 values (
   'a4000000-0000-4000-8000-000000000005',
@@ -77,7 +67,6 @@ select set_eq(
     values
       ('todo'::text, 'Needle todo'::text),
       ('idea', 'Needle idea'),
-      ('media', 'Needle media'),
       ('project', 'Needle project')
   $$,
   'search returns every active record type owned by the caller'
@@ -85,13 +74,13 @@ select set_eq(
 
 select is(
   (select count(*) from public.search_records('needle')),
-  4::bigint,
+  3::bigint,
   'search excludes both soft-deleted and foreign records'
 );
 
 select ok(
   (
-    select bool_and(total_count = 4)
+    select bool_and(total_count = 3)
     from public.search_records('needle')
   ),
   'every result reports the full filtered result count'
@@ -114,7 +103,7 @@ select set_eq(
     select record_type::text
     from public.search_records('needle -project')
   $$,
-  $$values ('todo'::text), ('idea'), ('media')$$,
+  $$values ('todo'::text), ('idea')$$,
   'web-style exclusion terms are applied safely'
 );
 
@@ -126,7 +115,7 @@ select is(
 
 select ok(
   (
-    select bool_and(total_count = 4)
+    select bool_and(total_count = 3)
     from public.search_records('needle', 2, 0)
   ),
   'limited pages retain the complete result count'
@@ -136,7 +125,7 @@ select results_eq(
   $$select record_id from public.search_records('needle', 2, 0)$$,
   array[
     'a4000000-0000-4000-8000-000000000005'::uuid,
-    'a4000000-0000-4000-8000-000000000004'::uuid
+    'a4000000-0000-4000-8000-000000000002'::uuid
   ],
   'the first page returns the exact newest stable record IDs'
 );
@@ -144,7 +133,6 @@ select results_eq(
 select results_eq(
   $$select record_id from public.search_records('needle', 2, 2)$$,
   array[
-    'a4000000-0000-4000-8000-000000000002'::uuid,
     'a4000000-0000-4000-8000-000000000001'::uuid
   ],
   'the second page returns the exact remaining stable record IDs'
