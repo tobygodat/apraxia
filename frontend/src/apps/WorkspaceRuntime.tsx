@@ -3,6 +3,7 @@ import { registerUserStateResetter } from "../auth/userState";
 import { primeCoverImage } from "../features/calendar/HomeHeader";
 import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
+import { WorkspacePreferencesProvider } from "./workspacePreferences";
 
 /** Shared by the authenticated app and local QA, including navigation timing. */
 export function WorkspaceRuntime(props: MainWorkspaceProps) {
@@ -136,13 +137,15 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     };
   }, [todoService, collectionService, workspaceData, props.identity.userId]);
   return (
-    <MainWorkspace
-      {...props}
-      cache={cache}
-      workspaceData={workspaceData}
-      todoService={todoService}
-      collectionService={collectionService}
-      calendarService={calendarService}
-    />
+    <WorkspacePreferencesProvider>
+      <MainWorkspace
+        {...props}
+        cache={cache}
+        workspaceData={workspaceData}
+        todoService={todoService}
+        collectionService={collectionService}
+        calendarService={calendarService}
+      />
+    </WorkspacePreferencesProvider>
   );
 }

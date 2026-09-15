@@ -1,0 +1,232 @@
+/* Classic theme: the original bordered-column board. Shared rules live in
+   TodosBoard.css; everything here is scoped under .todos-board-page--classic. */
+
+.todos-board-page--classic {
+  --todos-board-line: rgba(255, 255, 255, 0.1);
+  --todos-board-line-strong: rgba(255, 255, 255, 0.2);
+  --todos-board-surface: #1c1c1c;
+  --todos-board-surface-raised: #222222;
+  --todos-board-text: rgba(255, 255, 255, 0.93);
+  --todos-board-muted: rgba(255, 255, 255, 0.62);
+  --todos-board-faint: rgba(255, 255, 255, 0.52);
+  min-width: 0;
+  min-height: calc(100vh - 64px);
+  padding: var(--workspace-page-top, 36px) 0 48px;
+  color: var(--todos-board-text);
+}
+
+.todos-board-page--classic .todos-board-week {
+  margin: 10px 0 0;
+  color: var(--todos-board-muted);
+  font-size: 11px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.todos-board-page--classic .todos-board-scroll {
+  position: relative;
+  max-height: max(320px, calc(100vh - 280px));
+  overflow: auto;
+  padding: 0 var(--workspace-page-inset, 32px) 24px;
+  outline: none;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+.todos-board-page--classic .todos-board-columns {
+  width: max-content;
+  min-width: 100%;
+  display: grid;
+  grid-auto-columns: 240px;
+  grid-auto-flow: column;
+  gap: 10px;
+}
+
+.todos-board-page--classic .todos-board-column {
+  min-height: 460px;
+  border: 1px solid var(--todos-board-line);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.todos-board-page--classic .todos-board-column--inbox {
+  border-top-color: rgba(240, 239, 237, 0.45);
+}
+
+.todos-board-page--classic .todos-board-column {
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.todos-board-page--classic .todos-board-column--drop {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.todos-board-page--classic .todos-board-column__header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid var(--todos-board-line);
+  background: var(--todos-board-surface);
+}
+
+.todos-board-page--classic .todos-board-column__header h2 {
+  margin: 0;
+  color: var(--todos-board-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.todos-board-page--classic .todos-board-column__header > span {
+  min-width: 22px;
+  min-height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--todos-board-line);
+  border-radius: var(--radius-control);
+  color: var(--todos-board-faint);
+  font-size: 9px;
+}
+
+.todos-board-page--classic .todos-board-column__tasks {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  padding: 0 10px;
+}
+
+.todos-board-page--classic .todos-board-card {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px;
+  padding: 7px 0;
+  border: 0;
+  border-bottom: 1px solid var(--todos-board-line);
+  background: transparent;
+  transition:
+    background 150ms ease-out,
+    opacity 120ms ease-out;
+  cursor: grab;
+}
+
+.todos-board-page--classic .todos-board-card--dragging {
+  opacity: 0.45;
+}
+
+.todos-board-page--classic .todos-board-card:hover {
+  background: var(--todos-board-surface-raised);
+}
+
+.todos-board-page--classic .todos-board-card__check {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.todos-board-page--classic .todos-board-card__check > span[aria-hidden="true"] {
+  width: 16px;
+  height: 16px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 4px;
+}
+
+.todos-board-page--classic .todos-board-card__check input:checked + span {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 4px var(--todos-board-surface);
+}
+
+.todos-board-page--classic .todos-board-card__body {
+  min-width: 0;
+}
+
+.todos-board-page--classic .todos-board-card__body p {
+  overflow-wrap: anywhere;
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.todos-board-page--classic .todos-board-card__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  margin-top: 4px;
+  color: var(--todos-board-muted);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+}
+
+.todos-board-page--classic .todos-board-add {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--todos-board-muted);
+  font-size: 10px;
+}
+
+.todos-board-page--classic .todos-board-add:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--todos-board-text);
+}
+
+.todos-board-page--classic .todos-board-card__actions {
+  opacity: 0.65;
+}
+
+.todos-board-page--classic .todos-board-card__metadata > .todo-source-chip {
+  margin-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todos-board-page--classic .todos-board-card,
+  .todos-board-page--classic .todos-board-card__actions,
+  .todos-board-page--classic .todos-board-column {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .todos-board-page--classic .todos-board-column,
+  .todos-board-page--classic .todos-board-card,
+  .todos-board-page--classic .todos-board-add,
+  .todos-board-page--classic .todos-board-nav button,
+  .todos-board-page--classic .todos-board-error,
+  .todos-board-page--classic .todos-board-error button,
+  .todos-board-page--classic .todos-board-undo,
+  .todos-board-page--classic .todos-board-undo button {
+    border: 1px solid CanvasText;
+  }
+}
+
+.todos-board-page--classic .todos-board-filter select {
+  color: #f0efed;
+  background: #242424;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.todos-board-page--classic .todos-board-filter select:focus-visible {
+  outline: 2px solid #f0efed;
+  outline-offset: 3px;
+}

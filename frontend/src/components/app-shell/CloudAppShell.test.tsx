@@ -8,6 +8,10 @@ import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
 import { ColdLoadGate, useColdLoad } from "../../apps/coldLoad";
 import { CloudAppShell } from "./CloudAppShell";
+import {
+  WorkspacePreferencesProvider,
+  createMemoryWorkspacePreferencesStore,
+} from "../../apps/workspacePreferences";
 
 const IDENTITY: AuthIdentity = {
   userId: "private-user-id-never-rendered",
@@ -218,6 +222,32 @@ describe("CloudAppShell", () => {
     const main = screen.getByRole("main");
     expect(main.id).toBe("cloud-main-content");
     expect(main.textContent).toContain("Cloud content");
+  });
+
+  it("collapses the sidebar when the collapse toggle is clicked", () => {
+    const store = createMemoryWorkspacePreferencesStore({ sidebarCollapsed: false });
+    const { container } = render(
+      <WorkspacePreferencesProvider store={store}>
+        <MemoryRouter>
+          <CloudAppShell
+            identity={IDENTITY}
+            signOutStatus="idle"
+            onSignOut={vi.fn(async () => undefined)}
+            onOpenGlobalAdd={vi.fn()}
+          >
+            <section>Cloud content</section>
+          </CloudAppShell>
+        </MemoryRouter>
+      </WorkspacePreferencesProvider>,
+    );
+
+    const shell = container.querySelector(".cloud-shell");
+    expect(shell?.getAttribute("data-sidebar-collapsed")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+
+    expect(shell?.getAttribute("data-sidebar-collapsed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeTruthy();
   });
 });
 

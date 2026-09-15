@@ -1,8 +1,21 @@
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+} from "react";
 import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import {
+  useWorkspacePreferences,
+  type WorkspaceThemePreset,
+} from "../../apps/workspacePreferences";
 import { addSqlDateDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
@@ -15,6 +28,8 @@ import {
   type TodoMutationErrorKind,
 } from "./todoUiState";
 import "./TodosBoard.css";
+import "./TodosBoardClassic.css";
+import "./TodosBoardLedger.css";
 
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
@@ -40,6 +55,17 @@ export interface TodosBoardProps {
   readonly onEditTodo: (todo: Todo) => void;
   /** Return true only when the soft-delete mutation was actually started. */
   readonly onDeleteTodo: (todo: Todo) => boolean;
+  /** Reschedules a todo to a new due date; null moves it to the Inbox. */
+  readonly onRescheduleTodo?: (todo: Todo, dueDate: string | null) => void;
+  /** Overrides the workspace theme preference; used by tests. */
+  readonly theme?: WorkspaceThemePreset;
+}
+
+/** Private marker identifying a board-row drag; mirrors TodayList's own marker. */
+const TODO_DRAG_TYPE = "application/x-orbitos-todo";
+
+function isTodoDrag(dataTransfer: DataTransfer | null): boolean {
+  return Boolean(dataTransfer && Array.from(dataTransfer.types).includes(TODO_DRAG_TYPE));
 }
 
 interface FocusOwnership {
@@ -66,6 +92,31 @@ function columnLabel(column: TodoBoardColumn, today: string): string {
   return formatDateHeading(column.date!, today);
 }
 
+function columnQualifier(value: string, today: string): string {
+  if (value === today) return " · Today";
+  if (value === addSqlDateDays(today, 1)) return " · Tomorrow";
+  return "";
+}
+
+function columnDateParts(value: string): { day: string; month: string } {
+  return {
+    day: formatTaskDate(value, { day: "numeric" }),
+    month: formatTaskDate(value, { month: "short" }),
+  };
+}
+
+function columnWeekday(value: string): string {
+  return formatTaskDate(value, { weekday: "short" });
+}
+
+/** Groups date columns into layout tracks: a 7-column week pairs Sat/Sun into one stacked track. */
+function buildTracks(dateColumns: readonly TodoBoardColumn[]): (readonly TodoBoardColumn[])[] {
+  if (dateColumns.length === 7) {
+    return [...dateColumns.slice(0, 5).map((column) => [column] as const), dateColumns.slice(5, 7)];
+  }
+  return dateColumns.map((column) => [column] as const);
+}
+
 const SOURCE_FILTERS = ["All", "Projects", "Classes", "Unassigned"] as const;
 type SourceFilter = (typeof SOURCE_FILTERS)[number];
 
@@ -87,9 +138,12 @@ function TodoCard({
   primaryControlId,
   projectTitle,
   showDueDate,
+  dragging,
   onToggleComplete,
   onEditTodo,
   onDeleteTodo,
+  onDragStart,
+  onDragEnd,
 }: {
   readonly todo: Todo;
   readonly pending: boolean;
@@ -97,15 +151,23 @@ function TodoCard({
   readonly primaryControlId: string;
   readonly projectTitle: string | null;
   readonly showDueDate: boolean;
+  readonly dragging: boolean;
   readonly onToggleComplete: (todo: Todo) => void;
   readonly onEditTodo: (todo: Todo) => void;
   readonly onDeleteTodo: (todo: Todo) => void;
+  readonly onDragStart: (event: DragEvent<HTMLElement>) => void;
+  readonly onDragEnd: () => void;
 }) {
   return (
     <article
-      className={`todos-board-card${todo.completed ? " todos-board-card--completed" : ""}`}
+      className={`todos-board-card${todo.completed ? " todos-board-card--completed" : ""}${
+        dragging ? " todos-board-card--dragging" : ""
+      }`}
       aria-labelledby={titleId}
       aria-busy={pending || undefined}
+      draggable={!pending}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
       <label className="todos-board-card__check">
         <input
@@ -183,8 +245,16 @@ export function TodosBoard({
   onToggleComplete,
   onEditTodo,
   onDeleteTodo,
+  onRescheduleTodo,
+  theme: themeOverride,
 }: TodosBoardProps) {
+  const { preferences } = useWorkspacePreferences();
+  const theme = themeOverride ?? preferences.theme;
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
+  const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
+  const [dropColumnKey, setDropColumnKey] = useState<string | null>(null);
+  const draggedTodoRef = useRef<Todo | null>(null);
+  const draggedFromColumnKeyRef = useRef<string | null>(null);
   // Filtering keeps column order and each column's saved order intact.
   const model = useMemo(
     () =>
@@ -409,12 +479,219 @@ export function TodosBoard({
   const navigationPending = loadStatus === "loading";
   useColdLoad(loadStatus === "loading" && !loaded);
 
+  function clearDrag() {
+    draggedTodoRef.current = null;
+    draggedFromColumnKeyRef.current = null;
+    setDraggingTodoId(null);
+    setDropColumnKey(null);
+  }
+
+  function handleColumnDragOver(event: DragEvent<HTMLElement>, column: TodoBoardColumn) {
+    if (!isTodoDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    const fromColumnKey = draggedFromColumnKeyRef.current;
+    const isCurrentColumn = fromColumnKey !== null && fromColumnKey === column.key;
+    setDropColumnKey(isCurrentColumn ? null : column.key);
+  }
+
+  function handleColumnDragLeave(event: DragEvent<HTMLElement>, column: TodoBoardColumn) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+    setDropColumnKey((current) => (current === column.key ? null : current));
+  }
+
+  function handleColumnDrop(event: DragEvent<HTMLElement>, column: TodoBoardColumn) {
+    if (!isTodoDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    const todoId = event.dataTransfer?.getData("text/plain");
+    const dragged = draggedTodoRef.current;
+    const fromColumnKey = draggedFromColumnKeyRef.current;
+    clearDrag();
+    if (!todoId || !dragged || dragged.id !== todoId) return;
+    if (fromColumnKey !== null && fromColumnKey === column.key) return;
+    const targetDate = column.kind === "inbox" ? null : (column.date ?? null);
+    onRescheduleTodo?.(dragged, targetDate);
+  }
+
+  const renderCards = (column: TodoBoardColumn) =>
+    column.todos.map((todo, todoIndex) => (
+      <TodoCard
+        key={todo.id}
+        todo={todo}
+        pending={pendingTodoIds.has(todo.id)}
+        primaryControlId={todoControlId(todo.id)}
+        projectTitle={todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null}
+        showDueDate={!todo.completed && todo.dueDate !== null && todo.dueDate < model.today}
+        titleId={`${todoControlId(todo.id)}-title`}
+        dragging={draggingTodoId === todo.id}
+        onToggleComplete={(selectedTodo) => {
+          const started = onToggleComplete(selectedTodo);
+          if (started && !selectedTodo.completed) {
+            prepareFocusRecovery(column, todoIndex, selectedTodo, "complete");
+          }
+        }}
+        onEditTodo={onEditTodo}
+        onDeleteTodo={(selectedTodo) => {
+          if (onDeleteTodo(selectedTodo)) {
+            prepareFocusRecovery(column, todoIndex, selectedTodo, "delete");
+          }
+        }}
+        onDragStart={(event) => {
+          if (pendingTodoIds.has(todo.id)) {
+            event.preventDefault();
+            return;
+          }
+          draggedTodoRef.current = todo;
+          draggedFromColumnKeyRef.current = column.key;
+          setDraggingTodoId(todo.id);
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", todo.id);
+            event.dataTransfer.setData(TODO_DRAG_TYPE, todo.id);
+          }
+        }}
+        onDragEnd={clearDrag}
+      />
+    ));
+
+  const renderAddSlot = (column: TodoBoardColumn, label: string) =>
+    column.canAdd ? (
+      <button
+        className="todos-board-add"
+        id={columnAddId(column.key)}
+        type="button"
+        onClick={() => onAddTodo(column.date)}
+        aria-label={`Add task to ${label}`}
+      >
+        <PlusIcon />
+        Add task
+      </button>
+    ) : null;
+
+  const renderDateColumn = (column: TodoBoardColumn, stacked: boolean) => {
+    const label = columnLabel(column, model.today);
+    const headingId = columnHeadingId(column.key);
+    const { day, month } = columnDateParts(column.date!);
+    const weekday = columnWeekday(column.date!);
+    const qualifier = columnQualifier(column.date!, model.today);
+    const isToday = column.date === model.today;
+    const minSlots = stacked ? 4 : 9;
+    const fillers = Math.max(0, minSlots - column.todos.length - 1);
+
+    return (
+      <section
+        className={`todos-board-column todos-board-column--${column.kind}${
+          stacked ? " todos-board-column--stacked" : ""
+        }${isToday ? " todos-board-column--today" : ""}${
+          dropColumnKey === column.key ? " todos-board-column--drop" : ""
+        }`}
+        key={column.key}
+        aria-labelledby={headingId}
+        onDragOver={(event) => handleColumnDragOver(event, column)}
+        onDragLeave={(event) => handleColumnDragLeave(event, column)}
+        onDrop={(event) => handleColumnDrop(event, column)}
+      >
+        <header className="todos-board-column__header">
+          <h2 id={headingId} tabIndex={-1}>
+            <span className="todos-board-column__date">
+              {day} {month}
+            </span>
+            <span className="todos-board-column__weekday">{weekday}</span>
+            <span className="todos-board-sr-only">{qualifier}</span>
+          </h2>
+          <span className="todos-board-sr-only">
+            {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
+          </span>
+        </header>
+
+        <div className="todos-board-column__tasks">
+          {renderCards(column)}
+          {renderAddSlot(column, label)}
+          {Array.from({ length: fillers }).map((_, index) => (
+            <div className="todos-board-slot" aria-hidden="true" key={index} />
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderLedgerInbox = (column: TodoBoardColumn) => {
+    const label = columnLabel(column, model.today);
+    const headingId = columnHeadingId(column.key);
+
+    return (
+      <section
+        className={`todos-board-inbox${dropColumnKey === column.key ? " todos-board-inbox--drop" : ""}`}
+        key={column.key}
+        aria-labelledby={headingId}
+        onDragOver={(event) => handleColumnDragOver(event, column)}
+        onDragLeave={(event) => handleColumnDragLeave(event, column)}
+        onDrop={(event) => handleColumnDrop(event, column)}
+      >
+        <h2 id={headingId} tabIndex={-1}>
+          {label}
+        </h2>
+        <span className="todos-board-sr-only">
+          {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
+        </span>
+        <div className="todos-board-inbox__tasks">
+          {renderCards(column)}
+          {renderAddSlot(column, label)}
+        </div>
+      </section>
+    );
+  };
+
+  const renderClassicColumn = (column: TodoBoardColumn) => {
+    const label = columnLabel(column, model.today);
+    const headingId = columnHeadingId(column.key);
+
+    return (
+      <section
+        className={`todos-board-column todos-board-column--${column.kind}${
+          dropColumnKey === column.key ? " todos-board-column--drop" : ""
+        }`}
+        key={column.key}
+        aria-labelledby={headingId}
+        onDragOver={(event) => handleColumnDragOver(event, column)}
+        onDragLeave={(event) => handleColumnDragLeave(event, column)}
+        onDrop={(event) => handleColumnDrop(event, column)}
+      >
+        <header className="todos-board-column__header">
+          <h2 id={headingId} tabIndex={-1}>
+            {label}
+          </h2>
+          <span aria-hidden="true">{column.todos.length}</span>
+          <span className="todos-board-sr-only">
+            {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
+          </span>
+        </header>
+
+        <div className="todos-board-column__tasks">
+          {renderCards(column)}
+          {renderAddSlot(column, label)}
+        </div>
+      </section>
+    );
+  };
+
+  const dateColumns = model.columns.filter((column) => column.kind === "date");
+  const inboxColumn = model.columns.find((column) => column.kind === "inbox") ?? null;
+  const tracks = buildTracks(dateColumns);
+
   return (
-    <section className="todos-board-page" aria-labelledby="todos-board-heading">
+    <section
+      className={`todos-board-page todos-board-page--${theme}`}
+      aria-labelledby="todos-board-heading"
+    >
       <header className="todos-board-toolbar">
         <div>
           <h1 id="todos-board-heading">Tasks</h1>
-          <p className="todos-board-week" aria-live="polite">
+          <p
+            className={theme === "classic" ? "todos-board-week" : "todos-board-range"}
+            aria-live="polite"
+          >
             {weekRangeLabel(model.visibleWeekMonday)}
           </p>
         </div>
@@ -481,81 +758,39 @@ export function TodosBoard({
         </p>
       ) : null}
 
-      <div
-        className="todos-board-scroll"
-        id={boardRegionId}
-        role="region"
-        aria-label="Tasks by date"
-        tabIndex={0}
-      >
-        <div className="todos-board-columns">
-          {model.columns.map((column) => {
-            const label = columnLabel(column, model.today);
-            const headingId = columnHeadingId(column.key);
-
-            return (
-              <section
-                className={`todos-board-column todos-board-column--${column.kind}`}
-                key={column.key}
-                aria-labelledby={headingId}
-              >
-                <header className="todos-board-column__header">
-                  <h2 id={headingId} tabIndex={-1}>
-                    {label}
-                  </h2>
-                  <span aria-hidden="true">{column.todos.length}</span>
-                  <span className="todos-board-sr-only">
-                    {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
-                  </span>
-                </header>
-
-                <div className="todos-board-column__tasks">
-                  {column.todos.map((todo, todoIndex) => (
-                    <TodoCard
-                      key={todo.id}
-                      todo={todo}
-                      pending={pendingTodoIds.has(todo.id)}
-                      primaryControlId={todoControlId(todo.id)}
-                      projectTitle={
-                        todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null
-                      }
-                      showDueDate={
-                        !todo.completed && todo.dueDate !== null && todo.dueDate < model.today
-                      }
-                      titleId={`${todoControlId(todo.id)}-title`}
-                      onToggleComplete={(selectedTodo) => {
-                        const started = onToggleComplete(selectedTodo);
-                        if (started && !selectedTodo.completed) {
-                          prepareFocusRecovery(column, todoIndex, selectedTodo, "complete");
-                        }
-                      }}
-                      onEditTodo={onEditTodo}
-                      onDeleteTodo={(selectedTodo) => {
-                        if (onDeleteTodo(selectedTodo)) {
-                          prepareFocusRecovery(column, todoIndex, selectedTodo, "delete");
-                        }
-                      }}
-                    />
-                  ))}
-
-                  {column.canAdd ? (
-                    <button
-                      className="todos-board-add"
-                      id={columnAddId(column.key)}
-                      type="button"
-                      onClick={() => onAddTodo(column.date)}
-                      aria-label={`Add task to ${label}`}
-                    >
-                      <PlusIcon />
-                      Add task
-                    </button>
-                  ) : null}
-                </div>
-              </section>
-            );
-          })}
+      {theme === "classic" ? (
+        <div
+          className="todos-board-scroll"
+          id={boardRegionId}
+          role="region"
+          aria-label="Tasks by date"
+          tabIndex={0}
+        >
+          <div className="todos-board-columns">{model.columns.map(renderClassicColumn)}</div>
         </div>
-      </div>
+      ) : (
+        <div
+          className="todos-board-scroll"
+          id={boardRegionId}
+          role="region"
+          aria-label="Tasks by date"
+          tabIndex={0}
+        >
+          <div
+            className="todos-board-week"
+            key={model.visibleWeekMonday}
+            style={{ "--todos-board-tracks": tracks.length } as CSSProperties}
+          >
+            {tracks.map((track) => (
+              <div className="todos-board-track" key={track.map((column) => column.key).join("-")}>
+                {track.map((column) => renderDateColumn(column, track.length > 1))}
+              </div>
+            ))}
+          </div>
+
+          {inboxColumn ? renderLedgerInbox(inboxColumn) : null}
+        </div>
+      )}
 
       <p className="todos-board-sr-only" aria-live="polite" aria-atomic="true">
         <span key={announcement.sequence}>

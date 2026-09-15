@@ -7,6 +7,7 @@ import type {
 import type { CalendarService } from "./calendarService";
 import "./calendar.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { WORKSPACE_THEME_LABELS, useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
 
@@ -63,6 +64,7 @@ export function SettingsPage({
     }
   };
   const connected = status?.connectionState === "connected";
+  const { preferences, setTheme } = useWorkspacePreferences();
   useColdLoad(loading && status === null && !error);
   return (
     <section className="calendar-settings" aria-labelledby="calendar-settings-title">
@@ -162,6 +164,29 @@ export function SettingsPage({
             </button>
           </div>
         )}
+      </section>
+
+      <section>
+        <h2>Appearance</h2>
+        <p>Choose how the Tasks board looks.</p>
+        <fieldset role="radiogroup" aria-label="Tasks board theme">
+          <legend>Tasks board theme</legend>
+          {Object.entries(WORKSPACE_THEME_LABELS).map(([preset, { name, description }]) => (
+            <label key={preset}>
+              <input
+                type="radio"
+                name="workspace-theme"
+                value={preset}
+                checked={preferences.theme === preset}
+                onChange={() => setTheme(preset as keyof typeof WORKSPACE_THEME_LABELS)}
+              />
+              <span>
+                {name} — {description}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <p className="calendar-muted">This choice is saved on this device only.</p>
       </section>
 
       <section>

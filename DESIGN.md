@@ -3,6 +3,7 @@ name: "orbitOS"
 description: "A personal workspace with charcoal surfaces, serif page headings, and restrained controls."
 colors:
   primary: "#f0efed"
+  today: "#8b9bff"
   canvas: "#191919"
   sidebar: "#202020"
   hover: "#292929"
@@ -21,6 +22,21 @@ typography:
     fontWeight: 400
     lineHeight: 1.15
     letterSpacing: "-1px"
+  section-heading:
+    fontFamily: "Georgia, \"Times New Roman\", serif"
+    fontSize: "26px"
+    fontWeight: 400
+    letterSpacing: "-0.01em"
+  ledger-date:
+    fontFamily: "\"Space Grotesk\", \"Segoe UI\", system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 500
+    letterSpacing: "-0.02em"
+    fontFeature: "tabular-nums"
+  ledger-weekday:
+    fontFamily: "\"Space Grotesk\", \"Segoe UI\", system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 400
   body:
     fontFamily: "\"Segoe UI\", system-ui, sans-serif"
     fontSize: "13px"
@@ -58,6 +74,7 @@ rounded:
   navigation: "5px"
   collection: "7px"
   field: "8px"
+  toast: "10px"
   dialog: "14px"
   pill: "999px"
 spacing:
@@ -66,7 +83,9 @@ spacing:
   control-gap: "12px"
   md: "16px"
   lg: "24px"
+  ledger-gutter: "28px"
   page-top: "36px"
+  ledger-row-gap: "40px"
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
@@ -101,7 +120,23 @@ components:
     padding: "3px 9px"
   task-row:
     backgroundColor: "transparent"
-    padding: "7px 0"
+    typography: "{typography.body}"
+    height: "40px"
+    padding: "0 6px"
+  ledger-day-header:
+    backgroundColor: "transparent"
+    typography: "{typography.ledger-date}"
+    padding: "0 0 8px"
+  ledger-day-header-today:
+    textColor: "{colors.today}"
+  ledger-add-slot:
+    backgroundColor: "transparent"
+    textColor: "transparent"
+    typography: "{typography.label}"
+    height: "42px"
+    padding: "0"
+  ledger-add-slot-hover:
+    backgroundColor: "#2b2b2b"
 ---
 
 # Design System: orbitOS
@@ -121,18 +156,23 @@ The user-confirmed descriptive direction is “The Quiet Desk — calm and perso
 - Charcoal surfaces with warm light text.
 - Serif page headings and compact sans-serif controls.
 - Fine dividers, flat rows, and quiet interaction states.
+- Ruled ledgers: hairlines keep ruling where nothing is written.
 
-This document captures the local cloud implementation on 2026-09-13, including existing uncommitted work. It does not establish what is deployed. The source of visual evidence is `frontend/src/`, especially `components/app-shell/CloudAppShell.css`, `apps/workspace.css`, `features/calendar/calendar.css`, `features/todos/`, and `features/collections/collections.css`. The experiment under `frontend/qa/redesign/` has its own scope.
+This document captures the local cloud implementation on 2026-09-13, including existing uncommitted work, and was extended on 2026-09-15 for the Tasks week-ledger build (`features/todos/TodosBoard.tsx` and `TodosBoard.css`). It does not establish what is deployed. The source of visual evidence is `frontend/src/`, especially `components/app-shell/CloudAppShell.css`, `apps/workspace.css`, `features/calendar/calendar.css`, `features/todos/`, and `features/collections/collections.css`. The experiment under `frontend/qa/redesign/` has its own scope.
 
 Frontmatter records reusable observed values; most are still CSS literals or component-scoped properties, not centralized application tokens. It follows the [DESIGN.md format](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md). The sidecar contains previews and metadata, not an application stylesheet.
 
 ## Colors
 
-The palette is neutral charcoal, with warmth supplied by light text and muted grey labels.
+The palette is neutral charcoal, with warmth supplied by light text and muted grey labels, and one cool accent reserved for today.
 
 ### Primary
 
 - **Warm Paper** (`primary`): main text, keyboard focus, selected dates, and primary save actions. Primary buttons use dark dialog-colored text.
+
+### Secondary
+
+- **Today Periwinkle** (`today`): the Tasks board's single accent. It colors only the today column's date numeral and the 2px rule under its header, and tints text selection on that page at 35% alpha. It is a place marker, never a control color, a status color, or a fill. Its neutral alternative (a brightness step instead of a hue) was left unresolved in the surface brief; the shipped value is the periwinkle.
 
 ### Neutral
 
@@ -148,24 +188,30 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 - **Soft Error Rose** (`error`): collection and task-form error text.
 - **Overdue Clay** (`overdue`): overdue task metadata.
 - Calendar colors are dynamic. `calendarColors.ts` preserves valid Google fills, supplies stable fallbacks, and selects black or white event text by luminance. The fallback colors are not a global brand palette.
-- Component-scoped translucent whites remain intentional: task-dialog text, muted text, and borders use their local variables. Do not silently replace these with shell tokens.
+- Component-scoped translucent whites remain intentional: task-dialog text, muted text, and borders use their local variables. Do not silently replace these with shell tokens. The Tasks board's own set is text at 93% white, muted at 62%, faint at 52%, hairlines at 12% (filler slots at 8%), the day-header rule at 30%, and hover raises of `#262626` (rows) and `#2b2b2b` (add slot).
 
 **The Semantic Color Rule.** Keep the interface neutral. Calendar fills identify calendars; warm error and overdue colors communicate status.
+
+**The One Lit Header Rule.** Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.
 
 ## Typography
 
 Page headings pair Georgia with a Times New Roman/serif fallback; body text and controls use Segoe UI, system-ui, sans-serif. The hierarchy is role-based rather than a mathematical scale.
 
-Two families are actually bundled. `frontend/public/fonts/fonts.css` is linked from `index.html` and self-hosts Space Grotesk (400/500/700) and JetBrains Mono (400/500). They are used by the sign-in and cloud-ready screens in `index.css` and by the preserved legacy `orbit-shell` styles, not by the cloud workspace, which relies on the system Georgia and Segoe UI stacks above. Both sets are recorded in the frontmatter: workspace roles use the system stacks, `sign-in-headline` and `sign-in-eyebrow` use the bundled faces. The sign-in headline is a `clamp(30px, 5vw, 52px)` scale; the frontmatter records its upper bound.
+Two families are actually bundled. `frontend/public/fonts/fonts.css` is linked from `index.html` and self-hosts Space Grotesk (400/500/700) and JetBrains Mono (400/500). They are used by the sign-in and cloud-ready screens in `index.css` and by the preserved legacy `orbit-shell` styles. Inside the cloud workspace, Space Grotesk now has one role: the Tasks board's day headers (`ledger-date`, `ledger-weekday`), with Segoe UI as its fallback. Everything else in the workspace still relies on the system Georgia and Segoe UI stacks. Both sets are recorded in the frontmatter; `sign-in-headline` and `sign-in-eyebrow` use the bundled faces. The sign-in headline is a `clamp(30px, 5vw, 52px)` scale; the frontmatter records its upper bound.
 
 - **Headline:** the frontmatter's shared page title treatment, applied to Tasks, collection pages, Classes, and Calendar settings.
-- **Body:** compact task-row text. Collection titles use a slightly larger treatment (14px, weight 500); supporting descriptions use relaxed line height.
+- **Section heading:** a smaller Georgia step (26px, weight 400, -0.01em) for a band heading beneath a page's main content; on Tasks it titles the Inbox band. It sits between the 38px headline and the 32px cover title without replacing either.
+- **Ledger date / weekday:** the Tasks board's column headers. The date numeral and month are Space Grotesk 500 at 22px with tabular numerals and -0.02em tracking; the weekday sits on the same baseline at the right in Space Grotesk 400, 22px, white at 50% alpha (60% on today). These sizes are off the previously recorded ramp and are recorded here as the ledger's own step.
+- **Body:** compact task-row text. Collection titles use a slightly larger treatment (14px, weight 500); supporting descriptions use relaxed line height. Ledger rows use 13px at 1.4 line height with 11px metadata separated by a faint middle dot.
 - **Navigation / Label:** familiar sans-serif controls. Smaller metadata varies by context (10–12px); these values document the current density.
 - **Dialog:** titles use sans-serif (18–22px, weight 500); inputs are larger (15–16px) than their labels.
 - **Home:** the visible title is optional. A plain title uses Georgia (38px); cover titles use a smaller treatment (32px, reducing to 27px below 900px). Do not force a heading into the hidden-title state.
-- **Numbers:** calendar time labels and event times use tabular numerals. Uppercase weekday labels are local to the calendar.
+- **Numbers:** calendar time labels, event times, the Tasks week range, and ledger dates use tabular numerals. Uppercase weekday labels are local to the calendar; ledger weekdays are title case.
 
 **The Heading Rule.** Use the shared serif treatment for workspace page titles. Keep controls, metadata, and dialog titles in their existing sans-serif styles.
+
+**The Grotesk Numeral Rule.** Space Grotesk enters the workspace only where a date is the heading itself. It is not a second body face, a label face, or a replacement for Georgia on page or section titles.
 
 ## Layout
 
@@ -179,6 +225,8 @@ The desktop shell has a sticky sidebar (200px) and a flexible content column, wi
 - Task dialogs cap at 580px and scroll when needed. Below 560px, detail fields become one column and the dialog sits near the bottom with reduced outer spacing.
 - Classes uses a wider local layout (up to 1440px) and a notes split that stacks below 760px.
 
+The Tasks board is a week ledger, not a scrolling kanban. Day columns fill the content width in equal tracks (six on desktop) with 28px gutters and 40px between wrapped rows; no horizontal scroll. When seven dates are visible, Saturday and Sunday share the last track, stacked 36px apart with their own headers. Each column runs to a fixed ruled depth: task rows (40px minimum), then a 42px add slot, then inert 42px filler slots so a full column reaches nine rows and a stacked one reaches four. Beneath the week, after 56px, the Inbox band lays unscheduled tasks in auto-fill columns of at least 220px with the same 28px gutter, on a repeating 41px ruled background at least three rules deep. At 1180px and below the week reflows to auto-fill tracks of at least 200px; at 620px and below it becomes a single column, the toolbar stacks, and filler slots collapse to one per day.
+
 These are observed responsive rules, not a claim that every mobile flow has been validated. Home cover sizing and scrolling are controlled by its existing layout logic.
 
 ## Elevation & Depth
@@ -189,16 +237,21 @@ Persistent workspace content is mostly flat. The sidebar's lighter tone, section
 - Workspace notice: `0 8px 24px #0006`.
 - Workspace dialog: `0 20px 60px #0008`.
 - Task dialog: `0 24px 70px rgba(0, 0, 0, 0.48)`.
+- Tasks undo toast: `0 18px 48px rgba(0, 0, 0, 0.42)` on a `#252525` surface with the toast radius.
 
 **The Flat Workspace Rule.** Use tonal surfaces and rules for persistent content. Reserve substantial shadows for temporary menus, notices, and dialogs.
 
-Navigation changes color and background over 140ms; task-dialog controls transition over 150ms. The task dialog enters over 180ms with a small upward movement and scale change. Preserve the existing reduced-motion overrides.
+Navigation changes color and background over 140ms; task-dialog controls transition over 150ms. The task dialog enters over 180ms with a small upward movement and scale change. On the Tasks board, motion is limited to three moments: a row's hover raise over 160ms (`cubic-bezier(0.2, 0.8, 0.2, 1)`), the 120ms reveal of a row's checkbox and actions, and the week change, which fades the whole ledger in from 8px below over 220ms with the dialog's exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`), keyed to the visible week. Preserve the existing reduced-motion overrides; the ledger's disables all three.
+
+**The Three Moments Rule.** A ruled surface animates only on hover raise, action reveal, and a change of the whole page's subject. Rules, headers, and filler slots never move.
 
 ## Shapes
 
 The system uses restrained rectangular geometry, fine borders, and modest corner rounding. Frontmatter names the observed corner values by component role rather than claiming a universal scale.
 
-Compact calendar controls and checkboxes use the compact radius. Shell navigation and Add use the navigation radius; collection actions use the collection radius; editable fields use the field radius. Task dialogs are softer, with the dialog radius and pill-shaped action buttons. Workspace dialogs remain square; event dialogs have their own modest rounding. Avatars and the selected calendar date are circular.
+Compact calendar controls and checkboxes use the compact radius. Shell navigation and Add use the navigation radius; collection actions use the collection radius; editable fields use the field radius. Task dialogs are softer, with the dialog radius and pill-shaped action buttons. Workspace dialogs remain square; event dialogs have their own modest rounding. Avatars and the selected calendar date are circular. The Tasks undo toast uses the toast radius.
+
+Ruled surfaces have no corners at all: ledger rows, add slots, filler slots, and day headers are open rectangles bounded by a single bottom hairline. A day header's rule is 2px; rows and slots are 1px. Nothing on the ledger is boxed.
 
 ## Components
 
@@ -206,7 +259,7 @@ Compact calendar controls and checkboxes use the compact radius. Shell navigatio
 
 Primary save actions pair Warm Paper with dark text and brighten to white on hover. The task-dialog variant has pill corners, a 42px minimum height, and compact labels. Collection primary actions use a 38px minimum height and modest corners instead.
 
-The shell Add button is a transparent bordered rectangle with a 34px minimum height; hover lightens its background and border. Calendar toolbars use smaller controls. Preserve these contextual differences.
+The shell Add button is a transparent bordered rectangle with a 34px minimum height; hover lightens its background and border. Calendar toolbars use smaller controls. The Tasks board's prev/Today/next and Source controls are transparent 44px hairline-bordered rectangles at the navigation radius whose border and text brighten on hover. Preserve these contextual differences.
 
 Focus is generally a light 2px outline with a 3px offset. Pending/disabled actions become translucent; preserve each component's native disabled or aria-disabled behavior.
 
@@ -220,11 +273,22 @@ A labeled icon sidebar anchors the desktop workspace. Active destinations receiv
 
 ### Selection controls
 
-The Today/Tomorrow switch is a compact pair of rectangular buttons, with a filled selected state and visible focus. There is no general-purpose chip/tag system in the cloud workspace: collection filters use selects, while task metadata remains text.
+The Today/Tomorrow switch is a compact pair of rectangular buttons, with a filled selected state and visible focus. There is no general-purpose chip/tag system in the cloud workspace: collection filters use selects, while task metadata remains text. On the Tasks board the source chip is flattened into plain 11px muted metadata.
 
 ### Lists and containers
 
 Collection entries and task-board “cards” are flat rows divided by thin rules. Task-board rows expose compact checkbox, text, metadata, and action areas; hover adds a raised-charcoal tone. Completion dims and strikes through task text. Keep long titles wrapping and metadata subordinate.
+
+### Week ledger (Tasks)
+
+The Tasks board's signature: a planner spread where every day is a ruled column and the ink shows how heavy the day is.
+
+- **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white. The today column swaps date and rule to Today Periwinkle and lifts its weekday to 60% white. The header is the column's only emphasis.
+- **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%.
+- **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. It is a row that has not been written yet, not a button.
+- **Filler slot:** an inert 42px row with an 8% hairline; it keeps the column ruled to its fixed depth and carries no interaction.
+- **Inbox band:** the section heading followed by tasks flowing across auto-fill columns over a repeating 41px ruled background, so empty space is still ruled.
+- **Undo toast:** the board's only floating surface, fixed bottom-right, 440px wide at most, with the toast radius, a 20% white border, and its own shadow.
 
 ### Calendar and Today
 
@@ -242,6 +306,8 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.
 - Do keep calendar data colors and error/overdue semantics distinct from interface chrome.
 - Do preserve local component variants when extending an existing surface.
+- Do keep Today Periwinkle to the Tasks board's today header: the date numeral and its 2px rule, nothing more.
+- Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column.
 
 ### Don't
 
@@ -249,3 +315,5 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Don't turn flat collection and task rows into elevated cards by default.
 - Don't apply the dialog's pill buttons or larger radius to every toolbar.
 - Don't interpret the documented desktop density as a verified mobile accessibility standard.
+- Don't put borders, backgrounds, or counts around ledger columns, and don't return the week to a horizontally scrolling set of fixed-width columns.
+- Don't use Space Grotesk for anything in the workspace other than a date that is itself the heading.

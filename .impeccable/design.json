@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-13T06:43:05.595Z",
+  "generatedAt": "2026-09-15T00:00:00.000Z",
   "title": "Design System: orbitOS",
   "extensions": {
     "colorMeta": {
@@ -16,6 +16,21 @@
           "oklch(72.14% 0.00288 84.56)",
           "oklch(83.57% 0.00288 84.56)",
           "oklch(95.00% 0.00288 84.56)"
+        ]
+      },
+      "today": {
+        "role": "secondary",
+        "displayName": "Today Periwinkle",
+        "canonical": "#8b9bff",
+        "tonalRamp": [
+          "oklch(15.00% 0.14 276)",
+          "oklch(26.43% 0.14 276)",
+          "oklch(37.86% 0.14 276)",
+          "oklch(49.29% 0.14 276)",
+          "oklch(60.71% 0.14 276)",
+          "oklch(72.14% 0.14 276)",
+          "oklch(83.57% 0.14 276)",
+          "oklch(95.00% 0.14 276)"
         ]
       },
       "canvas": {
@@ -178,6 +193,18 @@
         "displayName": "Page heading",
         "purpose": "Shared workspace page titles."
       },
+      "section-heading": {
+        "displayName": "Section heading",
+        "purpose": "Georgia band heading beneath a page's main content; the Tasks Inbox band."
+      },
+      "ledger-date": {
+        "displayName": "Ledger date",
+        "purpose": "Tasks board day-column date and month; tabular numerals."
+      },
+      "ledger-weekday": {
+        "displayName": "Ledger weekday",
+        "purpose": "Weekday beside the ledger date, white at 50% alpha (60% on today)."
+      },
       "body": {
         "displayName": "Task body",
         "purpose": "Compact task text."
@@ -215,6 +242,11 @@
         "name": "task-dialog",
         "value": "0 24px 70px rgba(0, 0, 0, 0.48)",
         "purpose": "Task creation and editing."
+      },
+      {
+        "name": "tasks-undo-toast",
+        "value": "0 18px 48px rgba(0, 0, 0, 0.42)",
+        "purpose": "Fixed undo toast on the Tasks board."
       }
     ],
     "motion": [
@@ -232,12 +264,31 @@
         "name": "task-dialog-enter",
         "value": "180ms cubic-bezier(0.16, 1, 0.3, 1)",
         "purpose": "Dialog entry; disabled with reduced motion."
+      },
+      {
+        "name": "ledger-row-raise",
+        "value": "160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Tasks row hover/focus-within background raise; disabled with reduced motion."
+      },
+      {
+        "name": "ledger-reveal",
+        "value": "120ms ease-out",
+        "purpose": "Checkbox, action, and add-slot label reveal on hover or focus; disabled with reduced motion."
+      },
+      {
+        "name": "ledger-week-in",
+        "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Week change: the ledger fades in from 8px below, keyed to the visible week; disabled with reduced motion."
       }
     ],
     "breakpoints": [
       {
         "name": "sidebar-narrow",
         "value": "1200px"
+      },
+      {
+        "name": "ledger-autofill",
+        "value": "1180px"
       },
       {
         "name": "icon-rail",
@@ -264,7 +315,8 @@
       "Tonal ramps are synthesized preview metadata, not observed application tokens.",
       "Component snippets are documentation previews, not full application behavior.",
       "The source uses component-scoped CSS properties. Literal fallbacks make snippets render outside the app.",
-      "Snapshot of local code, including pre-existing uncommitted work; not production certification."
+      "Snapshot of local code, including pre-existing uncommitted work; not production certification.",
+      "Extended 2026-09-15 for the Tasks week ledger (features/todos/TodosBoard.css). The 22px ledger headers and 26px section heading are recorded additions off the earlier ramp, and Today Periwinkle is the recorded exception to the Semantic Color Rule."
     ]
   },
   "components": [
@@ -309,12 +361,20 @@
       "css": ".ds-days{display:flex;gap:3px}.ds-day{min-height:26px;padding:3px 9px;border:0;border-radius:4px;color:#ada9a3;background:transparent;font:11px/1.4 \"Segoe UI\",system-ui,sans-serif;cursor:pointer}.ds-day[aria-pressed=true]{color:#f0efed;background:#303030}.ds-day:hover:not(:disabled){color:#f0efed;background:#2c2c2c}.ds-day:focus-visible{outline:2px solid #f0efed;outline-offset:2px}.ds-day:disabled{opacity:.5;cursor:wait}"
     },
     {
-      "name": "Task board row",
+      "name": "Ledger task row",
       "kind": "card",
       "refersTo": "task-row",
-      "description": "Flat task-board card with a checkbox and quiet metadata; no raised card shell.",
-      "html": "<article class=\"ds-row\"><label class=\"ds-check\"><input type=\"checkbox\" aria-label=\"Mark example task complete\"/><span aria-hidden=\"true\"></span></label><div class=\"ds-row-body\"><p>Return the library books</p><div class=\"ds-meta\">Tomorrow</div></div></article>",
-      "css": ".ds-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:start;gap:6px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif;transition:background 150ms ease-out}.ds-row:hover{background:#222}.ds-row-body p{margin:2px 0 0;font-size:13px;line-height:1.45;overflow-wrap:anywhere}.ds-meta{margin-top:4px;color:rgba(255,255,255,.62);font-size:10px}.ds-check{position:relative;width:24px;height:24px;display:grid;place-items:center;cursor:pointer}.ds-check input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.ds-check span{width:16px;height:16px;border:1px solid rgba(255,255,255,.42);border-radius:4px}.ds-check input:checked+span{border-color:rgba(255,255,255,.72);background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 4px #1c1c1c}.ds-check input:focus-visible+span{outline:2px solid #f0efed;outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-row{transition:none}}"
+      "description": "Tasks-board row on a single hairline: faint checkbox and hidden actions until hover or focus, metadata inline after the title.",
+      "html": "<article class=\"ds-row\"><label class=\"ds-check\"><input type=\"checkbox\" aria-label=\"Mark example task complete\"/><span aria-hidden=\"true\"></span></label><div class=\"ds-row-body\"><p>Return the library books</p><div class=\"ds-meta\"><span>Due Sep 12</span><span>Studio refresh</span></div></div><div class=\"ds-row-actions\"><button type=\"button\" aria-label=\"Edit task\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20h4l10-10-4-4L4 16v4Z\"/></svg></button><button type=\"button\" aria-label=\"Delete task\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13\"/></svg></button></div></article>",
+      "css": ".ds-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif;transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-row:hover,.ds-row:focus-within{background:#262626}.ds-row-body{display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 8px;min-width:0;padding:6px 0}.ds-row-body p{margin:0;font-size:13px;line-height:1.4;overflow-wrap:break-word}.ds-meta{display:flex;flex-wrap:wrap;gap:0 9px;color:rgba(255,255,255,.62);font-size:11px;line-height:1.4}.ds-meta>*+*{position:relative}.ds-meta>*+*::before{position:absolute;right:calc(100% + 4px);color:rgba(255,255,255,.52);content:\"\\00b7\"}.ds-check{width:22px;height:22px;display:grid;place-items:center;cursor:pointer}.ds-check input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.ds-check span{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55;transition:opacity 120ms ease-out}.ds-row:hover .ds-check span,.ds-row:focus-within .ds-check span{opacity:1}.ds-check input:checked+span{opacity:1;border-color:rgba(255,255,255,.72);background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 4px #1c1c1c}.ds-check input:focus-visible+span{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-row-actions{display:flex;gap:2px;opacity:0;transition:opacity 120ms ease-out}.ds-row:hover .ds-row-actions,.ds-row:focus-within .ds-row-actions{opacity:1}.ds-row-actions button{width:24px;min-height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:4px;background:transparent;color:rgba(255,255,255,.52);cursor:pointer}.ds-row-actions button:hover{color:rgba(255,255,255,.93)}.ds-row-actions button:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-row,.ds-check span,.ds-row-actions{transition:none}}"
+    },
+    {
+      "name": "Ledger day column",
+      "kind": "custom",
+      "refersTo": "ledger-day-header",
+      "description": "A today column from the Tasks week ledger: Space Grotesk date and weekday over a 2px rule, one row, the hover-revealed add slot, and inert ruled filler slots.",
+      "html": "<section class=\"ds-col ds-col--today\"><h2 class=\"ds-col-head\"><span class=\"ds-col-date\">15 Sep</span><span class=\"ds-col-day\">Tue</span></h2><div class=\"ds-col-row\"><span class=\"ds-col-box\" aria-hidden=\"true\"></span><p>Problem set 3</p></div><button type=\"button\" class=\"ds-col-add\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add task</button><div class=\"ds-col-slot\"></div><div class=\"ds-col-slot\"></div></section>",
+      "css": ".ds-col{--ds-today:#8b9bff;width:220px;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif}.ds-col-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0;padding-bottom:8px;border-bottom:2px solid rgba(255,255,255,.3)}.ds-col--today .ds-col-head{border-bottom-color:var(--ds-today)}.ds-col-date{font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:500;font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ds-col--today .ds-col-date{color:var(--ds-today)}.ds-col-day{margin-left:auto;font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:400;font-size:22px;color:rgba(255,255,255,.5)}.ds-col--today .ds-col-day{color:rgba(255,255,255,.6)}.ds-col-row{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-col-row:hover{background:#262626}.ds-col-row p{margin:0;font-size:13px;line-height:1.4}.ds-col-box{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55}.ds-col-row:hover .ds-col-box{opacity:1}.ds-col-add{width:100%;min-height:42px;display:flex;align-items:center;gap:6px;padding:0;border:0;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;background:transparent;color:transparent;font:12px \"Segoe UI\",system-ui,sans-serif;cursor:pointer;transition:color 120ms ease-out,background 120ms ease-out}.ds-col-add:hover,.ds-col-add:focus-visible{color:rgba(255,255,255,.62);background:#2b2b2b}.ds-col-add:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-col-slot{min-height:42px;border-bottom:1px solid rgba(255,255,255,.08)}@media(prefers-reduced-motion:reduce){.ds-col-row,.ds-col-add{transition:none}}"
     }
   ],
   "narrative": {
@@ -323,7 +383,8 @@
     "keyCharacteristics": [
       "Charcoal surfaces with warm light text.",
       "Serif page headings and compact sans-serif controls.",
-      "Fine dividers, flat rows, and quiet interaction states."
+      "Fine dividers, flat rows, and quiet interaction states.",
+      "Ruled ledgers: hairlines keep ruling where nothing is written."
     ],
     "rules": [
       {
@@ -332,13 +393,28 @@
         "section": "colors"
       },
       {
+        "name": "The One Lit Header Rule",
+        "body": "Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.",
+        "section": "colors"
+      },
+      {
         "name": "The Heading Rule",
         "body": "Use the shared serif treatment for workspace page titles. Keep controls, metadata, and dialog titles in their existing sans-serif styles.",
         "section": "typography"
       },
       {
+        "name": "The Grotesk Numeral Rule",
+        "body": "Space Grotesk enters the workspace only where a date is the heading itself. It is not a second body face, a label face, or a replacement for Georgia on page or section titles.",
+        "section": "typography"
+      },
+      {
         "name": "The Flat Workspace Rule",
         "body": "Use tonal surfaces and rules for persistent content. Reserve substantial shadows for temporary menus, notices, and dialogs.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Three Moments Rule",
+        "body": "A ruled surface animates only on hover raise, action reveal, and a change of the whole page's subject. Rules, headers, and filler slots never move.",
         "section": "elevation"
       }
     ],
@@ -346,13 +422,17 @@
       "Do reuse the cloud shell palette, shared page insets, and serif page-heading treatment.",
       "Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.",
       "Do keep calendar data colors and error/overdue semantics distinct from interface chrome.",
-      "Do preserve local component variants when extending an existing surface."
+      "Do preserve local component variants when extending an existing surface.",
+      "Do keep Today Periwinkle to the Tasks board's today header: the date numeral and its 2px rule, nothing more.",
+      "Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column."
     ],
     "donts": [
       "Don't treat the isolated QA redesign study or legacy orbit-shell styles as the cloud workspace design authority.",
       "Don't turn flat collection and task rows into elevated cards by default.",
       "Don't apply the dialog's pill buttons or larger radius to every toolbar.",
-      "Don't interpret the documented desktop density as a verified mobile accessibility standard."
+      "Don't interpret the documented desktop density as a verified mobile accessibility standard.",
+      "Don't put borders, backgrounds, or counts around ledger columns, and don't return the week to a horizontally scrolling set of fixed-width columns.",
+      "Don't use Space Grotesk for anything in the workspace other than a date that is itself the heading."
     ]
   }
 }

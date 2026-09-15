@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
+import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { useColdLoadState } from "../../apps/coldLoad";
 import { WorkspaceIcon } from "../WorkspaceIcon";
 import "./CloudAppShell.css";
@@ -72,11 +73,14 @@ export function CloudAppShell({
 }: CloudAppShellProps) {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuId = useId();
+  const navId = useId();
   const accountRootRef = useRef<HTMLDivElement>(null);
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const settingsLinkRef = useRef<HTMLAnchorElement>(null);
   const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const email = identity.email?.trim() || null;
+  const { preferences, setSidebarCollapsed } = useWorkspacePreferences();
+  const collapsed = preferences.sidebarCollapsed;
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -149,7 +153,11 @@ export function CloudAppShell({
   };
 
   return (
-    <div className="cloud-shell" aria-busy={signOutStatus === "pending"}>
+    <div
+      className="cloud-shell"
+      aria-busy={signOutStatus === "pending"}
+      data-sidebar-collapsed={collapsed ? "true" : undefined}
+    >
       <LoadingBar />
       <a className="cloud-shell__skip-link" href="#cloud-main-content">
         Skip to main content
@@ -181,7 +189,7 @@ export function CloudAppShell({
           </button>
         ) : null}
 
-        <nav className="cloud-shell__nav" aria-label="Primary navigation">
+        <nav id={navId} className="cloud-shell__nav" aria-label="Primary navigation">
           {PRIMARY_DESTINATIONS.filter(
             (destination) =>
               !availableDestinations || availableDestinations.includes(destination.to),
@@ -190,6 +198,7 @@ export function CloudAppShell({
               key={destination.to}
               to={destination.to}
               end={destination.end}
+              title={collapsed ? destination.label.toLowerCase() : undefined}
               className={({ isActive }: { isActive: boolean }) =>
                 `cloud-shell__nav-link${isActive ? " cloud-shell__nav-link--active" : ""}`
               }
@@ -199,6 +208,28 @@ export function CloudAppShell({
             </NavLink>
           ))}
         </nav>
+
+        <button
+          type="button"
+          className="cloud-shell__collapse-toggle"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          aria-controls={navId}
+          onClick={() => setSidebarCollapsed(!collapsed)}
+        >
+          <svg
+            className="cloud-shell__collapse-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
 
         <div className="cloud-shell__actions" data-account-open={accountOpen}>
           <div className="cloud-shell__account" ref={accountRootRef}>

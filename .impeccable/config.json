@@ -472,6 +472,12 @@
         "files": ["frontend/src/features/collections/collections.css"],
         "createdAt": "2026-09-15T02:44:55.234Z",
         "reason": "Agent: parser false positive on var(--radius-control, 5px); DESIGN.md documents the existing 5px navigation/control radius."
+      },
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-09-15T07:34:46.358Z",
+        "reason": "Claude: Space Grotesk is the product's bundled, self-hosted brand face recorded in DESIGN.md (sign-in headline); reused for Tasks date headers"
       }
     ]
   }
