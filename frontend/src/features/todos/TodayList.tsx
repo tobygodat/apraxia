@@ -254,7 +254,7 @@ export function TodayList({
         </a>
       ) : null}
 
-      {state.loadStatus === "loading" ? (
+      {state.loadStatus === "loading" && !state.loaded ? (
         <p className="today-list__status" role="status">
           Loading {day}…
         </p>

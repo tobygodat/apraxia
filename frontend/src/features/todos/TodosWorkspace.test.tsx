@@ -7,6 +7,7 @@ import type { AuthIdentity } from "../../auth/authPort";
 import type { DeleteUndoToken, Profile, Todo } from "../../types/domain";
 import type { TodoService, TodoWorkspaceSnapshot } from "./todoService";
 import { TodosWorkspace } from "./TodosWorkspace";
+import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 
 const IDENTITY: AuthIdentity = {
   userId: "11111111-1111-4111-8111-111111111111",
@@ -248,5 +249,22 @@ describe("TodosWorkspace", () => {
     expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+  });
+
+  it("renders the board immediately from a warmed navigation cache with no loading flash", async () => {
+    const loadWorkspace = vi.fn(async () => SNAPSHOT);
+    const cache = new NavigationCache();
+    const service = cacheNavigationService(
+      createService({ loadWorkspace }),
+      cache,
+      "todos",
+      ["loadWorkspace", "loadToday"],
+      [],
+    ) as unknown as TodoService;
+    // Warm the cache the way an earlier visit or a prefetch would.
+    await service.loadWorkspace({ signal: new AbortController().signal });
+    mount(service);
+    expect(screen.queryByText("Loading your tasks…")).toBeNull();
+    expect(screen.getByRole("article", { name: TODO.text })).toBeTruthy();
   });
 });

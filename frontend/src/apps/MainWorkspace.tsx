@@ -35,21 +35,31 @@ import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
 import "./workspace.css";
 
 // Route-level chunks: calendar (Temporal polyfill), classes (pdfjs), todos board, collections.
-const HomePage = lazy(() =>
-  import("../features/calendar/HomePage").then((m) => ({ default: m.HomePage })),
-);
-const SettingsPage = lazy(() =>
-  import("../features/calendar/SettingsPage").then((m) => ({ default: m.SettingsPage })),
-);
-const TodosWorkspaceContent = lazy(() =>
-  import("../features/todos/TodosWorkspace").then((m) => ({ default: m.TodosWorkspaceContent })),
-);
-const ClassesPage = lazy(() =>
-  import("../features/classes/ClassesPage").then((m) => ({ default: m.ClassesPage })),
-);
-const CollectionPage = lazy(() =>
-  import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage })),
-);
+const loadHomePage = () =>
+  import("../features/calendar/HomePage").then((m) => ({ default: m.HomePage }));
+const loadSettingsPage = () =>
+  import("../features/calendar/SettingsPage").then((m) => ({ default: m.SettingsPage }));
+const loadTodosWorkspaceContent = () =>
+  import("../features/todos/TodosWorkspace").then((m) => ({ default: m.TodosWorkspaceContent }));
+const loadClassesPage = () =>
+  import("../features/classes/ClassesPage").then((m) => ({ default: m.ClassesPage }));
+const loadCollectionPage = () =>
+  import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage }));
+
+const HomePage = lazy(loadHomePage);
+const SettingsPage = lazy(loadSettingsPage);
+const TodosWorkspaceContent = lazy(loadTodosWorkspaceContent);
+const ClassesPage = lazy(loadClassesPage);
+const CollectionPage = lazy(loadCollectionPage);
+
+/** Warms the route chunks so navigation doesn't wait on network once data is cached. */
+export function preloadWorkspaceChunks() {
+  void loadHomePage();
+  void loadSettingsPage();
+  void loadTodosWorkspaceContent();
+  void loadClassesPage();
+  void loadCollectionPage();
+}
 
 export interface MainWorkspaceProps {
   identity: AuthIdentity;

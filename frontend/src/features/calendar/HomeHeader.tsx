@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import {
   EMPTY_APPEARANCE,
@@ -8,22 +8,67 @@ import {
 } from "./homeAppearance";
 import { COLLAPSED_COVER_HEIGHT, COMPACT_COVER_HEIGHT, coverImageLayout } from "./coverLayout";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { peekRead } from "../../apps/navigationCache";
+import { registerUserStateResetter } from "../../auth/userState";
+
+// Decoded cover dimensions, keyed by image src, so a revisit to an
+// already-seen cover has geometry ready on the very first layout pass
+// instead of waiting ~50ms for the <img> to decode again. Data-URI keys can
+// be up to ~350KB each, so this is capped with simple FIFO eviction and
+// cleared entirely at the account boundary.
+const DECODED_COVER_SIZE_LIMIT = 4;
+// Exported only for the eviction test below.
+export const decodedCoverSize = new Map<string, { width: number; height: number }>();
+
+function rememberCoverSize(src: string, size: { width: number; height: number }): void {
+  decodedCoverSize.delete(src);
+  decodedCoverSize.set(src, size);
+  while (decodedCoverSize.size > DECODED_COVER_SIZE_LIMIT) {
+    const oldest = decodedCoverSize.keys().next().value;
+    if (oldest === undefined) break;
+    decodedCoverSize.delete(oldest);
+  }
+}
+
+registerUserStateResetter(() => decodedCoverSize.clear());
 
 interface HomeHeaderProps {
   service?: HomeAppearanceService;
   userId: string;
-  scrollRef?: RefObject<HTMLDivElement | null>;
+  // The scroll container element itself (not a ref object): passed as state
+  // set from a callback ref by the parent, so it's already populated on this
+  // component's very first render/layout-effect pass instead of a render
+  // behind, avoiding an extra visible commit before the cover geometry applies.
+  pageElement?: HTMLDivElement | null;
 }
 export function HomeHeader(props: HomeHeaderProps) {
   return <HomeHeaderAccount key={props.userId} {...props} />;
 }
-function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
-  const [value, setValue] = useState<HomeAppearance>(EMPTY_APPEARANCE);
-  const [ready, setReady] = useState(false);
+function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
+  // Render the cover on first paint when an earlier navigation already warmed
+  // this read, instead of flashing a collapsed header while it refetches.
+  // The trailing signal is only there to satisfy the type signature; peekRead
+  // strips AbortSignal args before matching against the cached key. Read once
+  // via a useState initializer so this (and its AbortController) run only on
+  // mount, not on every render.
+  const [seeded] = useState(() =>
+    service ? peekRead(service, "load", userId, new AbortController().signal) : undefined,
+  );
+  const [value, setValue] = useState<HomeAppearance>(() => seeded ?? EMPTY_APPEARANCE);
+  const [ready, setReady] = useState(() => seeded !== undefined);
+  // The load effect below always runs on mount; skip its "loading" reset only
+  // for that very first run when a warm cache already seeded ready content.
+  const firstRun = useRef(seeded !== undefined);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [open, setOpen] = useState(false);
-  const [imageSize, setImageSize] = useState({ src: "", width: 1, height: 1 });
+  const [imageSize, setImageSize] = useState(() => {
+    const src = seeded?.coverImage;
+    const cached = src ? decodedCoverSize.get(src) : undefined;
+    return cached
+      ? { src: src!, width: cached.width, height: cached.height }
+      : { src: "", width: 1, height: 1 };
+  });
   const [layout, setLayout] = useState({
     width: 1,
     fullHeight: COMPACT_COVER_HEIGHT,
@@ -31,7 +76,7 @@ function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
   });
   const coverReady = !!value.coverImage && imageSize.src === value.coverImage;
   useLayoutEffect(() => {
-    const page = scrollRef?.current;
+    const page = pageElement;
     if (!page || !coverReady) return;
     page.classList.add("home-page--cover");
     let fullHeight = COMPACT_COVER_HEIGHT;
@@ -75,12 +120,16 @@ function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
       page.style.removeProperty("--home-workspace-height");
       page.scrollTop = 0;
     };
-  }, [scrollRef, coverReady, imageSize]);
+  }, [pageElement, coverReady, imageSize]);
   useEffect(() => {
     if (!service) return;
     const controller = new AbortController();
-    setReady(false);
-    setError("");
+    const skipReset = firstRun.current;
+    firstRun.current = false;
+    if (!skipReset) {
+      setReady(false);
+      setError("");
+    }
     void service
       .load(userId, controller.signal)
       .then((result) => {
@@ -94,7 +143,7 @@ function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
       });
     return () => controller.abort();
   }, [service, userId, revision]);
-  const collapsible = coverReady && !!scrollRef?.current;
+  const collapsible = coverReady && !!pageElement;
   const collapsed = collapsible && layout.height <= COLLAPSED_COVER_HEIGHT + 1;
   const imageStyle = coverReady
     ? coverImageLayout(
@@ -108,7 +157,7 @@ function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
       )
     : undefined;
   const scrollCover = () =>
-    scrollRef?.current?.scrollTo({
+    pageElement?.scrollTo({
       top: layout.height >= layout.fullHeight - 1 ? layout.fullHeight - COLLAPSED_COVER_HEIGHT : 0,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "instant"
@@ -134,13 +183,12 @@ function HomeHeaderAccount({ service, userId, scrollRef }: HomeHeaderProps) {
                     objectPosition: `${value.coverPositionX ?? 50}% ${value.coverPositionY ?? 50}%`,
                   }
             }
-            onLoad={(event) =>
-              setImageSize({
-                src: value.coverImage!,
-                width: event.currentTarget.naturalWidth,
-                height: event.currentTarget.naturalHeight,
-              })
-            }
+            onLoad={(event) => {
+              const width = event.currentTarget.naturalWidth;
+              const height = event.currentTarget.naturalHeight;
+              rememberCoverSize(value.coverImage!, { width, height });
+              setImageSize({ src: value.coverImage!, width, height });
+            }}
           />
         )}
         <div className="home-header__line">

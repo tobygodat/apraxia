@@ -19,6 +19,7 @@ import { TodayPanel } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday } from "../todos/dateDomain";
 import type { CalendarService } from "./calendarService";
+import { peekRead } from "../../apps/navigationCache";
 import { hasServiceErrorCode, serviceErrorMessage } from "../../lib/serviceError";
 import {
   layoutAllDayEvents,
@@ -62,10 +63,15 @@ export function HomePage({
   workspaceSessionKey,
   appearanceService,
 }: HomePageProps) {
-  const page = useRef<HTMLDivElement>(null);
+  // A callback ref (rather than useRef) so the element is available to
+  // HomeHeader's layout effect on the very first commit: React flushes a
+  // setState made from a ref callback synchronously before paint, whereas a
+  // plain ref set during the parent's commit isn't visible to a child's
+  // layout effect until a later pass.
+  const [page, setPage] = useState<HTMLDivElement | null>(null);
   return (
-    <div className="home-page" ref={page}>
-      <HomeHeader service={appearanceService} userId={profile.userId} scrollRef={page} />
+    <div className="home-page" ref={setPage}>
+      <HomeHeader service={appearanceService} userId={profile.userId} pageElement={page} />
       <div className="home-workspace">
         <CalendarPanel service={calendarService} timezone={profile.timezone} />
         <TodayPanel
@@ -101,22 +107,39 @@ export function CalendarPanel({
     week: WeekViewModel | null;
     error: string | null;
     connect: boolean;
-  }>({ loading: true, week: null, error: null, connect: false });
+  }>(() => {
+    const status = peekRead(service, "status");
+    if (status && status.connectionState === "connected") {
+      const week = peekRead(service, "week", sunday);
+      if (week && week.timezone === timezone)
+        return { loading: false, week, error: null, connect: false };
+      return { loading: true, week: null, error: null, connect: false };
+    }
+    if (status) return { loading: false, week: null, error: null, connect: true };
+    return { loading: true, week: null, error: null, connect: false };
+  });
+  // Remembers whether the effect below has already run once for this sunday/timezone,
+  // so a seeded (cache-warm) first run does not flash a loading state.
+  const firstRunKey = useRef("");
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    setState((previous) => ({
-      loading: true,
-      week:
+    const key = `${sunday}/${timezone}`;
+    const isFirstRun = firstRunKey.current !== key;
+    firstRunKey.current = key;
+    setState((previous) => {
+      const seededWeek =
         previous.week?.range.sunday === sunday && previous.week.timezone === timezone
           ? previous.week
-          : null,
-      error: null,
-      connect: false,
-    }));
+          : null;
+      // On the first run for this sunday/timezone, a seeded week is already visible:
+      // refetch quietly instead of showing the loading/refreshing placeholder.
+      if (isFirstRun && seededWeek) return previous;
+      return { loading: true, week: seededWeek, error: null, connect: false };
+    });
     void service
       .status(controller.signal)
       .then(async (status) => {
@@ -240,12 +263,6 @@ export function CalendarPanel({
       {state.loading && !visibleWeek && (
         <p className="calendar-message" role="status">
           Loading your week…
-        </p>
-      )}
-
-      {state.loading && visibleWeek && (
-        <p className="calendar-empty" role="status">
-          Refreshing your week…
         </p>
       )}
 

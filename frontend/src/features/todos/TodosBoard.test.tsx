@@ -167,6 +167,8 @@ describe("TodosBoard", () => {
     );
     expect(screen.getByRole("status").textContent).toContain("Loading tasks");
     expect(screen.getByText("Prepare review completed.")).toBeTruthy();
+    view.rerender(<TodosBoard {...props({ loadStatus: "loading", loaded: true })} />);
+    expect(screen.queryByText("Loading tasks…")).toBeNull();
     view.rerender(
       <TodosBoard
         {...props({

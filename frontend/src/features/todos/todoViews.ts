@@ -14,6 +14,8 @@ export type TodayListDay = "Today" | "Tomorrow";
 /** What the Today list renders: one day's rows plus the shared write status. */
 export interface TodayListViewState {
   readonly loadStatus: TodoLoadStatus;
+  /** True once this day's slice has ever received a snapshot (cache seed or live load). */
+  readonly loaded: boolean;
   readonly model: TodayListModel;
   readonly loadError: string | null;
   readonly mutationError: string | null;
@@ -81,8 +83,10 @@ export function selectTodayList(
           addSqlDateDays(today, 1),
         );
   const loadStatus = day === "Today" ? state.todayStatus : state.workspaceStatus;
+  const loaded = day === "Today" ? state.todayLoaded : state.workspaceLoaded;
   return {
     loadStatus,
+    loaded,
     model,
     loadError: loadStatus === "error" ? todoLoadErrorCopy(day) : null,
     mutationError: state.mutationError ? todoMutationErrorCopy(state.mutationError) : null,

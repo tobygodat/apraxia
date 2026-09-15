@@ -18,6 +18,8 @@ import "./TodosBoard.css";
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
   readonly loadStatus?: TodoLoadStatus;
+  /** True once the board has ever received a workspace snapshot. */
+  readonly loaded?: boolean;
   readonly pendingTodoIds?: ReadonlySet<string>;
   readonly projects?: readonly ProjectSummary[];
   readonly mutationResult?: TodoMutationResult | null;
@@ -163,6 +165,7 @@ function TodoCard({
 export function TodosBoard({
   model: fullModel,
   loadStatus = "ready",
+  loaded = false,
   pendingTodoIds = new Set<string>(),
   projects = [],
   mutationResult = null,
@@ -464,7 +467,7 @@ export function TodosBoard({
         </div>
       ) : null}
 
-      {loadStatus === "loading" ? (
+      {loadStatus === "loading" && !loaded ? (
         <p className="todos-board-status" role="status">
           Loading tasks…
         </p>

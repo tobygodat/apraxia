@@ -80,10 +80,9 @@ function TodosWorkspaceSession(props: TodosWorkspaceProps) {
   const binding = useTodoController(props.service, props.workspaceSessionKey, { workspace: true });
   const { state, controller } = binding;
   const profile = state.profile;
-  const ready =
-    state.workspaceStatus === "ready" &&
-    profile !== null &&
-    profile.userId === props.identity.userId;
+  // Once a workspace snapshot has loaded (seeded from cache or fetched), keep the
+  // board mounted through a background refresh instead of flashing the placeholder.
+  const ready = profile !== null && profile.userId === props.identity.userId;
 
   if (!ready || profile === null) {
     const failed =
@@ -152,6 +151,7 @@ function ReadyTodosBoard({
       <TodosBoard
         model={model}
         loadStatus={state.workspaceStatus}
+        loaded={state.workspaceLoaded}
         projects={state.projects}
         pendingTodoIds={state.pendingTodoIds}
         mutationResult={state.mutationResult}

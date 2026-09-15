@@ -36,6 +36,7 @@ function state(
 ): TodayListViewState {
   return {
     loadStatus: "ready",
+    loaded: true,
     model: buildTodayListModel(todos, "2026-09-02"),
     loadError: null,
     mutationError: null,
@@ -213,6 +214,18 @@ describe("TodayList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dismiss undo" }));
     expect(callbacks.onUndoDelete).toHaveBeenCalledOnce();
     expect(callbacks.onDismissUndo).toHaveBeenCalledOnce();
+  });
+
+  it("shows the loading row only before the day has ever loaded", () => {
+    const callbacks = props({
+      state: state([], { loadStatus: "loading", loaded: false }),
+    });
+    const view = render(<TodayList {...callbacks} />);
+    expect(screen.getByText("Loading Today…")).toBeTruthy();
+    view.rerender(
+      <TodayList {...callbacks} state={state(ROWS, { loadStatus: "loading", loaded: true })} />,
+    );
+    expect(screen.queryByText("Loading Today…")).toBeNull();
   });
 
   it("shows retryable load errors, mutation errors, and a neutral updating state", () => {
