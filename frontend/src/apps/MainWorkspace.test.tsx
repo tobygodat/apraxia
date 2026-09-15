@@ -8,7 +8,7 @@ import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
 import { localToday } from "../features/todos/dateDomain";
 import { startOfWeekSunday } from "../features/calendar/eventLayout";
-import { MainWorkspace, type MainWorkspaceProps } from "./MainWorkspace";
+import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 
@@ -86,6 +86,24 @@ describe("Main workspace integration", () => {
     expect(await screen.findByRole("button", { name: "Idea" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Project" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Media" })).toBeNull();
+  });
+
+  it("mounts a route synchronously with no Suspense fallback once its chunk was preloaded", async () => {
+    // Warm the route chunk the way WorkspaceRuntime's idle-time preload
+    // does, and wait for it to actually resolve before mounting.
+    await preloadWorkspaceChunks();
+    const f = fixture();
+    mount(f.props);
+    // No `act()`/`findBy*` wait: if the route's chunk had suspended, only
+    // the tiny Suspense fallback (its sr-only status text) would be in the
+    // DOM right after render(), and none of CollectionPage's own markup.
+    // With the chunk preloaded, CollectionPage itself mounts synchronously
+    // on the very first commit instead — its heading proves that, even
+    // though its own data load (a separate, still-async `listProjects`
+    // call) hasn't resolved yet and legitimately shows its own "Loading…"
+    // row in the meantime.
+    expect(screen.getByRole("heading", { name: "Projects" })).toBeTruthy();
+    await screen.findByText("No projects in this view.");
   });
 
   it("reuses the runtime project preload when opening Projects and returning to it", async () => {

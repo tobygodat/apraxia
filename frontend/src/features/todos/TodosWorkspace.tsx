@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
+import { useColdLoad } from "../../apps/coldLoad";
 import { CloudAppShell, type CloudAppShellProps } from "../../components/app-shell/CloudAppShell";
 import {
   GlobalAddTodoController,
@@ -34,6 +35,7 @@ export function TodosWorkspace(props: TodosWorkspaceProps) {
 }
 
 function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+  useColdLoad(!failed);
   return (
     <section className="todos-board-page" aria-labelledby="todos-loading-heading">
       <header className="todos-board-toolbar">
@@ -47,7 +49,7 @@ function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () =>
           </button>
         </div>
       ) : (
-        <p className="todos-board-status" role="status">
+        <p className="cloud-shell__sr-only" role="status">
           Loading your tasks…
         </p>
       )}

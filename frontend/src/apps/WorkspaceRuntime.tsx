@@ -119,7 +119,10 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     let idleHandle: number | undefined;
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
     if (typeof window.requestIdleCallback === "function") {
-      idleHandle = window.requestIdleCallback(() => preloadWorkspaceChunks());
+      // A timeout guarantees this still runs within 2s under sustained
+      // main-thread activity, where an idle period might otherwise never
+      // arrive.
+      idleHandle = window.requestIdleCallback(() => preloadWorkspaceChunks(), { timeout: 2000 });
     } else {
       idleTimer = setTimeout(() => preloadWorkspaceChunks(), 1500);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DeleteUndoToken, Idea, Project, Todo } from "../../types/domain";
+import { useColdLoad } from "../../apps/coldLoad";
 import { useWorkspace } from "../../apps/workspaceStore";
 import { peekRead } from "../../apps/navigationCache";
 import { TodoComposerDialog, TodoEditDialog } from "../todos/TodoFormDialog";
@@ -365,8 +366,10 @@ export function CollectionPage(props: Props) {
   }
   const completedTasks = tasks.filter((t) => t.completed);
   const openTasks = tasks.filter((t) => !t.completed);
-  const showLoadingStatus = !detail && loading && !rows.length;
   const coldDetail = detail && loading && !project;
+  const coldList = !detail && loading && !rows.length;
+  const showLoadingStatus = !error && (detail ? coldDetail : coldList);
+  useColdLoad(!error && (detail ? coldDetail : coldList));
   return (
     <section className={`collection-page${kind === "project" ? " collection-page--project" : ""}`}>
       {detail && (
@@ -427,13 +430,8 @@ export function CollectionPage(props: Props) {
           <button onClick={() => setRevision((v) => v + 1)}>Retry</button>
         </div>
       )}
-      {detail && loading && !project && (
-        <p className="cloud-shell__sr-only" role="status">
-          Loading…
-        </p>
-      )}
       {showLoadingStatus && (
-        <p className="collection-meta" role="status">
+        <p className="cloud-shell__sr-only" role="status">
           Loading…
         </p>
       )}

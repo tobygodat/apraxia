@@ -1,4 +1,5 @@
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -406,6 +407,7 @@ export function TodosBoard({
   }, [boardRegionId, model, todoControlId, undoNotice]);
 
   const navigationPending = loadStatus === "loading";
+  useColdLoad(loadStatus === "loading" && !loaded);
 
   return (
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
@@ -468,7 +470,7 @@ export function TodosBoard({
       ) : null}
 
       {loadStatus === "loading" && !loaded ? (
-        <p className="todos-board-status" role="status">
+        <p className="cloud-shell__sr-only" role="status">
           Loading tasks…
         </p>
       ) : null}

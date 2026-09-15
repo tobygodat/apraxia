@@ -2,6 +2,27 @@
   --workspace-page-inset: clamp(20px, 2.5vw, 36px);
   --workspace-page-top: 36px;
 }
+/* Revealing (data-cold removed): opacity fades in over 160ms, and
+   visibility flips back to visible instantly (0s delay/duration) so content
+   becomes focusable and readable by assistive tech right as the fade
+   starts, not 160ms later. */
+.cold-load {
+  transition:
+    opacity 160ms ease-out,
+    visibility 0s linear 0s;
+}
+/* Going cold: hidden immediately, no transition, so nothing stays
+   focusable/announced while a fade-out would otherwise still be playing. */
+.cold-load[data-cold] {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cold-load {
+    transition: none;
+  }
+}
 .workspace-page {
   padding: var(--workspace-page-top) var(--workspace-page-inset);
 }

@@ -20,6 +20,7 @@ import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday } from "../todos/dateDomain";
 import type { CalendarService } from "./calendarService";
 import { peekRead } from "../../apps/navigationCache";
+import { useColdLoad } from "../../apps/coldLoad";
 import { hasServiceErrorCode, serviceErrorMessage } from "../../lib/serviceError";
 import {
   layoutAllDayEvents,
@@ -168,6 +169,7 @@ export function CalendarPanel({
   // Do not flash a previous week's events while the new request effect starts.
   const visibleWeek =
     state.week?.range.sunday === sunday && state.week.timezone === timezone ? state.week : null;
+  useColdLoad(state.loading && !visibleWeek && !state.error && !state.connect);
   const dates = weekDates(sunday);
   const label = Temporal.PlainDate.from(dates.includes(today) ? today : dates[3]).toLocaleString(
     "en",
@@ -261,7 +263,7 @@ export function CalendarPanel({
         />
       )}
       {state.loading && !visibleWeek && (
-        <p className="calendar-message" role="status">
+        <p className="cloud-shell__sr-only" role="status">
           Loading your week…
         </p>
       )}

@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionPage } from "./CollectionPage";
+import { ColdLoadGate } from "../../apps/coldLoad";
 import type { CollectionService } from "./collectionService";
 import type { TodoService } from "../todos/todoService";
 import { WorkspaceContext, type WorkspaceStore } from "../../apps/workspaceStore";
@@ -543,5 +544,44 @@ describe("Collection pages", () => {
     await waitFor(() => {
       expect(checkbox.closest(".collection-task")?.getAttribute("data-settling")).toBeNull();
     });
+  });
+  it("holds the cold-load gate while the list loads and releases it once rows resolve", async () => {
+    let resolveRows: ((value: unknown) => void) | undefined;
+    const listProjects = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveRows = resolve;
+        }),
+    );
+    const { container } = render(
+      <ColdLoadGate>
+        <Page
+          kind="project"
+          service={{ listProjects } as unknown as CollectionService}
+          todoService={{} as TodoService}
+        />
+      </ColdLoadGate>,
+    );
+    const gate = container.querySelector(".cold-load");
+    expect(gate?.getAttribute("data-cold")).toBe("true");
+    await act(async () => {
+      resolveRows?.([]);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
+  });
+  it("releases the cold-load gate immediately when the list load fails", async () => {
+    const listProjects = vi.fn().mockRejectedValue(new Error("boom"));
+    const { container } = render(
+      <ColdLoadGate>
+        <Page
+          kind="project"
+          service={{ listProjects } as unknown as CollectionService}
+          todoService={{} as TodoService}
+        />
+      </ColdLoadGate>,
+    );
+    const gate = container.querySelector(".cold-load");
+    await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
   });
 });

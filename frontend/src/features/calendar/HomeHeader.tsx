@@ -10,6 +10,7 @@ import { COLLAPSED_COVER_HEIGHT, COMPACT_COVER_HEIGHT, coverImageLayout } from "
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
 import { registerUserStateResetter } from "../../auth/userState";
+import { useColdLoad } from "../../apps/coldLoad";
 
 // Decoded cover dimensions, keyed by image src, so a revisit to an
 // already-seen cover has geometry ready on the very first layout pass
@@ -89,6 +90,17 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
     height: COMPACT_COVER_HEIGHT,
   });
   const coverReady = !!value.coverImage && imageSize.src === value.coverImage;
+  const [imageErrored, setImageErrored] = useState(false);
+  // Idempotent "reset on cover change" instead of mutating a ref during
+  // render: comparing against state (not a ref) means this stays correct
+  // under StrictMode's double-invoked render.
+  const [erroredFor, setErroredFor] = useState<string | null>(null);
+  const coverKey = value.coverImage ?? null;
+  if (erroredFor !== coverKey) {
+    setErroredFor(coverKey);
+    setImageErrored(false);
+  }
+  useColdLoad((!ready && !error) || (!!value.coverImage && !coverReady && !imageErrored));
   useLayoutEffect(() => {
     const page = pageElement;
     if (!page || !coverReady) return;
@@ -203,6 +215,7 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
               rememberCoverSize(value.coverImage!, { width, height });
               setImageSize({ src: value.coverImage!, width, height });
             }}
+            onError={() => setImageErrored(true)}
           />
         )}
         <div className="home-header__line">

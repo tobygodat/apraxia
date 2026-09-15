@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TodayTodo } from "../../types/domain";
 import { TodayList, type TodayListProps } from "./TodayList";
 import { buildTodayListModel } from "./todayListModel";
 import type { TodayListViewState } from "./todoViews";
+import { ColdLoadGate } from "../../apps/coldLoad";
 
 afterEach(() => cleanup());
 
@@ -226,6 +227,27 @@ describe("TodayList", () => {
       <TodayList {...callbacks} state={state(ROWS, { loadStatus: "loading", loaded: true })} />,
     );
     expect(screen.queryByText("Loading Today…")).toBeNull();
+  });
+
+  it("stays cold-load pending until the day has loaded, then reveals", async () => {
+    const callbacks = props({
+      state: state([], { loadStatus: "loading", loaded: false }),
+    });
+    const { container, rerender } = render(
+      <ColdLoadGate>
+        <TodayList {...callbacks} />
+      </ColdLoadGate>,
+    );
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+    rerender(
+      <ColdLoadGate>
+        <TodayList {...callbacks} state={state(ROWS, { loadStatus: "ready", loaded: true })} />
+      </ColdLoadGate>,
+    );
+    // The gate defers its reveal to a rAF/timeout check that pending is still zero.
+    await waitFor(() =>
+      expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+    );
   });
 
   it("shows retryable load errors, mutation errors, and a neutral updating state", () => {

@@ -15,6 +15,7 @@ import { SavedClassNotes } from "./SavedClassNotes";
 import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
+import { useColdLoad } from "../../apps/coldLoad";
 
 export function ClassesPage({
   userId,
@@ -53,6 +54,7 @@ export function ClassesPage({
   const pending = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const course = courses.find((c) => c.id === courseId);
+  useColdLoad(!loaded && !error);
   useEffect(() => {
     const controller = new AbortController();
     // Don't flash the loading state when a cached list is already seeded/present.
@@ -135,7 +137,11 @@ export function ClassesPage({
       {!loaded ? (
         <>
           <h1>Classes</h1>
-          {!error && <p role="status">Loading classes…</p>}
+          {!error && (
+            <p className="cloud-shell__sr-only" role="status">
+              Loading classes…
+            </p>
+          )}
         </>
       ) : courseId && !course ? (
         <>

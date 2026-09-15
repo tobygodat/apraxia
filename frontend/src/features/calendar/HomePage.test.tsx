@@ -8,6 +8,7 @@ import { CalendarPanel, HomePage, WeekGrid } from "./HomePage";
 import type { AllDayCalendarEvent, CalendarEvent, WeekViewModel } from "../../types/domain";
 import { addSqlDateDays } from "../todos/dateDomain";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 afterEach(cleanup);
 it("loads Sunday through Saturday in the profile timezone and keeps navigation and Today aligned", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -160,6 +161,35 @@ it("loads Today while Calendar status is still pending", async () => {
   expect(screen.getByText("Loading your week…")).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
 });
+it("stays cold-load pending until the week resolves, then reveals", async () => {
+  let resolveWeek: ((week: WeekViewModel) => void) | undefined;
+  const service = {
+    status: async () => ({ connectionState: "connected" }),
+    week: () =>
+      new Promise<WeekViewModel>((resolve) => {
+        resolveWeek = resolve;
+      }),
+  } as unknown as CalendarService;
+  const { container } = render(
+    <MemoryRouter>
+      <ColdLoadGate>
+        <CalendarPanel service={service} timezone="UTC" />
+      </ColdLoadGate>
+    </MemoryRouter>,
+  );
+  expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+  resolveWeek?.({
+    range: { sunday: "2026-09-06", saturday: "2026-09-12" },
+    timezone: "UTC",
+    events: [],
+    partialErrors: [],
+    visibleCalendars: [],
+  });
+  await waitFor(() =>
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+  );
+});
+
 it("preserves a loaded week on refresh failure, then hides it when navigating", async () => {
   const week = vi.fn(async (sunday: string) => ({
     range: { sunday, saturday: sunday },

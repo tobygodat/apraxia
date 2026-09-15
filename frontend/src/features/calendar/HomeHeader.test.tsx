@@ -6,6 +6,7 @@ import { prepareCover, validateAppearance, type HomeAppearanceService } from "./
 import { coverImageLayout } from "./coverLayout";
 import { createRef, useState, type MutableRefObject } from "react";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
+import { ColdLoadGate } from "../../apps/coldLoad";
 afterEach(cleanup);
 
 // Mirrors HomePage's callback-ref pattern: `pageElement` must be populated
@@ -320,6 +321,43 @@ it("primeCoverImage decodes a cover ahead of the header mounting it", () => {
     expect(instances).toHaveLength(1);
   } finally {
     vi.unstubAllGlobals();
+  }
+});
+it("stays cold-load pending until the cover image decodes, then reveals", async () => {
+  // happy-dom resolves a data-URL <img> synchronously on mount instead of
+  // waiting for a real decode, so the auto-dispatched "load" event is
+  // swallowed here to observe the gate's pending state before the image
+  // is (manually) reported ready, mirroring a real browser's timing.
+  const originalDispatch = HTMLImageElement.prototype.dispatchEvent;
+  const dispatchSpy = vi
+    .spyOn(HTMLImageElement.prototype, "dispatchEvent")
+    .mockImplementation(function (this: HTMLImageElement, event: Event) {
+      if (event.type === "load") return true;
+      return originalDispatch.call(this, event);
+    });
+  try {
+    const service: HomeAppearanceService = {
+      load: async () => ({ title: "Studio", coverImage: "data:image/png;base64,COLD" }),
+      save: vi.fn(),
+    };
+    const { container } = render(
+      <ColdLoadGate>
+        <HomeHeader userId="owner" service={service} />
+      </ColdLoadGate>,
+    );
+    await screen.findByRole("heading", { name: "Studio" });
+    expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBe("true");
+    const image = container.querySelector("img.home-header__cover") as HTMLImageElement;
+    Object.defineProperty(image, "naturalWidth", { value: 200, configurable: true });
+    Object.defineProperty(image, "naturalHeight", { value: 100, configurable: true });
+    dispatchSpy.mockRestore();
+    fireEvent.load(image);
+    // The gate defers its reveal to a rAF/timeout check that pending is still zero.
+    await waitFor(() =>
+      expect(container.querySelector(".cold-load")?.getAttribute("data-cold")).toBeNull(),
+    );
+  } finally {
+    dispatchSpy.mockRestore();
   }
 });
 it("rejects remote URLs, SVG, excessive names, and unsupported uploads", async () => {
