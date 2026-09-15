@@ -46,7 +46,7 @@ export class NavigationCache {
     let entry = this.entries.get(key);
     if (!entry || entry.stale || entry.expires <= Date.now()) {
       // Bound memory even when browsing many project details or calendar weeks.
-      if (!entry && this.entries.size >= 100)
+      if (!entry && this.entries.size >= 300)
         this.entries.delete(this.entries.keys().next().value!);
       const previous = entry;
       const sharedSignal = this.controller.signal;

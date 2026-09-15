@@ -99,7 +99,17 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
     const timer = window.setTimeout(() => {
       void Promise.allSettled([
         todoService.loadWorkspace({ signal }),
-        collectionService.listProjects({ offset: 0, signal }),
+        collectionService.listProjects({ offset: 0, signal }).then((projects) => {
+          if (typeof collectionService.getProject !== "function") return;
+          const targets = projects.slice(0, 24);
+          void Promise.allSettled(
+            targets.flatMap((project) => [
+              collectionService.getProject(project.id),
+              collectionService.projectTodos(project.id, 0),
+              collectionService.listIdeas({ projectId: project.id, offset: 0, signal }),
+            ]),
+          );
+        }),
         collectionService.listIdeas({ offset: 0, signal }),
         workspaceData.homeAppearance?.load(props.identity.userId, signal).then((appearance) => {
           if (appearance.coverImage) primeCoverImage(appearance.coverImage);

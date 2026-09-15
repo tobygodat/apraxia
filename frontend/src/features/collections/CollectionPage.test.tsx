@@ -371,7 +371,7 @@ describe("Collection pages", () => {
     expect(screen.getByText("Draft the plan")).toBeTruthy();
     expect(screen.queryByText("Loading…")).toBeNull();
   });
-  it("renders the Tasks/Ideas section frame immediately on a cold detail open with no Loading row", async () => {
+  it("renders the Tasks/Ideas section frame immediately on a cold detail open with no Loading row and no counts", async () => {
     let resolveProject: ((value: unknown) => void) | undefined;
     const getProject = vi.fn(
       () =>
@@ -391,8 +391,11 @@ describe("Collection pages", () => {
         onChanged={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Tasks 0" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Ideas 0" })).toBeTruthy();
+    // Cold detail: the numeric counts are withheld until real data lands.
+    expect(screen.getByRole("heading", { name: "Tasks" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ideas" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Tasks \d/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Ideas \d/ })).toBeNull();
     const status = screen.getByText("Loading…");
     expect(status.className).toContain("cloud-shell__sr-only");
     expect(status.getAttribute("role")).toBe("status");
@@ -403,6 +406,9 @@ describe("Collection pages", () => {
       resolveProject?.({ id: "p", title: "Home", description: null, status: "active" });
       await Promise.resolve();
     });
+    // Warm render: counts return once the detail has loaded.
+    expect(screen.getByRole("heading", { name: "Tasks 0" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ideas 0" })).toBeTruthy();
   });
   it("shows the workspace project title instead of Project while a cold detail load is in flight", async () => {
     let resolveProject: ((value: unknown) => void) | undefined;

@@ -366,6 +366,7 @@ export function CollectionPage(props: Props) {
   const completedTasks = tasks.filter((t) => t.completed);
   const openTasks = tasks.filter((t) => !t.completed);
   const showLoadingStatus = !detail && loading && !rows.length;
+  const coldDetail = detail && loading && !project;
   return (
     <section className={`collection-page${kind === "project" ? " collection-page--project" : ""}`}>
       {detail && (
@@ -441,7 +442,10 @@ export function CollectionPage(props: Props) {
           <section className="collection-section">
             <header>
               <h2>
-                Tasks <span className="collection-section__count">{openTasks.length}</span>
+                Tasks{" "}
+                {!coldDetail && (
+                  <span className="collection-section__count">{openTasks.length}</span>
+                )}
               </h2>
               <button className="collection-section__add" onClick={() => setComposer(true)}>
                 <WorkspaceIcon name="plus" />
@@ -487,7 +491,8 @@ export function CollectionPage(props: Props) {
           <section className="collection-section">
             <header>
               <h2>
-                Ideas <span className="collection-section__count">{ideas.length}</span>
+                Ideas{" "}
+                {!coldDetail && <span className="collection-section__count">{ideas.length}</span>}
               </h2>
               <button
                 className="collection-section__add"

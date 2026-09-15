@@ -325,4 +325,51 @@ describe("Main workspace integration", () => {
     await waitFor(() => expect(week).toHaveBeenCalledTimes(1));
     expect(week).toHaveBeenCalledWith(sunday, expect.any(AbortSignal));
   });
+
+  it("prefetches each listed project's detail reads at startup", async () => {
+    const f = fixture();
+    const projectA = {
+      id: "garden-project",
+      title: "Garden plans",
+      description: "Make space for herbs",
+      status: "someday",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const projectB = { ...projectA, id: "kitchen-project", title: "Kitchen remodel" };
+    const listProjects = vi.fn().mockResolvedValue([projectA, projectB]);
+    const getProject = vi.fn().mockResolvedValue(projectA);
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <WorkspaceRuntime
+          {...f.props}
+          todoService={{
+            ...f.props.todoService,
+            loadWorkspace: vi.fn().mockResolvedValue({}),
+          }}
+          collectionService={{
+            ...f.props.collectionService,
+            listProjects,
+            getProject,
+            projectTodos,
+            listIdeas,
+          }}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("Garden plans");
+    await waitFor(() => expect(getProject).toHaveBeenCalledTimes(2));
+    expect(getProject).toHaveBeenCalledWith(projectA.id);
+    expect(getProject).toHaveBeenCalledWith(projectB.id);
+    expect(projectTodos).toHaveBeenCalledWith(projectA.id, 0);
+    expect(projectTodos).toHaveBeenCalledWith(projectB.id, 0);
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectA.id, offset: 0 }),
+    );
+    expect(listIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: projectB.id, offset: 0 }),
+    );
+  });
 });

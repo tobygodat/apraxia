@@ -166,6 +166,19 @@ describe("session navigation cache", () => {
     expect(source.loadWorkspace).toHaveBeenCalledTimes(1);
   });
 
+  it("bounds memory with a 300-entry FIFO cap", async () => {
+    const cache = new NavigationCache();
+    for (let n = 0; n < 300; n++) {
+      await cache.read(`page-${n}`, async () => n);
+    }
+    expect(cache.peek("page-0")).toBe(0);
+    await cache.read("page-300", async () => 300);
+    // The oldest entry is evicted once the cap is reached.
+    expect(cache.peek("page-0")).toBeUndefined();
+    expect(cache.peek("page-1")).toBe(1);
+    expect(cache.peek("page-300")).toBe(300);
+  });
+
   it("keeps peekRead working through an object that adds fields before the proxy wraps it", async () => {
     const cache = new NavigationCache();
     const source = { status: vi.fn(async () => "connected") };
