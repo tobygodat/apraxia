@@ -69,6 +69,11 @@ it("uses the authenticated route for Add, reload, completion, delete/Undo, and s
   await screen.findByText("Persisted from the UI");
   fireEvent.click(screen.getByRole("checkbox", { name: "Mark as complete Persisted from the UI" }));
   await screen.findByRole("checkbox", { name: "Mark as incomplete Persisted from the UI" });
+  // Completion is optimistic; row controls stay disabled until the write settles.
+  await waitFor(() => {
+    const button = screen.getByRole("button", { name: "Delete Persisted from the UI" });
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+  });
   fireEvent.click(screen.getByRole("button", { name: "Delete Persisted from the UI" }));
   fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
   await screen.findByText("Persisted from the UI");
