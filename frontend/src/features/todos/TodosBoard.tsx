@@ -254,6 +254,7 @@ export function TodosBoard({
   const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
   const [dropColumnKey, setDropColumnKey] = useState<string | null>(null);
   const draggedTodoRef = useRef<Todo | null>(null);
+  const draggedFromColumnKeyRef = useRef<string | null>(null);
   // Filtering keeps column order and each column's saved order intact.
   const model = useMemo(
     () =>
@@ -480,6 +481,7 @@ export function TodosBoard({
 
   function clearDrag() {
     draggedTodoRef.current = null;
+    draggedFromColumnKeyRef.current = null;
     setDraggingTodoId(null);
     setDropColumnKey(null);
   }
@@ -488,12 +490,8 @@ export function TodosBoard({
     if (!isTodoDrag(event.dataTransfer)) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    const dragged = draggedTodoRef.current;
-    const isCurrentColumn = dragged
-      ? column.kind === "inbox"
-        ? dragged.dueDate === null
-        : dragged.dueDate === column.date
-      : false;
+    const fromColumnKey = draggedFromColumnKeyRef.current;
+    const isCurrentColumn = fromColumnKey !== null && fromColumnKey === column.key;
     setDropColumnKey(isCurrentColumn ? null : column.key);
   }
 
@@ -508,12 +506,11 @@ export function TodosBoard({
     event.preventDefault();
     const todoId = event.dataTransfer?.getData("text/plain");
     const dragged = draggedTodoRef.current;
+    const fromColumnKey = draggedFromColumnKeyRef.current;
     clearDrag();
     if (!todoId || !dragged || dragged.id !== todoId) return;
+    if (fromColumnKey !== null && fromColumnKey === column.key) return;
     const targetDate = column.kind === "inbox" ? null : (column.date ?? null);
-    const isCurrentColumn =
-      column.kind === "inbox" ? dragged.dueDate === null : dragged.dueDate === targetDate;
-    if (isCurrentColumn) return;
     onRescheduleTodo?.(dragged, targetDate);
   }
 
@@ -546,6 +543,7 @@ export function TodosBoard({
             return;
           }
           draggedTodoRef.current = todo;
+          draggedFromColumnKeyRef.current = column.key;
           setDraggingTodoId(todo.id);
           if (event.dataTransfer) {
             event.dataTransfer.effectAllowed = "move";

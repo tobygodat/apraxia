@@ -380,6 +380,32 @@ describe("TodosBoard drag to reschedule", () => {
     fireEvent.drop(ownColumn, { dataTransfer });
     expect(callbacks.onRescheduleTodo).not.toHaveBeenCalled();
   });
+
+  it("does not reschedule an overdue row dropped back onto Today, but does when dropped elsewhere", () => {
+    const callbacks = props({ onRescheduleTodo: vi.fn() });
+    render(<TodosBoard {...callbacks} />);
+    const row = screen.getByText(OVERDUE.text).closest("article")!;
+    const todayColumn = row.closest("section")!;
+    let dataTransfer = dataTransferStub();
+    fireEvent.dragStart(row, { dataTransfer });
+    fireEvent.dragOver(todayColumn, { dataTransfer });
+    fireEvent.drop(todayColumn, { dataTransfer });
+    expect(callbacks.onRescheduleTodo).not.toHaveBeenCalled();
+
+    dataTransfer = dataTransferStub();
+    fireEvent.dragStart(row, { dataTransfer });
+    const otherHeading = screen
+      .getAllByRole("heading", { level: 2 })
+      .find((heading) => !heading.closest("section")!.contains(row))!;
+    const otherColumn = otherHeading.closest("section")!;
+    fireEvent.dragOver(otherColumn, { dataTransfer });
+    fireEvent.drop(otherColumn, { dataTransfer });
+    expect(callbacks.onRescheduleTodo).toHaveBeenCalledOnce();
+    const [droppedTodo, dueDate] = (callbacks.onRescheduleTodo as ReturnType<typeof vi.fn>).mock
+      .calls[0]!;
+    expect(droppedTodo.id).toBe(OVERDUE.id);
+    expect(dueDate).not.toBe(OVERDUE.dueDate);
+  });
 });
 
 it("renders the classic theme with Inbox first and a count badge", () => {
