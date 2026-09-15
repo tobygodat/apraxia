@@ -377,6 +377,25 @@ describe("TodoController delete and Undo", () => {
     expect(controller.deleteTodo(DUE_TODAY.id)).toBe(true);
   });
 
+  it("defers a delete clicked while the same row's completion is still in flight", async () => {
+    const completion = deferred<Todo>();
+    const { service } = fixture([OVERDUE, DUE_TODAY, INBOX], {
+      setTodoCompleted: vi.fn(() => completion.promise),
+    });
+    const controller = new TodoController(service);
+    await controller.loadWorkspace();
+    expect(controller.setCompleted(OVERDUE.id, true)).toBe(true);
+    expect(controller.deleteTodo(OVERDUE.id)).toBe(true);
+    expect(service.softDeleteTodo).not.toHaveBeenCalled();
+    completion.resolve({ ...OVERDUE, completed: true, completedAt: "2026-09-03T19:00:00Z" });
+    await flush();
+    await flush();
+    expect(service.softDeleteTodo).toHaveBeenCalledWith(OVERDUE.id, expect.anything());
+    const state = controller.getSnapshot();
+    expect(ids(state.todos)).toEqual([DUE_TODAY.id, INBOX.id]);
+    expect(state.undoNotice).toMatchObject({ todoId: OVERDUE.id, pending: false, error: null });
+  });
+
   it("restores the row and reports delete failures without a token", async () => {
     const { controller, service } = await ready();
     vi.mocked(service.softDeleteTodo).mockRejectedValueOnce(new Error("db"));

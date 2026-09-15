@@ -214,6 +214,8 @@ export class TodoController {
   private resultSequence = 0;
   private announcementSequence = 0;
   private reloadAfterMutation = { workspace: false, today: false };
+  /** One follow-up per row, run once that row's in-flight write settles. */
+  private readonly queuedAfterSettle = new Map<UUID, () => void>();
   private undo: {
     readonly todo: Todo;
     readonly originalIndex: number;
@@ -283,6 +285,7 @@ export class TodoController {
     }
     for (const abort of this.mutationAborts) abort.abort();
     this.mutationAborts.clear();
+    this.queuedAfterSettle.clear();
     this.reloadAfterMutation = { workspace: false, today: false };
     this.undo = null;
     this.recentCreates.clear();
@@ -515,6 +518,11 @@ export class TodoController {
           ...patch,
           pending: this.state.pending.filter((candidate) => candidate !== entry),
         });
+        const queued = this.queuedAfterSettle.get(todoId);
+        if (queued && !this.state.pending.some((candidate) => candidate.todoId === todoId)) {
+          this.queuedAfterSettle.delete(todoId);
+          queued();
+        }
         if (this.state.pending.length === 0) {
           const { workspace, today } = this.reloadAfterMutation;
           this.reloadAfterMutation = { workspace: false, today: false };
@@ -527,6 +535,16 @@ export class TodoController {
 
   private isCurrentMutation(revision: number): boolean {
     return this.active && revision === this.mutationRevision;
+  }
+
+  /**
+   * Optimistic rows flip before the provider confirms, so a click that lands
+   * while that write is still in flight is deferred rather than dropped.
+   */
+  private queueBehindPending(todoId: UUID, run: () => void): boolean {
+    if (!this.state.pending.some((entry) => entry.todoId === todoId)) return false;
+    this.queuedAfterSettle.set(todoId, run);
+    return true;
   }
 
   private settle(
@@ -546,6 +564,7 @@ export class TodoController {
   readonly setCompleted = (todoId: UUID, completed: boolean): boolean => {
     const todo = this.findTodo(todoId);
     if (!todo || todo.completed === completed) return false;
+    if (this.queueBehindPending(todo.id, () => this.setCompleted(todo.id, completed))) return true;
     const mutation = this.beginMutation("complete", todo.id);
     if (!mutation) return false;
     const optimistic: Todo = {
@@ -663,6 +682,7 @@ export class TodoController {
     if (this.undo || this.state.pending.some((entry) => entry.kind === "delete")) return false;
     const todo = this.findTodo(todoId);
     if (!todo) return false;
+    if (this.queueBehindPending(todo.id, () => this.deleteTodo(todo.id))) return true;
     const mutation = this.beginMutation("delete", todo.id);
     if (!mutation) return false;
     const originalIndex = this.state.todos.findIndex((candidate) => sameId(candidate.id, todo.id));
