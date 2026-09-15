@@ -56,9 +56,10 @@ describe("Collection pages", () => {
     );
     fireEvent.click(await screen.findByRole("button", { name: "Delete Home" }));
     await screen.findByRole("button", { name: "Undo deletion" });
-    fireEvent.click(screen.getByRole("button", { name: /Home Make space active/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Home Make space/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    await screen.findByText("Saved.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.queryByText("Saved.")).toBeNull();
     expect(screen.getByRole("button", { name: "Undo deletion" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   });
@@ -182,8 +183,77 @@ describe("Collection pages", () => {
         onChanged={vi.fn()}
       />,
     );
-    await screen.findByText("Completed tasks (1)");
+    await screen.findByRole("button", { name: "Show completed (1)" });
     fireEvent.click(screen.getByRole("button", { name: "Add idea" }));
     expect((screen.getByLabelText("Project (optional)") as HTMLSelectElement).value).toBe("p");
+  });
+  it("shows the description, omits project status, and reveals completed tasks on demand", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: "Make space", status: "active" });
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValue([{ id: "t", text: "Finished action", completed: true, dueDate: null }]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    await screen.findByText("Make space");
+    expect(screen.queryByText("Active project")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Finished action" })).toBeNull();
+    const toggle = await screen.findByRole("button", { name: "Show completed (1)" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    screen.getByRole("button", { name: "Finished action" });
+    expect(
+      screen.getByRole("button", { name: "Hide completed (1)" }).getAttribute("aria-expanded"),
+    ).toBe("true");
+    fireEvent.click(toggle);
+    expect(screen.queryByRole("button", { name: "Finished action" })).toBeNull();
+  });
+  it("lists projects of every saved status without classifications or a status filter", async () => {
+    const records = ["active", "someday", "completed", "archived"].map((status, index) => ({
+      id: `p-${index}`,
+      title: `Project ${index}`,
+      description: null,
+      status,
+    }));
+    const listProjects = vi.fn().mockResolvedValue(records);
+    render(
+      <Page
+        kind="project"
+        service={{ listProjects } as unknown as CollectionService}
+        todoService={{} as TodoService}
+      />,
+    );
+    await screen.findByRole("button", { name: "Project 3" });
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    expect(screen.queryByLabelText("Status")).toBeNull();
+    expect(listProjects.mock.calls[0][0]).not.toHaveProperty("status");
+    for (const { status } of records) expect(screen.queryByText(status)).toBeNull();
+  });
+  it("saves project details without a lingering Saved message", async () => {
+    let project = { id: "p", title: "Home", description: null, status: "someday" };
+    const service = {
+      getProject: vi.fn(async () => project),
+      projectTodos: vi.fn().mockResolvedValue([]),
+      listIdeas: vi.fn().mockResolvedValue([]),
+      saveProject: vi.fn(async (input) => (project = { ...project, ...input })),
+    } as unknown as CollectionService;
+    render(<Page kind="project" recordId="p" service={service} todoService={{} as TodoService} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Edit project" }));
+    expect(screen.queryByLabelText("Status")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByRole("heading", { name: "Reading room" });
+    expect(screen.queryByText("Saved.")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

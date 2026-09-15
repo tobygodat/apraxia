@@ -6,7 +6,6 @@ import type {
   MediaStatus,
   MediaType,
   Project,
-  ProjectStatus,
   ProjectSummary,
 } from "../../types/domain";
 import type { CollectionKind, CollectionRecord, CollectionService } from "./collectionService";
@@ -45,8 +44,8 @@ export function CollectionEditor({
         : ((record as MediaItem)?.notes ?? ""),
   );
   const [selectedProject, setProject] = useState((record as Idea)?.projectId ?? projectId ?? "");
-  const [status, setStatus] = useState(
-    (record as Project | MediaItem)?.status ?? (kind === "project" ? "active" : "saved"),
+  const [status, setStatus] = useState<MediaStatus>(
+    kind === "media" ? ((record as MediaItem)?.status ?? "saved") : "saved",
   );
   const [mediaType, setMediaType] = useState<MediaType>((record as MediaItem)?.mediaType ?? "book");
   const [creator, setCreator] = useState((record as MediaItem)?.creator ?? "");
@@ -81,7 +80,7 @@ export function CollectionEditor({
       const saved =
         kind === "project"
           ? await service.saveProject(
-              { title, description: body, status: status as ProjectStatus },
+              { title, description: body, status: (record as Project)?.status ?? "active" },
               record?.id,
             )
           : kind === "idea"
@@ -196,23 +195,21 @@ export function CollectionEditor({
         )}
         {kind !== "idea" && (
           <>
-            {field(
-              "Status",
-              <select
-                value={status}
-                disabled={busy}
-                onChange={(e) => setStatus(e.target.value as ProjectStatus | MediaStatus)}
-              >
-                {(kind === "project"
-                  ? ["active", "someday", "completed", "archived"]
-                  : ["saved", "in_progress", "finished"]
-                ).map((s) => (
-                  <option key={s} value={s}>
-                    {s.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>,
-            )}
+            {kind === "media" &&
+              field(
+                "Status",
+                <select
+                  value={status}
+                  disabled={busy}
+                  onChange={(e) => setStatus(e.target.value as MediaStatus)}
+                >
+                  {["saved", "in_progress", "finished"].map((s) => (
+                    <option key={s} value={s}>
+                      {s.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>,
+              )}
             {field(
               kind === "project" ? "Description (optional)" : "Notes (optional)",
               <textarea

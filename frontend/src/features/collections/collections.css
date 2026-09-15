@@ -20,6 +20,19 @@
   margin: 8px 0 0;
   font-size: 12px;
 }
+.collection-heading--detail {
+  padding-bottom: 24px;
+  border-bottom: 1px solid #383838;
+}
+@media (max-width: 620px) {
+  .collection-page .collection-heading--detail {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .collection-heading--detail > div {
+    width: 100%;
+  }
+}
 .collection-page button,
 .collection-page select {
   font: inherit;
@@ -171,12 +184,35 @@
   color: #ada9a3;
   font-size: 14px;
 }
-.collection-detail-description {
-  white-space: pre-wrap;
-  line-height: 1.7;
+.collection-heading .collection-description {
+  margin: 8px 0 0;
   max-width: 72ch;
-  color: #ada9a3;
+  color: var(--cloud-shell-muted, #ada9a3);
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 14px;
   overflow-wrap: anywhere;
+}
+.collection-completed {
+  margin-top: 4px;
+}
+.collection-page .collection-completed__toggle {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  color: var(--cloud-shell-muted, #ada9a3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.collection-page .collection-completed__toggle:hover {
+  color: #f0efed;
+}
+.collection-completed__list {
+  border-top: 1px solid #383838;
 }
 .collection-section {
   margin-top: 24px;
@@ -192,11 +228,6 @@
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-}
-.collection-section summary {
-  cursor: pointer;
-  color: #ada9a3;
-  padding: 16px 0;
 }
 .collection-task {
   display: flex;

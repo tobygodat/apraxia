@@ -34,7 +34,7 @@ export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
   const [rows, setRows] = useState<CollectionRecord[]>([]);
-  const [status, setStatus] = useState(kind === "project" ? "active" : "all");
+  const [status, setStatus] = useState("all");
   const [mediaType, setMediaType] = useState("all");
   const [revision, setRevision] = useState(0);
   const [limit, setLimit] = useState(50);
@@ -62,6 +62,7 @@ export function CollectionPage(props: Props) {
     token: DeleteUndoToken;
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const busyRef = useRef(false);
   const mounted = useRef(true);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -109,7 +110,7 @@ export function CollectionPage(props: Props) {
           Array.from({ length: limit / 50 }, (_, n) => {
             const options = { status, mediaType, offset: n * 50, signal: controller.signal };
             return kind === "project"
-              ? service.listProjects(options)
+              ? service.listProjects({ offset: n * 50, signal: controller.signal })
               : kind === "idea"
                 ? service.listIdeas(options)
                 : service.listMedia(options);
@@ -223,7 +224,7 @@ export function CollectionPage(props: Props) {
             ]
               .filter(Boolean)
               .join(" · ")
-          : (r as Project).status;
+          : null;
     return (
       <li key={r.id} className="collection-row">
         <button
@@ -301,6 +302,7 @@ export function CollectionPage(props: Props) {
     );
   }
   const detail = kind === "project" && Boolean(recordId);
+  const completedTasks = tasks.filter((t) => t.completed);
   return (
     <section className="collection-page">
       {detail && (
@@ -309,12 +311,17 @@ export function CollectionPage(props: Props) {
           Back to Projects
         </button>
       )}
-      <header className="collection-heading workspace-page-header">
+      <header
+        className={`collection-heading workspace-page-header${detail ? " collection-heading--detail" : ""}`}
+      >
         <div>
           <h1 ref={headingRef} tabIndex={-1}>
             {detail ? (project?.title ?? "Project") : headings[kind]}
           </h1>
-          <p>{detail ? project?.status : descriptions[kind]}</p>
+          {!detail && <p>{descriptions[kind]}</p>}
+          {detail && project?.description && (
+            <p className="collection-description">{project.description}</p>
+          )}
         </div>
         {detail ? (
           project && (
@@ -333,7 +340,7 @@ export function CollectionPage(props: Props) {
           </button>
         )}
       </header>
-      {!detail && kind !== "idea" && (
+      {!detail && kind === "media" && (
         <div className="collection-filters">
           {kind === "media" && (
             <label>
@@ -361,10 +368,7 @@ export function CollectionPage(props: Props) {
               }}
             >
               <option value="all">All statuses</option>
-              {(kind === "project"
-                ? ["active", "someday", "completed", "archived"]
-                : ["saved", "in_progress", "finished"]
-              ).map((s) => (
+              {["saved", "in_progress", "finished"].map((s) => (
                 <option key={s} value={s}>
                   {s.replace(/_/g, " ")}
                 </option>
@@ -397,9 +401,6 @@ export function CollectionPage(props: Props) {
       {detail ? (
         project && (
           <>
-            {project.description && (
-              <p className="collection-detail-description">{project.description}</p>
-            )}
             <section className="collection-section">
               <header>
                 <h2>Tasks</h2>
@@ -413,10 +414,26 @@ export function CollectionPage(props: Props) {
                   No incomplete tasks. Add the next action when you’re ready.
                 </p>
               )}
-              <details>
-                <summary>Completed tasks ({tasks.filter((t) => t.completed).length})</summary>
-                {tasks.filter((t) => t.completed).map(renderTask)}
-              </details>
+              {completedTasks.length > 0 && (
+                <div className="collection-completed">
+                  <button
+                    type="button"
+                    className="collection-completed__toggle"
+                    aria-expanded={showCompleted}
+                    aria-controls="collection-completed-tasks"
+                    onClick={() => setShowCompleted((v) => !v)}
+                  >
+                    {showCompleted ? "Hide completed" : "Show completed"} ({completedTasks.length})
+                  </button>
+                  <div
+                    id="collection-completed-tasks"
+                    className="collection-completed__list"
+                    hidden={!showCompleted}
+                  >
+                    {completedTasks.map(renderTask)}
+                  </div>
+                </div>
+              )}
               {moreTasks && (
                 <button
                   className="collection-button"
@@ -492,7 +509,8 @@ export function CollectionPage(props: Props) {
           onClose={() => setEditor(null)}
           onSaved={() => {
             setEditor(null);
-            setNotice("Saved.");
+            if (editor.kind !== "project") setNotice("Saved.");
+            else if (!undo) setNotice("");
             changed();
           }}
         />
