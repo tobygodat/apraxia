@@ -61,6 +61,64 @@ workflow holds no secrets.
 configured. It is unauthenticated and deliberately does not name variables;
 read those from the deployment logs.
 
+## Fast local feedback
+
+Install dependencies once with `npm ci`; repeat when the lockfile changes.
+Use the smallest relevant check while editing, then verify the complete change
+before pushing. These commands use the same tools as CI:
+
+```powershell
+# Keep the relevant tests running while editing (omit the path for all tests).
+npm run test:watch -- frontend/src/path/to/example.test.ts
+# One-shot tests that import a changed source file, directly or indirectly.
+npm run test:related -- frontend/src/path/to/source.ts
+# Types, lint, formatting, and all unit/contract tests, without rebuilding the production bundle.
+npm run verify:quick
+# Complete app check before release, including production build and secret scan.
+npm run verify
+```
+
+Replace example paths with real files. Related tests use Vitest's import graph;
+they do not replace full checks for configuration, migrations, dynamic imports,
+or broad refactors. A specific failure can also be rerun with
+`npm test -- path/to/failing.test.ts` or `npm run typecheck`.
+
+Enable the repository's fast pre-push gate once per clone, provided you do not
+already have a custom hooks path:
+
+```powershell
+git config --local core.hooksPath .githooks
+```
+
+For a linked worktree with `extensions.worktreeConfig` already enabled, use
+`git config --worktree core.hooksPath .githooks` to enable it only there.
+
+The hook runs `verify:quick` and rejects the push on failure. The quick suite
+limits Vitest to four workers to reduce local contention with Docker and editors.
+It does not install
+dependencies or start Docker. Preserve/integrate existing custom hooks instead
+of replacing them. Local hooks provide early feedback; CI remains the release
+gate. They can be bypassed and do not prove the final deployed app works.
+
+For database/auth changes and broad rewrites, start Docker and run:
+
+```powershell
+npm run verify:db
+```
+
+This is the same complete database command used in GitHub Actions: start/reuse
+Supabase, reset and test, rewind/reapply, OAuth concurrency, authenticated Data
+API, generate types, and typecheck. It resets **disposable local data**, never
+hosted data. It rewrites `frontend/src/types/database.ts`; review the result and
+commit it when the schema changed. Keep Supabase running between attempts;
+`npm run db:stop` stops it when finished. All worktrees share this project's
+local container/ports: run database checks from only one checkout at a time.
+
+After a failure, rerun the failing subcommand while fixing it; run the full
+relevant suite once the fix is ready. Do not repeat `npm ci`, start/stop Docker,
+or push just to discover whether a local fix worked. If a check cannot run
+locally, report the missing prerequisite or CI-only difference explicitly.
+
 ## GitHub Actions
 
 `.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual
@@ -68,7 +126,7 @@ dispatch from the repository's **Actions → CI → Run workflow** page (once th
 workflow exists on the default branch).
 
 - **App checks** runs `npm ci` and `npm run verify` on Node.js 22.
-- **Database checks** starts Supabase on GitHub's Linux runner, applies and lints
+- **Database checks** runs `npm run verify:db` on GitHub's Linux runner, applies and lints
   migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
@@ -85,10 +143,11 @@ require pull requests and the status checks **App checks** and **Database checks
 for `main` if those controls are available for this repository. This prevents
 merging failed checks; direct pushes must also be restricted to enforce the gate.
 
-When a migration changes the schema, download **database-types** from the
-successful run's **Artifacts** section, extract `database.ts`, and replace
-`frontend/src/types/database.ts` with it. Review and commit that file, then let CI
-run again. Artifacts are retained for seven days. CI checks against fresh types
+When a migration changes the schema, `npm run verify:db` generates the updated
+`frontend/src/types/database.ts` locally. Review and commit it with the change.
+If local generation is unavailable, download **database-types** from the
+successful run's **Artifacts** section and use its `database.ts` instead.
+Artifacts are retained for seven days. CI checks against fresh types
 but does not commit them or enforce a byte-for-byte match with the saved file.
 
 This uses [GitHub's Node workflow](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)
@@ -128,10 +187,10 @@ Configuration lives in `eslint.config.js`, `.prettierrc`/`.prettierignore`, and
 `knip.json`. `knip` is not in `verify` because a new export is often added a
 commit before its caller; run it before opening a pull request.
 
-## Optional local database checks
+## Focused local database checks
 
-CI runs these checks automatically. Use the database commands below locally only
-when reproducing a backend issue with disposable local Supabase running.
+CI runs these checks automatically through `npm run verify:db`. Use the individual
+commands below to iterate on a failure with disposable local Supabase running.
 
 ```bash
 npm run verify

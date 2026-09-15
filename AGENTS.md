@@ -40,10 +40,16 @@
 - Fixtures use fictional data and cannot prove Google sync or database persistence.
   Scenarios and parameters are documented in `docs/QA_FIXTURES.md`. Before deploying data/provider-dependent changes, check the normal authenticated app with the intended data/configuration and report anything unverified. See `docs/CLOUD_DEVELOPMENT.md` for the pre-deployment workflow.
 - GitHub Actions runs `App checks` and `Database checks`; require both before
-  release. Run `npm run verify` locally for cloud changes. Schema validation and
-  type generation run in CI; download its `database-types` artifact when updating
-  the checked-in types. Local Docker is optional for backend debugging, not a
-  prerequisite for ordinary work. See `docs/CLOUD_DEVELOPMENT.md`.
+  release. Iterate locally: use `npm run test:watch -- <test-file>` or
+  `npm run test:related -- <source-file>` after edits, and `npm run verify:quick`
+  before pushing. Run `npm run verify` before release. For database/auth changes,
+  broad refactors, or database CI failures, run `npm run verify:db` against
+  disposable local Supabase before pushing; keep Docker/Supabase running between
+  attempts. This regenerates the checked-in database types; review the diff.
+  After a CI failure, reproduce the failing command locally and verify the fix
+  before another push. If the local environment cannot reproduce it, report the
+  specific blocker instead of cycling through speculative remote fixes.
+  Docker is not needed for ordinary frontend tests. See `docs/CLOUD_DEVELOPMENT.md`.
 - Add focused tests for meaningful behavior changes. Documentation-only edits
   need a consistency and diff check. Once required checks pass, repeat or broaden
   testing only for new changes, failures, or unresolved concerns.

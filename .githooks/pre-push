@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fast feedback before starting hosted CI. Full verification remains required
+# before release; database work also needs npm run verify:db locally.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+npm run verify:quick

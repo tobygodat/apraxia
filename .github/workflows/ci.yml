@@ -38,22 +38,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # npm ci installs the CLI version in package-lock.json. Docker runs only
-      # on this temporary GitHub runner; no hosted project is linked.
-      - name: Start disposable Supabase
-        run: npm run db:start
-      - name: Apply migrations, lint, and test database
-        run: npm run db:verify
-      - name: Verify migration rewind and reapply
-        run: npm run db:rewind:verify
-      - name: Verify OAuth concurrency
-        run: npm run db:test:oauth-concurrency
-      - name: Verify authenticated Data API
-        run: npm run db:test:todos-http
-      - name: Generate database types
-        run: npm run db:types
-      - name: Check app against generated schema
-        run: npm run typecheck
+      # Use the same complete suite locally before pushing database changes.
+      # All resets and migration rewinds target disposable local Supabase.
+      - name: Verify database (reproduce locally with npm run verify:db)
+        run: npm run verify:db
       - name: Upload generated database types
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
