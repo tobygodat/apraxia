@@ -4,7 +4,9 @@ import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { describe, expect, it } from "vitest";
 import {
-  collectTodaySnapshot, TodaySnapshotChangedError, verifyTodayReorderReceipt,
+  collectTodaySnapshot,
+  TodaySnapshotChangedError,
+  verifyTodayReorderReceipt,
   type FetchTodayPage,
 } from "../../frontend/src/features/todos/todayRpcProtocol";
 import type { TodayPageRequest } from "../../shared/todayRpcContract";
@@ -31,19 +33,28 @@ async function databaseFixture() {
   for (const name of (await readdir(migrations)).filter((name) => name.endsWith(".sql")).sort()) {
     await database.exec(await readFile(path.join(migrations, name), "utf8"));
   }
-  await database.query("insert into auth.users (id,email) values ($1,'protocol@example.test')", [USER]);
+  await database.query("insert into auth.users (id,email) values ($1,'protocol@example.test')", [
+    USER,
+  ]);
   await database.exec(`set role authenticated; set request.jwt.claim.sub = '${USER}';`);
-  const date = (await database.query<{ date: string }>(
-    "select (statement_timestamp() at time zone 'America/New_York')::date::text as date",
-  )).rows[0]!.date;
-  const projectId = (await database.query<{ id: string }>(
-    "insert into public.projects (title) values ('Original project') returning id",
-  )).rows[0]!.id;
-  await database.query(`
+  const date = (
+    await database.query<{ date: string }>(
+      "select (statement_timestamp() at time zone 'America/New_York')::date::text as date",
+    )
+  ).rows[0]!.date;
+  const projectId = (
+    await database.query<{ id: string }>(
+      "insert into public.projects (title) values ('Original project') returning id",
+    )
+  ).rows[0]!.id;
+  await database.query(
+    `
     insert into public.todos (text,due_date,due_time,project_id)
     select 'Protocol task ' || item, $1::date - 1, time '14:30:00.123456', $2::uuid
     from generate_series(1, 1001) as item
-  `, [date, projectId]);
+  `,
+    [date, projectId],
+  );
   const requests: TodayPageRequest[] = [];
   const fetchPage: FetchTodayPage = async (request, { signal }) => {
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
@@ -70,7 +81,9 @@ describe("Today database-to-client protocol", () => {
       const initial = await collectTodaySnapshot(fetchPage, date, options);
       expect(initial).toHaveLength(1001);
       expect(requests.map((request) => request.p_offset)).toEqual([0, 200, 400, 600, 800, 1000]);
-      expect(initial.every((todo) => todo.isOverdue && todo.dueTime === "14:30:00.123456")).toBe(true);
+      expect(initial.every((todo) => todo.isOverdue && todo.dueTime === "14:30:00.123456")).toBe(
+        true,
+      );
       expect(initial.every((todo) => todo.projectTitle === "Original project")).toBe(true);
       expect(JSON.stringify(initial)).not.toContain(USER);
 
@@ -78,16 +91,24 @@ describe("Today database-to-client protocol", () => {
       // One write, one scalar result: never paginate this mutation or call it
       // again to retrieve the confirmation rows beyond PostgREST's row cap.
       const response = await database.query<{ receipt: unknown }>(
-        "select public.reorder_today_todos($1::date,$2::uuid[]) as receipt", [date, desired],
+        "select public.reorder_today_todos($1::date,$2::uuid[]) as receipt",
+        [date, desired],
       );
       expect(response.rows).toHaveLength(1);
-      const ranks = await verifyTodayReorderReceipt(response.rows[0]!.receipt, date, desired, options);
+      const ranks = await verifyTodayReorderReceipt(
+        response.rows[0]!.receipt,
+        date,
+        desired,
+        options,
+      );
       expect(ranks).toHaveLength(1001);
       expect(ranks.at(-1)).toEqual({ todoId: desired.at(-1), todayRank: 1001 * 1024 });
       const reloaded = await collectTodaySnapshot(fetchPage, date, options);
       expect(reloaded.map((todo) => todo.id)).toEqual(desired);
       expect(reloaded.map((todo) => todo.todayRank)).toEqual(ranks.map((row) => row.todayRank));
-    } finally { await database.close(); }
+    } finally {
+      await database.close();
+    }
   }, 30_000);
 
   it("restarts the entire snapshot after a joined project edit between pages", async () => {
@@ -97,15 +118,24 @@ describe("Today database-to-client protocol", () => {
       const changeBetweenPages: FetchTodayPage = async (request, options) => {
         if (!edited && request.p_offset > 0) {
           edited = true;
-          await database.query("update public.projects set title = 'Renamed project' where id = $1", [projectId]);
+          await database.query(
+            "update public.projects set title = 'Renamed project' where id = $1",
+            [projectId],
+          );
         }
         return fetchPage(request, options);
       };
-      const todos = await collectTodaySnapshot(changeBetweenPages, date, { signal: new AbortController().signal });
+      const todos = await collectTodaySnapshot(changeBetweenPages, date, {
+        signal: new AbortController().signal,
+      });
       expect(todos).toHaveLength(1001);
-      expect(requests.map((request) => request.p_offset)).toEqual([0, 200, 0, 200, 400, 600, 800, 1000]);
+      expect(requests.map((request) => request.p_offset)).toEqual([
+        0, 200, 0, 200, 400, 600, 800, 1000,
+      ]);
       expect(todos.every((todo) => todo.projectTitle === "Renamed project")).toBe(true);
       expect(new Set(todos.map((todo) => todo.id)).size).toBe(1001);
-    } finally { await database.close(); }
+    } finally {
+      await database.close();
+    }
   }, 30_000);
 });

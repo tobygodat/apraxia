@@ -4,8 +4,12 @@ import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 // Importing the runner exercises pure safety guards, never Docker or PostgreSQL.
-const runnerUrl = pathToFileURL(path.join(process.cwd(), "scripts/check-oauth-concurrency.mjs")).href;
-const { assertLocalDockerEndpoint, assertLocalContainer, assertDatabaseIdentity } = await import(runnerUrl);
+const runnerUrl = pathToFileURL(
+  path.join(process.cwd(), "scripts/check-oauth-concurrency.mjs"),
+).href;
+const { assertLocalDockerEndpoint, assertLocalContainer, assertDatabaseIdentity } = await import(
+  runnerUrl
+);
 
 const localContainer = {
   name: "/supabase_db_orbitos",
@@ -15,31 +19,47 @@ const localContainer = {
   image: "public.ecr.aws/supabase/postgres:17.6.1.063",
 };
 const localDatabase = {
-  database: "postgres", user: "postgres", socket: true, version: 170006,
-  migration: true, begin_function: true, consume_function: true,
+  database: "postgres",
+  user: "postgres",
+  socket: true,
+  version: 170006,
+  migration: true,
+  begin_function: true,
+  consume_function: true,
 };
 
 describe("local OAuth concurrency runner safety guards (not concurrency proof)", () => {
   it.each(["npipe:////./pipe/dockerDesktopLinuxEngine", "unix:///var/run/docker.sock"])(
-    "accepts local Docker endpoint %s", (endpoint) => {
+    "accepts local Docker endpoint %s",
+    (endpoint) => {
       expect(assertLocalDockerEndpoint(endpoint)).toBe(endpoint);
     },
   );
 
-  it.each(["ssh://remote", "tcp://localhost:2375", "https://docker.example.test", "npipe:////remote/pipe/docker", "unix://remote/docker.sock", "", null])(
-    "rejects nonlocal or ambiguous Docker endpoint %s", (endpoint) => {
-      expect(() => assertLocalDockerEndpoint(endpoint)).toThrow();
-    },
-  );
+  it.each([
+    "ssh://remote",
+    "tcp://localhost:2375",
+    "https://docker.example.test",
+    "npipe:////remote/pipe/docker",
+    "unix://remote/docker.sock",
+    "",
+    null,
+  ])("rejects nonlocal or ambiguous Docker endpoint %s", (endpoint) => {
+    expect(() => assertLocalDockerEndpoint(endpoint)).toThrow();
+  });
 
   it("accepts only a verified running project container with a pinned immutable ID", () => {
     expect(assertLocalContainer(localContainer)).toBe(localContainer.id);
   });
 
   it.each([
-    { name: "/supabase_db_other" }, { id: "supabase_db_orbitos" }, { running: false },
-    { labels: {} }, { labels: { "com.supabase.cli.project": "production" } },
-    { image: "supabase/postgres:16.4" }, { image: "attacker/supabase/postgres:17.6" },
+    { name: "/supabase_db_other" },
+    { id: "supabase_db_orbitos" },
+    { running: false },
+    { labels: {} },
+    { labels: { "com.supabase.cli.project": "production" } },
+    { image: "supabase/postgres:16.4" },
+    { image: "attacker/supabase/postgres:17.6" },
   ])("rejects a mismatching container projection %j", (change) => {
     expect(() => assertLocalContainer({ ...localContainer, ...change })).toThrow();
   });
@@ -49,9 +69,15 @@ describe("local OAuth concurrency runner safety guards (not concurrency proof)",
   });
 
   it.each([
-    { database: "production" }, { user: "service_role" }, { socket: false },
-    { version: 160006 }, { version: 180000 }, { version: "170006" },
-    { migration: false }, { begin_function: false }, { consume_function: false },
+    { database: "production" },
+    { user: "service_role" },
+    { socket: false },
+    { version: 160006 },
+    { version: 180000 },
+    { version: "170006" },
+    { migration: false },
+    { begin_function: false },
+    { consume_function: false },
   ])("rejects mismatching database identity %j", (change) => {
     expect(() => assertDatabaseIdentity({ ...localDatabase, ...change })).toThrow();
   });

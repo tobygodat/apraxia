@@ -1,6 +1,5 @@
-import { Temporal } from "@js-temporal/polyfill";
-
 import type { CalendarWeekRange } from "../../frontend/src/types/domain.js";
+import { requireTemporal } from "./temporal.js";
 
 export interface CalendarWeekWindow {
   readonly range: CalendarWeekRange;
@@ -25,17 +24,49 @@ function hasSupportedYear(year: number): boolean {
   return year >= 1 && year <= 9999;
 }
 
-/** Derive an exclusive civil-week window, never a fixed 168-hour duration. */
+/**
+ * Civil-date check that needs no timezone database and no polyfill, so a
+ * malformed request line is rejected before any Temporal load.
+ */
+export function assertCalendarWeekSunday(sunday: unknown): string {
+  if (typeof sunday !== "string" || sunday.length !== 10 || !DATE_PATTERN.test(sunday)) {
+    throw new CalendarWeekRequestError();
+  }
+  const year = Number(sunday.slice(0, 4));
+  const month = Number(sunday.slice(5, 7));
+  const day = Number(sunday.slice(8, 10));
+  const civil = new Date(Date.UTC(2000, month - 1, day));
+  civil.setUTCFullYear(year);
+  if (
+    !hasSupportedYear(year) ||
+    civil.getUTCMonth() !== month - 1 ||
+    civil.getUTCDate() !== day ||
+    civil.getUTCDay() !== 0
+  ) {
+    throw new CalendarWeekRequestError();
+  }
+  return sunday;
+}
+
+/**
+ * Derive an exclusive civil-week window, never a fixed 168-hour duration.
+ * Requires `loadTemporal()` to have been awaited on this request path.
+ */
 export function buildCalendarWeekWindow(sunday: unknown, timezone: unknown): CalendarWeekWindow {
   try {
     if (
-      typeof sunday !== "string" || sunday.length !== 10 || !DATE_PATTERN.test(sunday) ||
-      typeof timezone !== "string" || timezone.length > 255 ||
-      timezone !== timezone.trim() || !NAMED_ZONE_PATTERN.test(timezone)
+      typeof sunday !== "string" ||
+      sunday.length !== 10 ||
+      !DATE_PATTERN.test(sunday) ||
+      typeof timezone !== "string" ||
+      timezone.length > 255 ||
+      timezone !== timezone.trim() ||
+      !NAMED_ZONE_PATTERN.test(timezone)
     ) {
       throw new CalendarWeekRequestError();
     }
 
+    const Temporal = requireTemporal();
     const firstDay = Temporal.PlainDate.from(sunday, { overflow: "reject" });
     if (!hasSupportedYear(firstDay.year) || firstDay.dayOfWeek !== 7) {
       throw new CalendarWeekRequestError();
