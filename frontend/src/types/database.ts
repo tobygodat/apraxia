@@ -631,28 +631,56 @@ export type Database = {
         };
         Returns: boolean;
       };
-      save_calendar_credentials: {
-        Args: {
-          p_connection_id: string;
-          p_envelope: string;
-          p_expected_updated_at: string;
-          p_key_version: number;
-          p_scopes: string[];
-          p_verified_user_id: string;
-        };
-        Returns: boolean;
-      };
-      save_drive_credentials: {
-        Args: {
-          p_connection_id: string;
-          p_envelope: string;
-          p_expected_updated_at: string;
-          p_key_version: number;
-          p_scopes: string[];
-          p_verified_user_id: string;
-        };
-        Returns: boolean;
-      };
+      save_calendar_credentials:
+        | {
+            Args: {
+              p_connection_id: string;
+              p_envelope: string;
+              p_expected_updated_at: string;
+              p_key_version: number;
+              p_scopes: string[];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          }
+        | {
+            Args: {
+              p_access_token_envelope: string;
+              p_access_token_expires_at: string;
+              p_connection_id: string;
+              p_envelope: string;
+              p_expected_updated_at: string;
+              p_key_version: number;
+              p_scopes: string[];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          };
+      save_drive_credentials:
+        | {
+            Args: {
+              p_connection_id: string;
+              p_envelope: string;
+              p_expected_updated_at: string;
+              p_key_version: number;
+              p_scopes: string[];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          }
+        | {
+            Args: {
+              p_access_token_envelope: string;
+              p_access_token_expires_at: string;
+              p_connection_id: string;
+              p_envelope: string;
+              p_expected_updated_at: string;
+              p_key_version: number;
+              p_scopes: string[];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          };
       search_records: {
         Args: { p_limit?: number; p_offset?: number; p_query: string };
         Returns: {
