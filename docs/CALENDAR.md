@@ -42,6 +42,18 @@ access, and disconnect after setup. Never log credential values or OAuth materia
   uncertain consumption fails closed. Do not blindly retry an exchange.
 - Offline token exchange and refresh stay server-side. A validated existing
   refresh token survives Google's omission of a replacement.
+- Each access token is cached beside its refresh token as its own AES-256-GCM
+  envelope with an expiry, so an ordinary request reuses it instead of calling
+  Google. The server refreshes only when the cache is missing, within a minute of
+  expiry, or after Google rejects the token once; that retry happens at most once
+  per request. Disconnect clears the cached token with the refresh token.
+- `read_calendar_credentials` also returns the profile timezone, so a week load
+  makes no separate profile request. It runs with invoker rights as `service_role`,
+  which holds a column grant on `public.profiles (user_id, timezone)` only.
+- `save_calendar_credentials` has an eight-argument overload carrying the cached
+  access-token envelope and expiry; the six-argument form remains and delegates
+  with an empty cache. The server always passes all eight named arguments so
+  PostgREST resolves the overload unambiguously.
 - AES-256-GCM envelopes bind refresh tokens to owner, connection, and key
   version. Credentials and transaction data remain private; only server roles
   can invoke credential RPCs. Callback responses use no-store/no-referrer.

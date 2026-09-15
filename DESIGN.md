@@ -41,6 +41,18 @@ typography:
     fontWeight: 500
     lineHeight: 1.2
     letterSpacing: "0.025em"
+  sign-in-headline:
+    fontFamily: "\"Space Grotesk\", sans-serif"
+    fontSize: "52px"
+    fontWeight: 500
+    lineHeight: 0.98
+    letterSpacing: "-0.045em"
+  sign-in-eyebrow:
+    fontFamily: "\"JetBrains Mono\", ui-monospace, monospace"
+    fontSize: "11px"
+    fontWeight: 500
+    lineHeight: 1.4
+    letterSpacing: "0.08em"
 rounded:
   compact: "4px"
   navigation: "5px"
@@ -143,6 +155,8 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 ## Typography
 
 Page headings pair Georgia with a Times New Roman/serif fallback; body text and controls use Segoe UI, system-ui, sans-serif. The hierarchy is role-based rather than a mathematical scale.
+
+Two families are actually bundled. `frontend/public/fonts/fonts.css` is linked from `index.html` and self-hosts Space Grotesk (400/500/700) and JetBrains Mono (400/500). They are used by the sign-in and cloud-ready screens in `index.css` and by the preserved legacy `orbit-shell` styles, not by the cloud workspace, which relies on the system Georgia and Segoe UI stacks above. Both sets are recorded in the frontmatter: workspace roles use the system stacks, `sign-in-headline` and `sign-in-eyebrow` use the bundled faces. The sign-in headline is a `clamp(30px, 5vw, 52px)` scale; the frontmatter records its upper bound.
 
 - **Headline:** the frontmatter's shared page title treatment, applied to Tasks, collection pages, Classes, and Calendar settings.
 - **Body:** compact task-row text. Collection titles use a slightly larger treatment (14px, weight 500); supporting descriptions use relaxed line height.

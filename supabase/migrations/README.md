@@ -14,8 +14,9 @@ and revoke the temporary privileges before it ends.
 
 `npm run db:rewind:verify` is a disposable-local rewind/reapply check down to
 the initial schema migration. The CLI requires at least one migration to remain;
-`npm run db:verify` separately verifies full database recreation. The explicit
-`--last` count must stay one below the migration count when migrations are added.
+`npm run db:verify` separately verifies full database recreation. The rewind
+count is derived by `scripts/migration-rewind.mjs`, which counts the `.sql` files
+in this directory and rewinds one fewer, so adding a migration needs no edit.
 Never run that check against hosted or personal data.
 
 Migration 004 keeps the complete set-returning Today helper in the non-exposed
