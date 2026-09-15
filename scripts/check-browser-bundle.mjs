@@ -43,15 +43,11 @@ function containsPrivilegedSupabaseKey(contents) {
   if (secretKeyPattern.test(contents)) return true;
 
   jwtPattern.lastIndex = 0;
-  return [...contents.matchAll(jwtPattern)].some((match) =>
-    isPrivilegedSupabaseKey(match[0]),
-  );
+  return [...contents.matchAll(jwtPattern)].some((match) => isPrivilegedSupabaseKey(match[0]));
 }
 
 if (isPrivilegedSupabaseKey(process.env.VITE_SUPABASE_ANON_KEY)) {
-  throw new Error(
-    "VITE_SUPABASE_ANON_KEY is privileged and cannot enter a browser build.",
-  );
+  throw new Error("VITE_SUPABASE_ANON_KEY is privileged and cannot enter a browser build.");
 }
 
 async function listTextFiles(directory) {
@@ -72,7 +68,9 @@ try {
   files = await listTextFiles(bundleDirectory);
 } catch (error) {
   if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-    throw new Error("Browser bundle is missing; run the production build first.");
+    throw new Error("Browser bundle is missing; run the production build first.", {
+      cause: error,
+    });
   }
   throw error;
 }

@@ -2,9 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "npm ci",
-  "buildCommand": "npm run verify",
+  "buildCommand": "npm run build && npm run check:bundle",
   "devCommand": "npm run dev:web",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/calendar/**": { "maxDuration": 30 },
+    "api/drive/**": { "maxDuration": 300 }
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -12,7 +16,10 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://apis.google.com; worker-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://*.supabase.co https://apis.google.com https://www.googleapis.com; frame-src https://docs.google.com https://drive.google.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://apis.google.com; worker-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://*.googleusercontent.com https://*.gstatic.com; connect-src 'self' https://*.supabase.co https://apis.google.com https://www.googleapis.com; frame-src https://docs.google.com https://drive.google.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
       ]
     },
     {
