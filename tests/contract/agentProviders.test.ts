@@ -154,6 +154,7 @@ describe("agent provider boundary", () => {
       const context = setup({ state, result: { status: 200, body: { saved: true } } });
       const response = await serveAgentProvider(request("events", command), context, "events");
       expect(response.status).toBe(state === "completed" ? 200 : 409);
+      if (state === "pending") expect((await response.json()).eventId).toMatch(/^[a-f0-9]{32}$/);
       expect(context.fetch).not.toHaveBeenCalled();
     },
   );
@@ -162,7 +163,10 @@ describe("agent provider boundary", () => {
     const context = setup(undefined, 503);
     expect(
       await (await serveAgentProvider(request("events", command), context, "events")).json(),
-    ).toMatchObject({ error: { code: "outcome_unknown" } });
+    ).toMatchObject({
+      error: { code: "outcome_unknown" },
+      eventId: expect.stringMatching(/^[a-f0-9]{32}$/),
+    });
     const failedFinish = setup();
     failedFinish.rpc.mockImplementation(async (_name, body) => {
       if (body.p_operation === "finish") throw new Error("database unavailable");

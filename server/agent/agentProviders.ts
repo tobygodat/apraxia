@@ -14,10 +14,16 @@ const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
 const error = (code: string, message: string, status: number) =>
   json({ error: { code, message } }, status);
-const unknownOutcome = () =>
-  error(
-    "outcome_unknown",
-    "This write may have reached Google. Read the event before taking further action; do not retry with a new key.",
+const unknownOutcome = (eventId?: string) =>
+  json(
+    {
+      error: {
+        code: "outcome_unknown",
+        message:
+          "This write may have reached Google. Read the event before taking further action; do not retry with a new key.",
+      },
+      ...(eventId ? { eventId } : {}),
+    },
     409,
   );
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -94,14 +100,14 @@ export async function serveAgentProvider(
       p_payload: payload,
       p_result: null,
     });
-    if (!record(reservation)) return unknownOutcome();
+    if (!record(reservation)) return unknownOutcome(createdEventId);
     if (
       reservation.state === "completed" &&
       record(reservation.result) &&
       typeof reservation.result.status === "number"
     )
       return json(reservation.result.body, reservation.result.status);
-    if (reservation.state !== "new") return unknownOutcome();
+    if (reservation.state !== "new") return unknownOutcome(createdEventId);
   }
 
   const internal = new Request(url, {
@@ -124,7 +130,7 @@ export async function serveAgentProvider(
         )(internal);
   if (requestId) {
     // A transport/server failure cannot prove that Google did not commit a write.
-    if (response.status >= 500) response = unknownOutcome();
+    if (response.status >= 500) response = unknownOutcome(createdEventId);
     let result = (await response.json()) as unknown;
     if (response.ok && createdEventId && record(result))
       result = { ...result, eventId: createdEventId };
@@ -137,7 +143,7 @@ export async function serveAgentProvider(
         p_result: { status: response.status, body: result },
       });
     } catch {
-      return unknownOutcome();
+      return unknownOutcome(createdEventId);
     }
     return json(result, response.status);
   }
