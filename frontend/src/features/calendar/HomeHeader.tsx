@@ -7,6 +7,9 @@ import {
   type HomeAppearanceService,
 } from "./homeAppearance";
 import { COLLAPSED_COVER_HEIGHT, COMPACT_COVER_HEIGHT, coverImageLayout } from "./coverLayout";
+
+/** Matches the app shell's sidebar column transition (--cloud-shell-duration). */
+const SETTLE_DURATION_MS = 260;
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
 import { registerUserStateResetter } from "../../auth/userState";
@@ -107,40 +110,109 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
     page.classList.add("home-page--cover");
     let fullHeight = COMPACT_COVER_HEIGHT;
     let initialized = false;
-    const measure = () => {
+    let held = false;
+    let settleFrame = 0;
+    let settleTarget = 0;
+    // While the app shell is sliding its sidebar column, the content width
+    // changes every frame. Re-measuring per frame would resize the cover and
+    // rewrite the scroll position a frame behind the sidebar, so hold the
+    // layout and ease into the new size once the column transition ends.
+    const shellIsAnimating = () =>
+      (document.getAnimations?.() ?? []).some(
+        (animation) =>
+          animation instanceof CSSTransition &&
+          animation.transitionProperty === "grid-template-columns",
+      );
+    const compute = () => {
       const css = getComputedStyle(page);
       const width = page.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight);
       const available =
         page.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
-      if (width <= 0 || available <= 0) return;
+      if (width <= 0 || available <= 0) return null;
       const fraction = initialized
         ? Math.min(1, page.scrollTop / (fullHeight - COLLAPSED_COVER_HEIGHT))
         : 0;
-      fullHeight = Math.max(
+      const nextFullHeight = Math.max(
         COMPACT_COVER_HEIGHT + 1,
         Math.min((width * imageSize.height) / imageSize.width, available * 0.75),
       );
       const top = initialized
-        ? fraction * (fullHeight - COLLAPSED_COVER_HEIGHT)
-        : fullHeight - COMPACT_COVER_HEIGHT;
-      page.style.setProperty("--home-cover-height", `${fullHeight}px`);
-      page.style.setProperty("--home-workspace-height", `${available - COLLAPSED_COVER_HEIGHT}px`);
-      page.scrollTop = top;
-      setLayout({ width, fullHeight, height: fullHeight - top });
+        ? fraction * (nextFullHeight - COLLAPSED_COVER_HEIGHT)
+        : nextFullHeight - COMPACT_COVER_HEIGHT;
+      return { width, available, fullHeight: nextFullHeight, top };
+    };
+    const apply = (next: { width: number; available: number; fullHeight: number; top: number }) => {
+      fullHeight = next.fullHeight;
+      page.style.setProperty("--home-cover-height", `${next.fullHeight}px`);
+      page.style.setProperty(
+        "--home-workspace-height",
+        `${next.available - COLLAPSED_COVER_HEIGHT}px`,
+      );
+      page.scrollTop = next.top;
+      setLayout({
+        width: next.width,
+        fullHeight: next.fullHeight,
+        height: next.fullHeight - next.top,
+      });
       initialized = true;
+    };
+    const measure = () => {
+      if (shellIsAnimating()) {
+        held = true;
+        return;
+      }
+      const next = compute();
+      if (!next) return;
+      // The resize observer and the transitionend listener both report the
+      // settled size; whichever arrives second must not restart the ease.
+      if (settleFrame && Math.abs(next.fullHeight - settleTarget) < 0.5) return;
+      cancelAnimationFrame(settleFrame);
+      settleFrame = 0;
+      const reduceMotion =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!held || reduceMotion || !initialized) {
+        held = false;
+        apply(next);
+        return;
+      }
+      // Settle: the width is already final, so ease only the height and the
+      // scroll offset that depends on it, matching the shell's own duration.
+      held = false;
+      settleTarget = next.fullHeight;
+      const from = { fullHeight, top: page.scrollTop };
+      const start = performance.now();
+      const step = (now: number) => {
+        const progress = Math.min(1, Math.max(0, (now - start) / SETTLE_DURATION_MS));
+        const eased = 1 - (1 - progress) ** 3;
+        apply({
+          width: next.width,
+          available: next.available,
+          fullHeight: from.fullHeight + (next.fullHeight - from.fullHeight) * eased,
+          top: from.top + (next.top - from.top) * eased,
+        });
+        settleFrame = progress < 1 ? requestAnimationFrame(step) : 0;
+      };
+      settleFrame = requestAnimationFrame(step);
     };
     const scroll = () =>
       setLayout((previous) => ({
         ...previous,
         height: Math.max(COLLAPSED_COVER_HEIGHT, fullHeight - page.scrollTop),
       }));
+    const settle = (event: TransitionEvent) => {
+      if (event.propertyName === "grid-template-columns" && held) measure();
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(page);
     page.addEventListener("scroll", scroll, { passive: true });
+    document.addEventListener("transitionend", settle);
     return () => {
+      cancelAnimationFrame(settleFrame);
       observer.disconnect();
       page.removeEventListener("scroll", scroll);
+      document.removeEventListener("transitionend", settle);
       page.classList.remove("home-page--cover");
       page.style.removeProperty("--home-cover-height");
       page.style.removeProperty("--home-workspace-height");

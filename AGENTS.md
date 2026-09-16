@@ -50,6 +50,13 @@ changes. Avoid tests that only restate low-impact copy or styling changes.
   Use `realistic`; add `dense` for calendar geometry/text,
   `portrait`/`typical` for covers, reload for persistence/initialization. Broader
   shared-layout QA runs once at completion; details in `docs/CLOUD_DEVELOPMENT.md`.
+- Shell layout, sidebar, or transition changes: verify with legible full-size
+  screenshots (1280px viewport; use Playwright if the browser pane scales it
+  down) in every state, including a frozen mid-transition frame per direction
+  (`document.getAnimations()` pause/`currentTime`). Scan every descendant of the
+  changed container against its edge at rest and per animation frame, not only the
+  edited element. Check for never-matching selectors (e.g. nested `.cloud-shell`).
+  Send proof screenshots; keep Playwright output out of the worktree.
 - Before pushing code, run `npm run verify:quick` once, manually or through the
   optional hook; do not run both. `verify` includes this check.
 - Before release, require successful `App checks` and `Database checks` for the

@@ -169,16 +169,6 @@ export function CloudAppShell({
             <WorkspaceIcon name="orbit" />
             <span>orbitOS</span>
           </Link>
-          <button
-            className="cloud-shell__add"
-            type="button"
-            disabled={globalAddDisabled}
-            onClick={onOpenGlobalAdd}
-            aria-label="+ add"
-            title="Add"
-          >
-            <WorkspaceIcon name="plus" />
-          </button>
         </div>
 
         {onOpenSearch ? (
@@ -232,6 +222,17 @@ export function CloudAppShell({
         </button>
 
         <div className="cloud-shell__actions" data-account-open={accountOpen}>
+          <button
+            className="cloud-shell__add"
+            type="button"
+            disabled={globalAddDisabled}
+            onClick={onOpenGlobalAdd}
+            aria-label="+ add"
+            title="Add"
+          >
+            <WorkspaceIcon name="plus" />
+            <span>add</span>
+          </button>
           <div className="cloud-shell__account" ref={accountRootRef}>
             <button
               ref={accountTriggerRef}
