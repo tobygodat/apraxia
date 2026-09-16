@@ -1,4 +1,4 @@
-export const COLLAPSED_COVER_HEIGHT = 64;
+const COLLAPSED_COVER_HEIGHT = 64;
 export const COMPACT_COVER_HEIGHT = 180;
 
 /** Zoom out from the saved crop to fit the complete image, including portrait covers. */

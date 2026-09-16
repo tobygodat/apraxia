@@ -229,17 +229,25 @@ it("starts with a compact cover and uses native scrolling with a reduced-motion 
   expect(page.current!.scrollTop).toBe(420);
   const frame = container.querySelector(".home-header__frame") as HTMLElement;
   expect(frame.style.height).toBe("180px");
+  // At rest the page sits at its maximum scroll: the cover above the fold plus
+  // the workspace below it exactly fill the viewport, so no part of the calendar
+  // hangs past the bottom edge.
+  expect(page.current!.style.getPropertyValue("--home-cover-height")).toBe("600px");
+  expect(page.current!.style.getPropertyValue("--home-workspace-height")).toBe("620px");
+  expect(600 + 620 - page.current!.scrollTop).toBe(800);
   page.current!.scrollTop = 0;
   fireEvent.scroll(page.current!);
   expect(frame.style.height).toBe("600px");
   const scrollTo = vi.spyOn(page.current!, "scrollTo");
   const match = vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
   fireEvent.click(screen.getByRole("button", { name: "Collapse cover" }));
-  expect(scrollTo).toHaveBeenCalledWith({ top: 536, behavior: "instant" });
-  page.current!.scrollTop = 536;
+  expect(scrollTo).toHaveBeenCalledWith({ top: 420, behavior: "instant" });
+  page.current!.scrollTop = 420;
   fireEvent.scroll(page.current!);
-  expect(frame.style.height).toBe("64px");
-  expect((image as HTMLElement).style.opacity).toBe("0");
+  // The compact cover is the collapse floor, so it stays visible rather than
+  // shrinking to a bare title bar.
+  expect(frame.style.height).toBe("180px");
+  expect((image as HTMLElement).style.opacity).toBe("1");
   expect(screen.getByRole("heading", { name: "Studio" })).toBeTruthy();
   match.mockRestore();
   scrollTo.mockRestore();

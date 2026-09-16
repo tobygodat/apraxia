@@ -41,9 +41,16 @@ import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
 
 const VISIBLE_HOURS = 15;
+/** Below this the hour rows stop being readable, so the grid scrolls instead. */
+const MIN_HOUR_HEIGHT = 32;
 const DAY_START_MINUTE = 0;
 const MAX_EVENT_LANES = 3;
 const HOUR_LABEL_HIDE_MINUTES = 25;
+
+// Fit VISIBLE_HOURS to the panel, but never squeeze the rows past legibility:
+// a short panel shows fewer hours and scrolls within itself for the rest.
+const timeScale = (panelHeight: number) =>
+  Math.max(panelHeight / (VISIBLE_HOURS * 60), MIN_HOUR_HEIGHT / 60);
 
 export interface HomePageProps {
   appearanceService?: HomeAppearanceService;
@@ -375,7 +382,7 @@ export function WeekGrid({
     if (!element) return;
     const measure = () => {
       if (element.clientHeight > 0) {
-        setPixelsPerMinute(element.clientHeight / (VISIBLE_HOURS * 60));
+        setPixelsPerMinute(timeScale(element.clientHeight));
       }
     };
     measure();
@@ -406,8 +413,7 @@ export function WeekGrid({
     const element = scroll.current;
     if (!element) return;
     // Wait for the measured scale before choosing the initial scroll position.
-    if (element.clientHeight > 0 && pixelsPerMinute !== element.clientHeight / (VISIBLE_HOURS * 60))
-      return;
+    if (element.clientHeight > 0 && pixelsPerMinute !== timeScale(element.clientHeight)) return;
     const anchor = `${week.range.sunday}/${week.timezone}/${scrollRevision}`;
     const sameAnchor = lastScrollAnchor.current === anchor;
     if (sameAnchor && lastTimeScale.current === pixelsPerMinute) return;

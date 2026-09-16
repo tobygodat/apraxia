@@ -148,7 +148,7 @@
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   outline: none;
   scrollbar-color: rgba(255, 255, 255, 0.26) transparent;
   scrollbar-width: thin;
