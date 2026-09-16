@@ -69,6 +69,7 @@ export type Database = {
           name: string;
           object_path: string | null;
           source: string;
+          updated_at: string;
           uploaded_at: string | null;
           user_id: string;
         };
@@ -82,6 +83,7 @@ export type Database = {
           name: string;
           object_path?: string | null;
           source: string;
+          updated_at?: string;
           uploaded_at?: string | null;
           user_id?: string;
         };
@@ -95,6 +97,7 @@ export type Database = {
           name?: string;
           object_path?: string | null;
           source?: string;
+          updated_at?: string;
           uploaded_at?: string | null;
           user_id?: string;
         };
@@ -460,6 +463,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      agent_provider_write: {
+        Args: {
+          p_operation: string;
+          p_payload?: Json;
+          p_request_id: string;
+          p_result?: Json;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      agent_workspace: {
+        Args: {
+          p_bucket: string;
+          p_data?: Json;
+          p_expected_version?: string;
+          p_id?: string;
+          p_operation: string;
+          p_query?: Json;
+          p_request_id?: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       begin_calendar_oauth_attempt: {
         Args: {
           p_code_verifier: string;

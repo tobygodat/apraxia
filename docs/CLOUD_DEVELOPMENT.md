@@ -481,3 +481,13 @@ The preserved legacy runtime uses `uv run python -m orbitos.main` with
 commands are unverified since 2026-09 and are not covered by CI. Cloud is the frontend default; the legacy command
 explicitly enables its FastAPI proxy. Do not remove legacy source, data, or
 recovery files without an explicit request. Backup location is in the root README.
+
+## Personal agent API setup
+
+See [Agent API](AGENT_API.md) for Muse/curl examples, endpoint discovery,
+permissions, and retry rules. The server-only variables are
+`ORBITOS_AGENT_TOKEN`, `ORBITOS_AGENT_USER_ID`, and `ORBITOS_AGENT_SCOPES`;
+`.env.cloud.example` includes placeholders. Apply the forward-only migration
+before deploying the API to the existing app, complete the normal database/app
+release gates, then verify authenticated hosted reads and intended writes.
+Token changes require redeployment; never expose the token in browser variables.

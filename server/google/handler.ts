@@ -92,18 +92,29 @@ export function readCachedAccessToken(
  * One request pipeline for every Google integration: method/origin checks, the
  * callback handoff, session verification, connect/complete/disconnect/status,
  * and access-token acquisition (cached, refreshed near expiry, refreshed once
- * after an upstream 401). Ownership always derives from a fresh Auth verification.
+ * after an upstream 401). Ownership derives from Auth verification or a trusted
+ * server-injected agent identity, never request parameters.
  */
 export function createGoogleConnectionHandler<A extends string, P, S extends GoogleStore>(
   adapter: GoogleHandlerAdapter<A, P, S>,
   action: A,
-  dependencies: { environment?: Record<string, string | undefined>; fetch?: typeof fetch } = {},
+  dependencies: {
+    environment?: Record<string, string | undefined>;
+    fetch?: typeof fetch;
+    /** Server-injected identity after agent authentication; never populated from request input. */
+    verifiedSession?: VerifiedSession;
+  } = {},
 ) {
   const { definition, http, policy } = adapter.runtime;
   const headers: Record<string, string> = { ...PRIVATE_HEADERS };
   const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
   return async (request: Request): Promise<Response> => {
     try {
+      if (dependencies.verifiedSession && !["calendars", "events", "files", "pdf"].includes(action))
+        return json(
+          { error: { code: "invalid_request", message: "This action is unavailable." } },
+          403,
+        );
       const expectedMethod = adapter.expectedMethod(action, request);
       if (request.method !== expectedMethod)
         return json(
@@ -123,7 +134,9 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
         return new Response(null, { status: 303, headers: { ...headers, Location: target.href } });
       }
       if (expectedMethod === "POST") policy.assertMutationRequest(request, environment.APP_URL);
-      const session = await verifySupabaseSession(request, environment, { fetch: fetcher });
+      const session =
+        dependencies.verifiedSession ??
+        (await verifySupabaseSession(request, environment, { fetch: fetcher }));
       const store = adapter.createStore(environment, request.signal, fetcher);
       const userId = session.userId;
       if (action === "status") return json((await store.read(userId))?.connection ?? null);

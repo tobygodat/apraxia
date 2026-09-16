@@ -62,6 +62,7 @@ export function createClassPersistenceFixture(empty = false): {
           object_path: null,
           uploaded_at: null,
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         notes.set(note.id, note);
         return note;
@@ -89,6 +90,7 @@ export function createClassPersistenceFixture(empty = false): {
           object_path: `${owner}/${draft.id}.pdf`,
           uploaded_at: null,
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         notes.set(note.id, note);
         return note;

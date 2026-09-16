@@ -103,3 +103,13 @@ See [QA fixtures](QA_FIXTURES.md).
 
 Details and when each suite runs are in
 [cloud development](CLOUD_DEVELOPMENT.md).
+
+## Personal agent API
+
+`/api/agent/v1/[resource]` is one Vercel function for scheduled agent clients.
+`server/agent/` verifies a dedicated bearer token, configured scopes, and a fixed
+server-bound user UUID. Workspace requests use service-only wrappers around
+RLS-constrained `orbitos_agent` functions; explicit field allowlists, opaque
+versions, idempotent writes, and a private journal protect the shared records.
+Google operations reuse the existing transports with that trusted identity.
+See [Agent API](AGENT_API.md) for endpoint contracts and server configuration.

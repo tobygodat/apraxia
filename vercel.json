@@ -6,6 +6,7 @@
   "devCommand": "npm run dev:web",
   "outputDirectory": "frontend/dist",
   "functions": {
+    "api/agent/v1/**": { "maxDuration": 300 },
     "api/calendar/**": { "maxDuration": 30 },
     "api/drive/**": { "maxDuration": 300 }
   },

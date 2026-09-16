@@ -20,6 +20,7 @@ const row: ClassNote = {
   object_path: `${owner}/${id}.pdf`,
   uploaded_at: null,
   created_at: "2026-09-13T00:00:00Z",
+  updated_at: "2026-09-13T00:00:00Z",
 };
 function setup(responses: { body: unknown; status?: number }[]) {
   const fetch = vi.fn(async () => {

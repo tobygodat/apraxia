@@ -149,12 +149,14 @@ const adapter: GoogleHandlerAdapter<CalendarAction, PreparedCalendarRequest, Cal
   },
 };
 
-/** Each invocation derives ownership from a fresh Auth verification, never request input. */
+/** Ownership comes from Auth verification or a trusted server-injected agent identity. */
 export function createCalendarHandler(
   action: CalendarAction,
   dependencies: {
     environment?: Record<string, string | undefined>;
     fetch?: typeof fetch;
+    /** Only trusted server code may supply an already authenticated agent identity. */
+    verifiedSession?: { readonly userId: string };
   } = {},
 ) {
   return createGoogleConnectionHandler(adapter, action, dependencies);

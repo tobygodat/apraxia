@@ -58,7 +58,7 @@ export async function prepareUpload(
   };
 }
 const columns =
-  "id,user_id,course_id,name,source,drive_file_id,byte_size,content_sha256,object_path,uploaded_at,created_at";
+  "id,user_id,course_id,name,source,drive_file_id,byte_size,content_sha256,object_path,uploaded_at,created_at,updated_at";
 const bounded = (signal: AbortSignal) => AbortSignal.any([signal, AbortSignal.timeout(20_000)]);
 function checked(note: ClassNote, owner: string, course: string) {
   if (note.user_id !== owner || note.course_id !== course)
