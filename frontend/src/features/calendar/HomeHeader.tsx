@@ -6,7 +6,7 @@ import {
   type HomeAppearance,
   type HomeAppearanceService,
 } from "./homeAppearance";
-import { COLLAPSED_COVER_HEIGHT, COMPACT_COVER_HEIGHT, coverImageLayout } from "./coverLayout";
+import { COMPACT_COVER_HEIGHT, coverImageLayout } from "./coverLayout";
 
 /** Matches the app shell's sidebar column transition (--cloud-shell-duration). */
 const SETTLE_DURATION_MS = 260;
@@ -130,23 +130,28 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
         page.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
       if (width <= 0 || available <= 0) return null;
       const fraction = initialized
-        ? Math.min(1, page.scrollTop / (fullHeight - COLLAPSED_COVER_HEIGHT))
+        ? Math.min(1, page.scrollTop / (fullHeight - COMPACT_COVER_HEIGHT))
         : 0;
       const nextFullHeight = Math.max(
         COMPACT_COVER_HEIGHT + 1,
         Math.min((width * imageSize.height) / imageSize.width, available * 0.75),
       );
       const top = initialized
-        ? fraction * (nextFullHeight - COLLAPSED_COVER_HEIGHT)
+        ? fraction * (nextFullHeight - COMPACT_COVER_HEIGHT)
         : nextFullHeight - COMPACT_COVER_HEIGHT;
       return { width, available, fullHeight: nextFullHeight, top };
     };
+    // The cover rests at COMPACT_COVER_HEIGHT and the page rests at its maximum
+    // scroll, so the workspace reservation, the collapse floor, and the initial
+    // offset all measure against the same height. Reserving less (the bare title
+    // bar) left the workspace hanging below the fold at rest, which truncated the
+    // calendar and forced a whole-page scroll to reach the evening hours.
     const apply = (next: { width: number; available: number; fullHeight: number; top: number }) => {
       fullHeight = next.fullHeight;
       page.style.setProperty("--home-cover-height", `${next.fullHeight}px`);
       page.style.setProperty(
         "--home-workspace-height",
-        `${next.available - COLLAPSED_COVER_HEIGHT}px`,
+        `${next.available - COMPACT_COVER_HEIGHT}px`,
       );
       page.scrollTop = next.top;
       setLayout({
@@ -198,7 +203,7 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
     const scroll = () =>
       setLayout((previous) => ({
         ...previous,
-        height: Math.max(COLLAPSED_COVER_HEIGHT, fullHeight - page.scrollTop),
+        height: Math.max(COMPACT_COVER_HEIGHT, fullHeight - page.scrollTop),
       }));
     const settle = (event: TransitionEvent) => {
       if (event.propertyName === "grid-template-columns" && held) measure();
@@ -242,7 +247,6 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
     return () => controller.abort();
   }, [service, userId, revision]);
   const collapsible = coverReady && !!pageElement;
-  const collapsed = collapsible && layout.height <= COLLAPSED_COVER_HEIGHT + 1;
   const imageStyle = coverReady
     ? coverImageLayout(
         layout.width,
@@ -256,15 +260,13 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
     : undefined;
   const scrollCover = () =>
     pageElement?.scrollTo({
-      top: layout.height >= layout.fullHeight - 1 ? layout.fullHeight - COLLAPSED_COVER_HEIGHT : 0,
+      top: layout.height >= layout.fullHeight - 1 ? layout.fullHeight - COMPACT_COVER_HEIGHT : 0,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "instant"
         : "smooth",
     });
   return (
-    <header
-      className={`home-header${value.coverImage ? " home-header--cover" : ""}${collapsed ? " home-header--collapsed" : ""}`}
-    >
+    <header className={`home-header${value.coverImage ? " home-header--cover" : ""}`}>
       <div
         className="home-header__frame"
         style={collapsible ? { height: layout.height } : undefined}

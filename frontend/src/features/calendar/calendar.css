@@ -236,7 +236,7 @@
   min-height: 0;
   scrollbar-color: #4a4a4a #191919;
   scrollbar-width: thin;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
 }
 /* Share the time scale with event positions, initial scroll, and pointer selection. */
 .week-hours {
@@ -865,9 +865,6 @@
 .home-header--cover .home-header__customize:hover {
   background: #353535;
 }
-.home-header--collapsed .home-header__line {
-  background: #191919;
-}
 .home-header :focus-visible {
   outline: 2px solid #f0efed;
   outline-offset: 2px;
@@ -902,6 +899,11 @@
 @media (max-width: 1400px) {
   .home-page--cover .home-workspace {
     flex-basis: auto;
+  }
+  /* Stacked: the tasks panel sits below the fold, so fit the calendar alone
+     to the space the resting cover leaves instead of a fixed 700px. */
+  .home-page--cover .calendar-panel {
+    height: var(--home-workspace-height);
   }
 }
 @media (max-width: 900px) {
