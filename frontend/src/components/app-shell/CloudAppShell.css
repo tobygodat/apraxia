@@ -6,13 +6,17 @@
   --cloud-shell-muted: #ada9a3;
   --cloud-shell-focus: #f0efed;
   --cloud-shell-sidebar-width: 200px;
+  /* Drawer-style curve: even travel through the middle instead of dumping
+     most of the motion into the first two frames. */
+  --cloud-shell-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --cloud-shell-duration: 260ms;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: var(--cloud-shell-sidebar-width) minmax(0, 1fr);
   background: var(--cloud-shell-bg);
   color: var(--cloud-shell-text);
   font-family: "Segoe UI", system-ui, sans-serif;
-  transition: grid-template-columns 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: grid-template-columns var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .workspace-icon {
   width: 18px;
@@ -94,9 +98,11 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 24px 14px 16px;
+  --cloud-shell-sidebar-pad-x: 14px;
+  padding: 24px var(--cloud-shell-sidebar-pad-x) 16px;
   border-right: 1px solid var(--cloud-shell-line);
   background: var(--cloud-shell-surface);
+  transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__brand-row {
   display: flex;
@@ -110,12 +116,21 @@
   align-items: center;
   gap: 11px;
   width: fit-content;
+  /* Fixed height so the header is the same size with or without the label,
+     and the label clips while the rail width animates. */
+  box-sizing: border-box;
+  min-height: 35px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
   padding: 4px 0 4px 10px;
   color: var(--cloud-shell-text);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.7px;
   text-decoration: none;
+  transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__wordmark .workspace-icon {
   width: 25px;
@@ -128,6 +143,8 @@
   min-height: 38px;
   padding: 8px 11px;
   margin-bottom: 21px;
+  overflow: hidden;
+  white-space: nowrap;
   border: 0;
   border-radius: 5px;
   background: transparent;
@@ -137,6 +154,7 @@
     12px/1.5 "Segoe UI",
     system-ui,
     sans-serif;
+  transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__search kbd {
   margin-left: auto;
@@ -158,6 +176,8 @@
   gap: 12px;
   min-height: 39px;
   padding: 9px 11px;
+  overflow: hidden;
+  white-space: nowrap;
   color: var(--cloud-shell-muted);
   border-radius: 5px;
   font-size: 13px;
@@ -166,7 +186,8 @@
   text-decoration: none;
   transition:
     color 140ms ease,
-    background-color 140ms ease;
+    background-color 140ms ease,
+    padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__nav-link:hover,
 .cloud-shell .cloud-shell__search:hover {
@@ -193,6 +214,8 @@
   gap: 10px;
   min-height: 40px;
   padding: 6px;
+  overflow: hidden;
+  white-space: nowrap;
   background: transparent;
   color: var(--cloud-shell-muted);
   border: 0;
@@ -202,6 +225,7 @@
     system-ui,
     sans-serif;
   text-align: left;
+  transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__avatar {
   width: 28px;
@@ -289,30 +313,34 @@
   flex-direction: column;
 }
 .cloud-shell .cloud-shell__add {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  padding: 8px;
+  gap: 12px;
+  width: 100%;
+  min-height: 39px;
+  margin-bottom: 6px;
+  padding: 9px 11px;
+  overflow: hidden;
+  white-space: nowrap;
   border: 0;
-  border-radius: var(--radius-control, 5px);
+  border-radius: 5px;
   background: transparent;
-  color: var(--cloud-shell-text);
+  color: var(--cloud-shell-muted);
   font:
-    12px/1.4 "Segoe UI",
+    13px/1.5 "Segoe UI",
     system-ui,
     sans-serif;
-}
-.cloud-shell__add .workspace-icon {
-  width: 15px;
-  height: 15px;
+  text-align: left;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell .cloud-shell__add:hover:not(:disabled) {
   background: #292929;
-  border-color: #707070;
+  color: var(--cloud-shell-text);
 }
 .cloud-shell .cloud-shell__add:disabled {
   cursor: wait;
@@ -445,25 +473,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 36px;
-  margin-top: 10px;
-  padding: 8px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  /* Straddle the sidebar border: half inside the rail, half over the page. */
+  margin: 10px calc(-17px - var(--cloud-shell-sidebar-pad-x)) 0 auto;
+  padding: 0;
+  border: 1px solid var(--cloud-shell-line);
+  border-radius: 999px;
+  background: var(--cloud-shell-surface);
   color: var(--cloud-shell-muted);
   cursor: pointer;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    margin var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell .cloud-shell__collapse-toggle:hover {
   background: #292929;
   color: var(--cloud-shell-text);
 }
+.cloud-shell .cloud-shell__collapse-toggle:focus-visible {
+  outline: 2px solid var(--cloud-shell-focus);
+  outline-offset: 3px;
+}
 .cloud-shell__collapse-icon {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 @media (min-width: 621px) {
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__collapse-icon {
@@ -472,51 +510,51 @@
 }
 .cloud-shell__nav-link span,
 .cloud-shell__wordmark span,
+.cloud-shell .cloud-shell__add span,
 .cloud-shell .cloud-shell__search span,
+.cloud-shell__search kbd,
 .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
 .cloud-shell__account-trigger > .workspace-icon {
-  transition: opacity 160ms ease-out;
+  /* Labels fade in after the rail has opened most of the way, and fade out
+     first when it closes; the rows clip whatever is still visible. */
+  transition: opacity 120ms ease-out 80ms;
 }
 @media (min-width: 621px) {
   .cloud-shell[data-sidebar-collapsed="true"] {
     --cloud-shell-sidebar-width: 64px;
   }
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__sidebar {
-    padding: 24px 10px 16px;
+    --cloud-shell-sidebar-pad-x: 10px;
   }
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__brand-row {
     flex-direction: column;
     gap: 8px;
   }
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__wordmark {
-    padding: 4px 11px;
+    padding: 4px 9.5px;
   }
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__wordmark span,
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav-link span,
-  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell .cloud-shell__search span,
+  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__add span,
+  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search span,
+  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search kbd,
   .cloud-shell[data-sidebar-collapsed="true"]
     .cloud-shell__account-trigger
     > span:not(.cloud-shell__avatar),
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__account-trigger > .workspace-icon {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
     opacity: 0;
+    transition-delay: 0ms;
   }
+  /* Rows stay left-anchored; padding is what centers the icon in the rail
+     (13 + 18 + 13 = 44px), so icons glide instead of jumping to the middle
+     of a still-wide row. Vertical padding keeps expanded row heights. */
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav-link,
-  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell .cloud-shell__search {
-    justify-content: center;
-    padding: 11px;
-  }
-  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search kbd {
-    display: none;
+  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__add,
+  .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search {
+    padding: 10px 13px;
   }
   .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__account-trigger {
-    justify-content: center;
-    padding: 5px;
+    padding: 5px 8px;
   }
 }
 @media (max-width: 980px) {
@@ -526,10 +564,18 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .cloud-shell,
+  .cloud-shell__sidebar,
+  .cloud-shell__wordmark,
+  .cloud-shell .cloud-shell__search,
+  .cloud-shell .cloud-shell__add,
+  .cloud-shell .cloud-shell__account-trigger,
+  .cloud-shell .cloud-shell__collapse-toggle,
   .cloud-shell__collapse-icon,
   .cloud-shell__nav-link span,
   .cloud-shell__wordmark span,
+  .cloud-shell .cloud-shell__add span,
   .cloud-shell .cloud-shell__search span,
+  .cloud-shell__search kbd,
   .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
   .cloud-shell__account-trigger > .workspace-icon {
     transition: none;
@@ -543,7 +589,7 @@
     --cloud-shell-sidebar-width: 174px;
   }
   .cloud-shell__sidebar {
-    padding-inline: 10px;
+    --cloud-shell-sidebar-pad-x: 10px;
   }
   .cloud-shell__search kbd {
     display: none;
@@ -565,6 +611,7 @@
   }
   .cloud-shell__wordmark span,
   .cloud-shell__nav-link span,
+  .cloud-shell__add span,
   .cloud-shell__search span,
   .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
   .cloud-shell__account-trigger > .workspace-icon {
@@ -576,7 +623,8 @@
     white-space: nowrap;
   }
   .cloud-shell__nav-link,
-  .cloud-shell .cloud-shell__search {
+  .cloud-shell .cloud-shell__search,
+  .cloud-shell .cloud-shell__add {
     justify-content: center;
     padding: 11px;
   }
@@ -620,9 +668,27 @@
     margin: 0 0 0 auto;
   }
   .cloud-shell__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     margin: 0;
     padding: 0;
     border: 0;
+  }
+  .cloud-shell .cloud-shell__add {
+    width: 32px;
+    min-height: 32px;
+    justify-content: center;
+    margin: 0;
+    padding: 8px;
+  }
+  .cloud-shell__add span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .cloud-shell__account-menu {
     left: auto;
