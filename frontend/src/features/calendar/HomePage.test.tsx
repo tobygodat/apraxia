@@ -429,8 +429,8 @@ it("shows the all-day row only while an all-day event overlaps the displayed wee
 });
 
 it("scales events, hour labels, current time, initial scroll and drag creation together", () => {
-  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(720);
-  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(300);
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(1440);
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(900);
   const week: WeekViewModel = {
     range: { sunday: "2026-09-06", saturday: "2026-09-12" },
     timezone: "UTC",
@@ -456,18 +456,18 @@ it("scales events, hour labels, current time, initial scroll and drag creation t
     <WeekGrid week={week} now={new Date("2026-09-07T12:00:00Z")} onCreate={onCreate} />,
   );
   const meeting = screen.getByRole("button", { name: /Meeting/ });
-  expect(meeting.style.top).toBe("270px");
-  expect(meeting.style.height).toBe("28px");
-  expect(screen.getByText("9 AM", { selector: ".week-time-labels span" }).style.top).toBe("270px");
-  expect((container.querySelector(".week-now") as HTMLElement).style.top).toBe("360px");
-  expect(container.querySelector(".week-scroll")?.scrollTop).toBe(352);
+  expect(meeting.style.top).toBe("540px");
+  expect(meeting.style.height).toBe("58px");
+  expect(screen.getByText("9 AM", { selector: ".week-time-labels span" }).style.top).toBe("540px");
+  expect((container.querySelector(".week-now") as HTMLElement).style.top).toBe("720px");
+  expect(container.querySelector(".week-scroll")?.scrollTop).toBe(540);
   const day = screen.getByLabelText("Add event on 2026-09-07; press Enter for event details");
   day.setPointerCapture = vi.fn();
   day.releasePointerCapture = vi.fn();
   vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ top: 100 } as DOMRect);
-  fireEvent.pointerDown(day, { button: 0, pointerId: 1, clientY: 370 });
-  fireEvent.pointerMove(day, { pointerId: 1, clientY: 392.5 });
-  expect((container.querySelector(".calendar-selection") as HTMLElement).style.height).toBe("30px");
+  fireEvent.pointerDown(day, { button: 0, pointerId: 1, clientY: 640 });
+  fireEvent.pointerMove(day, { pointerId: 1, clientY: 685 });
+  expect((container.querySelector(".calendar-selection") as HTMLElement).style.height).toBe("60px");
   fireEvent.pointerUp(day, { pointerId: 1 });
   expect(onCreate).toHaveBeenCalledWith({ day: "2026-09-07", startMinute: 540, endMinute: 600 });
 });

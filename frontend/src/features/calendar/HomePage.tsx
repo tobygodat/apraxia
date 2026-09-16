@@ -40,10 +40,9 @@ import { calendarEventStyle } from "./calendarColors";
 import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
 
-const PIXELS_PER_MINUTE = 0.5;
+const VISIBLE_HOURS = 15;
 const DAY_START_MINUTE = 0;
 const MAX_EVENT_LANES = 3;
-const MIN_CHIP_WIDTH = 72;
 const HOUR_LABEL_HIDE_MINUTES = 25;
 
 export interface HomePageProps {
@@ -354,13 +353,14 @@ export function WeekGrid({
     minute: number;
   } | null>(null);
   const drag = useRef<{ day: string; anchor: number; minute: number } | null>(null);
+  const [pixelsPerMinute, setPixelsPerMinute] = useState(0.5);
   const minuteAt = (element: HTMLElement, y: number) =>
     Math.max(
       DAY_START_MINUTE,
       Math.min(
         1425,
         DAY_START_MINUTE +
-          Math.floor((y - element.getBoundingClientRect().top) / PIXELS_PER_MINUTE / 15) * 15,
+          Math.floor((y - element.getBoundingClientRect().top) / pixelsPerMinute / 15) * 15,
       ),
     );
   const clearSelection = () => {
@@ -369,6 +369,20 @@ export function WeekGrid({
   };
   const scroll = useRef<HTMLDivElement>(null);
   const lastScrollAnchor = useRef("");
+  const lastTimeScale = useRef(pixelsPerMinute);
+  useLayoutEffect(() => {
+    const element = scroll.current;
+    if (!element) return;
+    const measure = () => {
+      if (element.clientHeight > 0) {
+        setPixelsPerMinute(element.clientHeight / (VISIBLE_HOURS * 60));
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const days = weekDates(week.range.sunday);
   const segments = layoutTimedEvents(week.events, week.range.sunday, week.timezone);
   const allDaySegments = layoutAllDayEvents(week.events, week.range.sunday);
@@ -378,22 +392,34 @@ export function WeekGrid({
   const showsNow = days.includes(today);
   const describe = (event: CalendarEvent & { kind: "timed" }) =>
     `${event.title}, ${time(event.startAt)}–${time(event.endAt)}${event.location ? `, ${event.location}` : ""}`;
-  // Overlap lanes keep a readable minimum width, stacking over later lanes within the day column.
-  const laneStyle = (column: number, lanes: number) => ({
-    left: `calc(${(column / lanes) * 100}% + 1px)`,
-    width: `min(max(calc(${100 / lanes}% - 3px), ${MIN_CHIP_WIDTH}px), calc(${100 - (column / lanes) * 100}% - 2px))`,
-    "--calendar-event-layer": column + 1,
-  });
+  // Nearby starts use side-by-side lanes. Later starts can share a lane,
+  // leaving a small inset so the earlier card remains visible underneath.
+  const laneStyle = (column: number, lanes: number, stackDepth = 0) => {
+    const inset = (Math.min(stackDepth, 4) * 0.05) / lanes;
+    return {
+      left: `calc(${(column / lanes + inset) * 100}% + 1px)`,
+      width: `calc(${(Math.min(1.7 / lanes, 1 - column / lanes) - inset) * 100}% - 3px)`,
+      "--calendar-event-layer": column + 1,
+    };
+  };
   useLayoutEffect(() => {
+    const element = scroll.current;
+    if (!element) return;
+    // Wait for the measured scale before choosing the initial scroll position.
+    if (element.clientHeight > 0 && pixelsPerMinute !== element.clientHeight / (VISIBLE_HOURS * 60))
+      return;
     const anchor = `${week.range.sunday}/${week.timezone}/${scrollRevision}`;
-    if (!scroll.current || lastScrollAnchor.current === anchor) return;
+    const sameAnchor = lastScrollAnchor.current === anchor;
+    if (sameAnchor && lastTimeScale.current === pixelsPerMinute) return;
+    const minute = sameAnchor
+      ? element.scrollTop / lastTimeScale.current
+      : Math.max(0, currentMinute - 8 / pixelsPerMinute);
     lastScrollAnchor.current = anchor;
-    const maximum = Math.max(0, scroll.current.scrollHeight - scroll.current.clientHeight);
-    scroll.current.scrollTop = Math.min(
-      Math.max(0, currentMinute * PIXELS_PER_MINUTE - 8),
-      maximum,
-    );
-  }, [week.range.sunday, week.timezone, scrollRevision, currentMinute]);
+    lastTimeScale.current = pixelsPerMinute;
+    const maximum = Math.max(0, element.scrollHeight - element.clientHeight);
+    element.scrollTop = Math.min(minute * pixelsPerMinute, maximum);
+  }, [week.range.sunday, week.timezone, scrollRevision, currentMinute, pixelsPerMinute]);
+
   const time = (at: string) =>
     new Intl.DateTimeFormat("en", {
       timeZone: week.timezone,
@@ -403,7 +429,7 @@ export function WeekGrid({
   return (
     <div
       className="week-grid"
-      style={{ "--calendar-hour-height": `${60 * PIXELS_PER_MINUTE}px` } as CSSProperties}
+      style={{ "--calendar-hour-height": `${60 * pixelsPerMinute}px` } as CSSProperties}
     >
       {preview && (
         <EventPreview
@@ -486,7 +512,7 @@ export function WeekGrid({
                     ? "week-time-label--near-now"
                     : undefined
                 }
-                style={{ top: (hour * 60 - DAY_START_MINUTE) * PIXELS_PER_MINUTE }}
+                style={{ top: (hour * 60 - DAY_START_MINUTE) * pixelsPerMinute }}
               >
                 {hour === 0
                   ? "12 AM"
@@ -503,7 +529,7 @@ export function WeekGrid({
                 style={{
                   top: Math.max(
                     8,
-                    Math.min(24 * 60 * PIXELS_PER_MINUTE - 8, currentMinute * PIXELS_PER_MINUTE),
+                    Math.min(24 * 60 * pixelsPerMinute - 8, currentMinute * pixelsPerMinute),
                   ),
                 }}
                 aria-hidden="true"
@@ -569,9 +595,9 @@ export function WeekGrid({
                     style={{
                       top:
                         (Math.min(selection.anchor, selection.minute) - DAY_START_MINUTE) *
-                        PIXELS_PER_MINUTE,
+                        pixelsPerMinute,
                       height:
-                        (Math.abs(selection.anchor - selection.minute) + 15) * PIXELS_PER_MINUTE,
+                        (Math.abs(selection.anchor - selection.minute) + 15) * pixelsPerMinute,
                     }}
                   >
                     New event
@@ -588,7 +614,7 @@ export function WeekGrid({
                     const start = Math.max(segment.start, DAY_START_MINUTE);
                     const lanes =
                       segment.columns > MAX_EVENT_LANES ? MAX_EVENT_LANES + 1 : segment.columns;
-                    const height = Math.max(2, (segment.end - start) * PIXELS_PER_MINUTE - 2);
+                    const height = Math.max(2, (segment.end - start) * pixelsPerMinute - 2);
                     const rows = height >= 33 ? 3 : height >= 23 ? 2 : 1;
                     const eventTime = formatEventTimeRange(
                       segment.event.startAt,
@@ -617,9 +643,9 @@ export function WeekGrid({
                               segment.event.calendarId,
                               segment.event.calendarColor,
                             ),
-                            top: (start - DAY_START_MINUTE) * PIXELS_PER_MINUTE,
+                            top: (start - DAY_START_MINUTE) * pixelsPerMinute,
                             height,
-                            ...laneStyle(segment.column, lanes),
+                            ...laneStyle(segment.column, lanes, segment.stackDepth),
                           } as CSSProperties
                         }
                       >
@@ -662,11 +688,11 @@ export function WeekGrid({
                           {
                             top:
                               (Math.max(cluster.start, DAY_START_MINUTE) - DAY_START_MINUTE) *
-                              PIXELS_PER_MINUTE,
+                              pixelsPerMinute,
                             height: Math.max(
                               2,
                               (cluster.end - Math.max(cluster.start, DAY_START_MINUTE)) *
-                                PIXELS_PER_MINUTE -
+                                pixelsPerMinute -
                                 2,
                             ),
                             ...laneStyle(MAX_EVENT_LANES, MAX_EVENT_LANES + 1),
@@ -682,8 +708,8 @@ export function WeekGrid({
                     className="week-now"
                     style={{
                       top: Math.min(
-                        24 * 60 * PIXELS_PER_MINUTE - 4,
-                        (currentMinute - DAY_START_MINUTE) * PIXELS_PER_MINUTE,
+                        24 * 60 * pixelsPerMinute - 4,
+                        (currentMinute - DAY_START_MINUTE) * pixelsPerMinute,
                       ),
                     }}
                     aria-label={`Current time: ${time(now.toISOString())}`}

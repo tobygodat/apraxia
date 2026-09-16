@@ -282,7 +282,8 @@
 .calendar-event--timed {
   position: absolute;
   box-sizing: border-box;
-  container-type: inline-size;
+  outline: 1px solid #191919;
+  outline-offset: -1px;
   z-index: var(--calendar-event-layer, 1);
 }
 .calendar-event--timed:hover,
@@ -335,14 +336,6 @@
   display: inline;
 }
 /* Lanes narrower than one readable word keep the title only; the title tooltip carries the rest. */
-@container (max-width: 72px) {
-  .calendar-event--timed .calendar-event__time,
-  .calendar-event--timed .calendar-event__location,
-  .calendar-event--timed .calendar-event__inline-rest {
-    display: none;
-  }
-}
-
 .week-now {
   position: absolute;
   left: 0;
@@ -523,7 +516,8 @@
     gap: 24px;
   }
   .calendar-panel {
-    height: clamp(320px, 44dvh, 480px);
+    /* Keep fifteen hours legible when tasks move below the calendar. */
+    height: max(700px, calc(100dvh - 240px));
     padding: 0;
     border-right: 0;
   }
