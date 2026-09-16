@@ -53,7 +53,7 @@ curl --fail-with-body -sS --get "$ORBITOS_BASE_URL/api/agent/v1/search" \
 | `search?q=...&bucket=...` | GET; bucket optional; `workspace:read`. |
 | `changes` | GET agent write journal; `workspace:read`. |
 | `calendars` | GET connected calendars; `calendar:read`. |
-| `events?sunday=YYYY-MM-DD` | GET one Sunday-start week; `calendar:read`. |
+| `events?sunday=YYYY-MM-DD&q=...` | GET one Sunday-start week; optional case-insensitive title/location search within that week; `calendar:read`. |
 | `events` | POST detail (`calendar:read`), create/update (`calendar:write`); OpenAPI supplies command bodies. |
 | `drive-files?folder=root&page=...` | GET folders and PDFs; `files:read`; response `{files,nextPage}`. |
 | `note-content?id=...` | GET saved PDF bytes; both `workspace:read` and `files:read`. |

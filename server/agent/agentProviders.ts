@@ -43,6 +43,13 @@ export async function serveAgentProvider(
   // Construct fresh headers: neither the agent bearer nor a caller identity is sent upstream.
   const url = new URL(`/api/agent-provider/${resource}`, context.environment.APP_URL);
   url.search = new URL(request.url).search;
+  let search: string | null = null;
+  if (resource === "events" && request.method === "GET" && url.searchParams.has("q")) {
+    search = url.searchParams.get("q")!.trim();
+    if (url.searchParams.getAll("q").length !== 1 || !search || search.length > 500)
+      return error("invalid_request", "Calendar search requires 1–500 characters.", 400);
+    url.searchParams.delete("q");
+  }
   const headers = new Headers();
   let body: string | undefined;
   let payload: Record<string, unknown> | undefined;
@@ -146,6 +153,23 @@ export async function serveAgentProvider(
       return unknownOutcome(createdEventId);
     }
     return json(result, response.status);
+  }
+  if (search !== null && response.ok) {
+    const week: unknown = await response.json();
+    if (!record(week) || !Array.isArray(week.events))
+      return error("calendar_unavailable", "Calendar search is temporarily unavailable.", 502);
+    const needle = search.toLowerCase();
+    return json({
+      ...week,
+      events: week.events.filter(
+        (event: unknown) =>
+          record(event) &&
+          [event.title, event.location].some(
+            (value) => typeof value === "string" && value.toLowerCase().includes(needle),
+          ),
+      ),
+      search: { query: search, scope: "requested_week" },
+    });
   }
   return response;
 }

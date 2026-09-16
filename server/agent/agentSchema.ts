@@ -101,7 +101,7 @@ export function agentDiscovery(scopes: string[]) {
     providers: {
       calendars: "GET /calendars; calendar:read; connected Google calendars.",
       events:
-        "GET /events?sunday=YYYY-MM-DD; calendar:read; Sunday-start week in configured calendar timezone. POST detail command uses calendar:read; POST create/update uses calendar:write and Idempotency-Key. Update requires current Google etag. See OpenAPI for command bodies.",
+        "GET /events?sunday=YYYY-MM-DD&q=<optional title/location search>; calendar:read; search is limited to the Sunday-start week in configured calendar timezone. POST detail command uses calendar:read; POST create/update uses calendar:write and Idempotency-Key. Update requires current Google etag. See OpenAPI for command bodies.",
       drive_files:
         "GET /drive-files?folder=root&page=<optional nextPage>; files:read; folders and PDFs only.",
       note_content:
@@ -415,7 +415,7 @@ export function agentOpenApi() {
   paths["/events"] = {
     get: operation(
       "events_week",
-      "Read a Sunday-start calendar week",
+      "Read or search a Sunday-start calendar week",
       ["calendar:read"],
       { type: "object" },
       {
@@ -425,6 +425,11 @@ export function agentOpenApi() {
             { type: "string", format: "date" },
             "Must be a Sunday. Uses configured calendar timezone.",
             true,
+          ),
+          parameter(
+            "q",
+            { type: "string", minLength: 1, maxLength: 500 },
+            "Case-insensitive title/location substring within this week only. Partial provider errors remain in the response.",
           ),
         ],
       },

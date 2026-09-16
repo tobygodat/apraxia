@@ -81,6 +81,55 @@ const request = (resource: string, body?: unknown, key = "muse-1") =>
   });
 
 describe("agent provider boundary", () => {
+  it("searches titles and locations within the requested week without changing provider queries", async () => {
+    const context = setup();
+    const base = context.fetch.getMockImplementation()!;
+    context.fetch.mockImplementation(async (url, init) =>
+      String(url).includes("/events")
+        ? Response.json({
+            items: [
+              {
+                id: "match-title",
+                htmlLink: "https://calendar.google.com/calendar/event?eid=title",
+                summary: "Exam prep",
+                start: { date: "2026-09-17" },
+                end: { date: "2026-09-18" },
+              },
+              {
+                id: "match-location",
+                htmlLink: "https://calendar.google.com/calendar/event?eid=location",
+                summary: "Study",
+                location: "Exam hall",
+                start: { date: "2026-09-17" },
+                end: { date: "2026-09-18" },
+              },
+              {
+                id: "other",
+                htmlLink: "https://calendar.google.com/calendar/event?eid=other",
+                summary: "Lunch",
+                start: { date: "2026-09-17" },
+                end: { date: "2026-09-18" },
+              },
+            ],
+          })
+        : base(url, init),
+    );
+    const response = await serveAgentProvider(
+      request("events?sunday=2026-09-13&q=EXAM"),
+      context,
+      "events",
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.events).toHaveLength(2);
+    expect(body.search).toEqual({ query: "EXAM", scope: "requested_week" });
+    expect(body.partialErrors).toEqual([]);
+    expect(
+      context.fetch.mock.calls
+        .filter(([url]) => String(url).includes("/events"))
+        .every(([url]) => !new URL(String(url)).searchParams.has("q")),
+    ).toBe(true);
+  });
   it.each(["calendars", "drive-files"])(
     "dispatches %s without leaking agent credentials or calling Supabase Auth",
     async (resource) => {
