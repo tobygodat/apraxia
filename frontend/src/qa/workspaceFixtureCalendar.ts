@@ -203,6 +203,12 @@ export function createFixtureCalendar({
         "#d50000",
       );
       timed("office", 0, 570, 610, "Office hours", "work", "#f6bf26");
+      timed("evening-session", 1, 1110, 1230, "Evening information session", "personal");
+      add("evening-study", "personal", "Library study", {
+        kind: "timed",
+        start: instant(1, 1170),
+        end: instant(2, 30),
+      });
       timed("adjacent-a", 1, 600, 615, "15 minute check-in", "personal", "#33b679");
       timed("adjacent-b", 1, 615, 630, "Next appointment", "personal", "#8e24aa");
       timed("short", 1, 660, 665, "Five minute reminder", "personal");

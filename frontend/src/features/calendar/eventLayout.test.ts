@@ -112,6 +112,79 @@ describe("calendar layout", () => {
       [0, 1],
     ]);
   });
+  it.each([
+    ["19:00", "2026-09-02T00:00:00Z", 1, 2, 0],
+    ["19:30", "2026-09-02T00:30:00Z", 0, 1, 1],
+  ])(
+    "protects the first hour before stacking a %s start",
+    (start, end, column, columns, stackDepth) => {
+      const result = layoutTimedEvents(
+        [
+          event("a", "2026-09-01T18:30:00Z", "2026-09-01T20:30:00Z"),
+          event("b", `2026-09-01T${start}:00Z`, end),
+        ],
+        "2026-08-30",
+        "UTC",
+      );
+      expect(result[0]).toMatchObject({ column: 0, columns, stackDepth: 0 });
+      expect(result[1]).toMatchObject({ column, columns, stackDepth });
+      if (start === "19:30") {
+        expect(result[2]).toMatchObject({
+          day: "2026-09-02",
+          start: 0,
+          end: 30,
+          column: 0,
+          columns: 1,
+          stackDepth: 0,
+        });
+      } else expect(result).toHaveLength(2);
+    },
+  );
+  it("tracks active cards through multiple stacks and resets depth when a lane clears", () => {
+    const events = [
+      event("a", "2026-09-01T09:00:00Z", "2026-09-01T14:00:00Z"),
+      event("b", "2026-09-01T10:00:00Z", "2026-09-01T11:30:00Z"),
+      event("c", "2026-09-01T11:00:00Z", "2026-09-01T12:00:00Z"),
+      event("d", "2026-09-01T12:00:00Z", "2026-09-01T13:00:00Z"),
+      event("bridge", "2026-09-01T12:30:00Z", "2026-09-01T16:00:00Z"),
+      event("cleared", "2026-09-01T14:00:00Z", "2026-09-01T15:00:00Z"),
+      event("after", "2026-09-01T16:00:00Z", "2026-09-01T17:00:00Z"),
+    ];
+    const result = layoutTimedEvents(events, "2026-08-30", "UTC");
+    expect(
+      result.map(({ event, column, columns, stackDepth }) => [
+        event.eventId,
+        column,
+        columns,
+        stackDepth,
+      ]),
+    ).toEqual([
+      ["a", 0, 2, 0],
+      ["b", 0, 2, 1],
+      ["c", 0, 2, 2],
+      ["d", 0, 2, 1],
+      ["bridge", 1, 2, 0],
+      ["cleared", 0, 2, 0],
+      ["after", 0, 1, 0],
+    ]);
+    expect(layoutTimedEvents([...events].reverse(), "2026-08-30", "UTC")).toEqual(result);
+  });
+  it("reuses a short card's lane as soon as its readable segment ends", () => {
+    const result = layoutTimedEvents(
+      [
+        event("short", "2026-09-01T09:00:00Z", "2026-09-01T09:15:00Z"),
+        event("bridge", "2026-09-01T09:15:00Z", "2026-09-01T11:00:00Z"),
+        event("next", "2026-09-01T09:30:00Z", "2026-09-01T10:30:00Z"),
+      ],
+      "2026-08-30",
+      "UTC",
+    );
+    expect(result.map(({ column, columns, stackDepth }) => [column, columns, stackDepth])).toEqual([
+      [0, 2, 0],
+      [1, 2, 0],
+      [0, 2, 0],
+    ]);
+  });
   it("collapses lanes beyond the third into one overflow cluster per run", () => {
     const at = (h: number) => `2026-09-01T${String(h).padStart(2, "0")}:00:00Z`;
     const segments = layoutTimedEvents(

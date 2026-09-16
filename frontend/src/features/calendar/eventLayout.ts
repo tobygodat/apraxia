@@ -58,6 +58,7 @@ export interface TimedSegment {
   end: number;
   column: number;
   columns: number;
+  stackDepth: number;
 }
 export function startOfWeekSunday(value: string): string {
   const date = Temporal.PlainDate.from(value);
@@ -104,6 +105,7 @@ export function layoutTimedEvents(
         end: Math.min(1440, Math.max(from + 30, to)),
         column: 0,
         columns: 1,
+        stackDepth: 0,
       });
     }
     segments.sort(
@@ -115,19 +117,34 @@ export function layoutTimedEvents(
         ),
     );
     let group: TimedSegment[] = [];
-    let ends: number[] = [];
+    let lanes: { protectedUntil: number; active: TimedSegment[] }[] = [];
+    let groupEnd = 0;
     const finish = () => {
-      for (const item of group) item.columns = ends.length;
+      for (const item of group) item.columns = lanes.length;
       group = [];
-      ends = [];
+      lanes = [];
+      groupEnd = 0;
     };
     for (const item of segments) {
-      if (group.length && ends.every((end) => end <= item.start)) finish();
-      let column = ends.findIndex((end) => end <= item.start);
-      if (column < 0) column = ends.length;
-      ends[column] = item.end;
+      // Full card ends keep connected overlap groups together, even after a
+      // heading's protected hour has passed and its lane can accept a stack.
+      if (group.length && groupEnd <= item.start) finish();
+      let column = lanes.findIndex((lane) => lane.protectedUntil <= item.start);
+      if (column < 0) {
+        column = lanes.length;
+        lanes.push({ protectedUntil: 0, active: [] });
+      }
+      const lane = lanes[column];
+      lane.active = lane.active.filter((prior) => prior.end > item.start);
+      item.stackDepth = lane.active.reduce(
+        (depth, prior) => Math.max(depth, prior.stackDepth + 1),
+        0,
+      );
+      lane.active.push(item);
+      lane.protectedUntil = Math.min(item.end, item.start + 60);
       item.column = column;
       group.push(item);
+      groupEnd = Math.max(groupEnd, item.end);
     }
     finish();
     return segments;
