@@ -70,6 +70,9 @@ Use a plan when uncertainty or scope warrants it, and read supporting docs only
 when relevant. The change-to-check table in [AGENTS.md](../AGENTS.md#verification)
 defines the local iteration scope.
 
+Choose the command for the current phase; these examples are alternatives, not
+a sequence.
+
 ```powershell
 # Keep the relevant tests running while editing (omit the path for all tests).
 npm run test:watch -- frontend/src/path/to/example.test.ts
@@ -332,17 +335,14 @@ CI runs these checks automatically through `npm run verify:db`. Use the individu
 commands below to iterate on a failure with disposable local Supabase running.
 
 ```bash
-npm run verify
 npm run db:verify
 npm run db:rewind:verify
 npm run db:test:oauth-concurrency
 npm run db:test:todos-http
 ```
 
-Run checks relevant to the change. `verify` covers server/frontend types, ESLint
-and Prettier, contract tests, the production build, and a browser secret scan. Embedded
-PostgreSQL tests cover migrations and behavior but do not replace local
-Supabase/RLS and HTTP checks.
+Run checks relevant to the change. Embedded PostgreSQL tests cover migrations
+and behavior but do not replace local Supabase/RLS and HTTP checks.
 
 `db:verify` resets the local database, lints it, and runs pgTAP. Rewind/reapply
 retains the initial migration; full reset separately verifies recreation.
