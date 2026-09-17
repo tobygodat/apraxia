@@ -132,9 +132,11 @@
   text-decoration: none;
   transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
-.cloud-shell__wordmark .workspace-icon {
+.cloud-shell__mark {
   width: 25px;
   height: 25px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 .cloud-shell .cloud-shell__search {
   display: flex;

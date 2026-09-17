@@ -219,6 +219,14 @@ button.link:hover {
   text-transform: uppercase;
 }
 
+.auth-card__mark {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 0 22px;
+  object-fit: contain;
+}
+
 .auth-card__eyebrow {
   margin: 0 0 24px;
   color: rgba(255, 255, 255, 0.48);
