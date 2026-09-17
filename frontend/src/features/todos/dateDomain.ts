@@ -158,6 +158,11 @@ export function startOfWeekMonday(value: string): SqlDate {
   return addSqlDateDays(value, -daysSinceMonday);
 }
 
+/** The calendar week runs Sunday to Saturday; pure date math, no Temporal. */
+export function startOfWeekSunday(value: string): SqlDate {
+  return addSqlDateDays(value, -utcDateFromSqlDate(value).getUTCDay());
+}
+
 function assertMonday(value: string): SqlDate {
   const date = asSqlDate(value);
   if (startOfWeekMonday(date) !== date) {

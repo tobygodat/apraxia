@@ -13,7 +13,6 @@
 .todos-board-nav button,
 .todos-board-add,
 .todos-board-card__actions button,
-.todos-board-status,
 .todos-board-error {
   font-family: "Segoe UI", system-ui, sans-serif;
 }
@@ -92,8 +91,7 @@
   line-height: 1.45;
 }
 
-.todos-board-error p,
-.todos-board-status {
+.todos-board-error p {
   margin: 0;
 }
 
@@ -105,12 +103,6 @@
   flex: 0 0 auto;
   border-color: rgba(255, 180, 180, 0.38);
   color: #ffd2d2;
-}
-
-.todos-board-status {
-  margin: 0 clamp(24px, 4vw, 52px) 14px;
-  color: var(--todos-board-muted);
-  font-size: 11px;
 }
 
 .todos-board-card[aria-busy="true"] {

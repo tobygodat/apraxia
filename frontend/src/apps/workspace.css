@@ -35,6 +35,16 @@
   color: #ada9a3;
   line-height: 1.6;
 }
+/* Body copy for paragraphs no feature sheet sizes itself. `:where()` keeps
+   this at class-only specificity so any `.feature p` rule wins regardless of
+   stylesheet order. */
+.workspace-page :where(p) {
+  font-size: 14px;
+}
+.workspace-page a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
 .workspace-page button,
 .workspace-notice button {
   min-height: 40px;

@@ -162,6 +162,7 @@
 }
 .collection-empty {
   padding: 32px 0;
+  font-size: 13px;
 }
 .collection-notice {
   display: flex;
@@ -236,7 +237,7 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #f0efed;
+  accent-color: #c3c0b8;
 }
 .collection-task input:focus-visible {
   outline: 2px solid #eee;
@@ -366,7 +367,6 @@
   margin: 0;
   padding: 13px 0;
   border-bottom: 1px solid #383838;
-  font-size: 13px;
   line-height: 1.5;
 }
 .collection-page--project .collection-button {

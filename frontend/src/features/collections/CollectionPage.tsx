@@ -371,7 +371,9 @@ export function CollectionPage(props: Props) {
   const showLoadingStatus = !error && (detail ? coldDetail : coldList);
   useColdLoad(!error && (detail ? coldDetail : coldList));
   return (
-    <section className={`collection-page${kind === "project" ? " collection-page--project" : ""}`}>
+    <section
+      className={`collection-page${detail && kind === "project" ? " collection-page--project" : ""}`}
+    >
       {detail && (
         <button className="collection-back" onClick={onBack}>
           <WorkspaceIcon name="left" />

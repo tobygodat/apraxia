@@ -44,7 +44,6 @@
 
 .today-list__header p,
 .today-list__add,
-.today-list__status,
 .today-list__error,
 .today-list__empty,
 .today-list__undo,
@@ -102,15 +101,10 @@
   opacity: 0.52;
 }
 
-.today-list__status,
 .today-list__error {
   margin: 14px 20px 0;
   font-size: 11px;
   line-height: 1.5;
-}
-
-.today-list__status {
-  color: var(--today-list-muted);
 }
 
 .today-list__error {
@@ -358,7 +352,6 @@
   margin-top: 3px;
 }
 
-.today-list-item__move,
 .today-list-item__manage {
   display: flex;
   flex-wrap: wrap;

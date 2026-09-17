@@ -1,5 +1,7 @@
 # Task aggregation roadmap
 
+> Historical record, moved to `docs/history/` on 2026-09-17. File names, counts, and sizes reflect the date it was written and are not maintained.
+
 Goal: the Tasks page (`/todos`) becomes the single list of everything with a
 due date, whether it was entered on the Tasks page, inside a project, or inside
 a class. Overdue work no longer has its own section; it simply shows under Today.

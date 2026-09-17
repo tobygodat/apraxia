@@ -10,6 +10,7 @@ import {
   parseSqlDate,
   shiftWeekMonday,
   startOfWeekMonday,
+  startOfWeekSunday,
   visibleTodoWeekDates,
 } from "./dateDomain";
 
@@ -172,5 +173,17 @@ describe("Todo due-date classification", () => {
     expect(() => classifyTodoDueDate("2026-02-30", today)).toThrow(RangeError);
     expect(() => classifyTodoDueDate(null, "2026-02-30")).toThrow(RangeError);
     expect(() => classifyTodoDueDate("", today)).toThrow(RangeError);
+  });
+});
+
+describe("startOfWeekSunday", () => {
+  it.each([
+    ["2026-09-13", "2026-09-13"],
+    ["2026-09-14", "2026-09-13"],
+    ["2026-09-19", "2026-09-13"],
+    ["2026-09-01", "2026-08-30"],
+    ["2026-01-01", "2025-12-28"],
+  ])("starts the week containing %s on Sunday %s", (date, sunday) => {
+    expect(startOfWeekSunday(date)).toBe(sunday);
   });
 });

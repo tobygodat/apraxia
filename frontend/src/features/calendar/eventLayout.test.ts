@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TimedCalendarEvent } from "../../types/domain";
-import {
-  layoutAllDayEvents,
-  layoutTimedEvents,
-  overflowClusters,
-  weekDates,
-  startOfWeekSunday,
-} from "./eventLayout";
+import { layoutAllDayEvents, layoutTimedEvents, overflowClusters, weekDates } from "./eventLayout";
 const event = (id: string, startAt: string, endAt: string): TimedCalendarEvent => ({
   kind: "timed",
   calendarId: "primary",
@@ -20,16 +14,6 @@ const event = (id: string, startAt: string, endAt: string): TimedCalendarEvent =
   endTimeZone: null,
 });
 describe("calendar layout", () => {
-  it.each([
-    ["2026-09-13", "2026-09-13"],
-    ["2026-09-14", "2026-09-13"],
-    ["2026-09-19", "2026-09-13"],
-    ["2026-09-01", "2026-08-30"],
-    ["2026-01-01", "2025-12-28"],
-  ])("starts the week containing %s on Sunday %s", (date, sunday) => {
-    expect(startOfWeekSunday(date)).toBe(sunday);
-  });
-
   it("keeps short events readable without painting over the next event", () => {
     const events = [
       event("short", "2026-09-07T09:00:00Z", "2026-09-07T09:15:00Z"),

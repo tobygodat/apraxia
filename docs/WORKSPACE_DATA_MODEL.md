@@ -3,7 +3,7 @@
 The core workspace tables and the rules the browser must respect. Classes and
 notes have their own document: [Classes data model](CLASSES_DATA_MODEL.md).
 Class assignments are todos with a class link; the decision record is
-[Task aggregation roadmap](TASK_AGGREGATION_ROADMAP.md). Today reads and
+[Task aggregation roadmap](history/TASK_AGGREGATION_ROADMAP.md). Today reads and
 ordering have [Today data protocol](TODAY_DATA_PROTOCOL.md).
 
 Everything below is defined in

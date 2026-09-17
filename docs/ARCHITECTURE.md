@@ -30,7 +30,7 @@ Todos, projects, ideas, home appearance, classes, and notes are read and
 written by `supabase-js` in the browser using the signed-in user's JWT. Class
 assignments are todos with a `class_id`; the Classes page reads and writes them
 through an adapter over the todo service (see
-[task aggregation](TASK_AGGREGATION_ROADMAP.md)). There is no application
+[task aggregation](history/TASK_AGGREGATION_ROADMAP.md)). There is no application
 server in this path. Every table has RLS policies and column-scoped grants, so
 the browser cannot read another account's rows or write protected lifecycle
 columns. Multi-row atomic work (Today ordering, soft
@@ -60,7 +60,7 @@ tokens stay out of the response. See [Calendar](CALENDAR.md) and
 | `frontend/src/config/` | Browser environment parsing, runtime mode, and Vite config helpers. |
 | `frontend/src/qa/` | Development-only fixtures. See [QA fixtures](QA_FIXTURES.md). |
 | `frontend/src/types/` | Generated `database.ts` and hand-written `domain.ts` browser contracts. |
-| `api/` | Vercel function entry points only. Each file parses the request and delegates. |
+| `api/` | Vercel function entry points only: one `[action].ts` per Google provider (`calendar/`, `drive/`) so a warm instance serves every action, the agent resource, and `health.ts`. Each parses the request and delegates. |
 | `server/` | Server-only logic: session verification, OAuth policy, token encryption, Google transports, and environment validation. Never imported by browser code. |
 | `shared/` | Contracts used by both sides: calendar event shapes, Today RPC wire names, Supabase environment normalizers. Must stay dependency-free and runtime-neutral. |
 | `supabase/` | `migrations/` (forward-only schema) and `tests/` (pgTAP). |

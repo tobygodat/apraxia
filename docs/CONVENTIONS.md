@@ -23,7 +23,7 @@ Repository-wide habits. Architecture and placement rules are in
 | Thing | Style | Example |
 | --- | --- | --- |
 | Component file | `PascalCase.tsx`, one main export | `TodayPanel.tsx` |
-| Module of helpers or a service | `camelCase.ts` | `todayListController.ts`, `collectionService.ts` |
+| Module of helpers or a service | `camelCase.ts` | `todoController.ts`, `collectionService.ts` |
 | Service factory | `create<Name>Service` returning an interface | `createNoteService` |
 | Test | sibling file, `<subject>.test.ts(x)` | `eventLayout.test.ts` |
 | CSS file | `camelCase.css` next to its component, or `<area>.css` for a shared sheet | `TodayList.css`, `calendar.css` |
@@ -52,6 +52,10 @@ tables. Do not rename either half in passing.
   per feature so stylesheets never collide.
 - Keep selectors flat. Do not add element or descendant selectors that reach
   into another feature's markup.
+- When two sheets style the same element, the winning rule must win on
+  specificity, not on import order. Stylesheet order follows the module graph
+  and changes whenever an import moves (a header margin once depended on
+  `HomeHeader` being imported before the shell).
 - Visual decisions, palette, and typography are documented in
   [DESIGN.md](../DESIGN.md). Reuse the existing tokens rather than adding
   new literals.

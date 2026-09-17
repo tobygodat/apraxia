@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { HomeHeader, decodedCoverSize, primeCoverImage } from "./HomeHeader";
+import { HomeHeader } from "./HomeHeader";
+import { decodedCoverSize, primeCoverImage } from "./coverImageCache";
 import { prepareCover, validateAppearance, type HomeAppearanceService } from "./homeAppearance";
 import { coverImageLayout } from "./coverLayout";
 import { createRef, useState, type MutableRefObject } from "react";

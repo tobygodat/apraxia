@@ -19,7 +19,7 @@ a class-only `assignment_type`. The Classes page keeps its inline table but
 reads and writes through `createTodoAssignmentService`, an adapter over the todo
 service, so assignments appear on Tasks and Home, gain optional times, and are
 deleted through the shared soft-delete RPC with Undo. See
-[Task aggregation roadmap](TASK_AGGREGATION_ROADMAP.md) and
+[Task aggregation roadmap](history/TASK_AGGREGATION_ROADMAP.md) and
 [Workspace data model](WORKSPACE_DATA_MODEL.md#publictodos). Notes reference
 `classes(user_id, id)` through a composite foreign key with no `on delete`
 action. A parent must exist in the same account. Owner RLS applies

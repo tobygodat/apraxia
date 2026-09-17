@@ -484,7 +484,6 @@
   width: 13px;
   height: 13px;
 }
-.home-workspace .today-list__status,
 .home-workspace .today-list__error {
   margin-inline: 0;
 }
@@ -601,8 +600,22 @@
   height: 16px;
   margin: 0;
   padding: 0;
-  accent-color: #ada9a3;
+  accent-color: #c3c0b8;
   flex: 0 0 auto;
+}
+
+/* Settings actions are page controls, so they use the workspace's standard
+   quiet button rather than the calendar toolbar's compact 11px controls. */
+.calendar-settings button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border-color: #575757;
+  color: #f0efed;
+  font-size: 12px;
+}
+.calendar-settings button:hover:not(:disabled) {
+  background: #292929;
+  border-color: #868686;
 }
 
 .calendar-swatch {
@@ -722,7 +735,7 @@
   height: 16px;
   flex: 0 0 16px;
   margin: 0;
-  accent-color: #ada9a3;
+  accent-color: #c3c0b8;
 }
 .event-time-fields,
 .event-repeat-fields {

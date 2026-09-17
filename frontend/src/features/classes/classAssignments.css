@@ -54,9 +54,6 @@
 .class-assignments td {
   border-bottom: 1px solid var(--assignment-grid);
 }
-.class-assignments td + td {
-  border-inline-start: 1px solid var(--assignment-grid);
-}
 .class-assignments th:first-child {
   width: 38px;
 }
@@ -68,7 +65,7 @@
   width: 176px;
 }
 .class-assignments th:last-child {
-  width: 136px;
+  width: 44px;
 }
 .class-assignments input[type="checkbox"],
 .assignment-draft-marker {
@@ -79,6 +76,29 @@
 .class-assignments input[type="checkbox"] {
   accent-color: #c3c0b8;
   cursor: pointer;
+}
+/* min-height: 0 releases workspace.css's 40px generic button height so the
+   row keeps the table's 40px rhythm. */
+.class-assignments .assignment-delete {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cloud-shell-muted);
+}
+.class-assignments .assignment-delete .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+.class-assignments .assignment-delete:hover:not(:disabled) {
+  background: #2c2c2c;
+  color: #f0c1c1;
 }
 .assignment-draft-marker {
   display: inline-block;
@@ -149,14 +169,17 @@
   align-items: center;
   justify-content: flex-start;
 }
+/* Same bordered chip as the task rows' source chip (TodoSourceChip.css). */
 .assignment-type-tag {
   display: inline-block;
-  padding: 1px 7px;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid #444;
   border-radius: 4px;
-  font-size: 12px;
-  line-height: 20px;
-  background: #2c2c2c;
-  color: #d5d2ce;
+  color: var(--cloud-shell-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 .class-assignments button:disabled {
   opacity: 0.45;
@@ -200,24 +223,9 @@
   white-space: nowrap;
   border-color: transparent;
 }
-.classes-compact-source {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding-block: 16px;
-  border-block: 1px solid var(--cloud-shell-line);
-}
-.classes-compact-source p {
-  font-size: 13px;
-  color: var(--cloud-shell-muted);
-}
 @media (max-width: 760px) {
   .class-assignments th:nth-child(3) {
     width: 166px;
-  }
-  .class-assignments th:last-child {
-    width: 126px;
   }
 }
 @media (max-width: 600px) {
