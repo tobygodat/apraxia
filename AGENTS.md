@@ -2,24 +2,11 @@
 
 ## Working style
 
-- Implement only the requested scope. Do not add unrequested features, fields,
-  or options. Suggest optional additions and wait for approval before adding them.
-- Keep changes minimal and consistent. Complete authorized work using reasonable
-  defaults; ask only when missing information materially changes the result.
-  User decisions supersede repo/skill defaults. Identify any blocking skill rule.
-- Preserve unrelated changes. Report the outcome, checks run, and any remaining
-  blocker concisely.
-- Small changes: inspect, implement, verify, finish. Plan ambiguous/substantial
-  work around an observable completion condition.
 - Reuse the task's worktree, dev server, browser, and focused test watcher. Read
   relevant docs only. Install dependencies for a new worktree/changed lockfile;
   format explicit changed paths.
 
 ## Repository constraints
-
-- Continue the invoked design skill through revisions. Honor Impeccable's saved
-  code-first preference: use existing components and fictional data in local QA.
-  State the target route and preview location before editing.
 
 - Develop locally and release to the existing personal Vercel/Supabase app;
   no separate Preview environment or commercial launch process.
@@ -27,21 +14,20 @@
   data; removal or data import needs an explicit request.
 - Browser CRUD uses the authenticated session and RLS. Google credentials and
   service-role keys stay server-only; never commit credentials or personal data.
-- Preserve date-only due dates, unchanged overdue dates, and atomic Today ordering.
 - Use `supabase/migrations/` for schema changes. Hosted changes are forward-only:
   inspect existing data and preserve backups. Reset/rewind commands are local-only.
 
 ## Verification
 
 Use the smallest sufficient check while editing; add tests for meaningful behavior
-changes. Avoid tests that only restate low-impact copy or styling changes.
+changes. Avoid unnecessary tests that only restate low-impact copy or styling changes.
 
 | Change | Local iteration |
 | --- | --- |
 | Documentation | Consistency check and `git diff --check`. |
 | Copy or isolated styling | Inspect the affected route; format changed files. |
 | Component or application behavior | Focused tests, relevant typecheck, affected browser flow. |
-| Shared layout or calendar geometry | Relevant tests plus affected viewports/scenarios. |
+| Shared layout or calendar geometry | Relevant tests plus affected viewports/scenarios. If you need multiple screenshots, collage them into one image to minimize files sent. |
 | Database/auth/data contracts | Focused checks; `npm run verify:db` before pushing. |
 | Dependencies/build/CI configuration | Full app checks before pushing; see guide for hook reuse. |
 
@@ -50,13 +36,6 @@ changes. Avoid tests that only restate low-impact copy or styling changes.
   Use `realistic`; add `dense` for calendar geometry/text,
   `portrait`/`typical` for covers, reload for persistence/initialization. Broader
   shared-layout QA runs once at completion; details in `docs/CLOUD_DEVELOPMENT.md`.
-- Shell layout, sidebar, or transition changes: verify with legible full-size
-  screenshots (1280px viewport; use Playwright if the browser pane scales it
-  down) in every state, including a frozen mid-transition frame per direction
-  (`document.getAnimations()` pause/`currentTime`). Scan every descendant of the
-  changed container against its edge at rest and per animation frame, not only the
-  edited element. Check for never-matching selectors (e.g. nested `.cloud-shell`).
-  Send proof screenshots; keep Playwright output out of the worktree.
 - Before pushing code, run `npm run verify:quick` once, manually or through the
   optional hook; do not run both. `verify` includes this check.
 - Before release, require successful `App checks` and `Database checks` for the
