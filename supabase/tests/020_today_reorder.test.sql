@@ -10,19 +10,19 @@ select plan(24);
 do $$
 begin
   perform set_config(
-    'orbitos.test_local_date',
+    'apraxia.test_local_date',
     ((transaction_timestamp() at time zone 'America/New_York')::date)::text,
     true
   );
   perform set_config(
-    'orbitos.test_forward_date',
+    'apraxia.test_forward_date',
     (
       (transaction_timestamp() at time zone 'Pacific/Kiritimati')::date
     )::text,
     true
   );
   perform set_config(
-    'orbitos.test_backward_date',
+    'apraxia.test_backward_date',
     (
       (transaction_timestamp() at time zone 'Etc/GMT+12')::date
     )::text,
@@ -43,19 +43,19 @@ values
     'a1000000-0000-4000-8000-000000000001',
     '11111111-1111-4111-8111-111111111111',
     'A overdue',
-    current_setting('orbitos.test_local_date')::date - 1
+    current_setting('apraxia.test_local_date')::date - 1
   ),
   (
     'a1000000-0000-4000-8000-000000000002',
     '11111111-1111-4111-8111-111111111111',
     'A due today',
-    current_setting('orbitos.test_local_date')::date
+    current_setting('apraxia.test_local_date')::date
   ),
   (
     'a1000000-0000-4000-8000-000000000003',
     '11111111-1111-4111-8111-111111111111',
     'A future',
-    current_setting('orbitos.test_local_date')::date + 1
+    current_setting('apraxia.test_local_date')::date + 1
   ),
   (
     'a1000000-0000-4000-8000-000000000004',
@@ -67,7 +67,7 @@ values
     'b1000000-0000-4000-8000-000000000001',
     '22222222-2222-4222-8222-222222222222',
     'B overdue',
-    current_setting('orbitos.test_local_date')::date - 1
+    current_setting('apraxia.test_local_date')::date - 1
   );
 
 insert into public.todos (id, user_id, text, due_date, completed)
@@ -75,7 +75,7 @@ values (
   'a1000000-0000-4000-8000-000000000005',
   '11111111-1111-4111-8111-111111111111',
   'A completed',
-  current_setting('orbitos.test_local_date')::date - 1,
+  current_setting('apraxia.test_local_date')::date - 1,
   true
 );
 
@@ -84,7 +84,7 @@ values (
   'a1000000-0000-4000-8000-000000000006',
   '11111111-1111-4111-8111-111111111111',
   'A deleted',
-  current_setting('orbitos.test_local_date')::date - 1,
+  current_setting('apraxia.test_local_date')::date - 1,
   transaction_timestamp()
 );
 
@@ -95,7 +95,7 @@ select results_eq(
   $$
     select id, is_overdue, is_manually_ordered
     from internal.get_today_todos(
-      current_setting('orbitos.test_local_date')::date
+      current_setting('apraxia.test_local_date')::date
     )
   $$,
   $$
@@ -110,7 +110,7 @@ select throws_ok(
   $$
     select *
     from internal.get_today_todos(
-      current_setting('orbitos.test_local_date')::date + 1
+      current_setting('apraxia.test_local_date')::date + 1
     )
   $$,
   '22023',
@@ -122,7 +122,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date + 1,
+      current_setting('apraxia.test_local_date')::date + 1,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         'a1000000-0000-4000-8000-000000000002'::uuid,
@@ -139,7 +139,7 @@ select throws_ok(
   $$
     select *
     from internal.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date + 1,
+      current_setting('apraxia.test_local_date')::date + 1,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         'a1000000-0000-4000-8000-000000000002'::uuid,
@@ -156,7 +156,7 @@ select results_eq(
   $$
     select todo_id, today_rank
     from internal.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000002'::uuid,
         'a1000000-0000-4000-8000-000000000001'::uuid
@@ -175,7 +175,7 @@ select results_eq(
   $$
     select id, today_rank
     from internal.get_today_todos(
-      current_setting('orbitos.test_local_date')::date
+      current_setting('apraxia.test_local_date')::date
     )
   $$,
   $$
@@ -190,7 +190,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         'a1000000-0000-4000-8000-000000000001'::uuid
@@ -206,7 +206,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         null::uuid
@@ -222,7 +222,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array['a1000000-0000-4000-8000-000000000001'::uuid]
     )
   $$,
@@ -235,7 +235,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         'a1000000-0000-4000-8000-000000000003'::uuid
@@ -251,7 +251,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         'b1000000-0000-4000-8000-000000000001'::uuid
@@ -267,7 +267,7 @@ select throws_ok(
   $$
     select *
     from public.reorder_today_todos(
-      current_setting('orbitos.test_local_date')::date,
+      current_setting('apraxia.test_local_date')::date,
       array[
         'a1000000-0000-4000-8000-000000000001'::uuid,
         '99999999-9999-4999-8999-999999999999'::uuid
@@ -300,7 +300,7 @@ select results_eq(
 select lives_ok(
   $$
     update public.todos
-    set due_date = current_setting('orbitos.test_local_date')::date - 3
+    set due_date = current_setting('apraxia.test_local_date')::date - 3
     where id = 'a1000000-0000-4000-8000-000000000003'
   $$,
   'a future todo can become newly eligible'
@@ -310,7 +310,7 @@ select results_eq(
   $$
     select id, today_rank, is_overdue, is_manually_ordered
     from internal.get_today_todos(
-      current_setting('orbitos.test_local_date')::date
+      current_setting('apraxia.test_local_date')::date
     )
   $$,
   $$
@@ -352,7 +352,7 @@ select lives_ok(
     insert into public.todos (text, due_date)
     values (
       'C timezone boundary',
-      current_setting('orbitos.test_forward_date')::date
+      current_setting('apraxia.test_forward_date')::date
     )
   $$,
   'the timezone-boundary fixture is created through browser grants'
@@ -362,7 +362,7 @@ select results_eq(
   $$
     select todo_id, today_rank
     from internal.reorder_today_todos(
-      current_setting('orbitos.test_forward_date')::date,
+      current_setting('apraxia.test_forward_date')::date,
       array[
         (
           select id
@@ -384,7 +384,7 @@ select throws_ok(
   $$
     select *
     from internal.get_today_todos(
-      current_setting('orbitos.test_backward_date')::date
+      current_setting('apraxia.test_backward_date')::date
     )
   $$,
   '22023',
@@ -414,7 +414,7 @@ select is(
   (
     select count(*)
     from internal.get_today_todos(
-      current_setting('orbitos.test_backward_date')::date
+      current_setting('apraxia.test_backward_date')::date
     )
   ),
   0::bigint,
@@ -433,7 +433,7 @@ select results_eq(
   $$
     select text, today_rank
     from internal.get_today_todos(
-      current_setting('orbitos.test_forward_date')::date
+      current_setting('apraxia.test_forward_date')::date
     )
   $$,
   $$values ('C timezone boundary'::text, null::bigint)$$,

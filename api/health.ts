@@ -15,7 +15,7 @@ export function createHealthResponse(
 
   return Response.json(
     {
-      service: "orbitos-cloud",
+      service: "apraxia-cloud",
       runtime: "vercel-function",
       status,
       environment: deploymentEnvironment(source),

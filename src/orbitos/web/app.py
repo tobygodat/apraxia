@@ -28,7 +28,7 @@ DIST_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="orbitOS", version="0.1.0")
+    app = FastAPI(title="apraxia", version="0.1.0")
 
     # https_only is left False so prod works behind a plain reverse proxy; put a
     # TLS terminator in front in production (see deploy/DEPLOY.md, spec §9).

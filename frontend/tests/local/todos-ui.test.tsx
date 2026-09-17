@@ -8,16 +8,16 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import type { Database } from "../../src/types/database";
 import { ConfiguredCloudApp } from "../../src/apps/CloudApp";
 
-const url = process.env.ORBITOS_LOCAL_API;
+const url = process.env.APRAXIA_LOCAL_API;
 if (url !== "http://127.0.0.1:54321")
   throw new Error("Only the fixed local Supabase API is supported.");
 const authOptions = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 };
-const admin = createClient<Database>(url, process.env.ORBITOS_LOCAL_SECRET_KEY!, {
+const admin = createClient<Database>(url, process.env.APRAXIA_LOCAL_SECRET_KEY!, {
   auth: { ...authOptions.auth, storageKey: "local-ui-admin" },
 });
-const client = createClient<Database>(url, process.env.ORBITOS_LOCAL_PUBLIC_KEY!, authOptions);
+const client = createClient<Database>(url, process.env.APRAXIA_LOCAL_PUBLIC_KEY!, authOptions);
 let userId: string | undefined;
 
 beforeAll(async () => {

@@ -48,7 +48,7 @@ export interface WorkspacePreferencesStore {
   subscribe(listener: () => void): () => void;
 }
 
-const STORAGE_KEY = "orbitos:workspace-preferences:v1";
+const STORAGE_KEY = "apraxia:workspace-preferences:v1";
 
 function isThemePreset(value: unknown): value is WorkspaceThemePreset {
   return (

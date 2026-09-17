@@ -138,7 +138,7 @@ describe("TodayList", () => {
     const [source, target] = screen.getAllByRole("listitem");
     const dataTransfer = { setData: vi.fn(), effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(source!, { dataTransfer });
-    expect(dataTransfer.setData).toHaveBeenCalledWith("text/plain", "orbitos-today-reorder");
+    expect(dataTransfer.setData).toHaveBeenCalledWith("text/plain", "apraxia-today-reorder");
     vi.spyOn(target!, "getBoundingClientRect").mockReturnValue({ top: 100, height: 40 } as DOMRect);
     // The pointer (clientY 0 here) is above the row's midpoint: place before.
     fireEvent.dragOver(target!, { dataTransfer });

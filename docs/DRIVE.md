@@ -10,13 +10,13 @@ folders are used as the initial location. No background sync or Drive writes run
 1. Apply `supabase/migrations/20260913000100_google_drive.sql` after inspecting
    the hosted database and preserving a backup, following `CLOUD_DEVELOPMENT.md`.
 2. Enable Google Drive API and Google Picker API in the existing OAuth project.
-   Register `https://orbitos-virid.vercel.app/api/drive/callback` alongside the
+   Register `https://apraxia.dev/api/drive/callback` alongside the
    Calendar redirect. Local full-stack work uses `APP_URL` plus that path.
 3. Keep `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
    `GOOGLE_TOKEN_ENCRYPTION_KEY` on the server. Request the existing
    `https://www.googleapis.com/auth/drive.readonly` scope.
 4. Create a browser API key restricted to **Google Picker API** and these website
-   referrers: `https://orbitos-virid.vercel.app/*` and `https://docs.google.com/*`.
+   referrers: `https://apraxia.dev/*` and `https://docs.google.com/*`.
    Set server environment `GOOGLE_PICKER_API_KEY` to that key and
    `GOOGLE_PICKER_APP_ID` to the Google Cloud project number. For local provider
    testing, explicitly allow the local origin too. See

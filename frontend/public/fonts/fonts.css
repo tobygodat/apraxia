@@ -3,33 +3,33 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/fonts/orbitos-0.woff2) format('woff2');
+  src: url(/fonts/apraxia-0.woff2) format('woff2');
 }
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/fonts/orbitos-1.woff2) format('woff2');
+  src: url(/fonts/apraxia-1.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Space Grotesk';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/fonts/orbitos-2.woff2) format('woff2');
+  src: url(/fonts/apraxia-2.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Space Grotesk';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/fonts/orbitos-3.woff2) format('woff2');
+  src: url(/fonts/apraxia-3.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Space Grotesk';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url(/fonts/orbitos-4.woff2) format('woff2');
+  src: url(/fonts/apraxia-4.woff2) format('woff2');
 }

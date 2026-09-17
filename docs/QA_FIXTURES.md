@@ -54,7 +54,7 @@ listing fail. Omit it for a connected Drive. Pair it with
 ## What persists
 
 Calendar edits, visibility, and page appearance are written to `sessionStorage`
-under `orbitos:qa:workspace:v3:<scenario>:<local date>`, so reload checks are
+under `apraxia:qa:workspace:v3:<scenario>:<local date>`, so reload checks are
 meaningful and each scenario, day, and tab stays isolated. **Reset calendar and
 cover** in the QA menu clears those keys. Tasks and collections are in-memory
 and reset on reload. Classes, notes, and assignments persist across navigation

@@ -7,11 +7,11 @@ import { resolveRuntimeMode } from "./src/config/runtime.ts";
 type ViteEnvironment = Record<string, string | undefined>;
 
 export function createViteConfig(environment: ViteEnvironment) {
-  const runtimeMode = resolveRuntimeMode(environment.VITE_ORBITOS_RUNTIME);
-  const cloudDev = environment.ORBITOS_CLOUD_DEV === "1";
+  const runtimeMode = resolveRuntimeMode(environment.VITE_APRAXIA_RUNTIME);
+  const cloudDev = environment.APRAXIA_CLOUD_DEV === "1";
 
   if (cloudDev && runtimeMode === "legacy") {
-    throw new Error("ORBITOS_CLOUD_DEV=1 cannot be combined with VITE_ORBITOS_RUNTIME=legacy.");
+    throw new Error("APRAXIA_CLOUD_DEV=1 cannot be combined with VITE_APRAXIA_RUNTIME=legacy.");
   }
 
   const cloudRuntime = cloudDev || runtimeMode === "cloud";
@@ -20,7 +20,7 @@ export function createViteConfig(environment: ViteEnvironment) {
   return {
     plugins: [react(), pdfAssets()],
     // A literal lets Rollup drop the legacy runtime branch in App.tsx.
-    define: { "import.meta.env.VITE_ORBITOS_RUNTIME": JSON.stringify(runtimeMode) },
+    define: { "import.meta.env.VITE_APRAXIA_RUNTIME": JSON.stringify(runtimeMode) },
     server: {
       port: Number.isNaN(requestedPort) ? 5173 : requestedPort,
       strictPort: true,

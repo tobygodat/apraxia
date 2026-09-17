@@ -1,5 +1,5 @@
 ---
-name: "orbitOS"
+name: "apraxia"
 description: "A personal workspace with charcoal surfaces, serif page headings, and restrained controls."
 colors:
   primary: "#f0efed"
@@ -139,13 +139,13 @@ components:
     backgroundColor: "#2b2b2b"
 ---
 
-# Design System: orbitOS
+# Design System: apraxia
 
 ## Overview
 
 **Creative North Star: "The Quiet Desk"**
 
-orbitOS uses dark neutral surfaces, warm light text, and familiar document typography. Georgia page headings give the workspace a personal character; Segoe UI keeps navigation, forms, and dense task information practical.
+apraxia uses dark neutral surfaces, warm light text, and familiar document typography. Georgia page headings give the workspace a personal character; Segoe UI keeps navigation, forms, and dense task information practical.
 
 Hierarchy comes from spacing, fine rules, and small changes in surface tone. Calendar fills and status colors carry information; the surrounding interface stays restrained.
 

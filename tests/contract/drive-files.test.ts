@@ -72,7 +72,7 @@ it("streams a PDF larger than 4.5 MB without waiting for the full download", asy
     headers,
   );
   expect(response.headers.get("content-type")).toBe("application/pdf");
-  expect(decodeURIComponent(response.headers.get("x-orbitos-file-name")!)).toBe(
+  expect(decodeURIComponent(response.headers.get("x-apraxia-file-name")!)).toBe(
     "Renamed lecture.pdf",
   );
   expect(response.headers.get("cache-control")).toContain("no-store");

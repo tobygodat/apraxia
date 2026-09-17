@@ -1,6 +1,6 @@
 # Architecture
 
-orbitOS has two data paths. Ordinary workspace records go from the browser
+apraxia has two data paths. Ordinary workspace records go from the browser
 straight to Supabase Postgres under row-level security. Anything that needs a
 Google credential goes through a Vercel function, which runs server-only code and
 never exposes the credential to the browser.

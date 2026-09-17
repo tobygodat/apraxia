@@ -1,6 +1,6 @@
 """Single entrypoint — web + scheduler + bot in one asyncio loop (spec §6).
 
-This is the integration point that keeps orbitOS "one process, one service":
+This is the integration point that keeps apraxia "one process, one service":
 uvicorn (the FastAPI app), APScheduler, and the Telegram bot all run on the same
 event loop. The bot is optional — without a token, the web app and scheduler run
 alone.

@@ -233,7 +233,7 @@ describe("Main workspace integration", () => {
     mount(f.props);
     await screen.findByText("No projects in this view.");
     fireEvent.click(screen.getByRole("button", { name: "+ add" }));
-    await screen.findByRole("dialog", { name: "Add to orbitOS" });
+    await screen.findByRole("dialog", { name: "Add to apraxia" });
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
     expect(screen.queryByRole("searchbox")).toBeNull();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });

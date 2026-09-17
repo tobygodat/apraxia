@@ -143,7 +143,7 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
 if (
   typeof window !== "undefined" &&
   import.meta.env.MODE !== "test" &&
-  import.meta.env.VITE_ORBITOS_RUNTIME !== "legacy"
+  import.meta.env.VITE_APRAXIA_RUNTIME !== "legacy"
 )
   void preloadRouteChunk(window.location.pathname)?.catch(() => undefined);
 
@@ -448,7 +448,7 @@ function WorkspaceLayout({
         onOpenSearch={() => setSearchOpen(true)}
       />
       {addOpen && (
-        <WorkspaceDialog title="Add to orbitOS" onClose={() => setAddOpen(false)}>
+        <WorkspaceDialog title="Add to apraxia" onClose={() => setAddOpen(false)}>
           <div className="workspace-add-choices">
             <button
               onClick={() => {

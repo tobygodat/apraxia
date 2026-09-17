@@ -46,13 +46,13 @@ const retry =
 
 export function agentDiscovery(scopes: string[]) {
   return {
-    name: "orbitOS personal agent API",
+    name: "apraxia personal agent API",
     version: "1",
     base_path: "/api/agent/v1",
     openapi: "/api/agent/v1/openapi",
-    authentication: "Authorization: Bearer <ORBITOS_AGENT_TOKEN>",
+    authentication: "Authorization: Bearer <APRAXIA_AGENT_TOKEN>",
     scopes,
-    ownership: "One account, fixed by server ORBITOS_AGENT_USER_ID. No caller-supplied owner.",
+    ownership: "One account, fixed by server APRAXIA_AGENT_USER_ID. No caller-supplied owner.",
     workspace: Object.fromEntries(
       workspaceBuckets.map((bucket) => [
         bucket,
@@ -488,7 +488,7 @@ export function agentOpenApi() {
   return {
     openapi: "3.1.0",
     info: {
-      title: "orbitOS personal agent API",
+      title: "apraxia personal agent API",
       version: "1.0.0",
       description:
         "Authenticated API for one server-bound account. Date-only due dates and opaque versions must be preserved. " +

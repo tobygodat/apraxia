@@ -1,4 +1,4 @@
-"""orbitOS — a self-hosted personal CRM.
+"""apraxia — a self-hosted personal CRM.
 
 Legacy runtime: a FastAPI JSON API, an APScheduler
 job runner, and a Telegram bot all run in a single asyncio loop over one SQLite

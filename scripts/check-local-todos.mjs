@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 try {
   const config = readFileSync(new URL("../supabase/config.toml", import.meta.url), "utf8");
   if (
-    !/^project_id\s*=\s*"orbitos"\s*$/m.test(config) ||
+    !/^project_id\s*=\s*"apraxia"\s*$/m.test(config) ||
     !/^max_rows\s*=\s*1000\s*$/m.test(config)
   ) {
     throw new Error("Unexpected local project configuration.");
@@ -34,16 +34,16 @@ try {
       windowsHide: true,
       env: {
         ...process.env,
-        ORBITOS_LOCAL_API: status.API_URL,
-        ORBITOS_LOCAL_PUBLIC_KEY: status.PUBLISHABLE_KEY,
-        ORBITOS_LOCAL_SECRET_KEY: status.SECRET_KEY,
+        APRAXIA_LOCAL_API: status.API_URL,
+        APRAXIA_LOCAL_PUBLIC_KEY: status.PUBLISHABLE_KEY,
+        APRAXIA_LOCAL_SECRET_KEY: status.SECRET_KEY,
       },
     },
   );
   process.exitCode = run.status ?? 1;
 } catch {
   console.error(
-    "Local Todo verification could not start. Start orbitos local Supabase first; no hosted target is supported.",
+    "Local Todo verification could not start. Start apraxia local Supabase first; no hosted target is supported.",
   );
   process.exitCode = 1;
 }

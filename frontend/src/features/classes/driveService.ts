@@ -91,7 +91,7 @@ export function createDriveService(client: SupabaseClient<Database>): DriveServi
       const response = await request(`pdf?id=${encodeURIComponent(file.id)}`, "GET", signal);
       let name = file.name;
       try {
-        name = decodeURIComponent(response.headers.get("X-Orbitos-File-Name") ?? "") || name;
+        name = decodeURIComponent(response.headers.get("X-Apraxia-File-Name") ?? "") || name;
       } catch {
         /* Preserve the saved display name if the header is invalid. */
       }

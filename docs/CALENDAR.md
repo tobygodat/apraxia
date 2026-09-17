@@ -14,10 +14,10 @@ The live Supabase project is `oidvvenjamgcezdptfjr`. Vercel Production holds
   padded standard Base64. Never put its value in chat or tracked files.
 
 Enable Google Calendar API. Register the exact Calendar redirect:
-`https://orbitos-virid.vercel.app/api/calendar/callback`.
+`https://apraxia.dev/api/calendar/callback`.
 Retain the separate Supabase app sign-in redirect:
 `https://oidvvenjamgcezdptfjr.supabase.co/auth/v1/callback`.
-Supabase's Site URL and allowed app return are `https://orbitos-virid.vercel.app/`.
+Supabase's Site URL and allowed app return are `https://apraxia.dev/`.
 Redeploy after changing environment settings; connect through Settings and
 complete the separate Calendar consent. Existing read-only connections must
 reconnect to grant event editing. App sign-in alone does not connect Calendar.

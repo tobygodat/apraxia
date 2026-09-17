@@ -1,4 +1,4 @@
--- orbitOS database schema (spec §3).
+-- apraxia database schema (spec §3).
 -- Verbatim from the spec, with IF NOT EXISTS so migrate() is idempotent.
 -- Extracted + manual items share tables; `source` distinguishes origin.
 

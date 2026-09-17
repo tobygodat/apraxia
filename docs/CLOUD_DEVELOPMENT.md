@@ -43,7 +43,7 @@ workflow holds no secrets.
 
 | Variable | Local dev | Vercel | Browser-safe | Validation |
 | --- | --- | --- | --- | --- |
-| `VITE_ORBITOS_RUNTIME` | set by `npm run dev:web` | optional | yes | `cloud` or `legacy`; anything else throws (`frontend/src/config/runtime.ts`). Defaults to `cloud`. |
+| `VITE_APRAXIA_RUNTIME` | set by `npm run dev:web` | optional | yes | `cloud` or `legacy`; anything else throws (`frontend/src/config/runtime.ts`). Defaults to `cloud`. |
 | `VITE_SUPABASE_URL` | required | required | yes | HTTPS origin, or a loopback HTTP origin. Must equal `SUPABASE_URL`. |
 | `VITE_SUPABASE_ANON_KEY` | required | required | yes | Browser-safe Supabase publishable key. Must equal `SUPABASE_ANON_KEY` and differ from the service-role key. |
 | `SUPABASE_URL` | required | required | no | Same origin rule; must match `VITE_SUPABASE_URL`. |
@@ -155,7 +155,7 @@ run locally, report the missing prerequisite or CI-only difference explicitly.
 ## Using Codex and GPT-6 Astra
 
 Official guidance reviewed on 2026-09-15. The validation table and CI allowlist
-are orbitOS policy choices applying that guidance; OpenAI does not prescribe
+are apraxia policy choices applying that guidance; OpenAI does not prescribe
 these particular commands or file filters.
 
 - Give Codex the goal, relevant files/errors, constraints, and an observable
@@ -276,7 +276,7 @@ copy; the rest is identical.
 Populate the ignored `.env.local` with local Supabase settings. Never commit
 credentials. The first Vercel run may require account/project linking.
 The local app normally uses `http://127.0.0.1:3000`; `/api/health` should identify
-`orbitos-cloud` and `vercel-function`. `npm run dev:web` runs Vite alone for
+`apraxia-cloud` and `vercel-function`. `npm run dev:web` runs Vite alone for
 fictional UI fixtures; see the root README.
 
 ### Agent-managed Docker startup on this Windows machine
@@ -349,7 +349,7 @@ retains the initial migration; full reset separately verifies recreation.
 These commands are disposable-local only, never for hosted data.
 
 The OAuth concurrency suite uses independent sessions in the checked local
-`supabase_db_orbitos` container to prove one consume winner, expiry during a
+`supabase_db_apraxia` container to prove one consume winner, expiry during a
 lock wait, and rollback/retry. It verifies container identity and removes only
 its generated fixtures. Do not adapt it to a hosted database.
 
@@ -439,7 +439,14 @@ reveals the complete resized image. No public image bucket is used.
 | Development | Local Supabase | Ignored `.env.local` |
 | Vercel Production | `oidvvenjamgcezdptfjr` | Vercel Production variables |
 
-The live app is `https://orbitos-virid.vercel.app`, linked to `tobygodat/tobiOS`.
+The live app is `https://apraxia.dev`, linked to `tobygodat/apraxia`.
+Server variables were renamed from `ORBITOS_*` to `APRAXIA_*` with the app
+rename (`APRAXIA_AGENT_USER_ID`, `APRAXIA_AGENT_SCOPES`, `VITE_APRAXIA_RUNTIME`,
+`APRAXIA_CLOUD_DEV`). The agent token stays stored as `ORBITOS_AGENT_TOKEN` in
+Vercel Production because sensitive variables cannot be renamed; the server
+accepts `APRAXIA_AGENT_TOKEN` or that name. `APP_URL` must be
+`https://apraxia.dev`, and Google OAuth redirect URIs plus the Supabase Site URL
+must match it, or Calendar and Drive connections fail.
 There is no required Preview environment. A main push may deploy immediately;
 apply required forward migrations before publishing dependent code. Inspect
 current hosted data and migration history, and preserve a backup/export when
@@ -486,7 +493,7 @@ recovery files without an explicit request. Backup location is in the root READM
 
 See [Agent API](AGENT_API.md) for Muse/curl examples, endpoint discovery,
 permissions, and retry rules. The server-only variables are
-`ORBITOS_AGENT_TOKEN`, `ORBITOS_AGENT_USER_ID`, and `ORBITOS_AGENT_SCOPES`;
+`APRAXIA_AGENT_TOKEN`, `APRAXIA_AGENT_USER_ID`, and `APRAXIA_AGENT_SCOPES`;
 `.env.cloud.example` includes placeholders. Apply the forward-only migration
 before deploying the API to the existing app, complete the normal database/app
 release gates, then verify authenticated hosted reads and intended writes.

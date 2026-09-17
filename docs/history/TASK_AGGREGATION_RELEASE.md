@@ -143,7 +143,7 @@ forward migration and domain promotion.
 
 ## Completed production release (2026-09-14)
 
-The production app at `https://orbitos-virid.vercel.app` was promoted to the
+The production app at `https://apraxia.dev` was promoted to the
 matching aggregation UI after an atomic forward transaction applied
 `20260913000300`, `20260913000400`, and `20260914000100`. The production build
 and both CI checks passed on runtime commit `4a1aa0e`; generated database types

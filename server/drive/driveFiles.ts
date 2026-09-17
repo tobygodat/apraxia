@@ -137,7 +137,7 @@ export async function serveDriveFiles(
       "Content-Security-Policy": "sandbox",
       "X-Frame-Options": "DENY",
       ...(typeof value.name === "string" && value.name.length <= 1024
-        ? { "X-Orbitos-File-Name": encodeURIComponent(value.name) }
+        ? { "X-Apraxia-File-Name": encodeURIComponent(value.name) }
         : {}),
     },
   });

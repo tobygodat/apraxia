@@ -64,7 +64,7 @@ describe("Google event writes", () => {
     const fetcher = vi.fn<typeof fetch>();
     const response = await createCalendarHandler("events", {
       environment: {
-        APP_URL: "https://orbitos.example.test",
+        APP_URL: "https://apraxia.example.test",
         SUPABASE_URL: "https://project.supabase.co",
         VITE_SUPABASE_URL: "https://project.supabase.co",
         SUPABASE_ANON_KEY: "sb_publishable_test",
@@ -73,7 +73,7 @@ describe("Google event writes", () => {
       },
       fetch: fetcher,
     })(
-      new Request("https://orbitos.example.test/api/calendar/events", {
+      new Request("https://apraxia.example.test/api/calendar/events", {
         method: "POST",
         headers: { origin: "https://other.test", "Content-Type": "application/json" },
         body: JSON.stringify(update),
