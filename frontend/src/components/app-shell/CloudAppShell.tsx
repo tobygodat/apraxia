@@ -166,7 +166,13 @@ export function CloudAppShell({
       <aside className="cloud-shell__sidebar" aria-label="Workspace sidebar">
         <div className="cloud-shell__brand-row">
           <Link to="/" className="cloud-shell__wordmark">
-            <WorkspaceIcon name="orbit" />
+            <img
+              className="cloud-shell__mark"
+              src="/brand/apraxia-mark-96.png"
+              alt=""
+              width={25}
+              height={25}
+            />
             <span>apraxia</span>
           </Link>
         </div>

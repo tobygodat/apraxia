@@ -40,6 +40,13 @@ function AuthFrame({
   return (
     <main className="auth-screen">
       <section className="auth-card" aria-labelledby="auth-card-title">
+        <img
+          className="auth-card__mark"
+          src="/brand/apraxia-mark-256.png"
+          alt=""
+          width={64}
+          height={64}
+        />
         <p className="auth-card__eyebrow">{eyebrow}</p>
         <h1 id="auth-card-title">{title}</h1>
         {children}
