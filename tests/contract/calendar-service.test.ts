@@ -448,8 +448,10 @@ describe("Calendar endpoint session and callback boundary", () => {
         });
       throw new Error("Unexpected fixture request");
     });
+    // Vercel appends the dynamic route segment to the query (`action=events`);
+    // the week request must still pass the strict parameter check.
     const response = await createCalendarHandler("events", { environment, fetch: fetcher })(
-      request("events?sunday=2026-08-30"),
+      request("events?sunday=2026-08-30&action=events"),
     );
     expect(response.status).toBe(200);
     const value = (await response.json()) as {
@@ -465,6 +467,24 @@ describe("Calendar endpoint session and callback boundary", () => {
     );
     expect(fetcher.mock.calls.some(([url]) => String(url).includes("/profiles"))).toBe(false);
     expect(JSON.stringify(value)).not.toContain("provider-private-detail");
+  });
+
+  it("rejects mismatched, duplicate, and unrelated routing query parameters", async () => {
+    const fetcher = vi.fn<typeof fetch>(async (url) => {
+      const target = String(url);
+      if (target.endsWith("/auth/v1/user"))
+        return Response.json({ id: userId, role: "authenticated", is_anonymous: false });
+      if (target.endsWith("/read_calendar_credentials")) return Response.json(stored());
+      throw new Error(`Unexpected fixture request: ${target}`);
+    });
+    for (const query of ["action=status", "action=events&action=events", "action=events&week=1"]) {
+      const response = await createCalendarHandler("events", { environment, fetch: fetcher })(
+        request(`events?sunday=2026-08-30&${query}`),
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ error: { code: "invalid_request" } });
+    }
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes("googleapis.com"))).toBe(false);
   });
 });
 
