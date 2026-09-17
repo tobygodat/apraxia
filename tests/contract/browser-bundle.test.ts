@@ -9,7 +9,7 @@ const repositoryRoot = process.cwd();
 const scannerPath = path.join(repositoryRoot, "scripts", "check-browser-bundle.mjs");
 
 async function runScanner(contents: string, environment: Record<string, string> = {}) {
-  const temporaryRoot = await mkdtemp(path.join(tmpdir(), "orbitos-browser-bundle-"));
+  const temporaryRoot = await mkdtemp(path.join(tmpdir(), "apraxia-browser-bundle-"));
   const bundleDirectory = path.join(temporaryRoot, "frontend", "dist");
 
   try {

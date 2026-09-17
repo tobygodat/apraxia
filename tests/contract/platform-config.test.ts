@@ -64,10 +64,10 @@ describe("Vercel platform configuration", () => {
     ) as { scripts: Record<string, string> };
 
     expect(packageJson.scripts["dev:web"]).toContain(
-      "ORBITOS_CLOUD_DEV=1 VITE_ORBITOS_RUNTIME=cloud",
+      "APRAXIA_CLOUD_DEV=1 VITE_APRAXIA_RUNTIME=cloud",
     );
     expect(packageJson.scripts["dev:legacy-web"]).toContain(
-      "ORBITOS_CLOUD_DEV=0 VITE_ORBITOS_RUNTIME=legacy",
+      "APRAXIA_CLOUD_DEV=0 VITE_APRAXIA_RUNTIME=legacy",
     );
   });
 });

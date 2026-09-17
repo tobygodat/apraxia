@@ -11,7 +11,7 @@ it("loads the emitted API modules with plain Node ESM, including health", async 
   const root = process.cwd();
   const scratchParent = path.resolve(root, "node_modules", ".cache");
   await mkdir(scratchParent, { recursive: true });
-  const scratch = await mkdtemp(path.join(scratchParent, "orbitos-node-runtime-"));
+  const scratch = await mkdtemp(path.join(scratchParent, "apraxia-node-runtime-"));
   // Guard before the try so cleanup never throws out of `finally` and masks a real failure.
   if (path.dirname(path.resolve(scratch)) !== scratchParent) {
     throw new Error("Unexpected runtime-test artifact path");

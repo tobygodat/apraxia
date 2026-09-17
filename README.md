@@ -1,4 +1,4 @@
-# orbitOS
+# apraxia
 
 A private, manual-entry workspace for Todos, Projects, and Ideas.
 Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
@@ -15,7 +15,17 @@ migration and UI release completed on 2026-09-14; see
 [the release record](docs/history/TASK_AGGREGATION_RELEASE.md).
 
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
-[orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).
+[apraxia.dev](https://apraxia.dev).
+
+The app was renamed from orbitOS to apraxia on 2026-09-17. Persisted or hosted
+identifiers keep the old name on purpose: the database roles and enum
+(`orbitos_rpc`, `orbitos_agent`, `orbitos_record_type`), the `orbitos.agent_owner`
+session setting and `orbitos:today-order:` lock key inside applied migrations,
+the token-encryption purpose strings, the legacy `orbitos:classes:v1` browser
+payload, the preserved Python package `src/orbitos` with its `orbitos.db` data,
+and the Vercel Production variable `ORBITOS_AGENT_TOKEN`, which cannot be renamed
+in place. Renaming the database or legacy identifiers is a separate,
+data-affecting change.
 
 ## Status
 

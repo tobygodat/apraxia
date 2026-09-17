@@ -34,9 +34,11 @@ export function invalid(
   throw new AgentError("invalid_request", 400, message);
 }
 export function authenticateAgent(request: Request, env: Record<string, string | undefined>) {
-  const token = env.ORBITOS_AGENT_TOKEN;
-  const userId = env.ORBITOS_AGENT_USER_ID;
-  const scopes = (env.ORBITOS_AGENT_SCOPES ?? "workspace:read").split(",").map((s) => s.trim());
+  // Vercel cannot rename a sensitive variable, so production still stores the token under
+  // the pre-rename name. Prefer the current name and accept the stored one.
+  const token = env.APRAXIA_AGENT_TOKEN ?? env.ORBITOS_AGENT_TOKEN;
+  const userId = env.APRAXIA_AGENT_USER_ID;
+  const scopes = (env.APRAXIA_AGENT_SCOPES ?? "workspace:read").split(",").map((s) => s.trim());
   if (
     !token ||
     !/^[A-Za-z0-9_-]{43,256}$/.test(token) ||

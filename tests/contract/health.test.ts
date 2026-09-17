@@ -41,7 +41,7 @@ describe("cloud health", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toMatchObject({
-      service: "orbitos-cloud",
+      service: "apraxia-cloud",
       runtime: "vercel-function",
       status: "ok",
       environment: "preview",

@@ -52,7 +52,7 @@ function RestoringSession() {
   return (
     <main className="auth-screen" aria-busy="true">
       <p className="auth-status" role="status">
-        Restoring your orbitOS session…
+        Restoring your apraxia session…
       </p>
     </main>
   );
@@ -61,7 +61,7 @@ function RestoringSession() {
 function RestoreError() {
   const { retryRestore } = useAuth();
   return (
-    <AuthFrame eyebrow="Session check" title="orbitOS could not verify your session">
+    <AuthFrame eyebrow="Session check" title="apraxia could not verify your session">
       <p className="auth-card__copy" role="alert">
         Your data has not been loaded. Check the connection and try again.
       </p>
@@ -77,7 +77,7 @@ function CleanupError() {
   return (
     <AuthFrame eyebrow="Account boundary" title="The previous workspace could not close safely">
       <p className="auth-card__copy" role="alert">
-        orbitOS has kept every private workspace closed because local user state could not be
+        apraxia has kept every private workspace closed because local user state could not be
         cleared. Try the cleanup again before continuing.
       </p>
       <button className="auth-card__button" type="button" onClick={retryCleanup}>
@@ -137,7 +137,7 @@ function SignedOut({
       ? "Your session ended"
       : reason === "signed_out"
         ? "You’re signed out"
-        : "Sign in to orbitOS";
+        : "Sign in to apraxia";
   const copy =
     reason === "expired"
       ? "Sign in again to reopen your private workspace."

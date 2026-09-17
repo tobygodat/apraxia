@@ -1,5 +1,5 @@
 // LEGACY RUNTIME ONLY. This client serves the transitional FastAPI application
-// (VITE_ORBITOS_RUNTIME=legacy); the cloud app talks to Supabase directly and
+// (VITE_APRAXIA_RUNTIME=legacy); the cloud app talks to Supabase directly and
 // the /api/me and /api/login endpoints do not exist on Vercel.
 //
 // Thin typed fetch client for the /api JSON API.

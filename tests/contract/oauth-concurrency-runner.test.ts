@@ -12,10 +12,10 @@ const { assertLocalDockerEndpoint, assertLocalContainer, assertDatabaseIdentity 
 );
 
 const localContainer = {
-  name: "/supabase_db_orbitos",
+  name: "/supabase_db_apraxia",
   id: "a".repeat(64),
   running: true,
-  labels: { "com.supabase.cli.project": "orbitos" },
+  labels: { "com.supabase.cli.project": "apraxia" },
   image: "public.ecr.aws/supabase/postgres:17.6.1.063",
 };
 const localDatabase = {
@@ -54,7 +54,7 @@ describe("local OAuth concurrency runner safety guards (not concurrency proof)",
 
   it.each([
     { name: "/supabase_db_other" },
-    { id: "supabase_db_orbitos" },
+    { id: "supabase_db_apraxia" },
     { running: false },
     { labels: {} },
     { labels: { "com.supabase.cli.project": "production" } },

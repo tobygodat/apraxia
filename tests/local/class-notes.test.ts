@@ -6,13 +6,13 @@ import { createClassService } from "../../frontend/src/features/classes/classSer
 import { createAssignmentService } from "../../frontend/src/features/classes/assignmentService";
 import { createNoteService, prepareUpload } from "../../frontend/src/features/classes/noteService";
 
-const url = process.env.ORBITOS_LOCAL_API;
+const url = process.env.APRAXIA_LOCAL_API;
 if (url !== "http://127.0.0.1:54321")
   throw new Error("Only the fixed local Supabase API is supported.");
 const options = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 };
-const admin = createClient<Database>(url, process.env.ORBITOS_LOCAL_SECRET_KEY!, options);
+const admin = createClient<Database>(url, process.env.APRAXIA_LOCAL_SECRET_KEY!, options);
 const users: { id: string; client: SupabaseClient<Database> }[] = [];
 const paths: string[] = [];
 const signal = () => new AbortController().signal;
@@ -23,7 +23,7 @@ beforeAll(async () => {
     const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     if (created.error || !created.data.user)
       throw new Error("Could not create local Classes test user.");
-    const client = createClient<Database>(url, process.env.ORBITOS_LOCAL_PUBLIC_KEY!, options);
+    const client = createClient<Database>(url, process.env.APRAXIA_LOCAL_PUBLIC_KEY!, options);
     users.push({ id: created.data.user.id, client });
     if ((await client.auth.signInWithPassword({ email, password })).error)
       throw new Error("Local Classes sign-in failed.");

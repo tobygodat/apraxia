@@ -167,7 +167,7 @@ export function CloudAppShell({
         <div className="cloud-shell__brand-row">
           <Link to="/" className="cloud-shell__wordmark">
             <WorkspaceIcon name="orbit" />
-            <span>orbitOS</span>
+            <span>apraxia</span>
           </Link>
         </div>
 

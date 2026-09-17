@@ -1,4 +1,4 @@
-# orbitOS
+# apraxia
 
 <!-- impeccable:product-schema 1 -->
 
@@ -9,7 +9,7 @@ web
 ## Users
 
 Currently a personal workspace for its owner. The owner plans to give friends
-access so they can use orbitOS for their own information and workflows.
+access so they can use apraxia for their own information and workflows.
 Friends' access is a future product direction, not a claim of launch readiness.
 
 ## Product Purpose
@@ -49,7 +49,7 @@ AGENTS.md.
 
 ## Brand Commitments
 
-The product name is orbitOS. Favor direct, understandable language.
+The product name is apraxia. Favor direct, understandable language.
 The isolated study under frontend/qa/redesign/ records an experiment, not
 binding visual direction for the whole product.
 

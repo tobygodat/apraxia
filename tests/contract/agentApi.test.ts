@@ -4,9 +4,9 @@ import { createAgentHandler } from "../../server/agent/agentHandler.js";
 const token = "test-agent-token-" + "a".repeat(48);
 const owner = "12345678-1234-4234-8234-123456789abc";
 const environment = {
-  ORBITOS_AGENT_TOKEN: token,
-  ORBITOS_AGENT_USER_ID: owner,
-  ORBITOS_AGENT_SCOPES: "workspace:read,workspace:write,calendar:read,calendar:write,files:read",
+  APRAXIA_AGENT_TOKEN: token,
+  APRAXIA_AGENT_USER_ID: owner,
+  APRAXIA_AGENT_SCOPES: "workspace:read,workspace:write,calendar:read,calendar:write,files:read",
   SUPABASE_URL: "https://database.example",
   SUPABASE_SERVICE_ROLE_KEY: "sb_secret_server-only",
 };
@@ -27,7 +27,7 @@ function request(
 function setup(
   response: unknown = { items: [], next_offset: null },
   status = 200,
-  env = environment,
+  env: Record<string, string | undefined> = environment,
 ) {
   const fetcher = vi
     .fn<typeof fetch>()
@@ -44,6 +44,12 @@ describe("agent API boundary", () => {
     ).toBe(401);
     expect((await createAgentHandler({ environment: {} })(request("todos"))).status).toBe(503);
     expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("accepts the token under the pre-rename Vercel variable name", async () => {
+    const { APRAXIA_AGENT_TOKEN, ...rest } = environment;
+    const { handle } = setup(undefined, 200, { ...rest, ORBITOS_AGENT_TOKEN: APRAXIA_AGENT_TOKEN });
+    expect((await handle(request("meta"))).status).toBe(200);
+    expect((await handle(request("meta", { token: "wrong" }))).status).toBe(401);
   });
   it("binds ownership to environment and never forwards the agent credential upstream", async () => {
     const { handle, fetcher } = setup();
@@ -89,7 +95,7 @@ describe("agent API boundary", () => {
   it("requires write scope, idempotency and a version precondition", async () => {
     const readonly = setup(undefined, 200, {
       ...environment,
-      ORBITOS_AGENT_SCOPES: "workspace:read",
+      APRAXIA_AGENT_SCOPES: "workspace:read",
     });
     expect(
       (
@@ -200,7 +206,7 @@ describe("agent API boundary", () => {
     expect(pending.fetcher).toHaveBeenCalledTimes(1);
     const limited = setup(undefined, 200, {
       ...environment,
-      ORBITOS_AGENT_SCOPES: "workspace:read",
+      APRAXIA_AGENT_SCOPES: "workspace:read",
     });
     expect((await limited.handle(request(`note-content?id=${owner}`))).status).toBe(403);
     expect(limited.fetcher).not.toHaveBeenCalled();

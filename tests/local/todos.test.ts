@@ -6,11 +6,11 @@ import type { Database } from "../../frontend/src/types/database";
 import { createSupabaseTodoService } from "../../frontend/src/features/todos/supabaseTodoService";
 import { localToday, addSqlDateDays } from "../../frontend/src/features/todos/dateDomain";
 
-const url = process.env.ORBITOS_LOCAL_API;
+const url = process.env.APRAXIA_LOCAL_API;
 if (url !== "http://127.0.0.1:54321")
   throw new Error("Only the fixed local Supabase API is supported.");
-const publicKey = process.env.ORBITOS_LOCAL_PUBLIC_KEY!;
-const secretKey = process.env.ORBITOS_LOCAL_SECRET_KEY!;
+const publicKey = process.env.APRAXIA_LOCAL_PUBLIC_KEY!;
+const secretKey = process.env.APRAXIA_LOCAL_SECRET_KEY!;
 const authOptions = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 };

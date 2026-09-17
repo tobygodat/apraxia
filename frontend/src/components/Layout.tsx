@@ -12,7 +12,7 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
     <div className="orbit-shell">
       <header className="orbit-shell__header">
         <Link to="/" className="orbit-shell__wordmark">
-          /orbitOS/
+          /apraxia/
         </Link>
         <nav className="orbit-shell__nav" aria-label="Primary navigation">
           {SECTIONS.map((section) => (

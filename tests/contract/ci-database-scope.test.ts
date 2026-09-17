@@ -62,7 +62,7 @@ function scope(eventName: string, base: string, head: string, eventText?: string
 
 beforeAll(() => {
   mkdirSync(cacheRoot, { recursive: true });
-  scratch = mkdtempSync(path.join(cacheRoot, "orbitos-ci-scope-"));
+  scratch = mkdtempSync(path.join(cacheRoot, "apraxia-ci-scope-"));
   if (path.dirname(path.resolve(scratch)) !== cacheRoot) throw new Error("Unexpected fixture path");
   git("init", "-q");
   git("config", "core.hooksPath", path.join(scratch, "no-hooks"));

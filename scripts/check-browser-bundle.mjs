@@ -3,6 +3,7 @@ import path from "node:path";
 
 const bundleDirectory = path.resolve("frontend", "dist");
 const sensitiveNames = [
+  "APRAXIA_AGENT_TOKEN",
   "ORBITOS_AGENT_TOKEN",
   "SUPABASE_SERVICE_ROLE_KEY",
   "GOOGLE_CLIENT_SECRET",

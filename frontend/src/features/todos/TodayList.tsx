@@ -324,7 +324,7 @@ export function TodayList({
                     if (event.dataTransfer) {
                       event.dataTransfer.effectAllowed = "move";
                       // Only this list's private ref carries the record identity.
-                      event.dataTransfer.setData("text/plain", "orbitos-today-reorder");
+                      event.dataTransfer.setData("text/plain", "apraxia-today-reorder");
                     }
                   }}
                   onDragOver={(event) => handleDragOver(event, todo.id)}

@@ -5,13 +5,13 @@ import type { Database } from "../../frontend/src/types/database";
 import { createAgentHandler } from "../../server/agent/agentHandler";
 import { createNoteService, prepareUpload } from "../../frontend/src/features/classes/noteService";
 
-const url = process.env.ORBITOS_LOCAL_API;
+const url = process.env.APRAXIA_LOCAL_API;
 if (url !== "http://127.0.0.1:54321")
   throw new Error("Only disposable local Supabase is supported.");
 const options = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 };
-const admin = createClient<Database>(url, process.env.ORBITOS_LOCAL_SECRET_KEY!, options);
+const admin = createClient<Database>(url, process.env.APRAXIA_LOCAL_SECRET_KEY!, options);
 const users: { id: string; client: SupabaseClient<Database> }[] = [];
 const token = randomBytes(32).toString("base64url");
 const paths: string[] = [];
@@ -21,7 +21,7 @@ beforeAll(async () => {
     const password = randomUUID();
     const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     if (created.error || !created.data.user) throw new Error("Local user creation failed.");
-    const client = createClient<Database>(url, process.env.ORBITOS_LOCAL_PUBLIC_KEY!, options);
+    const client = createClient<Database>(url, process.env.APRAXIA_LOCAL_PUBLIC_KEY!, options);
     users.push({ id: created.data.user.id, client });
     if ((await client.auth.signInWithPassword({ email, password })).error)
       throw new Error("Local sign-in failed.");
@@ -39,11 +39,11 @@ afterAll(async () => {
 function handle(user = users[0]!) {
   return createAgentHandler({
     environment: {
-      ORBITOS_AGENT_TOKEN: token,
-      ORBITOS_AGENT_USER_ID: user.id,
-      ORBITOS_AGENT_SCOPES: "workspace:read,workspace:write,files:read",
+      APRAXIA_AGENT_TOKEN: token,
+      APRAXIA_AGENT_USER_ID: user.id,
+      APRAXIA_AGENT_SCOPES: "workspace:read,workspace:write,files:read",
       SUPABASE_URL: url,
-      SUPABASE_SERVICE_ROLE_KEY: process.env.ORBITOS_LOCAL_SECRET_KEY!,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.APRAXIA_LOCAL_SECRET_KEY!,
     },
   });
 }

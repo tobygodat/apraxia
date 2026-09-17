@@ -10,9 +10,9 @@ Set these **server-only** Vercel environment variables for the existing app:
 
 | Variable | Value |
 | --- | --- |
-| `ORBITOS_AGENT_TOKEN` | A dedicated random secret: 32 random bytes encoded as base64url (43 characters), or 64 random hexadecimal characters. Accepted characters are letters, digits, `_`, `-`; length 43–256. |
-| `ORBITOS_AGENT_USER_ID` | Your existing Supabase Auth user UUID. This fixes the account; requests cannot choose an owner. |
-| `ORBITOS_AGENT_SCOPES` | Comma-separated permissions. For the requested access: `workspace:read,workspace:write,calendar:read,calendar:write,files:read`. Omitted defaults to `workspace:read`. |
+| `APRAXIA_AGENT_TOKEN` | A dedicated random secret: 32 random bytes encoded as base64url (43 characters), or 64 random hexadecimal characters. Accepted characters are letters, digits, `_`, `-`; length 43–256. The current production value is stored under the pre-rename name `ORBITOS_AGENT_TOKEN`, which Vercel cannot rename; the server accepts either name. |
+| `APRAXIA_AGENT_USER_ID` | Your existing Supabase Auth user UUID. This fixes the account; requests cannot choose an owner. |
+| `APRAXIA_AGENT_SCOPES` | Comma-separated permissions. For the requested access: `workspace:read,workspace:write,calendar:read,calendar:write,files:read`. Omitted defaults to `workspace:read`. |
 
 Existing server Supabase and Google configuration is still required. Keep the
 agent token separate from the Supabase service-role key. Never give Muse the
@@ -30,20 +30,20 @@ Google features require the account's existing Calendar/Drive connection.
 
 ## Discover and read
 
-The examples are POSIX shell commands for Muse's curl runner. `ORBITOS_BASE_URL`
+The examples are POSIX shell commands for Muse's curl runner. `APRAXIA_BASE_URL`
 is the existing app origin without a trailing slash; no separate API host is
 needed. Both discovery endpoints require the bearer token.
 
 ```sh
-curl --fail-with-body -sS "$ORBITOS_BASE_URL/api/agent/v1/meta" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN"
-curl --fail-with-body -sS "$ORBITOS_BASE_URL/api/agent/v1/openapi" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN"
-curl --fail-with-body -sS --get "$ORBITOS_BASE_URL/api/agent/v1/todos" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN" \
+curl --fail-with-body -sS "$APRAXIA_BASE_URL/api/agent/v1/meta" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN"
+curl --fail-with-body -sS "$APRAXIA_BASE_URL/api/agent/v1/openapi" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN"
+curl --fail-with-body -sS --get "$APRAXIA_BASE_URL/api/agent/v1/todos" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN" \
   --data-urlencode 'completed=false' --data-urlencode 'limit=100'
-curl --fail-with-body -sS --get "$ORBITOS_BASE_URL/api/agent/v1/search" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN" \
+curl --fail-with-body -sS --get "$APRAXIA_BASE_URL/api/agent/v1/search" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN" \
   --data-urlencode 'q=exam'
 ```
 
@@ -104,8 +104,8 @@ Save a create body to a file and use a unique key for that logical operation:
 
 ```sh
 printf '%s\n' '{"data":{"text":"Plan next week"}}' > create-task.json
-curl --fail-with-body -sS "$ORBITOS_BASE_URL/api/agent/v1/todos" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN" \
+curl --fail-with-body -sS "$APRAXIA_BASE_URL/api/agent/v1/todos" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN" \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: muse-plan-week-2026-09-20-01' \
   --data-binary @create-task.json
@@ -117,8 +117,8 @@ and use PATCH:
 
 ```sh
 curl --fail-with-body -sS -X PATCH \
-  "$ORBITOS_BASE_URL/api/agent/v1/todos?id=$TODO_ID" \
-  -H "Authorization: Bearer $ORBITOS_AGENT_TOKEN" \
+  "$APRAXIA_BASE_URL/api/agent/v1/todos?id=$TODO_ID" \
+  -H "Authorization: Bearer $APRAXIA_AGENT_TOKEN" \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: muse-complete-task-2026-09-20-01' \
   --data-binary @edit-task.json

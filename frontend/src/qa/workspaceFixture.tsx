@@ -364,7 +364,7 @@ const collectionService: CollectionService = {
     return rows.slice(offset, offset + 40).map((r) => ({ ...r, totalCount: rows.length }));
   },
 };
-const storagePrefix = `orbitos:qa:workspace:v3:${scenario}:${today}`;
+const storagePrefix = `apraxia:qa:workspace:v3:${scenario}:${today}`;
 const calendarKey = `${storagePrefix}:calendar`;
 const appearanceKey = `${storagePrefix}:appearance`;
 const storage = {

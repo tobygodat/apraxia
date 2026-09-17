@@ -8,8 +8,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const PROJECT = "orbitos";
-const CONTAINER = "supabase_db_orbitos";
+const PROJECT = "apraxia";
+const CONTAINER = "supabase_db_apraxia";
 const REDIRECT = "http://localhost:3000/api/calendar/callback";
 const QUERY_TIMEOUT_MS = 20_000;
 const OUTPUT_LIMIT = 65_536;
@@ -54,7 +54,7 @@ export function assertLocalContainer(container) {
   };
   check(
     failed.length === 0,
-    `Refusing a container that is not the running orbitos local Supabase PostgreSQL 17 instance. Mismatched: ${failed.join(", ")}. Identity: ${JSON.stringify(identity)}`,
+    `Refusing a container that is not the running apraxia local Supabase PostgreSQL 17 instance. Mismatched: ${failed.join(", ")}. Identity: ${JSON.stringify(identity)}`,
   );
   return container.id;
 }
@@ -209,7 +209,7 @@ class PgSession {
       !this.closed && !this.pending,
       "PostgreSQL session is unavailable or already running a statement.",
     );
-    const marker = `orbitos_${randomBytes(12).toString("hex")}`;
+    const marker = `apraxia_${randomBytes(12).toString("hex")}`;
     const promise = new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.fail("Local PostgreSQL statement acknowledgement timed out.");
@@ -333,8 +333,8 @@ async function verifyPersisted(admin, id, receipt) {
 export async function runConcurrencyCheck() {
   const config = await readFile(new URL("../supabase/config.toml", import.meta.url), "utf8");
   check(
-    /^project_id\s*=\s*"orbitos"\s*$/m.test(config) && /^major_version\s*=\s*17\s*$/m.test(config),
-    "This runner is restricted to the orbitos PostgreSQL 17 local project.",
+    /^project_id\s*=\s*"apraxia"\s*$/m.test(config) && /^major_version\s*=\s*17\s*$/m.test(config),
+    "This runner is restricted to the apraxia PostgreSQL 17 local project.",
   );
   // Resolve then explicitly pin a local endpoint; subsequent operations cannot
   // be redirected by DOCKER_HOST/DOCKER_CONTEXT or a changed active context.
@@ -395,7 +395,7 @@ export async function runConcurrencyCheck() {
       'consume_function',to_regprocedure('public.consume_calendar_oauth_transaction(uuid,text,text)') is not null);`);
     assertDatabaseIdentity(identity);
     console.log(
-      "Verified local orbitos container, Unix-socket postgres connection, PostgreSQL 17, and migration 005.",
+      "Verified local apraxia container, Unix-socket postgres connection, PostgreSQL 17, and migration 005.",
     );
     const first = new PgSession(dockerArgs, containerId, `oauth-check-${runId}-first`);
     const second = new PgSession(dockerArgs, containerId, `oauth-check-${runId}-second`);

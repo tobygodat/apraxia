@@ -320,7 +320,7 @@ function projectCalendar(raw: unknown): CalendarSelection {
     // Never infer source timezone from the profile or events response. An empty
     // zone intentionally lets loadCalendarWeek fail only this calendar.
     timeZone: namedZone(raw.timeZone) ? raw.timeZone : "",
-    // Google hidden/selected preferences are not orbitOS visibility settings.
+    // Google hidden/selected preferences are not apraxia visibility settings.
     isVisible: true,
     canEdit: raw.accessRole === "owner" || raw.accessRole === "writer",
   };

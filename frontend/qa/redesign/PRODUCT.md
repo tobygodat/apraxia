@@ -1,4 +1,4 @@
-# Exploratory orbitOS front page
+# Exploratory apraxia front page
 
 <!-- impeccable:product-schema 1 -->
 
@@ -8,7 +8,7 @@ web
 
 ## Product Purpose
 
-This isolated design study explores the personal orbitOS home workspace. The user requested a mockup, not a final product, and chose concept images before an interactive implementation.
+This isolated design study explores the personal apraxia home workspace. The user requested a mockup, not a final product, and chose concept images before an interactive implementation.
 
 ## Capabilities and Constraints
 

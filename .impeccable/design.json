@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-09-15T00:00:00.000Z",
-  "title": "Design System: orbitOS",
+  "title": "Design System: apraxia",
   "extensions": {
     "colorMeta": {
       "primary": {
@@ -379,7 +379,7 @@
   ],
   "narrative": {
     "northStar": "The Quiet Desk",
-    "overview": "orbitOS uses dark neutral surfaces, warm light text, and familiar document typography. Georgia page headings give the workspace a personal character; Segoe UI keeps navigation, forms, and dense task information practical.\n\nHierarchy comes from spacing, fine rules, and small changes in surface tone. Calendar fills and status colors carry information; the surrounding interface stays restrained.",
+    "overview": "apraxia uses dark neutral surfaces, warm light text, and familiar document typography. Georgia page headings give the workspace a personal character; Segoe UI keeps navigation, forms, and dense task information practical.\n\nHierarchy comes from spacing, fine rules, and small changes in surface tone. Calendar fills and status colors carry information; the surrounding interface stays restrained.",
     "keyCharacteristics": [
       "Charcoal surfaces with warm light text.",
       "Serif page headings and compact sans-serif controls.",

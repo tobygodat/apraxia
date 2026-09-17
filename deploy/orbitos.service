@@ -1,10 +1,10 @@
-# systemd unit for orbitOS (spec §6 — one service; §7 step 7).
+# systemd unit for apraxia (spec §6 — one service; §7 step 7).
 # Install: copy to /etc/systemd/system/orbitos.service, then
 #   sudo systemctl daemon-reload && sudo systemctl enable --now orbitos
 # Logs:    journalctl -u orbitos -f
 
 [Unit]
-Description=orbitOS personal CRM (web + scheduler + Telegram bot)
+Description=apraxia personal CRM (web + scheduler + Telegram bot)
 After=network-online.target
 Wants=network-online.target
 

@@ -62,7 +62,7 @@ export interface TodosBoardProps {
 }
 
 /** Private marker identifying a board-row drag; mirrors TodayList's own marker. */
-const TODO_DRAG_TYPE = "application/x-orbitos-todo";
+const TODO_DRAG_TYPE = "application/x-apraxia-todo";
 
 function isTodoDrag(dataTransfer: DataTransfer | null): boolean {
   return Boolean(dataTransfer && Array.from(dataTransfer.types).includes(TODO_DRAG_TYPE));
