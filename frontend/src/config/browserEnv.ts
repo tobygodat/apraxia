@@ -43,5 +43,10 @@ export function parseBrowserEnvironment(source: BrowserEnvironmentSource): Brows
 }
 
 export function getBrowserEnvironment(): BrowserEnvironment {
-  return parseBrowserEnvironment(import.meta.env);
+  // Read named keys only. Passing the whole environment object makes Vite inline every
+  // `VITE_*` variable, including the git metadata Vercel exposes at build time.
+  return parseBrowserEnvironment({
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  });
 }
