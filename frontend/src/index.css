@@ -50,7 +50,6 @@ h1 {
   font-size: 24px;
 }
 
-.addform,
 .login {
   display: flex;
   gap: 8px;
@@ -177,8 +176,7 @@ button.link:hover {
   font-size: 14px;
 }
 
-.auth-screen,
-.cloud-ready {
+.auth-screen {
   min-height: 100vh;
   display: grid;
   align-items: center;
@@ -194,8 +192,7 @@ button.link:hover {
     sans-serif;
 }
 
-.auth-card,
-.cloud-ready__panel {
+.auth-card {
   width: min(100%, 620px);
   padding: clamp(28px, 5vw, 54px);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -204,8 +201,7 @@ button.link:hover {
   box-shadow: 18px 18px 0 rgba(0, 0, 0, 0.2);
 }
 
-.auth-card h1,
-.cloud-ready__panel h1 {
+.auth-card h1 {
   max-width: 14ch;
   margin: 0;
   font-size: clamp(30px, 5vw, 52px);
@@ -216,8 +212,7 @@ button.link:hover {
 }
 
 .auth-card__eyebrow,
-.auth-status,
-.cloud-ready__identity {
+.auth-status {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -238,15 +233,13 @@ button.link:hover {
 }
 
 .auth-card__note,
-.cloud-ready__identity,
 .auth-card__error {
   margin: 18px 0 0;
   font-size: 13px;
   line-height: 1.55;
 }
 
-.auth-card__note,
-.cloud-ready__identity {
+.auth-card__note {
   color: rgba(255, 255, 255, 0.46);
 }
 
@@ -314,12 +307,6 @@ button.link:hover {
   border-radius: 50%;
   background: currentColor;
   animation: auth-pulse 1.2s ease-in-out infinite alternate;
-}
-
-.cloud-ready code {
-  color: rgba(255, 255, 255, 0.88);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.86em;
 }
 
 @keyframes auth-pulse {

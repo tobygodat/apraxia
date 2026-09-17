@@ -198,7 +198,7 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 
 Page headings pair Georgia with a Times New Roman/serif fallback; body text and controls use Segoe UI, system-ui, sans-serif. The hierarchy is role-based rather than a mathematical scale.
 
-Two families are actually bundled. `frontend/public/fonts/fonts.css` is linked from `index.html` and self-hosts Space Grotesk (400/500/700) and JetBrains Mono (400/500). They are used by the sign-in and cloud-ready screens in `index.css` and by the preserved legacy `orbit-shell` styles. Inside the cloud workspace, Space Grotesk now has one role: the Tasks board's day headers (`ledger-date`, `ledger-weekday`), with Segoe UI as its fallback. Everything else in the workspace still relies on the system Georgia and Segoe UI stacks. Both sets are recorded in the frontmatter; `sign-in-headline` and `sign-in-eyebrow` use the bundled faces. The sign-in headline is a `clamp(30px, 5vw, 52px)` scale; the frontmatter records its upper bound.
+Two families are actually bundled. `frontend/public/fonts/fonts.css` is linked from `index.html` and self-hosts Space Grotesk (400/500/700) and JetBrains Mono (400/500). They are used by the sign-in screens in `index.css` and by the preserved legacy `orbit-shell` styles. Inside the cloud workspace, Space Grotesk now has one role: the Tasks board's day headers (`ledger-date`, `ledger-weekday`), with Segoe UI as its fallback. Everything else in the workspace still relies on the system Georgia and Segoe UI stacks. Both sets are recorded in the frontmatter; `sign-in-headline` and `sign-in-eyebrow` use the bundled faces. The sign-in headline is a `clamp(30px, 5vw, 52px)` scale; the frontmatter records its upper bound.
 
 - **Headline:** the frontmatter's shared page title treatment, applied to Tasks, collection pages, Classes, and Calendar settings.
 - **Section heading:** a smaller Georgia step (26px, weight 400, -0.01em) for a band heading beneath a page's main content; on Tasks it titles the Inbox band. It sits between the 38px headline and the 32px cover title without replacing either.
@@ -273,11 +273,11 @@ A labeled icon sidebar anchors the desktop workspace. Active destinations receiv
 
 ### Selection controls
 
-The Today/Tomorrow switch is a compact pair of rectangular buttons, with a filled selected state and visible focus. There is no general-purpose chip/tag system in the cloud workspace: collection filters use selects, while task metadata remains text. On the Tasks board the source chip is flattened into plain 11px muted metadata.
+The Today/Tomorrow switch is a compact pair of rectangular buttons, with a filled selected state and visible focus. There is no general-purpose chip/tag system in the cloud workspace: collection filters use selects, while task metadata remains text. Where a chip does appear (a task row's source, an assignment's type) it is the same bordered 11px muted chip. On the Tasks board the source chip is flattened into plain 11px muted metadata.
 
 ### Lists and containers
 
-Collection entries and task-board “cards” are flat rows divided by thin rules. Task-board rows expose compact checkbox, text, metadata, and action areas; hover adds a raised-charcoal tone. Completion dims and strikes through task text. Keep long titles wrapping and metadata subordinate.
+Collection entries and task-board “cards” are flat rows divided by thin rules. The class assignments table keeps the same rule: hairlines between rows, no vertical cell borders, and the row's trash icon for delete. Task-board rows expose compact checkbox, text, metadata, and action areas; hover adds a raised-charcoal tone. Completion dims and strikes through task text. Keep long titles wrapping and metadata subordinate.
 
 ### Week ledger (Tasks)
 

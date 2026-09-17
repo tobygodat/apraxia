@@ -6,10 +6,11 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // Build output, dependencies, preserved legacy Python, and generated code.
+    // Build output, dependencies, agent worktrees, preserved legacy Python, and generated code.
     ignores: [
       "**/node_modules/**",
       "**/dist/**",
+      ".claude/**",
       "frontend/public/**",
       "src/**",
       "supabase/.temp/**",

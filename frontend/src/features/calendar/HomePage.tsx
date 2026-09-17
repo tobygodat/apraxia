@@ -17,7 +17,7 @@ import type {
 } from "../../types/domain";
 import { TodayPanel } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
-import { addSqlDateDays, localToday } from "../todos/dateDomain";
+import { addSqlDateDays, localToday, startOfWeekSunday } from "../todos/dateDomain";
 import type { CalendarService } from "./calendarService";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
@@ -28,7 +28,6 @@ import {
   overflowClusters,
   wallMinute,
   weekDates,
-  startOfWeekSunday,
 } from "./eventLayout";
 import { EventEditor } from "./EventEditor";
 import { EventPreview } from "./EventPreview";
@@ -103,7 +102,7 @@ export function CalendarPanel({
 }) {
   const [now, setNow] = useState(() => new Date());
   const today = localToday(timezone, now);
-  const [sunday, setSunday] = useState(() => startOfWeekSunday(today));
+  const [sunday, setSunday] = useState<string>(() => startOfWeekSunday(today));
   const [revision, setRevision] = useState(0);
   const [scrollRevision, setScrollRevision] = useState(0);
   const [editor, setEditor] = useState<{ slot: CalendarSlot; event?: CalendarEvent } | null>(null);

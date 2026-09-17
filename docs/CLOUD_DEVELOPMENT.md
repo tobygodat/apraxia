@@ -410,7 +410,7 @@ Task aggregation additionally requires
 `20260914000100_assignment_todos.sql` coordinated with the matching UI. Assignments
 then share `todos` with Tasks and Home; the legacy table remains a read-only backup.
 Do not deploy the new Classes adapter before that migration. Follow
-[TASK_AGGREGATION_RELEASE.md](TASK_AGGREGATION_RELEASE.md) for backup, validation,
+[TASK_AGGREGATION_RELEASE.md](history/TASK_AGGREGATION_RELEASE.md) for backup, validation,
 and release sequencing. Classes and notes additionally require
 `20260913000300_classes_and_notes.sql` and
 `20260913000400_class_pdf_storage.sql`. The first preserves existing assignments

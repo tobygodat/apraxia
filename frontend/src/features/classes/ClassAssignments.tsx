@@ -525,14 +525,15 @@ function AssignmentSession({
                   ))}
                   <td>
                     <button
-                      className="assignment-cell"
+                      className="assignment-delete"
                       disabled={pending || !!editing}
+                      title="Delete"
                       aria-label={`Delete ${item.title}`}
                       onClick={() => {
                         void remove(item);
                       }}
                     >
-                      Delete
+                      <WorkspaceIcon name="trash" />
                     </button>
                   </td>
                 </tr>

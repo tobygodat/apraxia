@@ -7,8 +7,13 @@ import type { CalendarService } from "../features/calendar/calendarService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
 import { localToday } from "../features/todos/dateDomain";
-import { startOfWeekSunday } from "../features/calendar/eventLayout";
-import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
+import { startOfWeekSunday } from "../features/todos/dateDomain";
+import {
+  MainWorkspace,
+  preloadRouteChunk,
+  preloadWorkspaceChunks,
+  type MainWorkspaceProps,
+} from "./MainWorkspace";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspaceRuntime } from "./WorkspaceRuntime";
 
@@ -344,7 +349,13 @@ describe("Main workspace integration", () => {
     expect(week).toHaveBeenCalledWith(sunday, expect.any(AbortSignal));
   });
 
-  it("prefetches each listed project's detail reads at startup", async () => {
+  it("maps a pathname to its route chunk and ignores callback paths", async () => {
+    await expect(preloadRouteChunk("/todos")).resolves.toBeUndefined();
+    await expect(preloadRouteChunk("/projects/garden")).resolves.toBeUndefined();
+    expect(preloadRouteChunk("/calendar/callback")).toBeUndefined();
+  });
+
+  it("does not fan out per-project detail reads at startup", async () => {
     const f = fixture();
     const projectA = {
       id: "garden-project",
@@ -378,16 +389,17 @@ describe("Main workspace integration", () => {
       </MemoryRouter>,
     );
     await screen.findByText("Garden plans");
-    await waitFor(() => expect(getProject).toHaveBeenCalledTimes(2));
-    expect(getProject).toHaveBeenCalledWith(projectA.id);
-    expect(getProject).toHaveBeenCalledWith(projectB.id);
-    expect(projectTodos).toHaveBeenCalledWith(projectA.id, 0);
-    expect(projectTodos).toHaveBeenCalledWith(projectB.id, 0);
-    expect(listIdeas).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: projectA.id, offset: 0 }),
-    );
-    expect(listIdeas).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: projectB.id, offset: 0 }),
+    await waitFor(() => expect(listProjects).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(listIdeas).toHaveBeenCalledTimes(1));
+    // The removed fan-out ran in a continuation of listProjects; let every
+    // pending microtask and timer settle before asserting it stayed removed.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    // Project detail is prefetched on hover/focus in CollectionPage, not for
+    // every listed project while Home's own reads are in flight.
+    expect(getProject).not.toHaveBeenCalled();
+    expect(projectTodos).not.toHaveBeenCalled();
+    expect(listIdeas).not.toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: expect.any(String) }),
     );
   });
 });

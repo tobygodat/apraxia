@@ -60,10 +60,6 @@ export interface TimedSegment {
   columns: number;
   stackDepth: number;
 }
-export function startOfWeekSunday(value: string): string {
-  const date = Temporal.PlainDate.from(value);
-  return date.subtract({ days: date.dayOfWeek % 7 }).toString();
-}
 export function weekDates(sunday: string): string[] {
   return Array.from({ length: 7 }, (_, i) =>
     Temporal.PlainDate.from(sunday).add({ days: i }).toString(),

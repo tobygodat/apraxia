@@ -12,7 +12,7 @@ classes. Incomplete past-due tasks join
 Today with their original due dates shown in red; stored dates stay unchanged.
 Completed historical tasks remain on their original dates. The coordinated
 migration and UI release completed on 2026-09-14; see
-[the release record](docs/TASK_AGGREGATION_RELEASE.md).
+[the release record](docs/history/TASK_AGGREGATION_RELEASE.md).
 
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [orbitos-virid.vercel.app](https://orbitos-virid.vercel.app).
@@ -66,6 +66,8 @@ verification is required for dependency/build/CI changes or to reproduce failure
 - [Decision records](docs/adr/): why access is RLS-only, why Today uses scalar
   envelopes, why hosted migrations are forward-only, why time arithmetic runs on
   the server.
+- [History](docs/history/): the 2026-09-14 audit and the task aggregation
+  roadmap and release records, kept for reference.
 
 ## Repository and recovery
 

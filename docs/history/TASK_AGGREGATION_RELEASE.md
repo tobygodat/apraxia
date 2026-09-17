@@ -1,5 +1,7 @@
 # Task aggregation: coordinated release dependencies
 
+> Historical record, moved to `docs/history/` on 2026-09-17. File names, counts, and sizes reflect the date it was written and are not maintained.
+
 Prepared on `claude/task-aggregation-roadmap-3df71e`. Phase 0 is retained in its
 own commit. Phase 1 and Phase 2 must release together. No hosted migration or
 Vercel deployment is part of preparation. Phase 3 is implemented on top of `59342b8` and prepared for release. Phase 4 remains deferred; retain the `class_assignments` backup.

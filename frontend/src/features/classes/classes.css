@@ -15,17 +15,24 @@
   background: #292929;
   border-color: #8b8b8b;
 }
-.classes-page a {
-  color: inherit;
-  text-underline-offset: 4px;
-}
-.classes-back {
+/* Same quiet treatment as the project detail's back control. Scoped under
+   .classes-page so it outranks workspace.css's `.workspace-page a` color. */
+.classes-page .classes-back {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 24px;
-  font-size: 13px;
+  min-height: 32px;
+  margin-bottom: 16px;
+  color: var(--cloud-shell-muted);
+  font-size: 12px;
   text-decoration: none;
+}
+.classes-back .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+.classes-page .classes-back:hover {
+  color: var(--cloud-shell-text);
 }
 .classes-list {
   border-top: 1px solid var(--cloud-shell-line);
@@ -55,13 +62,6 @@
 .classes-row p {
   margin: 0;
   font-size: 12px;
-}
-.classes-local-note {
-  color: var(--cloud-shell-muted);
-  font-size: 12px;
-}
-.classes-local-note {
-  margin-top: 24px;
 }
 .classes-notes-layout {
   display: grid;
@@ -103,24 +103,6 @@
   align-items: center;
   flex-shrink: 0;
 }
-.classes-reader-empty {
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 40px;
-}
-.classes-reader-empty h2 {
-  font-size: 18px;
-  margin: 0 0 20px;
-}
-.classes-reader-empty p {
-  max-width: 43ch;
-  font-size: 13px;
-  margin: 16px 0 0;
-}
 .classes-notes-layout--reading {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -155,22 +137,6 @@
   padding: 8px 16px;
   font-size: 13px;
 }
-.classes-drive {
-  margin-top: 24px;
-  font-size: 13px;
-}
-.classes-drive summary {
-  cursor: pointer;
-  padding-block: 10px;
-}
-.classes-drive summary span {
-  margin-left: 16px;
-  color: #ada9a3;
-}
-.classes-drive > div {
-  max-width: 65ch;
-  padding: 8px 0;
-}
 .classes-form {
   display: grid;
   gap: 20px;
@@ -185,6 +151,9 @@
   color: #ada9a3;
   font-size: 12px;
   margin: 0;
+}
+.classes-form > button {
+  justify-self: end;
 }
 .classes-form input {
   width: 100%;
@@ -203,10 +172,6 @@
   .classes-reader {
     border-left: 0;
     border-top: 1px solid var(--cloud-shell-line);
-  }
-  .classes-reader-empty {
-    min-height: 280px;
-    padding: 24px;
   }
   .classes-row {
     gap: 12px;
@@ -240,34 +205,6 @@
   transform: rotate(180deg);
 }
 
-.classes-drive-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.classes-drive-files {
-  list-style: none;
-  padding: 0;
-  margin: 16px 0;
-}
-.classes-drive-files li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--cloud-shell-line);
-}
-.classes-drive-files button {
-  text-align: left;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-.classes-drive-files a {
-  flex-shrink: 0;
-  font-size: 12px;
-}
 .classes-page button:disabled {
   opacity: 0.5;
   cursor: wait;

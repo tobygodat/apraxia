@@ -361,7 +361,9 @@
   gap: 24px;
   margin-bottom: 24px;
 }
-.workspace-page-header h1 {
+/* Scoped under .cloud-shell so it outranks workspace.css's generic
+   `.workspace-page h1` margin whatever order the two sheets load in. */
+.cloud-shell .workspace-page-header h1 {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;

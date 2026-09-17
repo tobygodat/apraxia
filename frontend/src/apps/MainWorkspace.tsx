@@ -28,9 +28,8 @@ import {
 import { SearchDialog } from "../components/search/SearchDialog";
 import type { TodoService } from "../features/todos/todoService";
 import { TodoEditDialog } from "../features/todos/TodoFormDialog";
-import { localToday } from "../features/todos/dateDomain";
+import { localToday, startOfWeekSunday } from "../features/todos/dateDomain";
 import type { CalendarService } from "../features/calendar/calendarService";
-import { startOfWeekSunday } from "../features/calendar/eventLayout";
 import { CollectionEditor } from "../features/collections/CollectionEditor";
 import type {
   CollectionKind,
@@ -62,9 +61,14 @@ function preloadable<P extends object>(
   // `Lazy` (a `LazyExoticComponent<ComponentType<P>>`) is functionally a
   // `ComponentType<P>` at runtime but isn't structurally recognized as one
   // by JSX/`createElement`'s generic prop checking; the cast reflects that,
-  // not a real type hole.
-  const Component: ComponentType<P> = (props: P) =>
-    createElement((Resolved ?? Lazy) as ComponentType<P>, props);
+  // not a real type hole. The element type is chosen once per mounted
+  // instance: if the chunk resolves after a route already mounted through
+  // `Lazy`, switching to `Resolved` on the next render would change the
+  // element type and remount the whole page (state, scroll, effects).
+  const Component: ComponentType<P> = (props: P) => {
+    const [Type] = useState(() => (Resolved ?? Lazy) as ComponentType<P>);
+    return createElement(Type, props);
+  };
   const preload = (): Promise<void> =>
     load().then((module) => {
       Resolved = module.default;
@@ -114,6 +118,34 @@ export function preloadWorkspaceChunks(): Promise<void> {
     collectionChunk.preload(),
   ]).then(() => undefined);
 }
+
+/** Starts loading only the chunk that `pathname` will render; undefined for other paths. */
+export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
+  const chunk =
+    pathname === "/"
+      ? homeChunk
+      : pathname.startsWith("/todos")
+        ? todosChunk
+        : pathname.startsWith("/projects") || pathname.startsWith("/ideas")
+          ? collectionChunk
+          : pathname.startsWith("/classes")
+            ? classesChunk
+            : pathname.startsWith("/settings")
+              ? settingsChunk
+              : undefined;
+  return chunk?.preload();
+}
+
+// The first page's chunk downloads while the session is still restoring,
+// instead of only once the workspace has mounted and asked for it. Skipped
+// under Vitest so component tests control their own chunk loading, and in
+// legacy builds, which carry this module but never render the cloud routes.
+if (
+  typeof window !== "undefined" &&
+  import.meta.env.MODE !== "test" &&
+  import.meta.env.VITE_ORBITOS_RUNTIME !== "legacy"
+)
+  void preloadRouteChunk(window.location.pathname)?.catch(() => undefined);
 
 export interface MainWorkspaceProps {
   identity: AuthIdentity;
