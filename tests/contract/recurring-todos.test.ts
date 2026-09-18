@@ -1,10 +1,13 @@
 import { storageHarnessSql } from "../helpers/storageHarness";
 import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
-import { expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
-const ALICE = "11111111-1111-4111-8111-111111111111";
-const BOB = "22222222-2222-4222-8222-222222222222";
+// One account pair per test: the suite shares a single migrated database, so
+// replaying nineteen migrations per case cannot push a case past its timeout.
+const SPAWN_OWNER = "11111111-1111-4111-8111-111111111111";
+const RULE_OWNER = "22222222-2222-4222-8222-222222222222";
+const ONLOOKER = "33333333-3333-4333-8333-333333333333";
 
 async function migrated(): Promise<PGlite> {
   const db = new PGlite();
@@ -19,26 +22,45 @@ async function migrated(): Promise<PGlite> {
     .filter((n) => n.endsWith(".sql"))
     .sort())
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
-  await db.query("insert into auth.users(id) values ($1), ($2)", [ALICE, BOB]);
+  await db.query("insert into auth.users(id) values ($1), ($2), ($3)", [
+    SPAWN_OWNER,
+    RULE_OWNER,
+    ONLOOKER,
+  ]);
   return db;
 }
 
-async function signIn(db: PGlite, userId: string): Promise<void> {
-  await db.exec(`set role authenticated; set request.jwt.claim.sub = '${userId}'`);
-}
+describe("recurring tasks", () => {
+  let db: PGlite;
 
-/** Every open occurrence of one repeating task, oldest first. */
-async function openDueDates(db: PGlite): Promise<string[]> {
-  const rows = await db.query<{ due_date: string }>(
-    "select due_date::text from todos where not completed and deleted_at is null order by due_date",
-  );
-  return rows.rows.map((row) => row.due_date);
-}
+  beforeAll(async () => {
+    db = await migrated();
+  }, 120_000);
 
-it("creates the next occurrence on completion, once, and never past the end date", async () => {
-  const db = await migrated();
-  try {
-    await signIn(db, ALICE);
+  afterEach(async () => {
+    await db.exec("reset role");
+    await db.query("select set_config('request.jwt.claim.sub', '', false)");
+  });
+
+  afterAll(async () => {
+    await db.close();
+  });
+
+  async function signIn(userId: string): Promise<void> {
+    await db.query("select set_config('request.jwt.claim.sub', $1, false)", [userId]);
+    await db.exec("set role authenticated");
+  }
+
+  /** Every open occurrence the signed-in account can see, oldest first. */
+  async function openDueDates(): Promise<string[]> {
+    const rows = await db.query<{ due_date: string }>(
+      "select due_date::text from todos where not completed and deleted_at is null order by due_date",
+    );
+    return rows.rows.map((row) => row.due_date);
+  }
+
+  it("creates the next occurrence on completion, once, and never past the end date", async () => {
+    await signIn(SPAWN_OWNER);
     // Anchored in the past so the trigger must step forward, not repeat a date.
     await db.exec(
       "insert into todos(text,due_date,due_time,recurrence_freq,recurrence_interval) values ('Problem set','2020-03-02','09:00','weekly',1)",
@@ -51,7 +73,7 @@ it("creates the next occurrence on completion, once, and never past the end date
     expect(seed?.series).toMatch(/^[0-9a-f-]{36}$/);
 
     await db.query("update todos set completed = true where id = $1", [seed!.id]);
-    const [next] = await openDueDates(db);
+    const [next] = await openDueDates();
     const today = (
       await db.query<{ today: string }>(
         "select (statement_timestamp() at time zone 'America/New_York')::date::text as today",
@@ -84,23 +106,18 @@ it("creates the next occurrence on completion, once, and never past the end date
     // Unchecking and rechecking the same occurrence must not spawn a second one.
     await db.query("update todos set completed = false where id = $1", [seed!.id]);
     await db.query("update todos set completed = true where id = $1", [seed!.id]);
-    expect(await openDueDates(db)).toHaveLength(1);
+    expect(await openDueDates()).toHaveLength(1);
 
     // The end date stops the series instead of producing one occurrence past it.
     await db.exec(
       "update todos set recurrence_until = due_date where not completed and deleted_at is null",
     );
     await db.exec("update todos set completed = true where not completed and deleted_at is null");
-    expect(await openDueDates(db)).toEqual([]);
-  } finally {
-    await db.close();
-  }
-});
+    expect(await openDueDates()).toEqual([]);
+  });
 
-it("keeps the rule owner-scoped, database-owned, and anchored on a due date", async () => {
-  const db = await migrated();
-  try {
-    await signIn(db, ALICE);
+  it("keeps the rule owner-scoped, database-owned, and anchored on a due date", async () => {
+    await signIn(RULE_OWNER);
     await expect(
       db.exec("insert into todos(text,recurrence_freq) values ('No anchor','weekly')"),
     ).rejects.toThrow(/check constraint/);
@@ -148,14 +165,12 @@ it("keeps the rule owner-scoped, database-owned, and anchored on a due date", as
     // The elevated insert derives its owner from the completed row, so another
     // account can neither see the series nor complete into its own.
     await db.exec("update todos set recurrence_freq = 'weekly' where text = 'Reading'");
-    await signIn(db, BOB);
+    await signIn(ONLOOKER);
     expect((await db.query("select * from todos")).rows).toEqual([]);
-    await db.exec(`set request.jwt.claim.sub = '${ALICE}'`);
+    await signIn(RULE_OWNER);
     await db.exec("update todos set completed = true where text = 'Reading'");
     expect((await db.query("select distinct user_id::text as owner from todos")).rows).toEqual([
-      { owner: ALICE },
+      { owner: RULE_OWNER },
     ]);
-  } finally {
-    await db.close();
-  }
+  });
 });
