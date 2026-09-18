@@ -52,6 +52,17 @@ describe("local OAuth concurrency runner safety guards (not concurrency proof)",
     expect(assertLocalContainer(localContainer)).toBe(localContainer.id);
   });
 
+  // The CLI has pulled this image from more than one registry; each spelling is
+  // the same official repository and must pass the same guard.
+  it.each([
+    "supabase/postgres:17.6.1.063",
+    "docker.io/supabase/postgres:17.6.1.063",
+    "public.ecr.aws/supabase/postgres:17.6.1.063",
+    "ghcr.io/supabase/postgres:17.6.1.165",
+  ])("accepts the official Postgres 17 image as %s", (image) => {
+    expect(assertLocalContainer({ ...localContainer, image })).toBe(localContainer.id);
+  });
+
   it.each([
     { name: "/supabase_db_other" },
     { id: "supabase_db_apraxia" },
@@ -60,6 +71,9 @@ describe("local OAuth concurrency runner safety guards (not concurrency proof)",
     { labels: { "com.supabase.cli.project": "production" } },
     { image: "supabase/postgres:16.4" },
     { image: "attacker/supabase/postgres:17.6" },
+    { image: "ghcr.io/attacker/supabase/postgres:17.6" },
+    { image: "attacker.test/ghcr.io/supabase/postgres:17.6" },
+    { image: "ghcr.io/supabase/postgres:16.4" },
   ])("rejects a mismatching container projection %j", (change) => {
     expect(() => assertLocalContainer({ ...localContainer, ...change })).toThrow();
   });

@@ -1,21 +1,23 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import type { DriveService } from "./driveService";
 import "./classes.css";
 
-import { ClassAssignments } from "./ClassAssignments";
+import { ClassDetail } from "./ClassDetail";
+import { ClassSummary } from "./ClassSummary";
+import { emptyClassOverview, type ClassOverview } from "./classOverview";
+import type { ClassOverviewService } from "./classOverviewService";
 import type { AssignmentService } from "./assignmentService";
 
-const PdfReader = lazy(() => import("./PdfReader"));
-
 import { readLegacyClasses, type Course, type ClassService } from "./classService";
-import { SavedClassNotes } from "./SavedClassNotes";
 import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
+import { useWorkspaceRevision } from "../../apps/workspaceStore";
 import { useColdLoad } from "../../apps/coldLoad";
+import { useLocalToday } from "../todos/useLocalToday";
 
 export function ClassesPage({
   userId,
@@ -24,6 +26,7 @@ export function ClassesPage({
   assignmentService,
   classService,
   noteService,
+  overviewService,
   timezone,
   onClassesChanged,
 }: {
@@ -33,6 +36,8 @@ export function ClassesPage({
   assignmentService?: AssignmentService;
   classService?: ClassService;
   noteService?: NoteService;
+  /** Totals behind every row of the class list. The page works without it. */
+  overviewService?: ClassOverviewService;
   timezone?: string;
   /** Task forms list classes by name; a create or rename refreshes those choices. */
   onClassesChanged?: () => void;
@@ -54,6 +59,9 @@ export function ClassesPage({
   const pending = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const course = courses.find((c) => c.id === courseId);
+  // Sampled, not computed once: a page left open past local midnight has to
+  // re-label "Due tomorrow" as "Due today" on its own.
+  const today = useLocalToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
   useColdLoad(!loaded && !error);
   useEffect(() => {
     const controller = new AbortController();
@@ -148,74 +156,50 @@ export function ClassesPage({
           <h1>Class not found</h1>
           <p>This class isn’t in your account. Return to Classes to check your saved classes.</p>
         </>
+      ) : course ? (
+        <ClassDetail
+          key={course.id}
+          userId={userId}
+          course={course}
+          driveService={driveService}
+          assignmentService={assignmentService}
+          noteService={noteService}
+          timezone={timezone}
+          onEdit={() => {
+            setError("");
+            setEditing({ course, isNew: false });
+          }}
+        />
       ) : (
         <>
           <header className="classes-heading workspace-page-header">
-            <h1>{course ? (course.name ?? "Recovered class") : "Classes"}</h1>
+            <h1>Classes</h1>
             <button
               className="workspace-page-header__action"
               onClick={() => {
                 setError("");
                 setEditing({
-                  course: course ?? { id: crypto.randomUUID(), name: "", updatedAt: "" },
-                  isNew: !course,
+                  course: { id: crypto.randomUUID(), name: "", updatedAt: "" },
+                  isNew: true,
                 });
               }}
             >
-              <WorkspaceIcon name={course ? "edit" : "plus"} />
-              {course ? "Edit class" : "Add class"}
+              <WorkspaceIcon name="plus" />
+              Add class
             </button>
           </header>
-          {course ? (
-            <div key={course.id} className="classes-course-content">
-              {course.name === null && (
-                <p>
-                  This class was recovered from its assignments. Edit its name, or open the browser
-                  where you originally saved it to recover the name.
-                </p>
-              )}
-              {assignmentService && (
-                <ClassAssignments
-                  userId={userId}
-                  courseId={course.id}
-                  service={assignmentService}
-                  timezone={timezone}
-                />
-              )}
-              <h2 className="classes-section-heading">Notes</h2>
-              {noteService ? (
-                <SavedClassNotes
-                  userId={userId}
-                  course={course}
-                  service={noteService}
-                  driveService={driveService}
-                  renderReader={(file) => <CourseNotes course={course} file={file} />}
-                />
-              ) : (
-                <p role="alert">Note storage is unavailable. Reload to try again.</p>
-              )}
-            </div>
-          ) : (
-            <>
-              {!courses.length && (
-                <p className="classes-empty">
-                  No classes yet. Add a class to save assignments and notes.
-                </p>
-              )}
-              <div className={courses.length ? "classes-list" : undefined}>
-                {courses.map((c) => (
-                  <Link key={c.id} to={`/classes/${c.id}`} className="classes-row">
-                    <WorkspaceIcon name="classes" />
-                    <div>
-                      <h2>{c.name ?? "Recovered class"}</h2>
-                      <p>Open class</p>
-                    </div>
-                    <WorkspaceIcon name="right" />
-                  </Link>
-                ))}
-              </div>
-            </>
+          {!courses.length && (
+            <p className="classes-empty">
+              No classes yet. Add a class to save assignments and notes.
+            </p>
           )}
+          <ClassList
+            courses={courses}
+            userId={userId}
+            service={overviewService}
+            today={today}
+            reload={reload}
+          />
         </>
       )}
       {warning && (
@@ -264,66 +248,66 @@ export function ClassesPage({
   );
 }
 
-function CourseNotes({ course, file: preview }: { course: Course; file: File }) {
-  const [error, setError] = useState("");
-  const [fullscreen, setFullscreen] = useState(false);
-  const [showTools, setShowTools] = useState(false);
-  const reader = useRef<HTMLElement>(null);
+/**
+ * Every class with its own standing: what is due next, what is still open, and
+ * how many notes are saved. Totals arrive after the names, so the list is
+ * readable immediately and never shifts when they land.
+ */
+function ClassList({
+  courses,
+  userId,
+  service,
+  today,
+  reload,
+}: {
+  courses: Course[];
+  userId: string;
+  service?: ClassOverviewService;
+  today: string;
+  reload: number;
+}) {
+  const [cached] = useState(() =>
+    service ? peekRead(service, "list", userId, new AbortController().signal) : undefined,
+  );
+  const [overviews, setOverviews] = useState<Record<string, ClassOverview> | undefined>(cached);
+  // A task saved from the global Add dialog is an assignment when it carries a
+  // class, and it lands while this list is mounted. The store's revision is how
+  // a visible page hears about a write it did not make.
+  const revision = useWorkspaceRevision();
   useEffect(() => {
-    const changed = () => setFullscreen(document.fullscreenElement === reader.current);
-    document.addEventListener("fullscreenchange", changed);
-    return () => document.removeEventListener("fullscreenchange", changed);
-  }, []);
-  async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement === reader.current) await document.exitFullscreen();
-      else await reader.current?.requestFullscreen();
-    } catch {
-      setError(
-        "Full screen isn’t available in this browser. Try opening the workspace in another browser.",
-      );
-    }
-  }
+    if (!service) return;
+    const controller = new AbortController();
+    // Totals are supporting detail: a failed read leaves the names usable and
+    // says nothing rather than pushing an error at the page.
+    void service
+      .list(userId, controller.signal)
+      .then((rows) => {
+        if (!controller.signal.aborted) setOverviews(rows);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [userId, service, reload, revision]);
+  if (!courses.length) return null;
   return (
-    <>
-      <div className="classes-notes-layout classes-notes-layout--reading">
-        <section
-          ref={reader}
-          className="classes-reader"
-          aria-label={`${course.name ?? "Recovered class"} notes reader`}
-        >
-          {preview && (
-            <header>
-              <span title={preview.name}>{preview.name}</span>
-              <div>
-                <button
-                  className="classes-reader-tools"
-                  type="button"
-                  onClick={() => setShowTools((value) => !value)}
-                  aria-label={showTools ? "Hide PDF toolbar" : "Show PDF toolbar"}
-                  aria-expanded={showTools}
-                  title={`${showTools ? "Hide" : "Show"} PDF toolbar`}
-                >
-                  <WorkspaceIcon name="down" />
-                </button>
-                <button
-                  className="classes-reader-fullscreen"
-                  type="button"
-                  onClick={() => void toggleFullscreen()}
-                  aria-label={fullscreen ? "Exit full screen" : "Full screen"}
-                  title={fullscreen ? "Exit full screen" : "Full screen"}
-                >
-                  <WorkspaceIcon name={fullscreen ? "minimize" : "maximize"} />
-                </button>
-              </div>
-            </header>
-          )}
-          {error && <p role="alert">{error}</p>}
-          <Suspense fallback={<p role="status">Loading PDF reader…</p>}>
-            <PdfReader file={preview} showTools={showTools} />
-          </Suspense>
-        </section>
-      </div>
-    </>
+    <div className="classes-list">
+      {courses.map((c) => (
+        <Link key={c.id} to={`/classes/${c.id}`} className="classes-row">
+          <WorkspaceIcon name="classes" />
+          <div>
+            <h2>{c.name ?? "Recovered class"}</h2>
+            {overviews ? (
+              <ClassSummary
+                overview={overviews[c.id] ?? emptyClassOverview}
+                today={today}
+                variant="row"
+              />
+            ) : (
+              <p>Open class</p>
+            )}
+          </div>
+          <WorkspaceIcon name="right" />
+        </Link>
+      ))}
+    </div>
   );
 }
