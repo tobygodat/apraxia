@@ -98,7 +98,7 @@ are inclusive and become exclusive Google dates. Skipped or ambiguous DST
 times are rejected.
 
 Repeating events offer **This event** and **Entire series**. Series editing
-loads the first event's dates and affects past events too. Daily, weekly,
+loads the first event's dates and repeat schedule, and affects past events too. Daily, weekly,
 weekday, monthly-by-date, and yearly schedules support intervals and optional
 end dates/counts. Existing custom rules are preserved unless explicitly changed.
 Google expands repeat instances when the week reloads.

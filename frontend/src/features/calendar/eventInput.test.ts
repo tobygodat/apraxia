@@ -83,3 +83,51 @@ it("builds repeat rules with end dates in UTC and preserves instance recurrence"
   ]);
   expect(inputValues(input, true).recurrence).toBeNull();
 });
+const series = (recurrence: string[], timeZone = "America/New_York"): EventDetail => ({
+  eventId: "event",
+  calendarId: "personal",
+  etag: "v1",
+  recurring: true,
+  canMove: false,
+  values: {
+    title: "Standup",
+    location: "",
+    timeZone,
+    recurrence,
+    timing: { kind: "timed", start: "2026-09-07T13:00:00Z", end: "2026-09-07T13:30:00Z" },
+  },
+});
+it("opens an existing series on its own interval and end date", () => {
+  const input = detailInput(series(["RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261002T035959Z"]));
+  expect(input).toMatchObject({
+    repeat: "WEEKLY",
+    interval: 2,
+    repeatEnd: "until",
+    until: "2026-10-01",
+  });
+});
+it("keeps the original interval when only the series end date changes", () => {
+  const detail = series(["RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261002T035959Z"]);
+  const input = { ...detailInput(detail), until: "2026-11-05" };
+  expect(inputValues(input, false, detail).recurrence).toEqual([
+    "RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261106T045959Z",
+  ]);
+});
+it("leaves an untouched schedule to the server so the stored rule cannot drift", () => {
+  const detail = series(["RRULE:FREQ=MONTHLY;INTERVAL=3;COUNT=8"]);
+  const input = { ...detailInput(detail), title: "Renamed" };
+  expect(input).toMatchObject({ repeat: "MONTHLY", interval: 3, repeatEnd: "count", count: 8 });
+  expect(inputValues(input, false, detail).recurrence).toBeNull();
+});
+it("reads a weekday series and rebuilds it when the count changes", () => {
+  const detail = series(["RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR;COUNT=20"]);
+  expect(detailInput(detail)).toMatchObject({ repeat: "weekdays", repeatEnd: "count", count: 20 });
+  expect(inputValues({ ...detailInput(detail), count: 30 }, false, detail).recurrence).toEqual([
+    "RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR;COUNT=30",
+  ]);
+});
+it("keeps a rule the editor cannot express and offers the start date as its repeat end", () => {
+  const detail = series(["RRULE:FREQ=WEEKLY;BYDAY=TU,TH"]);
+  expect(detailInput(detail)).toMatchObject({ repeat: "keep", until: "2026-09-07" });
+  expect(inputValues(detailInput(detail), false, detail).recurrence).toBeNull();
+});
