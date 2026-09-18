@@ -41,7 +41,6 @@ const icons = {
   ),
   trash: <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />,
   repeat: <path d="m17 2 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4m14-3v2a4 4 0 0 1-4 4H3" />,
-  review: <path d="M4 20h16M8 20v-9m4 9V5m4 15v-7" />,
   clock: (
     <>
       <circle cx="12" cy="12" r="9" />

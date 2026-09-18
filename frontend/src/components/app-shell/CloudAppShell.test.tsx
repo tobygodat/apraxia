@@ -67,7 +67,6 @@ describe("CloudAppShell", () => {
       "ideas",
       "projects",
       "classes",
-      "review",
     ]);
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/",
@@ -75,7 +74,6 @@ describe("CloudAppShell", () => {
       "/ideas",
       "/projects",
       "/classes",
-      "/review",
     ]);
     expect(
       within(primaryNavigation).getByRole("link", { name: "ideas" }).getAttribute("aria-current"),

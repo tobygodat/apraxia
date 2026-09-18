@@ -54,7 +54,7 @@ tokens stay out of the response. See [Calendar](CALENDAR.md) and
 | Location | Contents |
 | --- | --- |
 | `frontend/src/apps/` | Application entry points and the workspace shell runtime: `CloudApp`, `MainWorkspace`, `WorkspaceRuntime`, the OAuth callback pages, and the navigation cache. |
-| `frontend/src/features/` | One folder per feature area (`todos`, `collections`, `calendar`, `classes`, `review`): components, their CSS, the Supabase-backed service, and pure domain/model helpers. `review` has no service of its own; it reads the workspace snapshot the todo service already loads. |
+| `frontend/src/features/` | One folder per feature area (`todos`, `collections`, `calendar`, `classes`): components, their CSS, the Supabase-backed service, and pure domain/model helpers. |
 | `frontend/src/components/` | Cross-feature UI: the app shell, global add, search. Legacy-only components also still live here. |
 | `frontend/src/auth/` | Session restore, Google app sign-in, provider-safe storage, and the `RequireAuth` gate. |
 | `frontend/src/config/` | Browser environment parsing, runtime mode, and Vite config helpers. |
