@@ -5,6 +5,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import type { DriveService, DriveFile } from "./driveService";
 import "./drivePicker.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { readDriveFolder, rememberDriveFolder } from "./driveFolderMemory";
 export function DriveNotes({
   userId,
   courseId,
@@ -58,8 +59,10 @@ export function DriveNotes({
   }, [service, userId, courseId]);
   function browse() {
     void run("Choosing a PDF…", async (signal) => {
-      const file = await service.pickPdf(signal);
+      // Reopen where this class's notes were last taken from.
+      const file = await service.pickPdf(signal, readDriveFolder(userId, courseId));
       if (!file || signal.aborted) return;
+      rememberDriveFolder(userId, courseId, file.parentId);
       setBusy(`Opening ${file.name}…`);
       const pdf = await service.pdf(file, signal);
       if (signal.aborted) return;

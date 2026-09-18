@@ -604,6 +604,24 @@
   flex: 0 0 auto;
 }
 
+.calendar-settings select {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid #444;
+  border-radius: var(--radius-control, 5px);
+  background-color: #202020;
+  color: #f0efed;
+  font:
+    13px/1.4 "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+.calendar-settings select:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
 /* Settings actions are page controls, so they use the workspace's standard
    quiet button rather than the calendar toolbar's compact 11px controls. */
 .calendar-settings button {
@@ -1059,7 +1077,7 @@
   padding: 6px;
 }
 .calendar-toolbar-month .calendar-icon-button {
-  background: #202020;
+  background-color: #202020;
 }
 .calendar-toolbar .calendar-add {
   border-color: #444;

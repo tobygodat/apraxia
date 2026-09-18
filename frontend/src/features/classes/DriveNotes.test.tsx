@@ -28,9 +28,58 @@ it("opens the native picker and downloads only the selected PDF, ignoring the re
   render(<DriveNotes userId="owner" courseId="math" service={drive} onPreview={preview} />);
   fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
   await waitFor(() => expect(preview).toHaveBeenCalledWith(expect.any(File)));
-  expect(drive.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal));
+  expect(drive.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal), undefined);
   expect(drive.files).not.toHaveBeenCalled();
   expect(drive.pdf).toHaveBeenCalledWith(note, expect.any(AbortSignal));
+});
+it("reopens the picker in the folder this class was last opened from", async () => {
+  const drive = service();
+  vi.mocked(drive.pickPdf).mockResolvedValue({ ...note, parentId: "lecture-folder" });
+  const { unmount } = render(
+    <DriveNotes userId="owner" courseId="math" service={drive} onPreview={vi.fn()} />,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() => expect(drive.pdf).toHaveBeenCalledTimes(1));
+  unmount();
+
+  const next = service();
+  vi.mocked(next.pickPdf).mockResolvedValue({ ...note, parentId: "lecture-folder" });
+  render(<DriveNotes userId="owner" courseId="math" service={next} onPreview={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() =>
+    expect(next.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal), "lecture-folder"),
+  );
+});
+it("keeps each class's remembered folder separate and forgets it for a file with no parent", async () => {
+  const drive = service();
+  vi.mocked(drive.pickPdf).mockResolvedValue({ ...note, parentId: "lecture-folder" });
+  const { unmount } = render(
+    <DriveNotes userId="owner" courseId="math" service={drive} onPreview={vi.fn()} />,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() => expect(drive.pdf).toHaveBeenCalledTimes(1));
+  unmount();
+
+  const other = service();
+  render(<DriveNotes userId="owner" courseId="history" service={other} onPreview={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() => expect(other.pdf).toHaveBeenCalledTimes(1));
+  expect(other.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal), undefined);
+  cleanup();
+
+  const again = service();
+  render(<DriveNotes userId="owner" courseId="math" service={again} onPreview={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() => expect(again.pdf).toHaveBeenCalledTimes(1));
+  // The second pick returned a parentless file, so the shortcut is dropped.
+  expect(again.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal), "lecture-folder");
+  cleanup();
+
+  const last = service();
+  render(<DriveNotes userId="owner" courseId="math" service={last} onPreview={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Open from Drive" }));
+  await waitFor(() => expect(last.pdf).toHaveBeenCalledTimes(1));
+  expect(last.pickPdf).toHaveBeenCalledWith(expect.any(AbortSignal), undefined);
 });
 it("leaves the current reader unchanged when Google Picker is cancelled", async () => {
   const drive = service();

@@ -1,5 +1,6 @@
 /// <reference types="google.picker" />
 import type { DriveFile } from "./driveService";
+import { DRIVE_ID_PATTERN } from "./driveFolderMemory";
 export interface PickerGrant {
   accessToken: string;
   developerKey: string;
@@ -79,7 +80,7 @@ export async function pickGooglePdf(
       .setIncludeFolders(true)
       .setSelectFolderEnabled(false)
       .setMimeTypes("application/pdf");
-    if (parent && /^[A-Za-z0-9_-]{1,256}$/.test(parent)) view.setParent(parent);
+    if (parent && DRIVE_ID_PATTERN.test(parent)) view.setParent(parent);
     try {
       picker = new google.picker.PickerBuilder()
         .addView(view)
@@ -97,14 +98,25 @@ export async function pickGooglePdf(
           const file = data.docs?.[0];
           if (
             !file ||
-            !/^[A-Za-z0-9_-]{1,256}$/.test(file.id) ||
+            !DRIVE_ID_PATTERN.test(file.id) ||
             typeof file.name !== "string" ||
             file.mimeType !== "application/pdf"
           ) {
             finish(null, new Error("Choose a PDF to open in your notes reader."));
             return;
           }
-          finish({ id: file.id, name: file.name, folder: false, modifiedTime: null, size: null });
+          const parentId =
+            typeof file.parentId === "string" && DRIVE_ID_PATTERN.test(file.parentId)
+              ? file.parentId
+              : null;
+          finish({
+            id: file.id,
+            name: file.name,
+            folder: false,
+            modifiedTime: null,
+            size: null,
+            parentId,
+          });
         })
         .build();
       signal?.addEventListener("abort", cancel, { once: true });
