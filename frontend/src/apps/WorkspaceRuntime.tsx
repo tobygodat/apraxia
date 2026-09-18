@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { registerUserStateResetter } from "../auth/userState";
 import { primeCoverImage } from "../features/calendar/coverImageCache";
 import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
+import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
 import { WorkspacePreferencesProvider } from "./workspacePreferences";
 
@@ -116,9 +117,12 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
       // A timeout guarantees this still runs within 2s under sustained
       // main-thread activity, where an idle period might otherwise never
       // arrive.
-      idleHandle = window.requestIdleCallback(() => preloadWorkspaceChunks(), { timeout: 2000 });
+      idleHandle = window.requestIdleCallback(
+        () => void preloadWorkspaceChunks().catch(() => undefined),
+        { timeout: 2000 },
+      );
     } else {
-      idleTimer = setTimeout(() => preloadWorkspaceChunks(), 1500);
+      idleTimer = setTimeout(() => void preloadWorkspaceChunks().catch(() => undefined), 1500);
     }
     return () => {
       clearTimeout(timer);
@@ -131,14 +135,16 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
   }, [todoService, collectionService, workspaceData, props.identity.userId]);
   return (
     <WorkspacePreferencesProvider>
-      <MainWorkspace
-        {...props}
-        cache={cache}
-        workspaceData={workspaceData}
-        todoService={todoService}
-        collectionService={collectionService}
-        calendarService={calendarService}
-      />
+      <WorkspaceErrorBoundary>
+        <MainWorkspace
+          {...props}
+          cache={cache}
+          workspaceData={workspaceData}
+          todoService={todoService}
+          collectionService={collectionService}
+          calendarService={calendarService}
+        />
+      </WorkspaceErrorBoundary>
     </WorkspacePreferencesProvider>
   );
 }

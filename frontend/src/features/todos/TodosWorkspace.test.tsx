@@ -215,15 +215,27 @@ describe("TodosWorkspace", () => {
     });
     completion.focus();
     fireEvent.click(completion);
-    await waitFor(() => expect(screen.queryByRole("article", { name: TODO.text })).toBeNull());
+    // Completing it takes it out of Today; the board now keeps this week's
+    // earlier days, so it settles into its own due-date column instead of
+    // vanishing until the user steps back a week.
+    const todayRegion = screen.getByRole("region", { name: /· Today$/ });
+    await waitFor(() =>
+      expect(within(todayRegion).queryByRole("article", { name: TODO.text })).toBeNull(),
+    );
     expect(service.setTodoCompleted).toHaveBeenCalledWith(
       TODO.id,
       true,
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+    const dueRegion = screen.getByRole("region", { name: /Wednesday, Sep 2/ });
+    expect(within(dueRegion).getByRole("article", { name: TODO.text })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
-    expect(screen.queryByRole("article", { name: TODO.text })).toBeNull();
+    expect(
+      within(screen.getByRole("region", { name: /Wednesday, Sep 2/ })).getByRole("article", {
+        name: TODO.text,
+      }),
+    ).toBeTruthy();
   });
 
   it("saves edited details atomically and moves a cleared date into Inbox", async () => {

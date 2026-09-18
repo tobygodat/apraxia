@@ -202,7 +202,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
           </button>
         </header>
         <label className="search-label" htmlFor={`${id}-query`}>
-          Find a task, idea, project, book, or movie
+          Find a task, idea, or project
         </label>
         <input
           className="search-input"
