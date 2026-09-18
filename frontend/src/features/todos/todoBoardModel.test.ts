@@ -26,7 +26,7 @@ function columnTodoIds(model: TodoBoardModel, key: string): string[] {
 }
 
 describe("buildTodoBoardModel", () => {
-  it("shows Inbox and merges past-due tasks into Today through Sunday for the current week", () => {
+  it("opens the current week on Today, wraps to its earlier days, and ends with Inbox", () => {
     const model = buildTodoBoardModel(
       [
         todo({ id: "inbox", text: "Inbox" }),
@@ -40,17 +40,19 @@ describe("buildTodoBoardModel", () => {
     );
 
     expect(model.isCurrentWeek).toBe(true);
+    // Today leads, the rest of the week follows, then Monday and Tuesday wrap
+    // to the end. Inbox is undated, so it trails every day column.
     expect(model.columns.map((column) => column.key)).toEqual([
-      "inbox",
-      "2026-08-31",
-      "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
       "2026-09-06",
+      "2026-08-31",
+      "2026-09-01",
+      "inbox",
     ]);
-    expect(model.columns[0]?.todos.map(({ id }) => id)).toEqual(["inbox"]);
+    expect(model.columns.at(-1)?.todos.map(({ id }) => id)).toEqual(["inbox"]);
     expect(columnTodoIds(model, "2026-09-02")).toEqual(["oldest", "older", "today"]);
     expect(columnTodoIds(model, "2026-09-06")).toEqual(["sunday"]);
     // The week's earlier days keep their own columns; open past-due rows still
@@ -121,11 +123,30 @@ describe("buildTodoBoardModel", () => {
     ]);
   });
 
+  it("starts the current week on Today whichever weekday it falls on", () => {
+    const sunday = buildTodoBoardModel([], "2026-08-31", "2026-09-06");
+    expect(sunday.columns.slice(0, -1).map((column) => column.key)).toEqual([
+      "2026-09-06",
+      "2026-08-31",
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-05",
+    ]);
+
+    // Monday is already first, so its week needs no rotation.
+    const monday = buildTodoBoardModel([], "2026-08-31", "2026-08-31");
+    expect(monday.columns[0]?.key).toBe("2026-08-31");
+    expect(monday.columns.at(-2)?.key).toBe("2026-09-06");
+  });
+
   it("shows all Monday-through-Sunday dates for a navigated week", () => {
     const model = buildTodoBoardModel([], "2026-09-07", "2026-09-02");
 
+    // A navigated week holds no Today, so it stays in plain Monday-first order.
     expect(model.isCurrentWeek).toBe(false);
-    expect(model.columns.slice(1).map((column) => column.key)).toEqual([
+    expect(model.columns.slice(0, -1).map((column) => column.key)).toEqual([
       "2026-09-07",
       "2026-09-08",
       "2026-09-09",
@@ -185,7 +206,7 @@ describe("buildTodoBoardModel", () => {
     expect(columnTodoIds(monday, "2026-09-07")).toEqual(["open"]);
     expect(columnTodoIds(monday, "2026-09-08")).toEqual(["future"]);
     const history = buildTodoBoardModel(source, "2026-08-31", "2026-09-07");
-    expect(history.columns.at(-1)?.todos.map(({ id }) => id)).toEqual(["done"]);
+    expect(columnTodoIds(history, "2026-09-06")).toEqual(["done"]);
   });
 
   it("preserves date-only values and does not mutate the source list", () => {
