@@ -57,8 +57,38 @@ access, and disconnect after setup. Never log credential values or OAuth materia
 - AES-256-GCM envelopes bind refresh tokens to owner, connection, and key
   version. Credentials and transaction data remain private; only server roles
   can invoke credential RPCs. Callback responses use no-store/no-referrer.
-- Key rotation requires the previous key to decrypt and re-encrypt records;
-  no operational rotation procedure has been verified.
+- `clear_calendar_credentials` and `clear_drive_credentials` take
+  `p_delete_credentials`. The server passes `false` when it could not decrypt
+  its own credential, which marks the connection `reconnect_required` but keeps
+  the refresh-token ciphertext, so restoring the correct key recovers it and
+  **Disconnect** can still revoke the grant at Google. A genuinely revoked grant
+  still deletes the row. The three-argument forms delegate with `true`.
+
+### Rotating the token encryption key
+
+Envelopes carry the key version that sealed them. `GOOGLE_TOKEN_ENCRYPTION_KEY`
+is the current key and `GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION` is its version
+(unset means 1). `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS` holds the key one
+version below, and is the only other key the server will read with.
+
+1. Generate a key: `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`.
+2. Set all three variables together: the new key as `GOOGLE_TOKEN_ENCRYPTION_KEY`,
+   the key it replaces as `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS`, and
+   `GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION` one higher than before. Deploying a new
+   key without the other two makes every stored credential unreadable; the
+   server treats that as a key failure rather than a revoked grant and keeps the
+   ciphertext, so putting the old key back restores service.
+3. Exercise Calendar and Drive once each as the signed-in user. The next token
+   refresh re-encrypts the stored credential under the new key and raises its
+   `encryption_key_version`, whether or not Google rotated the refresh token.
+4. Confirm the rotation finished before starting another one: every
+   `encryption_key_version` in `private.google_calendar_credentials` and
+   `private.google_drive_credentials` must equal the new version. Only then
+   remove `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS`.
+
+A rotation that is never finished leaves the previous key deployed; a second
+rotation started before the first finishes makes the oldest envelopes
+unreadable, and those accounts must reconnect.
 
 ## Event editing
 

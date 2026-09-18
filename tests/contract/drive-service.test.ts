@@ -17,6 +17,7 @@ const environment = {
   GOOGLE_CLIENT_SECRET: "google-secret",
   GOOGLE_TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 8).toString("base64"),
 };
+const OTHER_KEY = Buffer.alloc(32, 9).toString("base64");
 const state = Buffer.alloc(32, 1).toString("base64url");
 const request = (action: string, body?: unknown) =>
   new Request(`${environment.APP_URL}/api/drive/${action}`, {
@@ -297,6 +298,30 @@ describe("Drive endpoint session and callback boundary", () => {
       p_state: "reconnect_required",
       p_expected_updated_at: existing.connection.updated_at,
     });
+  });
+
+  it("keeps the stored credential when this server cannot decrypt it", async () => {
+    const existing = stored();
+    const fetcher = vi.fn<typeof fetch>(async (url) => {
+      if (String(url).endsWith("/auth/v1/user"))
+        return Response.json({ id: userId, role: "authenticated", is_anonymous: false });
+      if (String(url).endsWith("/read_drive_credentials")) return Response.json(existing);
+      return Response.json(true);
+    });
+    const response = await createDriveHandler("files", {
+      environment: { ...environment, GOOGLE_TOKEN_ENCRYPTION_KEY: OTHER_KEY },
+      fetch: fetcher,
+    })(request("files"));
+
+    expect(response.status).toBe(409);
+    const clear = fetcher.mock.calls.find(([url]) =>
+      String(url).endsWith("/clear_drive_credentials"),
+    )!;
+    expect(JSON.parse(clear[1]!.body as string)).toMatchObject({
+      p_state: "reconnect_required",
+      p_delete_credentials: false,
+    });
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes("googleapis.com"))).toBe(false);
   });
 
   it("can disconnect even when the Google configuration has been removed", async () => {

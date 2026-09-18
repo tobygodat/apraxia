@@ -79,16 +79,72 @@ const applicationEnvironmentSchema = z
     }
   });
 
-const calendarEnvironmentSchema = z.object({
-  GOOGLE_CLIENT_ID: requiredText,
-  GOOGLE_CLIENT_SECRET: requiredText,
-  GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().refine(isCanonicalEncryptionKey, {
-    message: "Expected a canonical Base64 encoding of a 32-byte encryption key.",
-  }),
+const encryptionKey = z.string().refine(isCanonicalEncryptionKey, {
+  message: "Expected a canonical Base64 encoding of a 32-byte encryption key.",
 });
+
+/**
+ * The version stamped into every envelope this deployment writes. It starts at
+ * 1 and the operator raises it by one per rotation, keeping the key it replaces
+ * in GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS until every credential has been
+ * re-encrypted. See the rotation procedure in docs/CALENDAR.md.
+ */
+const keyVersion = z
+  .string()
+  .trim()
+  .regex(/^[1-9]\d{0,8}$/, { message: "Expected a positive integer key version." })
+  .transform(Number);
+
+const calendarEnvironmentSchema = z
+  .object({
+    GOOGLE_CLIENT_ID: requiredText,
+    GOOGLE_CLIENT_SECRET: requiredText,
+    GOOGLE_TOKEN_ENCRYPTION_KEY: encryptionKey,
+    GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS: encryptionKey.optional(),
+    GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION: keyVersion.optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS === undefined) return;
+    if ((value.GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION ?? 1) < 2) {
+      context.addIssue({
+        code: "custom",
+        path: ["GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION"],
+        message: "A previous key requires a current key version of at least 2.",
+      });
+    }
+    if (value.GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS === value.GOOGLE_TOKEN_ENCRYPTION_KEY) {
+      context.addIssue({
+        code: "custom",
+        path: ["GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS"],
+        message: "The previous key must differ from the current key.",
+      });
+    }
+  });
 
 export type ApplicationEnvironment = z.infer<typeof applicationEnvironmentSchema>;
 export type CalendarEnvironment = z.infer<typeof calendarEnvironmentSchema>;
+
+/** The key version this deployment stamps into new envelopes. Unset means 1. */
+export function currentKeyVersion(google: CalendarEnvironment): number {
+  return google.GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION ?? 1;
+}
+
+/**
+ * The key that decrypts an envelope stored under `keyVersion`, or null when
+ * this deployment holds no key for it. Only the current version and the one it
+ * replaced are readable, so a rotation must finish before the next begins.
+ */
+export function encryptionKeyForVersion(
+  google: CalendarEnvironment,
+  keyVersion: number | null,
+): string | null {
+  const current = currentKeyVersion(google);
+  if (keyVersion === current) return google.GOOGLE_TOKEN_ENCRYPTION_KEY;
+  if (keyVersion === current - 1 && google.GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS !== undefined) {
+    return google.GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS;
+  }
+  return null;
+}
 
 export type EnvironmentCheck = {
   configured: boolean;

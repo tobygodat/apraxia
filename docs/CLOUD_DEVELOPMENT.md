@@ -53,6 +53,8 @@ workflow holds no secrets.
 | `GOOGLE_CLIENT_ID` | Calendar/Drive only | required for Calendar/Drive | no | Non-empty. Validated as a group: leave all three blank to run without Google. |
 | `GOOGLE_CLIENT_SECRET` | Calendar/Drive only | required for Calendar/Drive | **no, server only** | Non-empty. |
 | `GOOGLE_TOKEN_ENCRYPTION_KEY` | Calendar/Drive only | required for Calendar/Drive | **no, server only** | Canonical padded standard Base64 of exactly 32 random bytes. Keep it in a secret store. |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION` | Calendar/Drive only | optional (defaults to 1) | **no, server only** | The version stamped into new envelopes. Raise it by one per key rotation. |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS` | Calendar/Drive only | optional | **no, server only** | The key one version below the current one, set only while a rotation is in progress. See the rotation procedure in [calendar](CALENDAR.md#rotating-the-token-encryption-key). |
 | `GOOGLE_PICKER_API_KEY` | Drive Picker only | required for the Picker | server-held, released to the browser by `/api/drive/picker` | Not schema-validated. Restrict the key to the Picker API and the site referrers. |
 | `GOOGLE_PICKER_APP_ID` | Drive Picker only | required for the Picker | same | Not schema-validated. The Google Cloud project number. |
 
