@@ -23,7 +23,7 @@ There are two Vitest configurations.
 
 | Config | Command | Includes | Runs |
 | --- | --- | --- | --- |
-| `vitest.config.ts` | `npm test`, and inside `npm run verify` | `tests/contract/**` and `frontend/src/**/*.test.{ts,tsx}` | Every local run and the CI **App checks** job. Needs no Docker; DOM files opt in with `// @vitest-environment happy-dom`. |
+| `vitest.config.ts` | `npm test`, and inside `npm run verify` | `tests/contract/**` and `frontend/src/**/*.test.{ts,tsx}` | Every local run; in CI, split across the **Contract tests** and **Frontend tests** jobs. Needs no Docker; DOM files opt in with `// @vitest-environment happy-dom`. |
 | `vitest.local.config.ts` | `npm run db:test:todos-http`, or `npx vitest run --config vitest.local.config.ts` | `tests/local/**` and `frontend/tests/local/**` | Needs local Supabase running; files run serially with long timeouts. Not part of `npm test` or `verify`, but `verify:db` runs it, so the **Database checks** job does too. |
 
 pgTAP (`npm run db:test`) and the script suites below also belong to the
@@ -162,7 +162,13 @@ worktrees inherit, and verify the repair with `git fetch origin` and `git fsck
 `.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual
 dispatch from the repository's **Actions → CI → Run workflow** page.
 
-- **App checks** runs `npm ci` and `npm run verify` on Node.js 22.
+- **App checks** is a status that aggregates three parallel jobs on Node.js 22,
+  so the slowest one no longer waits behind the others: **Lint and types**
+  (`npm run verify:static`, i.e. typecheck, lint, build, and the bundle check),
+  **Contract tests** (`tests/contract/**`, the PGlite suites), and **Frontend
+  tests** (`frontend/src/**`). Together they cover exactly what `npm run verify`
+  covers locally. **App checks** fails if any of the three fails, so it stays
+  the only app status branch protection needs to require.
 - **Database checks** runs `npm run verify:db` on GitHub's Linux runner, applies and lints
   migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
   concurrency and the authenticated Data API, then generates database types and

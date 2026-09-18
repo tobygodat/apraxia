@@ -14,8 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  app:
-    name: App checks
+  # The app suite is split so the slow half (the PGlite contract tests) stops
+  # holding up typecheck, lint, build and the frontend tests. "App checks"
+  # below stays the single status to require; it fails if any part failed.
+  static:
+    name: Lint and types
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -25,7 +28,53 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run verify
+      - run: npm run verify:static
+
+  contract-tests:
+    name: Contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --maxWorkers=4 tests/contract
+
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --maxWorkers=4 frontend/src
+
+  # Aggregate status so branch protection keeps requiring one app check.
+  app:
+    name: App checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [static, contract-tests, frontend-tests]
+    if: always()
+    steps:
+      - name: Confirm every app check passed
+        env:
+          RESULTS: ${{ needs.static.result }} ${{ needs.contract-tests.result }} ${{ needs.frontend-tests.result }}
+        run: |
+          echo "Lint and types, contract tests, frontend tests: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "::error::An app check did not succeed ($RESULTS)."
+              exit 1
+            fi
+          done
 
   database:
     name: Database checks
@@ -44,8 +93,6 @@ jobs:
         run: node scripts/ci-database-scope.mjs
       - run: npm ci
         if: steps.scope.outputs.required != 'false'
-      # Use the same complete suite locally before pushing database changes.
-      # All resets and migration rewinds target disposable local Supabase.
       - name: Verify database (reproduce locally with npm run verify:db)
         id: verify
         if: steps.scope.outputs.required != 'false'

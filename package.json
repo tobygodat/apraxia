@@ -24,6 +24,7 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write",
     "knip": "knip",
+    "verify:static": "npm run typecheck && npm run lint && npm run build && npm run check:bundle",
     "verify:quick": "npm run typecheck && npm run lint && npm test -- --maxWorkers=4",
     "verify": "npm run typecheck && npm run lint && npm test -- --maxWorkers=4 && npm run build && npm run check:bundle",
     "verify:db": "npm run db:start && npm run db:verify && npm run db:rewind:verify && npm run db:test:oauth-concurrency && npm run db:test:todos-http && npm run db:types && npm run typecheck",
