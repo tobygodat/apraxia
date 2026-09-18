@@ -6,6 +6,7 @@ import {
   type SqlDate,
   visibleTodoWeekDates,
 } from "./dateDomain";
+import { compareTodayTodos, type TodayOrderableTodo } from "./todayOrder";
 
 type TodoBoardColumnKind = "inbox" | "date";
 
@@ -38,6 +39,15 @@ function assertUniqueTodoIds(todos: readonly Todo[]): void {
 
     if (todo.dueDate !== null) asSqlDate(todo.dueDate);
   }
+}
+
+/**
+ * Date columns follow the Today order: manual rank first, then due date, due
+ * time with unset times last, creation, and finally ID. Sorting by date alone
+ * left same-day tasks in the service's ID order.
+ */
+function compareDatedColumnTodos(left: Todo, right: Todo): number {
+  return compareTodayTodos(left as TodayOrderableTodo, right as TodayOrderableTodo);
 }
 
 /**
@@ -84,7 +94,7 @@ export function buildTodoBoardModel(
             todo.dueDate === date && (todo.completed || compareSqlDates(date, validToday) >= 0)
           );
         })
-        .sort((left, right) => compareSqlDates(left.dueDate!, right.dueDate!)),
+        .sort(compareDatedColumnTodos),
     })),
   ];
 

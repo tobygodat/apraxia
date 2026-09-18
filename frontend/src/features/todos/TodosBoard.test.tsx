@@ -108,15 +108,19 @@ describe("TodosBoard", () => {
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings[0]).toEqual(expect.stringContaining("· Today"));
+    expect(headings.some((heading) => heading?.includes("· Today"))).toBe(true);
     expect(headings[headings.length - 1]).toEqual("Inbox");
     expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
-    // The current week starts at today (Wednesday): Wed through Sun.
-    expect(headings).toHaveLength(1 + 5);
+    // The current week shows all seven days, so this week's earlier days keep
+    // a column for their completed tasks.
+    expect(headings).toHaveLength(1 + 7);
     const today = screen.getByRole("region", { name: /· Today$/ });
-    const pastDate = within(today).getByText("Due Aug 30");
+    const pastDate = within(today).getByText(/Due Aug 30/);
     expect(pastDate.getAttribute("datetime")).toBe("2026-08-30");
     expect(pastDate.classList.contains("todos-board-card__due--past")).toBe(true);
+    // The red styling is not available to a screen reader, so the status is
+    // also carried as text.
+    expect(pastDate.textContent).toContain("Past due.");
     expect(within(today).getByText(TODO.text)).toBeTruthy();
     expect(within(today).getAllByText("2:30 PM")).toHaveLength(2);
     expect(within(today).getAllByText("Launch")[0]!.className).toBe("todo-source-chip");
@@ -225,6 +229,24 @@ describe("TodosBoard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Restoring…" }));
     expect(callbacks.onUndoDelete).toHaveBeenCalledOnce();
     expect(screen.getByRole("alert").textContent).toBe("Try Undo again.");
+  });
+
+  it("refuses a second delete while an Undo notice is open, and says so", () => {
+    const callbacks = props({
+      undoNotice: { todoId: TODO.id, todoText: TODO.text, pending: false, error: null },
+    });
+    render(<TodosBoard {...callbacks} />);
+
+    const remove = screen.getByRole("button", { name: "Delete Call the clinic" });
+    expect(remove.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(remove);
+    expect(callbacks.onDeleteTodo).not.toHaveBeenCalled();
+
+    const describedBy = remove.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)?.textContent).toContain(
+      "Undo or dismiss before deleting another task",
+    );
   });
 
   it("moves focus to the adjacent task once a deletion settles", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Todo } from "../../types/domain";
-import { buildTodoBoardModel } from "./todoBoardModel";
+import { buildTodoBoardModel, type TodoBoardModel } from "./todoBoardModel";
 
 const BASE_TODO: Todo = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -17,6 +17,12 @@ const BASE_TODO: Todo = {
 
 function todo(overrides: Partial<Todo> & Pick<Todo, "id" | "text">): Todo {
   return { ...BASE_TODO, ...overrides };
+}
+
+function columnTodoIds(model: TodoBoardModel, key: string): string[] {
+  const column = model.columns.find((candidate) => candidate.key === key);
+  if (!column) throw new Error(`No board column for ${key}.`);
+  return column.todos.map(({ id }) => id);
 }
 
 describe("buildTodoBoardModel", () => {
@@ -36,6 +42,8 @@ describe("buildTodoBoardModel", () => {
     expect(model.isCurrentWeek).toBe(true);
     expect(model.columns.map((column) => column.key)).toEqual([
       "inbox",
+      "2026-08-31",
+      "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
@@ -43,8 +51,74 @@ describe("buildTodoBoardModel", () => {
       "2026-09-06",
     ]);
     expect(model.columns[0]?.todos.map(({ id }) => id)).toEqual(["inbox"]);
-    expect(model.columns[1]?.todos.map(({ id }) => id)).toEqual(["oldest", "older", "today"]);
-    expect(model.columns[5]?.todos.map(({ id }) => id)).toEqual(["sunday"]);
+    expect(columnTodoIds(model, "2026-09-02")).toEqual(["oldest", "older", "today"]);
+    expect(columnTodoIds(model, "2026-09-06")).toEqual(["sunday"]);
+    // The week's earlier days keep their own columns; open past-due rows still
+    // appear only under Today.
+    expect(columnTodoIds(model, "2026-08-31")).toEqual([]);
+    expect(columnTodoIds(model, "2026-09-01")).toEqual([]);
+  });
+
+  it("orders a column by due time, then creation, not by row ID", () => {
+    const model = buildTodoBoardModel(
+      [
+        todo({
+          id: "ffffffff-0000-4000-8000-000000000001",
+          text: "Evening",
+          dueDate: "2026-09-04",
+          dueTime: "17:00",
+        }),
+        todo({
+          id: "00000000-0000-4000-8000-0000000000aa",
+          text: "Morning",
+          dueDate: "2026-09-04",
+          dueTime: "09:00",
+        }),
+        todo({
+          id: "11111111-0000-4000-8000-0000000000bb",
+          text: "Untimed",
+          dueDate: "2026-09-04",
+          createdAt: "2026-09-01T08:00:00.000000Z",
+        }),
+      ],
+      "2026-08-31",
+      "2026-09-02",
+    );
+
+    // Unset due times sort last, so the untimed row follows both timed ones
+    // even though it was created first.
+    expect(columnTodoIds(model, "2026-09-04")).toEqual([
+      "00000000-0000-4000-8000-0000000000aa",
+      "ffffffff-0000-4000-8000-000000000001",
+      "11111111-0000-4000-8000-0000000000bb",
+    ]);
+  });
+
+  it("keeps a manual Today rank ahead of unranked rows in the Today column", () => {
+    const model = buildTodoBoardModel(
+      [
+        todo({
+          id: "00000000-0000-4000-8000-000000000011",
+          text: "Unranked but earlier",
+          dueDate: "2026-09-02",
+          dueTime: "08:00",
+        }),
+        todo({
+          id: "00000000-0000-4000-8000-000000000022",
+          text: "Ranked",
+          dueDate: "2026-09-02",
+          dueTime: "20:00",
+          todayRank: 1024,
+        }),
+      ],
+      "2026-08-31",
+      "2026-09-02",
+    );
+
+    expect(columnTodoIds(model, "2026-09-02")).toEqual([
+      "00000000-0000-4000-8000-000000000022",
+      "00000000-0000-4000-8000-000000000011",
+    ]);
   });
 
   it("shows all Monday-through-Sunday dates for a navigated week", () => {
@@ -82,28 +156,34 @@ describe("buildTodoBoardModel", () => {
       "open",
     );
     const current = buildTodoBoardModel([open, completed], "2026-08-31", "2026-09-02");
-    expect(current.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
+    expect(columnTodoIds(current, "2026-09-02")).toEqual(["open"]);
     const historicalColumn = model.columns.find((column) => column.key === "2026-08-25");
     expect(historicalColumn?.todos.map(({ id }) => id)).toEqual(["completed"]);
   });
 
   it("keeps completed dates separate across a Sunday-to-Monday rollover", () => {
     const source = [
-      todo({ id: "open", text: "Open", dueDate: "2026-09-06" }),
+      todo({
+        id: "open",
+        text: "Open",
+        dueDate: "2026-09-06",
+        createdAt: "2026-09-01T08:00:00.000000Z",
+      }),
       todo({
         id: "done",
         text: "Done",
         dueDate: "2026-09-06",
         completed: true,
         completedAt: "2026-09-06T12:00:00Z",
+        createdAt: "2026-09-01T09:00:00.000000Z",
       }),
       todo({ id: "future", text: "Future", dueDate: "2026-09-08" }),
     ];
     const sunday = buildTodoBoardModel(source, "2026-08-31", "2026-09-06");
-    expect(sunday.columns[1]?.todos.map(({ id }) => id)).toEqual(["open", "done"]);
+    expect(columnTodoIds(sunday, "2026-09-06")).toEqual(["open", "done"]);
     const monday = buildTodoBoardModel(source, "2026-09-07", "2026-09-07");
-    expect(monday.columns[1]?.todos.map(({ id }) => id)).toEqual(["open"]);
-    expect(monday.columns[2]?.todos.map(({ id }) => id)).toEqual(["future"]);
+    expect(columnTodoIds(monday, "2026-09-07")).toEqual(["open"]);
+    expect(columnTodoIds(monday, "2026-09-08")).toEqual(["future"]);
     const history = buildTodoBoardModel(source, "2026-08-31", "2026-09-07");
     expect(history.columns.at(-1)?.todos.map(({ id }) => id)).toEqual(["done"]);
   });
@@ -116,10 +196,11 @@ describe("buildTodoBoardModel", () => {
 
     const model = buildTodoBoardModel(source, "2026-08-31", "2026-09-02");
 
-    expect(model.columns[1]?.todos.map(({ dueDate }) => dueDate)).toEqual([
-      "2026-08-31",
-      "2026-09-01",
-    ]);
+    expect(
+      model.columns
+        .find((column) => column.key === "2026-09-02")
+        ?.todos.map(({ dueDate }) => dueDate),
+    ).toEqual(["2026-08-31", "2026-09-01"]);
     expect(source.map(({ id }) => id)).toEqual(["b", "a"]);
   });
 

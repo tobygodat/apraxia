@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import type { DriveService, DriveFile } from "./driveService";
 import "./drivePicker.css";
-import { serviceErrorMessage } from "../../lib/serviceError";
+import { hasServiceErrorCode, serviceErrorMessage } from "../../lib/serviceError";
 export function DriveNotes({
   userId,
   courseId,
@@ -25,6 +25,9 @@ export function DriveNotes({
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState("Checking Drive…");
   const [error, setError] = useState("");
+  // Branch on the typed code, never on the copy: a wording change used to turn
+  // the reconnect prompt back into a plain retry.
+  const [reconnectRequired, setReconnectRequired] = useState(false);
   const pending = useRef<AbortController | null>(null);
   async function run(label: string, work: (signal: AbortSignal) => Promise<void>) {
     pending.current?.abort();
@@ -32,11 +35,14 @@ export function DriveNotes({
     pending.current = controller;
     setBusy(label);
     setError("");
+    setReconnectRequired(false);
     try {
       await work(controller.signal);
     } catch (cause) {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted) {
         setError(serviceErrorMessage(cause, "Google Drive could not open. Try again."));
+        setReconnectRequired(hasServiceErrorCode(cause, "reconnect_required"));
+      }
     } finally {
       if (pending.current === controller) {
         setBusy("");
@@ -137,9 +143,9 @@ export function DriveNotes({
           <p role="alert">{error}</p>
           <button
             disabled={disabled || !!busy}
-            onClick={error.startsWith("Reconnect") ? connect : connected ? browse : initialize}
+            onClick={reconnectRequired ? connect : connected ? browse : initialize}
           >
-            {error.startsWith("Reconnect") ? "Reconnect Drive" : "Try again"}
+            {reconnectRequired ? "Reconnect Drive" : "Try again"}
           </button>
         </div>
       )}
