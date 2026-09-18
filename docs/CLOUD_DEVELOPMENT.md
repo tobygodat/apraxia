@@ -219,9 +219,11 @@ workflow exists on the default branch).
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
   `verify:db:ci` runs the same `db:checks` as the local `npm run verify:db`; it
-  only starts a leaner container set, because CI needs no Studio, Postgres-meta,
-  mail, image, edge-runtime, log, or pooler service. Keep `verify:db` for local
-  work, where Studio is useful.
+  only starts a leaner container set, because CI needs no Studio, mail, image,
+  edge-runtime, log, or pooler service. Postgres-meta stays: `supabase gen types`
+  uses it, and excluding it only defers the same image pull to `db:types`, where
+  it no longer overlaps the rest of the boot. Keep `verify:db` for local work,
+  where Studio is useful.
 
 The **Database checks** job always reports a status. Its scope step skips database
 execution only when every changed path is root `AGENTS.md`, `README.md`,

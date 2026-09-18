@@ -31,7 +31,7 @@
     "verify:db": "npm run db:start && npm run db:checks",
     "verify:db:ci": "npm run db:start:ci && npm run db:checks",
     "db:start": "supabase start",
-    "db:start:ci": "supabase start -x studio,postgres-meta,mailpit,imgproxy,edge-runtime,logflare,vector,supavisor,realtime",
+    "db:start:ci": "supabase start -x studio,mailpit,imgproxy,edge-runtime,logflare,vector,supavisor,realtime",
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
