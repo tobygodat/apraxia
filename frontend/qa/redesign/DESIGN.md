@@ -15,5 +15,3 @@ The supplied Notion and Obsidian references govern this exploration: charcoal su
 ## Review boundary
 
 Concepts use fictional records. Generated text, event placement, contrast, responsive behavior, and controls require implementation checks if a direction is developed. No concept has been selected or approved for implementation.
-
-The user's pinned references take precedence over the skill's randomized direction assignment (seed 9ee3e854; external catalog unavailable).

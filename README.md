@@ -5,27 +5,19 @@ Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
 React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
 Tasks aggregates ordinary tasks, project tasks, and class assignments into Inbox
-and date columns. Source chips identify projects or classes and assignment types;
-All, Projects, Classes, and Unassigned filter the board. Shared add/edit forms
-allow one project or class per task, with assignment type available only for
-classes. Incomplete past-due tasks join
-Today with their original due dates shown in red; stored dates stay unchanged.
-Completed historical tasks remain on their original dates. The coordinated
-migration and UI release completed on 2026-09-14; see
-[the release record](docs/history/TASK_AGGREGATION_RELEASE.md).
+and date columns, filtered by source. Incomplete past-due tasks join Today with
+their original due dates shown in red; stored dates are never rewritten.
 
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [apraxia.dev](https://apraxia.dev).
 
-The app was renamed from orbitOS to apraxia on 2026-09-17. Persisted or hosted
-identifiers keep the old name on purpose: the database roles and enum
-(`orbitos_rpc`, `orbitos_agent`, `orbitos_record_type`), the `orbitos.agent_owner`
-session setting and `orbitos:today-order:` lock key inside applied migrations,
-the token-encryption purpose strings, the legacy `orbitos:classes:v1` browser
-payload, the preserved Python package `src/orbitos` with its `orbitos.db` data,
-and the Vercel Production variable `ORBITOS_AGENT_TOKEN`, which cannot be renamed
-in place. Renaming the database or legacy identifiers is a separate,
-data-affecting change.
+The app was renamed from orbitOS to apraxia on 2026-09-17. Persisted and hosted
+identifiers keep the old name on purpose: the database roles and enum, names
+inside applied migrations, token-encryption purpose strings, the legacy
+`orbitos:classes:v1` browser payload, the preserved `src/orbitos` package with
+its `orbitos.db` data, and the Vercel variable `ORBITOS_AGENT_TOKEN`, which
+cannot be renamed in place. Renaming any of them is a separate, data-affecting
+change.
 
 ## Status
 
@@ -33,9 +25,9 @@ All planned feature slices are implemented and deployed. The hosted setup for
 Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified
 on `https://apraxia.dev` on 2026-09-18: the Picker added a PDF to a class, and a
 disconnect and reconnect completed through the production redirect.
-Real Calendar connection and reconnect/disconnect flows remain unverified since
-the last recorded check, so reinspect the current provider configuration before
-diagnosing an old failure as current.
+Real Calendar connection and reconnect were verified on the same day. An
+explicit Calendar disconnect is still unverified, so reinspect the current
+provider configuration before diagnosing an old failure as current.
 
 ## Development
 
@@ -52,14 +44,10 @@ URL parameters, and what the fixtures can and cannot prove are documented in
 [QA fixtures](docs/QA_FIXTURES.md). Fixtures do not verify database
 persistence, Google sync, OAuth, or hosted configuration.
 
-Use focused checks while editing and one local pre-push check; see
-[fast local feedback](docs/CLOUD_DEVELOPMENT.md#fast-local-feedback). GitHub
-Actions runs full app verification, split across parallel jobs that together
-cover `npm run verify`. **App checks** and
-**Database checks** must pass for the release commit. Database CI skips execution
-for documented docs/style-only diffs; otherwise it uses temporary Supabase and
-publishes regenerated types as its `database-types` artifact. Full local
-verification is required for dependency/build/CI changes or to reproduce failures.
+Use focused checks while editing, then run `npm run verify:quick` once before
+pushing; see [fast local feedback](docs/CLOUD_DEVELOPMENT.md#fast-local-feedback).
+GitHub Actions runs **App checks** and **Database checks**, which must both pass
+for the release commit.
 
 ## Documentation
 
@@ -76,6 +64,8 @@ verification is required for dependency/build/CI changes or to reproduce failure
   local setup, release.
 - [Calendar](docs/CALENDAR.md) and [Drive](docs/DRIVE.md): provider setup and
   security.
+- [Agent API](docs/AGENT_API.md): the personal agent endpoints, permissions, and
+  retry rules.
 - [Decision records](docs/adr/): why access is RLS-only, why Today uses scalar
   envelopes, why hosted migrations are forward-only, why time arithmetic runs on
   the server.

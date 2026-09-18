@@ -9,6 +9,7 @@ function fixture(result: unknown) {
     "is",
     "order",
     "eq",
+    "neq",
     "range",
     "abortSignal",
     "insert",
@@ -36,6 +37,17 @@ describe("Collection service", () => {
     expect(chain.is).toHaveBeenCalledWith("deleted_at", null);
     expect(chain.range).toHaveBeenCalledWith(50, 99);
     expect(chain.order).toHaveBeenCalledWith("id");
+  });
+  it("drops archived projects from the default list and keeps them under 'all'", async () => {
+    const unfiltered = fixture([]);
+    await unfiltered.service.listProjects();
+    expect(unfiltered.chain.neq).toHaveBeenCalledWith("status", "archived");
+    expect(unfiltered.chain.eq).not.toHaveBeenCalled();
+
+    const everything = fixture([]);
+    await everything.service.listProjects({ status: "all" });
+    expect(everything.chain.neq).not.toHaveBeenCalled();
+    expect(everything.chain.eq).not.toHaveBeenCalled();
   });
   it("deletes only the project via the atomic RPC and retains the exact restore token", async () => {
     const token = "2026-09-04T12:00:00.123456+00:00";

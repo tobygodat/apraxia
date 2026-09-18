@@ -8,6 +8,7 @@ const sensitiveNames = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "GOOGLE_CLIENT_SECRET",
   "GOOGLE_TOKEN_ENCRYPTION_KEY",
+  "GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS",
 ];
 const sensitiveValues = sensitiveNames
   .map((name) => process.env[name])

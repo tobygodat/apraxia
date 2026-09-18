@@ -125,16 +125,23 @@ export function createGoogleStore(
         timezone: typeof value.timezone === "string" ? value.timezone : null,
       };
     },
+    /**
+     * `deleteCredentials: false` keeps the refresh-token ciphertext and only
+     * marks the connection. Use it when this server could not read its own
+     * credential, which is not evidence that Google revoked the grant.
+     */
     async clear(
       userId: string,
       state: "disconnected" | "reconnect_required",
       expected?: string,
+      deleteCredentials = true,
     ): Promise<boolean> {
       return (
         (await rpc(`clear_${provider}_credentials`, {
           p_verified_user_id: userId,
           p_state: state,
           p_expected_updated_at: expected ?? null,
+          p_delete_credentials: deleteCredentials,
         })) === true
       );
     },
@@ -146,6 +153,7 @@ export function createGoogleStore(
       envelope: string,
       scopes: readonly string[],
       accessToken: AccessTokenCache | null,
+      keyVersion = 1,
     ): Promise<boolean> {
       return (
         (await rpc(`save_${provider}_credentials`, {
@@ -153,7 +161,7 @@ export function createGoogleStore(
           p_connection_id: connectionId,
           p_expected_updated_at: expected,
           p_envelope: envelope,
-          p_key_version: 1,
+          p_key_version: keyVersion,
           p_scopes: scopes,
           p_access_token_envelope: accessToken?.envelope ?? null,
           p_access_token_expires_at: accessToken?.expiresAt ?? null,

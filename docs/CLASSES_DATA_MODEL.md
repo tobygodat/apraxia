@@ -151,9 +151,7 @@ The QA workspace uses explicit fictional services. Classes, notes, and
 assignments survive navigation but reset on QA reload. Browser checks there
 exercise the production UI and reader, not real Google or database persistence.
 
-Before release, follow [Cloud development](CLOUD_DEVELOPMENT.md): inspect hosted
-data/migration history, preserve a backup, require App checks and Database checks,
-obtain generated database types, apply forward migrations, and verify the normal
-authenticated app. Test a browser import, fresh-browser access, a real device PDF
-upload/reopen, interrupted upload recovery, and a real Drive PDF. Report any
-unverified flows rather than treating fixtures as provider evidence.
+[Cloud development](CLOUD_DEVELOPMENT.md#live-releases) covers the release rules.
+Because fixtures prove neither persistence nor provider access, a change to
+uploads, imports, or Drive notes needs the authenticated app: report any flow it
+leaves unverified rather than treating fixtures as provider evidence.

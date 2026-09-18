@@ -45,6 +45,12 @@ function fixture(userId = "user-a") {
   const getTodo = vi.fn().mockResolvedValue(todo);
   const getIdea = vi.fn().mockResolvedValue(idea);
   const projects = vi.fn().mockResolvedValue([]);
+  const setTimezone = vi.fn().mockResolvedValue({
+    userId,
+    timezone: "America/New_York",
+    createdAt: "",
+    updatedAt: "",
+  });
   const props: MainWorkspaceProps = {
     identity: { userId, email: `${userId}@example.com`, expiresAt: null },
     signOutStatus: "idle",
@@ -54,12 +60,13 @@ function fixture(userId = "user-a") {
     calendarService: {} as CalendarService,
     workspaceData: {
       projects,
+      setTimezone,
       profile: vi
         .fn()
         .mockResolvedValue({ userId, timezone: "America/New_York", createdAt: "", updatedAt: "" }),
     },
   };
-  return { props, createTodo, listProjects, search, getTodo, getIdea, projects };
+  return { props, createTodo, listProjects, search, getTodo, getIdea, projects, setTimezone };
 }
 function RouteWitness() {
   return <output aria-label="Current route">{useLocation().pathname}</output>;

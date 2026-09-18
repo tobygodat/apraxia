@@ -59,7 +59,7 @@ changes. Avoid unnecessary tests that only restate low-impact copy or styling ch
   [the Docker procedure](docs/CLOUD_DEVELOPMENT.md#agent-managed-docker-startup-on-this-windows-machine);
   reuse a healthy engine and do not ask the user to perform routine cleanup.
 - Run commands from the repository root. Frontend: `npm run dev:web`; local full
-  stack: `npm run dev`. Setup, checks, Docker, release, and official Codex guidance:
+  stack: `npm run dev`. Setup, checks, Docker, and release:
   `docs/CLOUD_DEVELOPMENT.md`. Status: `README.md`.
 - Use `docs/ARCHITECTURE.md` for service boundaries and code placement;
   `docs/CONVENTIONS.md` for naming, CSS, error copy, formatting, and test placement;

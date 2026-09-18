@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   CalendarPreference,
   GoogleCalendarConnectionStatus,
@@ -11,14 +11,38 @@ import { WORKSPACE_THEME_LABELS, useWorkspacePreferences } from "../../apps/work
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
 
+/** `Intl.supportedValuesOf` is ES2022; this build targets ES2020. */
+type IntlWithSupportedValues = typeof Intl & {
+  supportedValuesOf?: (key: "timeZone") => readonly string[];
+};
+
+/**
+ * Every zone this browser knows, with the saved one kept in the list even when
+ * the browser does not offer it, so the current setting is never silently lost.
+ */
+export function timezoneChoices(current: string): string[] {
+  let supported: readonly string[];
+  try {
+    supported = (Intl as IntlWithSupportedValues).supportedValuesOf?.("timeZone") ?? [];
+  } catch {
+    supported = [];
+  }
+  const choices = new Set(supported);
+  choices.add(current);
+  return [...choices].sort((left, right) => left.localeCompare(right));
+}
+
 export function SettingsPage({
   calendarService: service,
   profile,
   onSignOut,
+  onSaveTimezone,
 }: {
   calendarService: CalendarService;
   profile: Profile;
   onSignOut: () => void | Promise<void>;
+  /** Omitted by fixtures and tests, which render the timezone read-only. */
+  onSaveTimezone?: (timezone: string) => Promise<void>;
 }) {
   const cachedStatus = peekRead(service, "status");
   const [status, setStatus] = useState<GoogleCalendarConnectionStatus | null>(cachedStatus ?? null);
@@ -64,6 +88,31 @@ export function SettingsPage({
     }
   };
   const connected = status?.connectionState === "connected";
+  const [timezone, setTimezone] = useState(profile.timezone);
+  const [timezoneBusy, setTimezoneBusy] = useState(false);
+  const [timezoneError, setTimezoneError] = useState<string | null>(null);
+  const [timezoneNotice, setTimezoneNotice] = useState("");
+  const timezoneOptions = useMemo(() => timezoneChoices(profile.timezone), [profile.timezone]);
+  useEffect(() => setTimezone(profile.timezone), [profile.timezone]);
+  const saveTimezone = (next: string) => {
+    if (!onSaveTimezone || next === timezone) return;
+    const previous = timezone;
+    setTimezone(next);
+    setTimezoneBusy(true);
+    setTimezoneError(null);
+    setTimezoneNotice("");
+    void (async () => {
+      try {
+        await onSaveTimezone(next);
+        setTimezoneNotice(`Timezone saved as ${next.replace(/_/g, " ")}.`);
+      } catch (reason) {
+        setTimezone(previous);
+        setTimezoneError(serviceErrorMessage(reason, "Your timezone wasn’t saved. Try again."));
+      } finally {
+        setTimezoneBusy(false);
+      }
+    })();
+  };
   const { preferences, setTheme } = useWorkspacePreferences();
   useColdLoad(loading && status === null && !error);
   return (
@@ -200,8 +249,40 @@ export function SettingsPage({
 
       <section>
         <h2>Timezone</h2>
-        <p>{profile.timezone.replace(/_/g, " ")}</p>
-        <p className="calendar-muted">Calendar and due dates use this timezone.</p>
+        {onSaveTimezone ? (
+          <>
+            {/* The section heading already names it; the label is for the control. */}
+            <label className="cloud-shell__sr-only" htmlFor="settings-timezone">
+              Timezone
+            </label>
+            <select
+              id="settings-timezone"
+              value={timezone}
+              disabled={timezoneBusy}
+              onChange={(event) => saveTimezone(event.target.value)}
+            >
+              {timezoneOptions.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone.replace(/_/g, " ")}
+                </option>
+              ))}
+            </select>
+            <p className="cloud-shell__sr-only" role="status">
+              {timezoneBusy ? "Saving your timezone…" : timezoneNotice}
+            </p>
+            {timezoneError && (
+              <div className="workspace-error" role="alert">
+                <p>{timezoneError}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <p>{profile.timezone.replace(/_/g, " ")}</p>
+        )}
+        <p className="calendar-muted">
+          Calendar and due dates use this timezone. Changing it clears the manual Today order for
+          any task whose due date no longer lands on today.
+        </p>
       </section>
 
       <section>

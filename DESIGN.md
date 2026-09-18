@@ -158,9 +158,9 @@ The user-confirmed descriptive direction is “The Quiet Desk — calm and perso
 - Fine dividers, flat rows, and quiet interaction states.
 - Ruled ledgers: hairlines keep ruling where nothing is written.
 
-This document captures the local cloud implementation on 2026-09-13, including existing uncommitted work, and was extended on 2026-09-15 for the Tasks week-ledger build (`features/todos/TodosBoard.tsx` and `TodosBoard.css`). It does not establish what is deployed. The source of visual evidence is `frontend/src/`, especially `components/app-shell/CloudAppShell.css`, `apps/workspace.css`, `features/calendar/calendar.css`, `features/todos/`, and `features/collections/collections.css`. The experiment under `frontend/qa/redesign/` has its own scope.
+This document records the implementation in `frontend/src/`, not what is deployed. Its visual evidence is especially `components/app-shell/CloudAppShell.css`, `apps/workspace.css`, `features/calendar/calendar.css`, `features/todos/`, and `features/collections/collections.css`. The experiment under `frontend/qa/redesign/` has its own scope.
 
-Frontmatter records reusable observed values; most are still CSS literals or component-scoped properties, not centralized application tokens. It follows the [DESIGN.md format](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md). The sidecar contains previews and metadata, not an application stylesheet.
+Frontmatter records reusable observed values; most are still CSS literals or component-scoped properties, not centralized application tokens. It follows the [DESIGN.md format](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md).
 
 ## Colors
 

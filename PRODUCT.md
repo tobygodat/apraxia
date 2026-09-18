@@ -32,12 +32,11 @@ AGENTS.md.
 
 ## Capabilities and Constraints
 
-- Existing workspace areas include Todos, Projects, Ideas, Calendar,
-  and a Classes/course-notes skeleton.
-- Classes supports saved notes, local PDF preview, and Google Drive notes
-  through Google's native Picker, with a separate Drive consent. Hosted setup
-  and live provider verification are still pending, and no background Drive
-  synchronization or Drive writes exist. See docs/DRIVE.md.
+- Existing workspace areas are Todos, Projects, Ideas, Calendar, and Classes
+  with assignments and course notes.
+- Classes supports saved notes, device PDF uploads, and Google Drive notes
+  through Google's native Picker, with a separate Drive consent. No background
+  Drive synchronization or Drive writes exist. See docs/DRIVE.md.
 - Keep each person's information private to their account. Browser data access
   uses authenticated sessions and row-level security; provider credentials
   remain server-only.

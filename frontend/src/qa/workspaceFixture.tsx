@@ -89,7 +89,7 @@ const today = localToday(timezone);
 const userId = "11111111-1111-4111-8111-111111111111";
 let sequence = 100;
 const id = () => `22222222-2222-4222-8222-${String(sequence++).padStart(12, "0")}`;
-const profile = { userId, timezone, createdAt: now, updatedAt: now };
+let profile = { userId, timezone, createdAt: now, updatedAt: now };
 const base = () => ({ id: id(), createdAt: now, updatedAt: now });
 const longText =
   "Plan the studio gathering, including the guest list, accessible arrival directions, food preferences, and the quiet corner for anyone who needs a break";
@@ -109,6 +109,7 @@ let projects: Project[] = empty
         status: "someday",
       },
       { ...base(), title: "Summer reading", description: null, status: "completed" },
+      { ...base(), title: "Old apartment move", description: null, status: "archived" },
     ];
 const projectId = projects[0]?.id ?? null;
 const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): Todo => ({
@@ -270,7 +271,11 @@ const rowsFor = (kind: CollectionKind) => (kind === "project" ? projects : ideas
 const collectionService: CollectionService = {
   async listProjects(o = {}) {
     return page(
-      projects.filter((p) => !o.status || o.status === "all" || p.status === o.status),
+      projects.filter((p) =>
+        o.status === undefined
+          ? p.status !== "archived"
+          : o.status === "all" || p.status === o.status,
+      ),
       o,
     );
   },
@@ -389,6 +394,11 @@ const workspaceData = {
   ),
   profile: async () => profile,
   projects: async () => projects.map(({ id, title }) => ({ id, title })),
+  setTimezone: async (_userId: string, nextTimezone: string) => {
+    check();
+    profile = { ...profile, timezone: nextTimezone, updatedAt: new Date().toISOString() };
+    return profile;
+  },
 };
 const runtimeTodos = delayedFixtureService(todoService, delay);
 const runtimeCollections = delayedFixtureService(collectionService, delay);
