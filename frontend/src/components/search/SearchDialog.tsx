@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CollectionService } from "../../features/collections/collectionService";
-import type { SearchResult } from "../../types/domain";
+import type { SearchRecordType, SearchResult } from "../../types/domain";
 import { useDialogPresence, useWorkspaceRevision } from "../../apps/workspaceStore";
 import "./SearchDialog.css";
 
@@ -11,6 +11,16 @@ export interface SearchDialogProps {
   onClose: () => void;
   onSelect: (result: SearchResult) => Promise<void> | void;
 }
+
+/** The interface says "Tasks" where the database says todos, and "note" reads better than the column name. */
+const RESULT_KIND: Record<SearchRecordType, string> = {
+  todo: "task",
+  assignment: "assignment",
+  idea: "idea",
+  project: "project",
+  class: "class",
+  class_note: "note",
+};
 
 /** Remains mounted in the authenticated shell so closing search keeps its place. */
 export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogProps) {
@@ -202,7 +212,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
           </button>
         </header>
         <label className="search-label" htmlFor={`${id}-query`}>
-          Find a task, idea, or project
+          Find a task, assignment, class, note, idea, or project
         </label>
         <input
           className="search-input"
@@ -247,15 +257,16 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
                 disabled={Boolean(selection)}
                 onClick={() => void select(result)}
               >
-                <span className="search-result-type">
-                  {result.recordType === "todo" ? "task" : result.recordType}
-                </span>
+                <span className="search-result-type">{RESULT_KIND[result.recordType]}</span>
                 <span className="search-result-content">
                   <strong>
                     {result.title ||
                       result.snippet.split(/\r?\n/).find((line) => line.trim()) ||
                       "Untitled"}
                   </strong>
+                  {result.parentId && (
+                    <span className="search-result-parent">{result.parentId}</span>
+                  )}
                   {result.snippet && <span>{result.snippet}</span>}
                 </span>
               </button>

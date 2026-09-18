@@ -440,15 +440,23 @@ function WorkspaceLayout({
       setSearchOpen(false);
       return;
     }
-    if (result.recordType === "todo") {
+    if (result.recordType === "class" || result.recordType === "class_note") {
+      // A class is identified by its course code; a saved note is read on the
+      // class page it belongs to, which the result carries as its parent.
+      const course = result.recordType === "class" ? result.recordId : result.parentId;
+      navigate(course ? `/classes/${encodeURIComponent(course)}` : "/classes");
+      setSearchOpen(false);
+      return;
+    }
+    if (result.recordType === "todo" || result.recordType === "assignment") {
+      // An assignment is a task with a class, so it opens in the task editor.
       const todo = await props.collectionService.getTodo(result.recordId);
       if (!alive.current) return;
       setEditingTodo(todo);
     } else {
-      const kind = result.recordType;
       const record = await props.collectionService.getIdea(result.recordId);
       if (!alive.current) return;
-      setEditor({ kind, record, fromSearch: true });
+      setEditor({ kind: "idea", record, fromSearch: true });
     }
     setSearchOpen(false);
   }

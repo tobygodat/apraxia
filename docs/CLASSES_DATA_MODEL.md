@@ -26,6 +26,12 @@ action. A parent must exist in the same account. Owner RLS applies
 independently on every table. Browser column grants prevent changing owners,
 class relationships, and server-managed upload completion.
 
+Since `20260918020000_search_classes_and_stemming.sql`, `classes` and
+`class_notes` each carry a generated `search_vector` and a GIN index, so a class,
+its assignments, and its saved notes all answer a workspace search for the course
+code. See [Search](WORKSPACE_DATA_MODEL.md#search) for the result contract; no
+client selects the vector column.
+
 Class IDs remain text to preserve existing URLs and assignment relationships,
 including `math3012`. New IDs are UUID strings. Names are labels, not identities:
 ordinary UI edits reject duplicates, but migration preserves distinct legacy

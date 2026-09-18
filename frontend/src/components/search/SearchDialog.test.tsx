@@ -9,6 +9,7 @@ afterEach(cleanup);
 const row = (id: string, title: string, totalCount = 1): SearchResult => ({
   recordId: id,
   recordType: "idea",
+  parentId: null,
   title,
   snippet: `Notes for ${title}`,
   updatedAt: "2026-09-04",
@@ -57,6 +58,40 @@ describe("Search dialog", () => {
     await screen.findByText("Updated title");
     expect(screen.queryByText("Old title")).toBeNull();
     expect(search).toHaveBeenCalledTimes(2);
+  });
+  it("names every record kind and shows the class a result belongs to", async () => {
+    const kinds: SearchResult[] = [
+      { ...row("t1", "Buy milk"), recordType: "todo", snippet: "" },
+      {
+        ...row("a1", "Problem set 4"),
+        recordType: "assignment",
+        parentId: "MATH3012",
+        snippet: "",
+      },
+      { ...row("i1", "Garden thought"), recordType: "idea", snippet: "" },
+      { ...row("p1", "Kitchen"), recordType: "project", snippet: "" },
+      { ...row("MATH3012", "Linear Algebra"), recordType: "class", snippet: "" },
+      {
+        ...row("n1", "Week 3 slides"),
+        recordType: "class_note",
+        parentId: "MATH3012",
+        snippet: "",
+      },
+    ];
+    const search = vi
+      .fn()
+      .mockResolvedValue(kinds.map((r) => ({ ...r, totalCount: kinds.length })));
+    render(<SearchDialog open service={{ search }} onClose={vi.fn()} onSelect={vi.fn()} />);
+    enter("a");
+    await screen.findByText("Linear Algebra");
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "taskBuy milk",
+      "assignmentProblem set 4MATH3012",
+      "ideaGarden thought",
+      "projectKitchen",
+      "classLinear Algebra",
+      "noteWeek 3 slidesMATH3012",
+    ]);
   });
   it("focuses search, traps Tab, closes with Escape, and restores the opener", async () => {
     const opener = document.createElement("button");

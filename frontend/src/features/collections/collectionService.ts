@@ -206,6 +206,8 @@ export function createCollectionService(client: SupabaseClient<Database>): Colle
       ).map((r) => ({
         recordType: r.record_type,
         recordId: r.record_id,
+        // The generated row type cannot express a nullable RETURNS TABLE column.
+        parentId: r.parent_id ?? null,
         title: r.title,
         snippet: r.snippet,
         updatedAt: r.updated_at,

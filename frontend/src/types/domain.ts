@@ -4,7 +4,8 @@ export type LocalTime = string;
 type Timestamp = string;
 
 export type ProjectStatus = "active" | "someday" | "completed" | "archived";
-type OrbitRecordType = "todo" | "idea" | "project";
+/** A class is identified by its course code, every other kind by a UUID. */
+export type SearchRecordType = "todo" | "assignment" | "idea" | "project" | "class" | "class_note";
 type GoogleCalendarConnectionState = "connected" | "reconnect_required" | "disconnected";
 
 /** Browser-safe calendar colors. No Google event body or credential data belongs here. */
@@ -210,8 +211,10 @@ export interface TodayTodo {
 }
 
 export interface SearchResult {
-  recordType: OrbitRecordType;
-  recordId: UUID;
+  recordType: SearchRecordType;
+  recordId: string;
+  /** The class an assignment or a saved note belongs to; null for every other kind. */
+  parentId: string | null;
   title: string;
   snippet: string;
   updatedAt: Timestamp;
