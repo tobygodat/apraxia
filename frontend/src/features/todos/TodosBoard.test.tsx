@@ -387,33 +387,69 @@ describe("TodosBoard one-tap tomorrow", () => {
     expect(screen.queryByLabelText(`Move ${OVERDUE.text} to tomorrow`)).toBeNull();
   });
 
-  it("hands keyboard focus to the next row once the rescheduled row leaves the column", () => {
-    function DeferHarness() {
-      const [todos, setTodos] = useState<Todo[]>([
-        OVERDUE,
-        { ...OVERDUE, id: "todo-next", text: "Next overdue", dueDate: "2026-08-31" },
-      ]);
-      return (
+  /** Mirrors the controller: pending plus an optimistic move, then a settlement. */
+  function DeferHarness({ status }: { status: "succeeded" | "failed" }) {
+    const original = [
+      OVERDUE,
+      { ...OVERDUE, id: "todo-next", text: "Next overdue", dueDate: "2026-08-31" },
+    ];
+    const [todos, setTodos] = useState<Todo[]>(original);
+    const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            if (status === "failed") setTodos(original);
+            setPending(new Set());
+          }}
+        >
+          Settle
+        </button>
         <TodosBoard
-          {...props({ model: buildTodoBoardModel(todos, "2026-08-31", "2026-09-02") })}
-          onRescheduleTodo={(todo, dueDate) =>
+          {...props({
+            model: buildTodoBoardModel(todos, "2026-08-31", "2026-09-02"),
+            pendingTodoIds: pending,
+          })}
+          onRescheduleTodo={(todo, dueDate) => {
+            setPending(new Set([todo.id]));
             setTodos((current) =>
               current.map((candidate) =>
                 candidate.id === todo.id ? { ...candidate, dueDate } : candidate,
               ),
-            )
-          }
+            );
+          }}
         />
-      );
-    }
+      </>
+    );
+  }
 
-    render(<DeferHarness />);
+  function deferOverdue() {
     const action = screen.getByLabelText<HTMLButtonElement>(`Move ${OVERDUE.text} to tomorrow`);
     action.focus();
     fireEvent.click(action);
+  }
 
+  it("hands keyboard focus to the next row once the rescheduled row leaves the column", () => {
+    render(<DeferHarness status="succeeded" />);
+    deferOverdue();
     const nextRow = screen.getByText("Next overdue").closest("article")!;
     expect(nextRow.contains(document.activeElement)).toBe(true);
+
+    fireEvent.click(screen.getByText("Settle"));
+    expect(nextRow.contains(document.activeElement)).toBe(true);
+  });
+
+  it("returns focus to the row when the reschedule rolls back", () => {
+    render(<DeferHarness status="failed" />);
+    deferOverdue();
+    expect(
+      screen.getByText("Next overdue").closest("article")!.contains(document.activeElement),
+    ).toBe(true);
+
+    fireEvent.click(screen.getByText("Settle"));
+    const restored = screen.getByText(OVERDUE.text).closest("article")!;
+    expect(restored.contains(document.activeElement)).toBe(true);
   });
 });
 

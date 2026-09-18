@@ -320,7 +320,10 @@ export function TodosBoard({
     | ({
         readonly todoId: string;
         readonly columnKey: string;
+        readonly controlId: string;
         readonly targetIds: readonly string[];
+        sawPending: boolean;
+        handedOn: boolean;
       } & FocusOwnership)
     | null
   >(null);
@@ -537,19 +540,38 @@ export function TodosBoard({
   useLayoutEffect(() => {
     const defer = deferFocusRef.current;
     if (!defer) return;
+    // A newer interaction took focus, so the row's departure is no longer ours.
+    if (defer.focusOwner === null) {
+      deferFocusRef.current = null;
+      return;
+    }
+
     const column = model.columns.find((candidate) => candidate.key === defer.columnKey);
-    // Wait for the reschedule to take the row out of the column it was in; a
-    // rollback puts it back and leaves focus where the user left it.
-    if (column?.todos.some((todo) => todo.id === defer.todoId)) return;
-    focusFirstAvailable(defer, defer.targetIds);
+    const stillInColumn = Boolean(column?.todos.some((todo) => todo.id === defer.todoId));
+    if (!stillInColumn && !defer.handedOn) {
+      focusFirstAvailable(defer, defer.targetIds);
+      defer.handedOn = true;
+    }
+
+    // The optimistic move lands before the write settles, so hold the recovery
+    // open: a rollback puts the row back and focus belongs on it again.
+    if (pendingTodoIds.has(defer.todoId)) {
+      defer.sawPending = true;
+      return;
+    }
+    if (!defer.sawPending) return;
+    if (stillInColumn) focusFirstAvailable(defer, [defer.controlId]);
     deferFocusRef.current = null;
-  }, [model]);
+  }, [model, pendingTodoIds]);
 
   function deferToTomorrow(column: TodoBoardColumn, todoIndex: number, todo: Todo) {
     deferFocusRef.current = {
       todoId: todo.id,
       columnKey: column.key,
+      controlId: todoControlId(todo.id),
       targetIds: focusTargetsAfterRowLeaves(column, todoIndex),
+      sawPending: false,
+      handedOn: false,
       focusOwner: focusedElementWithin(
         document.getElementById(todoControlId(todo.id))?.closest("article") ?? null,
       ),
