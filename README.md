@@ -54,7 +54,8 @@ persistence, Google sync, OAuth, or hosted configuration.
 
 Use focused checks while editing and one local pre-push check; see
 [fast local feedback](docs/CLOUD_DEVELOPMENT.md#fast-local-feedback). GitHub
-Actions runs full app verification through `npm run verify`. **App checks** and
+Actions runs full app verification, split across parallel jobs that together
+cover `npm run verify`. **App checks** and
 **Database checks** must pass for the release commit. Database CI skips execution
 for documented docs/style-only diffs; otherwise it uses temporary Supabase and
 publishes regenerated types as its `database-types` artifact. Full local

@@ -23,7 +23,7 @@ There are two Vitest configurations.
 
 | Config | Command | Includes | Runs |
 | --- | --- | --- | --- |
-| `vitest.config.ts` | `npm test`, and inside `npm run verify` | `tests/contract/**` and `frontend/src/**/*.test.{ts,tsx}` | Every local run and the CI **App checks** job. Needs no Docker; DOM files opt in with `// @vitest-environment happy-dom`. |
+| `vitest.config.ts` | `npm test`, and inside `npm run verify` | `tests/contract/**` and `frontend/src/**/*.test.{ts,tsx}` | Every local run; in CI, split across the **Contract tests** and **Frontend tests** jobs. Needs no Docker; DOM files opt in with `// @vitest-environment happy-dom`. |
 | `vitest.local.config.ts` | `npx vitest run --config vitest.local.config.ts` | `tests/local/**` and `frontend/tests/local/**` | Manually, with local Supabase running. Files run serially with long timeouts. Not run in CI, not part of `verify`. |
 
 pgTAP (`npm run db:test`) and the two script suites below are separate again and
@@ -208,11 +208,20 @@ Verify the repair with normal `git fetch origin` and `git fsck --full
 dispatch from the repository's **Actions → CI → Run workflow** page (once the
 workflow exists on the default branch).
 
-- **App checks** runs `npm ci` and `npm run verify` on Node.js 22.
-- **Database checks** runs `npm run verify:db` on GitHub's Linux runner, applies and lints
+- **App checks** is a status that aggregates three parallel jobs on Node.js 22,
+  so the slowest one no longer waits behind the others: **Lint and types**
+  (`npm run verify:static`, i.e. typecheck, lint, build, and the bundle check),
+  **Contract tests** (`tests/contract/**`, the PGlite suites), and **Frontend
+  tests** (`frontend/src/**`). Together they cover exactly what `npm run verify`
+  covers locally. **App checks** fails if any of the three fails.
+- **Database checks** runs `npm run verify:db:ci` on GitHub's Linux runner, applies and lints
   migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
+  `verify:db:ci` runs the same `db:checks` as the local `npm run verify:db`; it
+  only starts a leaner container set, because CI needs no Studio, Postgres-meta,
+  mail, image, edge-runtime, log, or pooler service. Keep `verify:db` for local
+  work, where Studio is useful.
 
 The **Database checks** job always reports a status. Its scope step skips database
 execution only when every changed path is root `AGENTS.md`, `README.md`,
@@ -234,9 +243,11 @@ check:bundle` only, because CI already gates on the full `verify`; this workflow
 alone does not make Vercel wait for the database job.
 
 After publishing the workflow, open its first run under **Actions** and confirm
-both jobs are green. In the repository's branch protection/ruleset settings,
+every job is green. In the repository's branch protection/ruleset settings,
 require pull requests and the status checks **App checks** and **Database checks**
-for `main` if those controls are available for this repository. This prevents
+for `main` if those controls are available for this repository. Those two names
+still cover everything: **App checks** waits on the three app jobs, so the
+individual job names do not need to be required as well. This prevents
 merging failed checks; direct pushes must also be restricted to enforce the gate.
 
 When a migration changes the schema, `npm run verify:db` generates the updated
@@ -331,7 +342,7 @@ concern, rather than every unrelated pull request.
 
 ## Focused local database checks
 
-CI runs these checks automatically through `npm run verify:db`. Use the individual
+CI runs these checks automatically through `npm run verify:db:ci`. Use the individual
 commands below to iterate on a failure with disposable local Supabase running.
 
 ```bash
