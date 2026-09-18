@@ -84,12 +84,14 @@ function fixture(overrides: Partial<TodoService> = {}) {
       return saved;
     }),
     updateTodoDetails: vi.fn(async (id, input) => update(id, input)),
-    setTodoCompleted: vi.fn(async (id, completed) =>
-      update(id, {
+    setTodoCompleted: vi.fn(async (id, completed) => ({
+      todo: update(id, {
         completed,
         completedAt: completed ? "2026-09-03T19:00:00Z" : null,
       }),
-    ),
+      spawned: null,
+      withdrawn: null,
+    })),
     softDeleteTodo: vi.fn(async (id) => {
       deleted = rows.find((row) => row.id === id) ?? null;
       rows = rows.filter((row) => row.id !== id);
@@ -314,6 +316,7 @@ describe("TodayPanel", () => {
         dueTime: "14:30:00.123456",
         text: TODO.text,
         projectId: TODO.projectId,
+        recurrence: null,
       },
       { signal: expect.any(AbortSignal) },
     );

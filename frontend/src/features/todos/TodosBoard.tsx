@@ -20,6 +20,7 @@ import { addSqlDateDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
 import type { TodoAnnouncement, TodoMutationResult, TodoUndoNotice } from "./todoController";
+import { TodoRepeatMark } from "./TodoRepeatMark";
 import { TodoSourceChip } from "./TodoSourceChip";
 import {
   todoLoadErrorCopy,
@@ -197,7 +198,7 @@ function TodoCard({
 
       <div className="todos-board-card__body">
         <p id={titleId}>{todo.text}</p>
-        {showDueDate || todo.dueTime || projectTitle || todo.classId ? (
+        {showDueDate || todo.dueTime || todo.recurrence || projectTitle || todo.classId ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
               // Past-due tasks sit under Today; the original date stays visible in red.
@@ -209,6 +210,7 @@ function TodoCard({
             {todo.dueTime ? (
               <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
             ) : null}
+            <TodoRepeatMark recurrence={todo.recurrence} />
             <TodoSourceChip todo={todo} projectTitle={projectTitle} />
           </div>
         ) : null}

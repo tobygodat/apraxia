@@ -402,6 +402,12 @@ export type Database = {
           id: string;
           legacy_id: string | null;
           project_id: string | null;
+          recurrence_anchor_date: string | null;
+          recurrence_freq: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval: number | null;
+          recurrence_series_id: string | null;
+          recurrence_spawned_id: string | null;
+          recurrence_until: string | null;
           search_vector: unknown;
           source: Database["public"]["Enums"]["record_source"];
           text: string;
@@ -421,6 +427,12 @@ export type Database = {
           id?: string;
           legacy_id?: string | null;
           project_id?: string | null;
+          recurrence_anchor_date?: string | null;
+          recurrence_freq?: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval?: number | null;
+          recurrence_series_id?: string | null;
+          recurrence_spawned_id?: string | null;
+          recurrence_until?: string | null;
           search_vector?: unknown;
           source?: Database["public"]["Enums"]["record_source"];
           text: string;
@@ -440,6 +452,12 @@ export type Database = {
           id?: string;
           legacy_id?: string | null;
           project_id?: string | null;
+          recurrence_anchor_date?: string | null;
+          recurrence_freq?: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval?: number | null;
+          recurrence_series_id?: string | null;
+          recurrence_spawned_id?: string | null;
+          recurrence_until?: string | null;
           search_vector?: unknown;
           source?: Database["public"]["Enums"]["record_source"];
           text?: string;
@@ -460,6 +478,13 @@ export type Database = {
             columns: ["user_id", "project_id"];
             isOneToOne: false;
             referencedRelation: "projects";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "todos_recurrence_spawned_same_owner";
+            columns: ["user_id", "recurrence_spawned_id"];
+            isOneToOne: false;
+            referencedRelation: "todos";
             referencedColumns: ["user_id", "id"];
           },
         ];
@@ -690,6 +715,7 @@ export type Database = {
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
       search_record_type: "todo" | "assignment" | "idea" | "project" | "class" | "class_note";
+      todo_recurrence_freq: "daily" | "weekly" | "monthly";
     };
     CompositeTypes: {
       [_ in never]: never;

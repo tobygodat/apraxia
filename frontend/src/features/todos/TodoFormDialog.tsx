@@ -12,6 +12,13 @@ import { Dialog } from "../../components/dialog/Dialog";
 import { TodoClassFields } from "./TodoClassFields";
 import { changeTodoField } from "./todoParent";
 import {
+  isRecurrenceFreq,
+  MAX_RECURRENCE_INTERVAL,
+  RECURRENCE_FREQS,
+  recurrenceFreqLabel,
+  recurrencePeriodLabel,
+} from "./todoRecurrence";
+import {
   type TodoInputErrors,
   type TodoInputField,
   type TodoInputValues,
@@ -54,7 +61,18 @@ export interface TodoFormDialogProps {
 }
 
 const EMPTY_ERRORS: TodoInputErrors = { fieldErrors: {}, formErrors: [] };
-const FIELDS = ["text", "dueDate", "dueTime", "projectId", "classId", "assignmentType"] as const;
+// Validation focus follows the reading order of the form, not the payload.
+const FIELDS = [
+  "text",
+  "dueDate",
+  "dueTime",
+  "recurrenceFreq",
+  "recurrenceInterval",
+  "recurrenceUntil",
+  "projectId",
+  "classId",
+  "assignmentType",
+] as const;
 const PRECISE_TIME_PATTERN = /^((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)\.\d{1,6}$/;
 
 const COPY = {
@@ -106,6 +124,8 @@ function TodoForm({
     submitError: `${baseId}-submit-error`,
     saveStatus: `${baseId}-save-status`,
     timeHint: `${baseId}-time-hint`,
+    repeatUnit: `${baseId}-repeat-unit`,
+    repeatHint: `${baseId}-repeat-hint`,
     field: (field: TodoInputField) => `${baseId}-${field}`,
     error: (field: TodoInputField) => `${baseId}-${field}-error`,
   };
@@ -116,6 +136,9 @@ function TodoForm({
     projectId: useRef<HTMLSelectElement>(null),
     classId: useRef<HTMLSelectElement>(null),
     assignmentType: useRef<HTMLSelectElement>(null),
+    recurrenceFreq: useRef<HTMLSelectElement>(null),
+    recurrenceInterval: useRef<HTMLInputElement>(null),
+    recurrenceUntil: useRef<HTMLInputElement>(null),
   };
   const submitRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
@@ -130,6 +153,15 @@ function TodoForm({
     projectId: todo?.projectId ?? initialProjectId ?? "",
     classId: todo?.classId ?? "",
     assignmentType: todo?.assignmentType ?? "",
+    // Reschedule moves one date and never shows the repeat fields, so it must
+    // not carry a rule that its own form could not correct.
+    ...(mode === "reschedule"
+      ? { recurrenceFreq: "", recurrenceInterval: "", recurrenceUntil: "" }
+      : {
+          recurrenceFreq: todo?.recurrence?.freq ?? "",
+          recurrenceInterval: todo?.recurrence ? String(todo.recurrence.interval) : "",
+          recurrenceUntil: todo?.recurrence?.until ?? "",
+        }),
   }));
   const [retainedDueTime, setRetainedDueTime] = useState(todo?.dueTime ?? null);
   const [errors, setErrors] = useState<TodoInputErrors>(EMPTY_ERRORS);
@@ -166,12 +198,23 @@ function TodoForm({
     setValues((current) => ({
       // A task has one parent: choosing a project or class clears the other.
       ...changeTodoField(current, field, value),
-      // Clearing the date clears its time, matching the atomic provider rule.
-      ...(field === "dueDate" && value === "" ? { dueTime: "" } : {}),
+      // A repeat is anchored on the date, so clearing the date clears its time
+      // and its rule together, matching the atomic provider rule.
+      ...(field === "dueDate" && value === ""
+        ? { dueTime: "", recurrenceFreq: "", recurrenceInterval: "", recurrenceUntil: "" }
+        : {}),
+      ...(field === "recurrenceFreq" && value === ""
+        ? { recurrenceInterval: "", recurrenceUntil: "" }
+        : {}),
     }));
     setErrors((current) => {
       const fieldErrors = { ...current.fieldErrors, [field]: undefined };
       if (field === "dueDate") fieldErrors.dueTime = undefined;
+      if (field === "dueDate" || field === "recurrenceFreq") {
+        fieldErrors.recurrenceFreq = undefined;
+        fieldErrors.recurrenceInterval = undefined;
+        fieldErrors.recurrenceUntil = undefined;
+      }
       return { ...current, fieldErrors };
     });
     setSubmitError(null);
@@ -201,7 +244,14 @@ function TodoForm({
     const input: UpdateTodoDetailsInput =
       dueDate === null
         ? { ...details, dueDate: null, dueTime: null }
-        : { ...details, dueDate, dueTime: retainedDueTime ?? data.dueTime ?? null };
+        : {
+            ...details,
+            dueDate,
+            dueTime: retainedDueTime ?? data.dueTime ?? null,
+            // Reschedule leaves the key off entirely, so an existing rule is
+            // carried over untouched rather than rewritten from a hidden field.
+            ...(mode === "edit" ? { recurrence: data.recurrence ?? null } : {}),
+          };
     return { mode, todoId: todo!.id, input };
   }
 
@@ -257,6 +307,14 @@ function TodoForm({
     Boolean(values.projectId) && !projects.some((project) => project.id === values.projectId);
   const preciseStoredTime =
     retainedDueTime !== null && PRECISE_TIME_PATTERN.test(retainedDueTime) ? retainedDueTime : null;
+  const repeatFreq = isRecurrenceFreq(values.recurrenceFreq) ? values.recurrenceFreq : null;
+  // Only say something the person cannot already see: what a rule will do, or
+  // why the menu will not hold one yet.
+  const repeatHint = repeatFreq
+    ? "Finishing this task creates the next one."
+    : values.dueDate
+      ? null
+      : "Requires a due date.";
 
   return (
     <Dialog
@@ -335,6 +393,92 @@ function TodoForm({
             )}
           </div>
         </div>
+        {mode !== "reschedule" && (
+          <fieldset className="todo-dialog__repeat">
+            <div className="todo-dialog__field">
+              <label htmlFor={ids.field("recurrenceFreq")}>Repeats</label>
+              <select
+                aria-describedby={
+                  fieldError("recurrenceFreq")
+                    ? ids.error("recurrenceFreq")
+                    : repeatHint
+                      ? ids.repeatHint
+                      : undefined
+                }
+                aria-invalid={Boolean(fieldError("recurrenceFreq"))}
+                disabled={isSubmitting}
+                id={ids.field("recurrenceFreq")}
+                onChange={(event) => updateValue("recurrenceFreq", event.target.value)}
+                ref={refs.recurrenceFreq as RefObject<HTMLSelectElement>}
+                value={values.recurrenceFreq ?? ""}
+              >
+                <option value="">Doesn’t repeat</option>
+                {RECURRENCE_FREQS.map((freq) => (
+                  <option key={freq} value={freq}>
+                    {recurrenceFreqLabel(freq)}
+                  </option>
+                ))}
+              </select>
+              {fieldError("recurrenceFreq")
+                ? renderFieldError("recurrenceFreq")
+                : repeatHint && (
+                    <p className="todo-dialog__hint" id={ids.repeatHint}>
+                      {repeatHint}
+                    </p>
+                  )}
+            </div>
+            {repeatFreq && (
+              <div className="todo-dialog__details">
+                <div className="todo-dialog__field">
+                  <label htmlFor={ids.field("recurrenceInterval")}>Every</label>
+                  <div className="todo-dialog__measure">
+                    <input
+                      aria-describedby={
+                        fieldError("recurrenceInterval")
+                          ? ids.error("recurrenceInterval")
+                          : ids.repeatUnit
+                      }
+                      aria-invalid={Boolean(fieldError("recurrenceInterval"))}
+                      disabled={isSubmitting}
+                      id={ids.field("recurrenceInterval")}
+                      inputMode="numeric"
+                      max={MAX_RECURRENCE_INTERVAL}
+                      min={1}
+                      onChange={(event) => updateValue("recurrenceInterval", event.target.value)}
+                      ref={refs.recurrenceInterval as RefObject<HTMLInputElement>}
+                      type="number"
+                      value={values.recurrenceInterval ?? ""}
+                    />
+                    <span className="todo-dialog__measure-unit" id={ids.repeatUnit}>
+                      {recurrencePeriodLabel(repeatFreq)}
+                    </span>
+                  </div>
+                  {renderFieldError("recurrenceInterval")}
+                </div>
+                <div className="todo-dialog__field">
+                  <label htmlFor={ids.field("recurrenceUntil")}>Until</label>
+                  <input
+                    aria-describedby={
+                      fieldError("recurrenceUntil") ? ids.error("recurrenceUntil") : undefined
+                    }
+                    aria-invalid={Boolean(fieldError("recurrenceUntil"))}
+                    disabled={isSubmitting}
+                    id={ids.field("recurrenceUntil")}
+                    onChange={(event) => updateValue("recurrenceUntil", event.target.value)}
+                    ref={refs.recurrenceUntil as RefObject<HTMLInputElement>}
+                    type="date"
+                    value={values.recurrenceUntil ?? ""}
+                  />
+                  {fieldError("recurrenceUntil") ? (
+                    renderFieldError("recurrenceUntil")
+                  ) : (
+                    <p className="todo-dialog__hint">Optional. Repeats forever when empty.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </fieldset>
+        )}
         {mode !== "reschedule" && (
           <div className="todo-dialog__field">
             <label htmlFor={ids.field("projectId")}>Project</label>

@@ -86,7 +86,7 @@ export function createFixtureAssignments(empty = false): AssignmentService {
     async setTodoCompleted(id, completed) {
       const row = find(id);
       Object.assign(row, { completed, completedAt: completed ? now : null });
-      return { ...row };
+      return { todo: { ...row }, spawned: null, withdrawn: null };
     },
     async softDeleteTodo(id) {
       deleted.set(id, find(id));

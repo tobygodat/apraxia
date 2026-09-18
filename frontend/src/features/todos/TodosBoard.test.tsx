@@ -610,3 +610,27 @@ it("renders the classic theme with Today first, marked, and carrying a count bad
   const badge = within(today).getByText(/^\d+$/, { selector: "span[aria-hidden]" });
   expect(badge).toBeTruthy();
 });
+
+describe("TodosBoard repeat marker", () => {
+  const REPEATING: Todo = {
+    ...TODO,
+    id: "todo-repeating",
+    text: "Problem set",
+    recurrence: { freq: "weekly", interval: 2, until: null },
+  };
+
+  it("marks a repeating task and leaves an ordinary one unmarked", () => {
+    render(
+      <ColdLoadGate>
+        <TodosBoard {...props({ model: model([TODO, REPEATING]) })} />
+      </ColdLoadGate>,
+    );
+    const repeating = screen.getByRole("article", { name: REPEATING.text });
+    expect(within(repeating).getByText("Every 2 weeks")).toBeTruthy();
+    // The glyph carries no meaning on its own, so the row spells the rule out.
+    expect(within(repeating).getByText("Repeats every 2 weeks.")).toBeTruthy();
+    expect(
+      within(screen.getByRole("article", { name: TODO.text })).queryByText(/repeats/i),
+    ).toBeNull();
+  });
+});

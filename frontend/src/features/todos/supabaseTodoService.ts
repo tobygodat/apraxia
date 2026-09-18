@@ -7,7 +7,7 @@ import {
   TodaySnapshotChangedError,
   verifyTodayReorderReceipt,
 } from "./todayRpcProtocol";
-import type { TodoRequestOptions, TodoService } from "./todoService";
+import type { TodoCompletionResult, TodoRequestOptions, TodoService } from "./todoService";
 import {
   isDeleteUndoToken,
   readTodoResponse,
@@ -17,7 +17,7 @@ import { ServiceError } from "../../lib/serviceError";
 
 export const PAGE_SIZE = 200;
 const TODO_FIELDS =
-  "id,text,completed,completed_at,due_date,due_time,project_id,class_id,assignment_type,classes(name),today_rank,created_at,updated_at";
+  "id,text,completed,completed_at,due_date,due_time,project_id,class_id,assignment_type,classes(name),recurrence_freq,recurrence_interval,recurrence_until,today_rank,created_at,updated_at";
 type TodoRow = Pick<
   Tables<"todos">,
   | "id"
@@ -29,6 +29,9 @@ type TodoRow = Pick<
   | "project_id"
   | "class_id"
   | "assignment_type"
+  | "recurrence_freq"
+  | "recurrence_interval"
+  | "recurrence_until"
   | "today_rank"
   | "created_at"
   | "updated_at"
@@ -61,6 +64,16 @@ function mapTodo(row: TodoRow): Todo {
     classId: row.class_id,
     className: row.classes?.name ?? null,
     assignmentType: row.assignment_type,
+    // The three stored columns are one browser value; the database keeps them
+    // consistent, so a missing frequency is simply "does not repeat".
+    recurrence:
+      row.recurrence_freq == null
+        ? null
+        : {
+            freq: row.recurrence_freq,
+            interval: row.recurrence_interval ?? 1,
+            until: row.recurrence_until,
+          },
     todayRank: row.today_rank,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -159,6 +172,15 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
         project_id: input.projectId ?? null,
         class_id: input.classId ?? null,
         assignment_type: input.assignmentType ?? "",
+        // Named only for a repeating task, so an ordinary create still writes
+        // exactly the columns it wrote before.
+        ...(input.recurrence
+          ? {
+              recurrence_freq: input.recurrence.freq,
+              recurrence_interval: input.recurrence.interval,
+              recurrence_until: input.recurrence.until,
+            }
+          : {}),
       };
       if (input.id !== undefined) {
         // A draft keeps its UUID across retries: an interrupted response must
@@ -192,19 +214,52 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
       if (input.assignmentType !== undefined) update.assignment_type = input.assignmentType;
       if (input.dueDate !== undefined) update.due_date = input.dueDate;
       if (input.dueTime !== undefined) update.due_time = input.dueTime;
-      if (input.dueDate === null) update.due_time = null;
+      if (input.recurrence !== undefined) {
+        update.recurrence_freq = input.recurrence?.freq ?? null;
+        update.recurrence_interval = input.recurrence?.interval ?? null;
+        update.recurrence_until = input.recurrence?.until ?? null;
+      }
+      if (input.dueDate === null) {
+        // A rule is anchored on the date, so clearing one clears the other.
+        update.due_time = null;
+        update.recurrence_freq = null;
+        update.recurrence_interval = null;
+        update.recurrence_until = null;
+      }
       if (Object.keys(update).length === 0) failed();
       const query = client.from("todos").update(update).eq("id", id).is("deleted_at", null);
       if (options.classId !== undefined) query.eq("class_id", options.classId);
       const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
-    async setTodoCompleted(id, completed, options) {
+    async setTodoCompleted(id, completed, options): Promise<TodoCompletionResult> {
       // The database trigger owns completed_at and resets stale Today ranks.
       const query = client.from("todos").update({ completed }).eq("id", id).is("deleted_at", null);
       if (options.classId !== undefined) query.eq("class_id", options.classId);
-      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
-      return mapTodo(result(response, options));
+      const response = await query
+        .select(`${TODO_FIELDS},recurrence_spawned_id`)
+        .abortSignal(requestSignal(options))
+        .single();
+      const row = result(response, options);
+      const todo = mapTodo(row);
+      // The link is the only name the browser has for the occurrence this write
+      // created or withdrew. Reading it back answers both directions at once: a
+      // successor that is still active has just appeared, and one that is gone
+      // was withdrawn with the completion that made it.
+      const linked = row.recurrence_spawned_id ?? null;
+      if (linked === null) return { todo, spawned: null, withdrawn: null };
+      const successor = client
+        .from("todos")
+        .select(TODO_FIELDS)
+        .eq("id", linked)
+        .is("deleted_at", null);
+      if (options.classId !== undefined) successor.eq("class_id", options.classId);
+      const found = await successor.abortSignal(requestSignal(options)).maybeSingle();
+      options.signal.throwIfAborted();
+      if (found.error) failed();
+      return found.data
+        ? { todo, spawned: mapTodo(found.data), withdrawn: null }
+        : { todo, spawned: null, withdrawn: linked };
     },
     async softDeleteTodo(id, options) {
       const response = await client

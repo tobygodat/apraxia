@@ -8,6 +8,7 @@ import type {
   ProjectSummary,
   TodayTodo,
   Todo,
+  TodoRecurrence,
   UUID,
 } from "../../types/domain";
 
@@ -31,25 +32,29 @@ type TodoTextOrProjectUpdate =
       readonly projectId?: UUID | null;
       readonly dueDate?: never;
       readonly dueTime?: never;
+      readonly recurrence?: never;
     }
   | {
       readonly projectId: UUID | null;
       readonly text?: string;
       readonly dueDate?: never;
       readonly dueTime?: never;
+      readonly recurrence?: never;
     };
 
 type TodoScheduleUpdate =
   | {
       readonly dueDate: LocalDate;
       readonly dueTime?: LocalTime | null;
+      readonly recurrence?: TodoRecurrence | null;
       readonly text?: string;
       readonly projectId?: UUID | null;
     }
   | {
-      /** Clearing a date must clear any persisted time atomically. */
+      /** Clearing a date must clear any persisted time and repeat rule atomically. */
       readonly dueDate: null;
       readonly dueTime: null;
+      readonly recurrence?: null;
       readonly text?: string;
       readonly projectId?: UUID | null;
     }
@@ -57,6 +62,7 @@ type TodoScheduleUpdate =
       /** Clearing only the time is valid regardless of the current date. */
       readonly dueTime: null;
       readonly dueDate?: never;
+      readonly recurrence?: never;
       readonly text?: string;
       readonly projectId?: UUID | null;
     };
@@ -67,6 +73,7 @@ type TodoAssignmentUpdate = {
   readonly projectId?: never;
   readonly dueDate?: never;
   readonly dueTime?: never;
+  readonly recurrence?: never;
 };
 
 /** A task belongs to at most one project or class; the type is class-only. */
@@ -83,6 +90,18 @@ export type UpdateTodoDetailsInput = (
   TodoTextOrProjectUpdate | TodoScheduleUpdate | TodoAssignmentUpdate
 ) &
   TodoParentFields;
+
+/**
+ * Completing a repeating task materializes its successor, and undoing that
+ * completion withdraws the successor again, both inside the same write. The
+ * answer therefore has to name the occurrence that appeared or disappeared
+ * alongside the row the caller asked about.
+ */
+export interface TodoCompletionResult {
+  readonly todo: Todo;
+  readonly spawned: Todo | null;
+  readonly withdrawn: UUID | null;
+}
 
 export interface TodayRankUpdate {
   readonly todoId: UUID;
@@ -105,7 +124,11 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<Todo>;
 
-  setTodoCompleted(todoId: UUID, completed: boolean, options: TodoRequestOptions): Promise<Todo>;
+  setTodoCompleted(
+    todoId: UUID,
+    completed: boolean,
+    options: TodoRequestOptions,
+  ): Promise<TodoCompletionResult>;
 
   softDeleteTodo(todoId: UUID, options: TodoRequestOptions): Promise<DeleteUndoToken>;
 

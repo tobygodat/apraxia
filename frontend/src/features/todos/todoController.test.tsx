@@ -5,7 +5,7 @@ import { act, cleanup, render, renderHook, waitFor } from "@testing-library/reac
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DeleteUndoToken, Profile, TodayTodo, Todo } from "../../types/domain";
 import { asSqlDate } from "./dateDomain";
-import type { TodoService } from "./todoService";
+import type { TodoCompletionResult, TodoService } from "./todoService";
 import { TodoController, TodoMutationError, useTodoController } from "./todoController";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 
@@ -97,9 +97,11 @@ function fixture(
       throw new Error("unused");
     }),
     updateTodoDetails: vi.fn(async (id, input) => update(id, input)),
-    setTodoCompleted: vi.fn(async (id, completed) =>
-      update(id, { completed, completedAt: completed ? "2026-09-03T19:00:00Z" : null }),
-    ),
+    setTodoCompleted: vi.fn(async (id, completed) => ({
+      todo: update(id, { completed, completedAt: completed ? "2026-09-03T19:00:00Z" : null }),
+      spawned: null,
+      withdrawn: null,
+    })),
     softDeleteTodo: vi.fn(async (id) => {
       deleted = rows.find((row) => row.id === id)!;
       rows = rows.filter((row) => row.id !== id);
@@ -289,7 +291,7 @@ describe("TodoController loads", () => {
 describe("TodoController completion and details", () => {
   it("completes optimistically in both slices, then confirms the exact saved row", async () => {
     const { controller, service } = await ready();
-    const pending = deferred<Todo>();
+    const pending = deferred<TodoCompletionResult>();
     vi.mocked(service.setTodoCompleted).mockReturnValueOnce(pending.promise);
     expect(controller.setCompleted(DUE_TODAY.id, true)).toBe(true);
     expect(controller.setCompleted(DUE_TODAY.id, true)).toBe(false);
@@ -297,7 +299,11 @@ describe("TodoController completion and details", () => {
     expect(state.pendingTodoIds.has(DUE_TODAY.id)).toBe(true);
     expect(state.todos.find((row) => row.id === DUE_TODAY.id)?.completed).toBe(true);
     expect(ids(state.today.todos)).toEqual([OVERDUE.id]);
-    pending.resolve({ ...DUE_TODAY, completed: true, completedAt: "2026-09-03T19:00:00Z" });
+    pending.resolve({
+      todo: { ...DUE_TODAY, completed: true, completedAt: "2026-09-03T19:00:00Z" },
+      spawned: null,
+      withdrawn: null,
+    });
     await flush();
     state = controller.getSnapshot();
     expect(state.pending).toEqual([]);
@@ -312,12 +318,54 @@ describe("TodoController completion and details", () => {
     expect(state.todos.find((row) => row.id === DUE_TODAY.id)?.dueDate).toBe(TODAY);
   });
 
+  it("shows the occurrence a repeat creates and takes it away again when undone", async () => {
+    const REPEATING: Todo = {
+      ...DUE_TODAY,
+      id: "66666666-6666-4666-8666-666666666666",
+      text: "Turn in the problem set",
+      recurrence: { freq: "weekly", interval: 1, until: null },
+    };
+    const SUCCESSOR: Todo = {
+      ...REPEATING,
+      id: "77777777-7777-4777-8777-777777777777",
+      dueDate: "2026-09-10",
+      todayRank: null,
+    };
+    const { service } = fixture([OVERDUE, REPEATING]);
+    const controller = new TodoController(service);
+    await controller.loadWorkspace();
+    await controller.setLocalDate(TODAY);
+    vi.mocked(service.setTodoCompleted).mockResolvedValueOnce({
+      todo: { ...REPEATING, completed: true, completedAt: "2026-09-03T19:00:00Z" },
+      spawned: SUCCESSOR,
+      withdrawn: null,
+    });
+    controller.setCompleted(REPEATING.id, true);
+    await flush();
+    let state = controller.getSnapshot();
+    expect(state.mutationResult?.status).toBe("succeeded");
+    expect(state.todos.map((row) => row.id)).toContain(SUCCESSOR.id);
+    // The successor is due next week, so it belongs to the list and not to Today.
+    expect(ids(state.today.todos)).toEqual([OVERDUE.id]);
+
+    vi.mocked(service.setTodoCompleted).mockResolvedValueOnce({
+      todo: { ...REPEATING, completed: false, completedAt: null },
+      spawned: null,
+      withdrawn: SUCCESSOR.id,
+    });
+    controller.setCompleted(REPEATING.id, false);
+    await flush();
+    state = controller.getSnapshot();
+    expect(state.todos.map((row) => row.id)).toEqual([OVERDUE.id, REPEATING.id]);
+    expect(ids(state.today.todos)).toEqual([OVERDUE.id, REPEATING.id]);
+  });
+
   it("rolls completion back after failure or a malformed response and reports one copy kind", async () => {
     const { controller, service } = await ready();
     vi.mocked(service.setTodoCompleted).mockResolvedValueOnce({
-      ...OVERDUE,
-      completed: true,
-      completedAt: "bad",
+      todo: { ...OVERDUE, completed: true, completedAt: "bad" },
+      spawned: null,
+      withdrawn: null,
     });
     controller.setCompleted(OVERDUE.id, true);
     await flush();
@@ -480,7 +528,7 @@ describe("TodoController delete and Undo", () => {
   });
 
   it("defers a delete clicked while the same row's completion is still in flight", async () => {
-    const completion = deferred<Todo>();
+    const completion = deferred<TodoCompletionResult>();
     const { service } = fixture([OVERDUE, DUE_TODAY, INBOX], {
       setTodoCompleted: vi.fn(() => completion.promise),
     });
@@ -489,7 +537,11 @@ describe("TodoController delete and Undo", () => {
     expect(controller.setCompleted(OVERDUE.id, true)).toBe(true);
     expect(controller.deleteTodo(OVERDUE.id)).toBe(true);
     expect(service.softDeleteTodo).not.toHaveBeenCalled();
-    completion.resolve({ ...OVERDUE, completed: true, completedAt: "2026-09-03T19:00:00Z" });
+    completion.resolve({
+      todo: { ...OVERDUE, completed: true, completedAt: "2026-09-03T19:00:00Z" },
+      spawned: null,
+      withdrawn: null,
+    });
     await flush();
     await flush();
     expect(service.softDeleteTodo).toHaveBeenCalledWith(OVERDUE.id, expect.anything());

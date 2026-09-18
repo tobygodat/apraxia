@@ -39,15 +39,50 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `project_id` | `uuid` | Composite foreign key on `(user_id, project_id)`, so a task can only reference the same owner's project. Set to null when the project is hard-deleted; a trigger also requires the project to be active. |
 | `class_id` | `text` | Composite foreign key on `(user_id, class_id)` to `classes`, `on delete set null`. A check forbids setting both `project_id` and `class_id`: a task has at most one parent. Added by `20260914000100_assignment_todos.sql`. |
 | `assignment_type` | `text` | `''`, `Homework`, `Quiz`, `Reading`, `Exam`, or `Other`; non-empty only with a `class_id`. A trigger clears it when the class link is removed. Class-only; not a general task kind. |
+| `recurrence_freq` | `todo_recurrence_freq` | `daily`, `weekly`, or `monthly`, or null for a task that does not repeat. A rule requires a `due_date`, which is the anchor it is measured from. Added by `20260918060000_recurring_todos.sql`. |
+| `recurrence_interval` | `integer` | 1 through 52, so "every other week" is one rule. Defaults to 1 and is cleared with the frequency by `private.sync_todo_recurrence`. |
+| `recurrence_until` | `date` | Inclusive last date a new occurrence may land on; never earlier than `due_date`. Null repeats without an end. |
+| `recurrence_series_id` | `uuid` | Links the occurrences of one repeating task. Assigned by the database, cleared when the rule is removed; the browser can write none of this column or the two below. |
+| `recurrence_anchor_date` | `date` | The due date the series counts from, carried unchanged to every successor so a monthly rule keeps its day of month. Rescheduling a repeating task by hand re-anchors it. |
+| `recurrence_spawned_id` | `uuid` | The occurrence this one created, a composite foreign key on `(user_id, recurrence_spawned_id)`. It is how a completion names the new occurrence to the browser, and how a later completion tells an open successor from a withdrawn one. |
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
 | `search_vector` | `tsvector` | Generated from `text` (weight A) and `class_id`, stemmed and literal (weight B). See [Search](#search). |
 
 Browser grants: `select` on all columns, `insert (id, text, due_date, due_time,
-project_id, class_id, assignment_type)`, `update (text, completed, due_date,
-due_time, project_id, class_id, assignment_type)`. The `id` insert grant lets
-the Classes editor keep a draft UUID across retries.
+project_id, class_id, assignment_type, recurrence_freq, recurrence_interval,
+recurrence_until)`, `update (text, completed, due_date, due_time, project_id,
+class_id, assignment_type, recurrence_freq, recurrence_interval,
+recurrence_until)`. The `id` insert grant lets the Classes editor keep a draft
+UUID across retries.
+
+Completing a repeating task is what creates the next occurrence: the
+`todos_spawn_recurrence` trigger runs `private.spawn_recurring_todo`, which
+takes the first occurrence that is both past the completed one and not already
+behind the owner's local today, stops at `recurrence_until`, and inserts one
+successor carrying the text, time of day, parent, rule, series and anchor.
+Nothing is generated in advance and no scheduled job is involved, so exactly one
+occurrence of a series is ever open. The helper is `SECURITY DEFINER` because
+the successor names columns the browser may not write; its owner is read from
+the row the caller just updated under RLS, so the elevated insert can only land
+in that caller's own account.
+
+Every candidate is `recurrence_anchor_date` plus a whole number of periods,
+never the previous occurrence plus one, so a monthly rule anchored on the 31st
+comes back to the 31st after a February that clamped it. The count is reached by
+division rather than one step per period, so a series abandoned for years still
+completes in a single statement. Moving one occurrence by hand re-anchors the
+series from that date on.
+
+Undoing a completion runs `private.withdraw_recurring_todo` through
+`todos_withdraw_recurrence`, which soft-deletes the occurrence that completion
+created so exactly one is open again. A successor already edited — completed,
+deleted, or changed in any way — is left alone, since the edit outranks the
+bookkeeping; the link is kept either way, which is how re-completing knows not
+to create a third. `TodoService.setTodoCompleted` therefore answers with the
+occurrence that appeared or the id of the one that disappeared, and the browser
+shows both without a reload.
 
 The Today RPC projects `class_id`, `class_name`, and `assignment_type` alongside
 the project title, and the workspace snapshot carries paginated class summaries
@@ -186,7 +221,9 @@ proves only that the result list renders. Behaviour is covered by
 
 - `due_date` is a SQL `date` and `due_time` a `time without time zone`. There is
   no timestamp for a due date anywhere in the schema.
-- `todos_due_time_requires_date` forbids a time without a date.
+- `todos_due_time_requires_date` forbids a time without a date, and
+  `todos_recurrence_requires_due_date` forbids a repeat rule without one.
+  Clearing the date clears both, in the browser service and at the provider.
 - `supabase/migrations/20260902000300_todo_schedule_bounds.sql` bounds
   `due_date` to years 0001 through 9999 and `due_time` to `[00:00, 24:00)`, so
   persisted schedules stay representable by the browser domain.

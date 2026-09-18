@@ -65,6 +65,44 @@ describe("Supabase Todo boundary", () => {
     });
   });
 
+  it("names the occurrence a completion created, or the one it withdrew", async () => {
+    const successor = {
+      ...row,
+      id: "22222222-2222-4222-8222-222222222222",
+      due_date: "2026-09-11",
+    };
+    const done = { ...row, completed: true, completed_at: "2026-09-04T13:00:00.123456Z" };
+    const spawn = setup([
+      json({ ...done, recurrence_spawned_id: successor.id }),
+      json([successor]),
+    ]);
+    expect(await spawn.service.setTodoCompleted(id, true, options())).toMatchObject({
+      todo: { id, completed: true },
+      spawned: { id: successor.id, dueDate: successor.due_date },
+      withdrawn: null,
+    });
+    // The link is read back, never written; the update names completion alone.
+    const write = spawn.fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(write[1].body))).toEqual({ completed: true });
+    const read = spawn.fetch.mock.calls[1] as unknown as [string];
+    expect(new URL(String(read[0])).searchParams.get("id")).toBe(`eq.${successor.id}`);
+
+    // A link whose occurrence is no longer active is one the undo withdrew.
+    const undo = setup([json({ ...row, recurrence_spawned_id: successor.id }), json([])]);
+    expect(await undo.service.setTodoCompleted(id, false, options())).toMatchObject({
+      spawned: null,
+      withdrawn: successor.id,
+    });
+
+    // An ordinary task carries no link and costs no second request.
+    const plain = setup([json({ ...done, recurrence_spawned_id: null })]);
+    expect(await plain.service.setTodoCompleted(id, true, options())).toMatchObject({
+      spawned: null,
+      withdrawn: null,
+    });
+    expect(plain.fetch).toHaveBeenCalledTimes(1);
+  });
+
   it("passes an exact Undo token and preserves a false restore result", async () => {
     const token = "2026-09-04T12:00:00.123456+00:00" as DeleteUndoToken;
     const { service, fetch } = setup([json(token), json(false)]);

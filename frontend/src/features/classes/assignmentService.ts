@@ -107,7 +107,7 @@ export function createTodoAssignmentService(todos: TodoService): AssignmentServi
         options,
       );
       if (item.done && !saved.completed)
-        saved = await todos.setTodoCompleted(saved.id, true, options);
+        saved = (await todos.setTodoCompleted(saved.id, true, options)).todo;
       return fromTodo(saved, courseId);
     },
     async update(_userId, courseId, id, patch, signal) {
@@ -120,7 +120,7 @@ export function createTodoAssignmentService(todos: TodoService): AssignmentServi
             "invalid_input",
             "Save assignment details before changing completion.",
           );
-        return fromTodo(await todos.setTodoCompleted(id, patch.done, options), courseId);
+        return fromTodo((await todos.setTodoCompleted(id, patch.done, options)).todo, courseId);
       }
       const details = {
         ...(patch.title !== undefined && { text: patch.title.trim() }),

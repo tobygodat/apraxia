@@ -152,6 +152,9 @@ let todos: Todo[] = empty
       task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
       task("Ask Sam about the reading group", null),
       task("Measure the shelves", 2, { projectId }),
+      task("Turn in the problem set", 0, {
+        recurrence: { freq: "weekly", interval: 1, until: null },
+      }),
       task("Choose a paint sample", 0, { projectId, completed: true, completedAt: completedOn(0) }),
     ];
 let ideas: Idea[] = empty
@@ -256,7 +259,14 @@ const todoService: TodoService = {
   },
   async setTodoCompleted(rowId, completed) {
     check();
-    return save(todos, { ...find(todos, rowId), completed, completedAt: completed ? now : null });
+    // The whole-workspace fixture exercises layout, not the repeat loop; the
+    // Tasks fixture is where a completion produces the next occurrence.
+    const todo = save(todos, {
+      ...find(todos, rowId),
+      completed,
+      completedAt: completed ? now : null,
+    });
+    return { todo, spawned: null, withdrawn: null };
   },
   async softDeleteTodo(rowId) {
     check();

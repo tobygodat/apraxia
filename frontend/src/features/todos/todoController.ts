@@ -668,10 +668,24 @@ export class TodoController {
           mutation.signal,
         );
         if (!this.isCurrentMutation(mutation.revision)) return;
-        const saved = readTodoResponse(response);
+        const saved = readTodoResponse(response?.todo);
         if (!saved || !sameId(saved.id, todo.id) || saved.completed !== completed)
           throw new RangeError("Invalid completion response.");
-        const slices = this.confirmTodo(saved);
+        // Ticking a repeating task is also what creates the next occurrence,
+        // and unticking it takes that occurrence away again. Both arrive with
+        // this write, so the list shows them without waiting for a reload.
+        const spawned = response.spawned == null ? null : readTodoResponse(response.spawned);
+        if (response.spawned != null && !spawned)
+          throw new RangeError("Invalid completion response.");
+        let slices = this.confirmTodo(saved);
+        if (spawned) {
+          this.confirmed = this.withTodo(this.confirmed, spawned);
+          slices = this.withTodo(slices, spawned);
+        }
+        if (response.withdrawn != null) {
+          this.confirmed = this.withoutTodo(this.confirmed, response.withdrawn);
+          slices = this.withoutTodo(slices, response.withdrawn);
+        }
         this.publish(slices, {
           ...this.settle(todo.id, "complete", "succeeded"),
           announcement: completed
@@ -713,7 +727,15 @@ export class TodoController {
       todo &&
       keys.length &&
       keys.every((key) =>
-        ["text", "projectId", "classId", "assignmentType", "dueDate", "dueTime"].includes(key),
+        [
+          "text",
+          "projectId",
+          "classId",
+          "assignmentType",
+          "dueDate",
+          "dueTime",
+          "recurrence",
+        ].includes(key),
       ) &&
       !(request.dueDate === null && request.dueTime !== null) &&
       !(
@@ -721,7 +743,13 @@ export class TodoController {
         typeof request.dueDate !== "string" &&
         todo.dueDate === null
       )
-        ? readTodoResponse({ ...todo, ...request })
+        ? // Clearing the date clears the repeat rule with it, the same way the
+          // provider does, so a reschedule off a repeating task stays valid.
+          readTodoResponse({
+            ...todo,
+            ...request,
+            ...(request.dueDate === null && { recurrence: null }),
+          })
         : null;
     if (!todo || !optimistic) {
       if (todo) this.replace({ mutationError: "update_failed" });
