@@ -32,6 +32,15 @@
   gap: 12px;
 }
 
+/* A phone has no room for the title and the controls on one line. */
+@media (max-width: 620px) {
+  .todos-board-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+}
+
 .todos-board-filter {
   display: flex;
   align-items: center;
