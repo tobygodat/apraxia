@@ -33,8 +33,11 @@ changes. Avoid unnecessary tests that only restate low-impact copy or styling ch
 
 - Frontend QA: reuse/start `npm run dev:web`, inspect the affected flow at
   `http://localhost:5173/qa/workspace.html` (or a free port).
-  Use `realistic`; add `dense` for calendar geometry/text,
-  `portrait`/`typical` for covers, reload for persistence/initialization. Broader
+  Check `personal` first (a private reproduction of the real account; refresh it
+  with `npm run qa:snapshot`, and it falls back to `realistic` without one), then
+  `dense` to try to break the layout. Add `portrait`/`typical` for covers, reload
+  for persistence/initialization. The snapshot and screenshots of it are personal
+  data: never commit them. Broader
   shared-layout QA runs once at completion; details in `docs/CLOUD_DEVELOPMENT.md`.
 - Before pushing code, run `npm run verify:quick` once, manually or through the
   optional hook; do not run both. `verify` includes this check.

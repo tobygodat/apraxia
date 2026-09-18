@@ -33,6 +33,10 @@ frontend/.vite/
 # Local clone of the Obsidian vault on the VPS (read-only input, not source)
 /vault/
 
+# Private reproduction of the account for the QA fixture's `personal` scenario
+# (npm run qa:snapshot). Personal data: never commit.
+/frontend/qa/local/
+
 # Agent scratch output (dated critiques, not source)
 .impeccable/critique/
 

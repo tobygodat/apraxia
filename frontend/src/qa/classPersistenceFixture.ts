@@ -1,6 +1,7 @@
 import type { ClassService, Course } from "../features/classes/classService";
 import type { ClassNote, NoteService } from "../features/classes/noteService";
 import { prepareUpload } from "../features/classes/noteService";
+import type { PersonalSnapshotNote } from "./personalSnapshot";
 /** Fictional services only. Retained across navigation, reset on QA reload. */
 /**
  * A full course load, so a scenario can exercise a surface that groups by
@@ -16,6 +17,12 @@ const DENSE_COURSES: Course[] = [
 export function createClassPersistenceFixture(
   empty = false,
   dense = false,
+  /** The `personal` scenario's classes and saved notes, in place of the fictional ones. */
+  seed?: {
+    owner: string;
+    classes: { id: string; name: string | null }[];
+    notes: PersonalSnapshotNote[];
+  },
 ): {
   classes: ClassService;
   notes: NoteService;
@@ -24,6 +31,28 @@ export function createClassPersistenceFixture(
   const notes = new Map<string, ClassNote>();
   const files = new Map<string, File>();
   let revision = 0;
+  if (seed) {
+    owners.set(
+      seed.owner,
+      seed.classes.map((course) => ({ ...course, updatedAt: "seed" })),
+    );
+    for (const note of seed.notes)
+      notes.set(note.id, {
+        id: note.id,
+        user_id: seed.owner,
+        course_id: note.courseId,
+        name: note.name,
+        source: note.source,
+        // A placeholder: the snapshot never carries real Drive file ids.
+        drive_file_id: note.source === "drive" ? `snapshot-${note.id}` : null,
+        byte_size: note.byteSize,
+        content_sha256: null,
+        object_path: note.source === "upload" ? `${seed.owner}/${note.id}.pdf` : null,
+        uploaded_at: note.saved && note.source === "upload" ? "2026-01-01T00:00:00.000Z" : null,
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+      });
+  }
   const rows = (owner: string) => {
     if (!owners.has(owner))
       owners.set(

@@ -326,16 +326,19 @@ ordering.
 
 ## Pre-deployment UI checks
 
-Start at `/qa/workspace.html` with the default `realistic` scenario. Scenarios,
+Start at `/qa/workspace.html?scenario=personal`, then repeat the affected flow in
+`dense`. `personal` shows how the change looks on the account it is for; `dense`
+tries to break it. Without a snapshot (`npm run qa:snapshot`), `personal` falls
+back to the fictional `realistic` seed, which is also the default. Scenarios,
 the `route`, `scenario`, and `drive` parameters, what persists across reload,
 and which fixture service stands in for which real service are documented in
 [QA fixtures](QA_FIXTURES.md).
 
-Inspect the affected flow in `realistic`. Add scenarios according to what changed:
+Beyond `personal` and `dense`, add scenarios according to what changed:
 
 | Changed behavior | Additional checks |
 | --- | --- |
-| Calendar geometry, overlap, density, or truncation | `dense`; relevant long/adjacent/overlapping events and visible times. |
+| Calendar geometry, overlap, density, or truncation | Relevant long/adjacent/overlapping events and visible times in `dense`. |
 | Cover or surrounding layout | `portrait` and no-cover `typical`; expand/collapse where affected. |
 | Responsive/shared layout | Actual desktop and a smaller viewport; the relevant scenario matrix once when the change is complete. |
 | Persistence, initialization, or navigation | Navigate away/back and reload; use the real app for account persistence. |

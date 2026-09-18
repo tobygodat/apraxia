@@ -10,6 +10,7 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { WorkspaceRuntime } from "../apps/WorkspaceRuntime";
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
+import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
 import {
   createFixtureAppearance,
   createFixtureCover,
@@ -34,7 +35,8 @@ import type {
 } from "../types/domain";
 import "../index.css";
 
-// Separate Vite development entry. All identities and records below are fictional.
+// Separate Vite development entry. All identities and records below are fictional,
+// except the `personal` scenario, which seeds from a private gitignored snapshot.
 // Calendar and appearance use isolated tab storage; no credentials or network requests.
 if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.");
 const params = new URLSearchParams(window.location.search);
@@ -86,8 +88,10 @@ const driveService: DriveService = {
   pdf: async () => createFixturePdf(),
 };
 const now = new Date().toISOString();
-const timezone = "America/New_York";
+const timezone = (scenario === "personal" && snapshotTimezone()) || "America/New_York";
 const today = localToday(timezone);
+/** Null for every other scenario, and for `personal` before a snapshot exists. */
+const personal = scenario === "personal" ? loadPersonalSnapshot(today) : null;
 const userId = "11111111-1111-4111-8111-111111111111";
 let sequence = 100;
 const id = () => `22222222-2222-4222-8222-${String(sequence++).padStart(12, "0")}`;
@@ -95,24 +99,26 @@ let profile = { userId, timezone, createdAt: now, updatedAt: now };
 const base = () => ({ id: id(), createdAt: now, updatedAt: now });
 const longText =
   "Plan the studio gathering, including the guest list, accessible arrival directions, food preferences, and the quiet corner for anyone who needs a break";
-let projects: Project[] = empty
-  ? []
-  : [
-      {
-        ...base(),
-        title: long ? longText : "Studio refresh",
-        description: "Make room for reading, writing, and a friend stopping by.",
-        status: "active",
-      },
-      {
-        ...base(),
-        title: "Autumn weekend away",
-        description: "A small trip, with room to wander.",
-        status: "someday",
-      },
-      { ...base(), title: "Summer reading", description: null, status: "completed" },
-      { ...base(), title: "Old apartment move", description: null, status: "archived" },
-    ];
+let projects: Project[] = personal
+  ? personal.projects
+  : empty
+    ? []
+    : [
+        {
+          ...base(),
+          title: long ? longText : "Studio refresh",
+          description: "Make room for reading, writing, and a friend stopping by.",
+          status: "active",
+        },
+        {
+          ...base(),
+          title: "Autumn weekend away",
+          description: "A small trip, with room to wander.",
+          status: "someday",
+        },
+        { ...base(), title: "Summer reading", description: null, status: "completed" },
+        { ...base(), title: "Old apartment move", description: null, status: "archived" },
+      ];
 const projectId = projects[0]?.id ?? null;
 /** A completion instant on a date relative to the fixture's today, at local midday. */
 const completedOn = (offset: number) => `${addSqlDateDays(today, offset)}T16:00:00.000000Z`;
@@ -156,62 +162,70 @@ const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): T
   todayRank: null,
   ...extra,
 });
-let todos: Todo[] = empty
-  ? []
-  : [
-      ...fixtureAssignmentTodos(),
-      // Open past-due tasks join Today; the completed task stays on its original date.
-      task("Return the library books", -3),
-      task("Send the venue confirmation", -1),
-      // Completions spread across this week and the last one, so the weekly
-      // review has a week to close out and a previous week to step back to.
-      task("Renew the library card", -8, { completed: true, completedAt: completedOn(-9) }),
-      task("Draft the guest list", -2, {
-        projectId,
-        completed: true,
-        completedAt: completedOn(-2),
-      }),
-      task("Sort the reading pile", -1, { completed: true, completedAt: completedOn(-1) }),
-      ...(scenario === "dense"
-        ? Array.from({ length: 12 }, (_, index) =>
-            task(`Review reading note ${index + 1}`, -(index + 1)),
-          )
-        : []),
-      // A term's worth of finished coursework, deliberately uneven per class,
-      // so the weekly review's group columns are exercised the way a real week
-      // fills them rather than with a tidy row of equal cards.
-      ...(scenario === "dense" ? denseClassCompletions() : []),
-      task(long ? longText : "Compare the lighting options", 0, { projectId }),
-      task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
-      task("Ask Sam about the reading group", null),
-      task("Measure the shelves", 2, { projectId }),
-      task("Turn in the problem set", 0, {
-        recurrence: { freq: "weekly", interval: 1, until: null },
-      }),
-      task("Choose a paint sample", 0, { projectId, completed: true, completedAt: completedOn(0) }),
-    ];
-let ideas: Idea[] = empty
-  ? []
-  : [
-      {
-        ...base(),
-        title: long ? longText : "A softer place to land",
-        body: "A lamp near the reading chair. A tray by the door for keys. Fewer things that need a decision at the end of the day.",
-        projectId,
-      },
-      {
-        ...base(),
-        title: null,
-        body: "Try a Sunday walk without a destination\nBring a notebook, leave enough time to stop.",
-        projectId: null,
-      },
-      {
-        ...base(),
-        title: "Dinner with friends",
-        body: "Soup, fresh bread, and a shared playlist. Ask everyone to bring one song.",
-        projectId: null,
-      },
-    ];
+let todos: Todo[] = personal
+  ? personal.todos
+  : empty
+    ? []
+    : [
+        ...fixtureAssignmentTodos(),
+        // Open past-due tasks join Today; the completed task stays on its original date.
+        task("Return the library books", -3),
+        task("Send the venue confirmation", -1),
+        // Completions spread across this week and the last one, so the weekly
+        // review has a week to close out and a previous week to step back to.
+        task("Renew the library card", -8, { completed: true, completedAt: completedOn(-9) }),
+        task("Draft the guest list", -2, {
+          projectId,
+          completed: true,
+          completedAt: completedOn(-2),
+        }),
+        task("Sort the reading pile", -1, { completed: true, completedAt: completedOn(-1) }),
+        ...(scenario === "dense"
+          ? Array.from({ length: 12 }, (_, index) =>
+              task(`Review reading note ${index + 1}`, -(index + 1)),
+            )
+          : []),
+        // A term's worth of finished coursework, deliberately uneven per class,
+        // so the weekly review's group columns are exercised the way a real week
+        // fills them rather than with a tidy row of equal cards.
+        ...(scenario === "dense" ? denseClassCompletions() : []),
+        task(long ? longText : "Compare the lighting options", 0, { projectId }),
+        task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
+        task("Ask Sam about the reading group", null),
+        task("Measure the shelves", 2, { projectId }),
+        task("Turn in the problem set", 0, {
+          recurrence: { freq: "weekly", interval: 1, until: null },
+        }),
+        task("Choose a paint sample", 0, {
+          projectId,
+          completed: true,
+          completedAt: completedOn(0),
+        }),
+      ];
+let ideas: Idea[] = personal
+  ? personal.ideas
+  : empty
+    ? []
+    : [
+        {
+          ...base(),
+          title: long ? longText : "A softer place to land",
+          body: "A lamp near the reading chair. A tray by the door for keys. Fewer things that need a decision at the end of the day.",
+          projectId,
+        },
+        {
+          ...base(),
+          title: null,
+          body: "Try a Sunday walk without a destination\nBring a notebook, leave enough time to stop.",
+          projectId: null,
+        },
+        {
+          ...base(),
+          title: "Dinner with friends",
+          body: "Soup, fresh bread, and a shared playlist. Ask everyone to bring one song.",
+          projectId: null,
+        },
+      ];
 const deleted = new Map<string, unknown>();
 const token = "2026-09-04T12:00:00.123456Z" as DeleteUndoToken;
 function check() {
@@ -248,7 +262,11 @@ function currentToday(date: string): TodayTodo[] {
       })),
   );
 }
-const classFixture = createClassPersistenceFixture(empty, scenario === "dense");
+const classFixture = createClassPersistenceFixture(
+  empty,
+  scenario === "dense",
+  personal ? { owner: userId, classes: personal.classes, notes: personal.notes } : undefined,
+);
 async function withClassName<T extends Todo>(todo: T): Promise<T> {
   const classes = await classFixture.classes.list(userId, new AbortController().signal);
   return { ...todo, className: classes.find((course) => course.id === todo.classId)?.name ?? null };
@@ -465,11 +483,17 @@ const storage = {
   removeItem: (key: string) => window.sessionStorage.removeItem(key),
 };
 const delay = scenario === "slow" ? 1500 : 180;
-const cover = ["realistic", "dense", "portrait", "slow"].includes(scenario)
+const cover = ["realistic", "personal", "dense", "portrait", "slow"].includes(scenario)
   ? createFixtureCover(scenario === "portrait")
   : null;
 const calendarService = delayedFixtureService(
-  createFixtureCalendar({ scenario, timezone, storage, storageKey: calendarKey }),
+  createFixtureCalendar({
+    scenario,
+    timezone,
+    storage,
+    storageKey: calendarKey,
+    weekEvents: personal?.events,
+  }),
   delay,
 );
 const workspaceData = {
@@ -527,7 +551,13 @@ function FixtureTools() {
   return (
     <details className="workspace-qa-tools">
       <summary>QA · {scenario}</summary>
-      <p>Fictional data · production layout and navigation cache.</p>
+      <p>
+        {scenario !== "personal"
+          ? "Fictional data · production layout and navigation cache."
+          : personal
+            ? `Private snapshot captured ${personal.capturedOn}, re-dated to this week. Refresh it with npm run qa:snapshot.`
+            : "No snapshot on this machine, so this is the realistic seed. Run npm run qa:snapshot."}
+      </p>
       <label>
         Scenario{" "}
         <select
@@ -540,6 +570,7 @@ function FixtureTools() {
         >
           {[
             "realistic",
+            "personal",
             "calendar",
             "typical",
             "empty",
