@@ -16,7 +16,7 @@ import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
-import { localToday } from "../todos/dateDomain";
+import { useLocalToday } from "../todos/useLocalToday";
 
 export function ClassesPage({
   userId,
@@ -58,7 +58,9 @@ export function ClassesPage({
   const pending = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const course = courses.find((c) => c.id === courseId);
-  const today = localToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+  // Sampled, not computed once: a page left open past local midnight has to
+  // re-label "Due tomorrow" as "Due today" on its own.
+  const today = useLocalToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
   useColdLoad(!loaded && !error);
   useEffect(() => {
     const controller = new AbortController();

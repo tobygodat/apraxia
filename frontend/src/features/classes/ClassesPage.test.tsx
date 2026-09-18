@@ -320,3 +320,37 @@ it("leaves an unfinished upload out of the class header's note count", async () 
   expect(await screen.findByText("Upload incomplete")).toBeTruthy();
   expect(screen.getByText("5 open · 1 note")).toBeTruthy();
 });
+it("re-dates the class list when local midnight passes with the page still open", async () => {
+  const data = createClassPersistenceFixture();
+  const overviewService = {
+    list: async () => ({
+      math3012: {
+        assignments: 1,
+        open: 1,
+        notes: 0,
+        nextDue: { title: "Problem set 4", due: "2026-09-18" },
+      },
+    }),
+  };
+  // 23:30 on Sep 17 in the profile's timezone, so Sep 18 is tomorrow.
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-18T03:30:00Z") });
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        classService={data.classes}
+        noteService={data.notes}
+        overviewService={overviewService}
+        timezone="America/New_York"
+      />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
+  vi.setSystemTime(new Date("2026-09-18T04:30:00Z"));
+  // A sleeping tab re-samples on focus rather than waiting for its interval.
+  act(() => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  expect(screen.getByText("Due today · Problem set 4")).toBeTruthy();
+  vi.useRealTimers();
+});

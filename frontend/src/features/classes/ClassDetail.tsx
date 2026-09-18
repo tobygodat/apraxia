@@ -3,7 +3,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { ClassAssignments } from "./ClassAssignments";
 import { ClassSummary } from "./ClassSummary";
 import { SavedClassNotes } from "./SavedClassNotes";
-import { localToday } from "../todos/dateDomain";
+import { useLocalToday } from "../todos/useLocalToday";
 import type { AssignmentService } from "./assignmentService";
 import type { ClassOverview } from "./classOverview";
 import type { Course } from "./classService";
@@ -34,7 +34,9 @@ export function ClassDetail({
   timezone?: string;
   onEdit(): void;
 }) {
-  const today = localToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+  // Sampled so the header re-labels itself at local midnight; the assignment
+  // table re-reads its own date on the render that follows.
+  const today = useLocalToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [assignments, setAssignments] = useState<ClassOverview | null>(null);
   const [notes, setNotes] = useState<number | null>(null);
   // Wait for both halves before writing the line, so a class with notes and no
