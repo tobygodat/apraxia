@@ -8,12 +8,13 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { formatTaskDate, formatTaskTime } from "../todos/taskFormatting";
 import { ideaPreview } from "./collectionPresentation";
 import type { TodoService } from "../todos/todoService";
-import { CollectionEditor } from "./CollectionEditor";
+import { CollectionEditor, PROJECT_STATUS_LABELS } from "./CollectionEditor";
 import {
   ideaTitle,
   type CollectionKind,
   type CollectionRecord,
   type CollectionService,
+  type ProjectStatusFilter,
 } from "./collectionService";
 import "./collections.css";
 interface Props {
@@ -29,6 +30,12 @@ const descriptions = {
   project: "Outcomes, with their tasks and thoughts in one place.",
   idea: "A place for thoughts you want to keep.",
 };
+/** The list filter's own choices; "" is the default view, which hides archives. */
+const PROJECT_FILTERS: readonly (readonly [string, string])[] = [
+  ["", "Current"],
+  ...Object.entries(PROJECT_STATUS_LABELS),
+  ["all", "Everything"],
+];
 const titleOf = (kind: CollectionKind, r: CollectionRecord) =>
   kind === "idea" ? ideaTitle(r as Idea) : r.title || "Untitled";
 const reducedMotion = () =>
@@ -87,6 +94,7 @@ export function CollectionPage(props: Props) {
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter | "">("");
   const [settling, setSettling] = useState<string | null>(null);
   const busyRef = useRef(false);
   const mounted = useRef(true);
@@ -135,8 +143,9 @@ export function CollectionPage(props: Props) {
         const pages = await Promise.all(
           Array.from({ length: limit / 50 }, (_, n) => {
             const options = { offset: n * 50, signal: controller.signal };
+            // The default view omits `status` so it shares the prefetch's cache key.
             return kind === "project"
-              ? service.listProjects({ offset: n * 50, signal: controller.signal })
+              ? service.listProjects(statusFilter ? { ...options, status: statusFilter } : options)
               : service.listIdeas(options);
           }),
         );
@@ -163,7 +172,7 @@ export function CollectionPage(props: Props) {
       active = false;
       controller.abort();
     };
-  }, [kind, service, recordId, limit, taskLimit, ideaLimit, revision, refreshKey]);
+  }, [kind, service, recordId, limit, taskLimit, ideaLimit, revision, refreshKey, statusFilter]);
   async function remove(k: CollectionKind | "todo", id: string) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -278,6 +287,9 @@ export function CollectionPage(props: Props) {
     const preview =
       k === "idea" ? ideaPreview(r as Idea) : k === "project" ? (r as Project).description : null;
     const metadata = k === "idea" && !detail ? p?.title : null;
+    // Active is the ordinary state, so only the other three are worth a badge.
+    const status =
+      k === "project" && (r as Project).status !== "active" ? (r as Project).status : null;
     return (
       <li key={r.id} className="collection-row">
         <button
@@ -297,6 +309,7 @@ export function CollectionPage(props: Props) {
             : {})}
         >
           <strong>{titleOf(k, r)}</strong>
+          {status && <span className="collection-status">{PROJECT_STATUS_LABELS[status]}</span>}
           {preview && <span className="collection-preview">{preview}</span>}
           {metadata && <span className="collection-meta">{metadata}</span>}
         </button>
@@ -528,6 +541,25 @@ export function CollectionPage(props: Props) {
         </>
       ) : (
         <>
+          {kind === "project" && (
+            <div className="collection-filter">
+              <label htmlFor="collection-status-filter">Status</label>
+              <select
+                id="collection-status-filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setLimit(50);
+                  setStatusFilter(e.target.value as ProjectStatusFilter | "");
+                }}
+              >
+                {PROJECT_FILTERS.map(([value, label]) => (
+                  <option key={value || "current"} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <ul className="collection-list">{rows.map((r) => renderRow(kind, r))}</ul>
           {!loading && !error && !rows.length && (
             <div className="collection-empty">

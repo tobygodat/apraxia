@@ -2,6 +2,7 @@ import {
   createElement,
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -335,13 +336,23 @@ function HomeRoute(props: MainWorkspaceProps) {
 }
 
 function SettingsRoute(props: MainWorkspaceProps) {
-  const { profile } = useWorkspace();
+  const { profile, invalidate } = useWorkspace();
+  const { workspaceData, identity } = props;
+  const saveTimezone = useCallback(
+    async (timezone: string) => {
+      await workspaceData.setTimezone(identity.userId, timezone);
+      // Today, the board, and the calendar all derive dates from the profile.
+      invalidate();
+    },
+    [workspaceData, identity.userId, invalidate],
+  );
   if (!profile) return <ProfilePlaceholder title="Settings" />;
   return (
     <SettingsPage
       calendarService={props.calendarService}
       profile={profile}
       onSignOut={props.onSignOut}
+      onSaveTimezone={saveTimezone}
     />
   );
 }

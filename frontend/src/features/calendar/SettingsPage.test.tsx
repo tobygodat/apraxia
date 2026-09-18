@@ -122,3 +122,56 @@ it("releases the cold-load gate immediately when settings fail to load", async (
   const gate = container.querySelector(".cold-load");
   await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
 });
+
+it("saves a newly picked timezone", async () => {
+  const service = {
+    status: async () => ({ connectionState: "disconnected" }),
+    calendars: async () => [],
+  } as unknown as CalendarService;
+  const onSaveTimezone = vi.fn(async () => {});
+  render(
+    <SettingsPage
+      calendarService={service}
+      profile={profile}
+      onSignOut={() => {}}
+      onSaveTimezone={onSaveTimezone}
+    />,
+  );
+  const select = await screen.findByLabelText("Timezone");
+  fireEvent.change(select, { target: { value: "America/New_York" } });
+  await waitFor(() => expect(onSaveTimezone).toHaveBeenCalledWith("America/New_York"));
+  expect((select as HTMLSelectElement).value).toBe("America/New_York");
+  await screen.findByText("Timezone saved as America/New York.");
+});
+
+it("restores the saved timezone when the change is rejected", async () => {
+  const service = {
+    status: async () => ({ connectionState: "disconnected" }),
+    calendars: async () => [],
+  } as unknown as CalendarService;
+  const onSaveTimezone = vi.fn(async () => {
+    throw new Error("That timezone isn’t recognised. Pick another one.");
+  });
+  render(
+    <SettingsPage
+      calendarService={service}
+      profile={profile}
+      onSignOut={() => {}}
+      onSaveTimezone={onSaveTimezone}
+    />,
+  );
+  const select = await screen.findByLabelText("Timezone");
+  fireEvent.change(select, { target: { value: "America/New_York" } });
+  await screen.findByText("That timezone isn’t recognised. Pick another one.");
+  expect((select as HTMLSelectElement).value).toBe("UTC");
+});
+
+it("shows the timezone read-only when no save handler is wired", async () => {
+  const service = {
+    status: async () => ({ connectionState: "disconnected" }),
+    calendars: async () => [],
+  } as unknown as CalendarService;
+  render(<SettingsPage calendarService={service} profile={profile} onSignOut={() => {}} />);
+  expect(await screen.findByText("UTC")).toBeTruthy();
+  expect(screen.queryByLabelText("Timezone")).toBeNull();
+});

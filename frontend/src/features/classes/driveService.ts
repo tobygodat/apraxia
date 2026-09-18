@@ -8,6 +8,8 @@ export interface DriveFile {
   folder: boolean;
   modifiedTime: string | null;
   size: string | null;
+  /** Set only by the picker, which is the one place that reports a parent. */
+  parentId?: string | null;
 }
 interface DrivePage {
   files: DriveFile[];
