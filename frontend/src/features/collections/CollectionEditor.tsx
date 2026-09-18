@@ -1,17 +1,9 @@
 import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Dialog } from "../../components/dialog/Dialog";
-import type { Idea, Project, ProjectStatus, ProjectSummary } from "../../types/domain";
+import type { Idea, Project, ProjectSummary } from "../../types/domain";
 import type { CollectionKind, CollectionRecord, CollectionService } from "./collectionService";
 import "../todos/TodoFormDialog.css";
 import "./collections.css";
-/** The saved project states, in the order a project usually moves through. */
-export const PROJECT_STATUS_LABELS: Readonly<Record<ProjectStatus, string>> = {
-  active: "Active",
-  someday: "Someday",
-  completed: "Completed",
-  archived: "Archived",
-};
-
 export interface CollectionEditorProps {
   kind: CollectionKind;
   record?: CollectionRecord;
@@ -41,7 +33,6 @@ export function CollectionEditor({
     kind === "idea" ? ((record as Idea)?.body ?? "") : ((record as Project)?.description ?? ""),
   );
   const [selectedProject, setProject] = useState((record as Idea)?.projectId ?? projectId ?? "");
-  const [status, setStatus] = useState<ProjectStatus>((record as Project)?.status ?? "active");
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -70,7 +61,10 @@ export function CollectionEditor({
     try {
       const saved =
         kind === "project"
-          ? await service.saveProject({ title, description: body, status }, record?.id)
+          ? await service.saveProject(
+              { title, description: body, status: (record as Project)?.status ?? "active" },
+              record?.id,
+            )
           : await service.saveIdea({ title, body, projectId: selectedProject || null }, record?.id);
       if (alive.current) onSaved(saved);
     } catch {
@@ -129,24 +123,6 @@ export function CollectionEditor({
                 onChange={(e) => setBody(e.target.value)}
               />,
             )}
-            {field(
-              "Status",
-              <select
-                value={status}
-                disabled={busy}
-                onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-              >
-                {Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>,
-            )}
-            <p className="collection-editor__hint">
-              Archived projects leave the Projects list until you filter for them. Their tasks and
-              ideas stay where they are.
-            </p>
           </>
         )}
         {kind === "idea" &&

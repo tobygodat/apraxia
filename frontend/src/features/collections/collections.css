@@ -116,43 +116,6 @@
   margin-top: 4px;
   line-height: 1.6;
 }
-.collection-status {
-  display: inline-block;
-  margin-top: 5px;
-  padding: 2px 7px;
-  border: 1px solid #4a4a4a;
-  border-radius: 999px;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.collection-filter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 11px;
-}
-.collection-filter select {
-  padding: 6px 9px;
-  border: 1px solid #444;
-  border-radius: var(--radius-control, 5px);
-  background-color: #111111;
-  color: #f0efed;
-  font-family: inherit;
-  font-size: 12px;
-}
-.collection-editor__hint {
-  margin: 0;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 11px;
-  line-height: 1.6;
-}
 .collection-delete,
 .collection-row-action {
   display: grid;

@@ -14,12 +14,10 @@ import { isDeleteUndoToken } from "../todos/todoWorkspaceValidation";
 import { ServiceError } from "../../lib/serviceError";
 export type CollectionKind = "project" | "idea";
 export type CollectionRecord = Project | Idea;
-/** `"all"` keeps archived projects in the list; omitting the option drops them. */
-export type ProjectStatusFilter = ProjectStatus | "all";
 export interface ListOptions {
   offset?: number;
   limit?: number;
-  status?: ProjectStatusFilter;
+  status?: string;
   projectId?: string;
   signal?: AbortSignal;
 }
@@ -93,10 +91,7 @@ export function createCollectionService(client: SupabaseClient<Database>): Colle
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .order("id");
-      // Archiving a project is what takes it out of the default list; an
-      // explicit status, "all" included, always shows exactly what it names.
-      if (o.status === undefined) q = q.neq("status", "archived");
-      else if (o.status !== "all") q = q.eq("status", o.status);
+      if (o.status && o.status !== "all") q = q.eq("status", o.status as ProjectStatus);
       return data(
         await q
           .range(o.offset ?? 0, (o.offset ?? 0) + (o.limit ?? 50) - 1)
