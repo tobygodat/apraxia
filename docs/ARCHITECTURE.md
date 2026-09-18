@@ -110,4 +110,6 @@ server-bound user UUID. Workspace requests use service-only wrappers around
 RLS-constrained `orbitos_agent` functions; explicit field allowlists, opaque
 versions, idempotent writes, and a private journal protect the shared records.
 Google operations reuse the existing transports with that trusted identity.
+`/api/mcp` is a stateless MCP adapter for Claude connectors: it authenticates the
+same token and turns each tool call into a request to the agent handler.
 See [Agent API](AGENT_API.md) for endpoint contracts and server configuration.
