@@ -591,16 +591,6 @@ filled yet, so an empty day is a ruled column rather than a blank one, and the
 row that has not been written yet is a rule with a `muted` label on it, not a
 button.
 
-### The weekly review
-
-`/review` rules the week by project and class instead of by day, one level down
-in type: the group name takes the place the date holds on the board, its count
-beside it in `fine` `muted` tabular, its entries on the same tracks across every
-band so names and tasks fall on the same axes down the page. Finished entries
-are `muted` with a line through them; a date already past takes its "12 days
-late" in `warning`. Nothing in a band is interactive except the group's own
-name.
-
 ### Settings
 
 Appearance is a list of three choices — **classic**, **paper**, **paper

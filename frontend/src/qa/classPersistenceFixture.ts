@@ -5,7 +5,7 @@ import type { PersonalSnapshotNote } from "./personalSnapshot";
 /** Fictional services only. Retained across navigation, reset on QA reload. */
 /**
  * A full course load, so a scenario can exercise a surface that groups by
- * class. Two classes cannot produce the ragged column layout a real term does.
+ * class against more than the two classes the default seed carries.
  */
 const DENSE_COURSES: Course[] = [
   { id: "cs1332", name: "CS1332", updatedAt: "seed" },
