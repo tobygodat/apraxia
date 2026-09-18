@@ -42,7 +42,7 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
-| `search_vector` | `tsvector` | Generated from `text` (weight A) and `class_id` (weight B). See [Search](#search). |
+| `search_vector` | `tsvector` | Generated from `text` (weight A) and `class_id`, stemmed and literal (weight B). See [Search](#search). |
 
 Browser grants: `select` on all columns, `insert (id, text, due_date, due_time,
 project_id, class_id, assignment_type)`, `update (text, completed, due_date,
@@ -122,10 +122,18 @@ Covered by `supabase/tests/030_soft_delete_restore.test.sql`.
 `public.search_records(p_query, p_limit, p_offset)` is the only search the
 browser has. Since
 `supabase/migrations/20260918020000_search_classes_and_stemming.sql` it covers
-five tables and both the stored vectors and `websearch_to_tsquery` use the
-`english` configuration, so "book" matches "books" and "lectures" matches
-"lecture". English stopwords are dropped from a query; a query of nothing but
-stopwords or negations returns no rows rather than everything.
+five tables and free text is stored and queried through the `english`
+configuration, so "book" matches "books" and "lectures" matches "lecture".
+
+Identifiers are not prose and are indexed literally as well as stemmed: course
+codes, class names, and note filenames all carry both an `english` and a
+`simple` vector, because a code can be an English stopword (`IT` stems to
+nothing) or a word whose stem is not itself (`STUDIES` stems to `studi`).
+`websearch_to_tsquery` drops stopwords the same way, so a query that English
+leaves empty is re-parsed with `simple` and matched against those literal
+tokens. A query that is still empty, or that is nothing but negations, returns
+no rows rather than everything. Stopwords inside longer free text stay
+unsearchable; only identifiers get the literal path.
 
 Each row reports a `public.search_record_type`, which is a wider set than the
 `public.orbitos_record_type` that `soft_delete_record` and `restore_record`

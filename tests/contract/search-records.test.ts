@@ -46,6 +46,8 @@ beforeAll(async () => {
     insert into public.classes(user_id,id,name) values
       ('${owner}','MATH3012','Linear Algebra'),
       ('${owner}','HIST1100',null),
+      ('${owner}','IT',null),
+      ('${owner}','STUDIES','Media studies'),
       ('${other}','MATH3012','Another account''s linear algebra');
     insert into public.projects(id,user_id,title,description) values
       ('a4000000-0000-4000-8000-000000000001','${owner}','Shelving','Build the reading shelves');
@@ -92,6 +94,22 @@ it("identifies a class by its course code and keeps a nameless class findable", 
   expect((await search("HIST1100")).map((r) => [r.record_id, r.title, r.snippet])).toEqual([
     ["HIST1100", "HIST1100", ""],
   ]);
+});
+
+it("finds a course code that English stems away or stems differently", async () => {
+  // 'IT' is an English stopword, so both the stemmed vector and a stemmed query
+  // are empty; 'STUDIES' stems to 'studi', which is not the text itself.
+  expect((await search("IT")).map((r) => [r.record_type, r.record_id])).toEqual([["class", "IT"]]);
+  expect((await search("STUDIES")).map((r) => [r.record_type, r.record_id])).toEqual([
+    ["class", "STUDIES"],
+  ]);
+  expect((await search("studies")).map((r) => r.record_id)).toEqual(["STUDIES"]);
+});
+
+it("returns nothing for an unmatched query and for one that only excludes", async () => {
+  expect(await search("the of and")).toEqual([]);
+  expect(await search("-book")).toEqual([]);
+  expect(await search("   ")).toEqual([]);
 });
 
 it("separates an assignment from a task without a class", async () => {

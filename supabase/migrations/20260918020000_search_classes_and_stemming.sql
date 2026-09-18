@@ -16,6 +16,15 @@
 -- Classes and class notes are hard deleted (20260914000300_class_deletes.sql),
 -- so neither branch has a deleted_at filter to apply.
 --
+-- Identifiers are not prose, so they are indexed literally as well as stemmed:
+-- a course code can be an English stopword ('IT'), which stems to nothing, or a
+-- word whose stem is not itself ('STUDIES' -> 'studi'). Class names and note
+-- filenames are short and are usually the code again, so they get the same
+-- treatment; only the long free-text fields are stemmed alone. The query side
+-- needs the same escape, because websearch_to_tsquery drops stopwords too, so
+-- search_records falls back to the literal configuration when English leaves it
+-- with nothing to look for.
+--
 -- The agent API strips search_vector from every record it returns but hashes the
 -- whole row for its opaque `version`, so an agent holding a version taken before
 -- this migration sees one conflict on its next write and re-reads.
@@ -38,6 +47,10 @@ alter table public.todos add column search_vector tsvector generated always as (
   ) ||
   setweight(
     to_tsvector('english'::regconfig, coalesce(class_id, '')),
+    'B'
+  ) ||
+  setweight(
+    to_tsvector('simple'::regconfig, coalesce(class_id, '')),
     'B'
   )
 ) stored;
@@ -72,7 +85,15 @@ alter table public.classes add column search_vector tsvector generated always as
     'A'
   ) ||
   setweight(
+    to_tsvector('simple'::regconfig, coalesce(name, '')),
+    'A'
+  ) ||
+  setweight(
     to_tsvector('english'::regconfig, id),
+    'B'
+  ) ||
+  setweight(
+    to_tsvector('simple'::regconfig, id),
     'B'
   )
 ) stored;
@@ -83,7 +104,15 @@ alter table public.class_notes add column search_vector tsvector generated alway
     'A'
   ) ||
   setweight(
+    to_tsvector('simple'::regconfig, name),
+    'A'
+  ) ||
+  setweight(
     to_tsvector('english'::regconfig, course_id),
+    'B'
+  ) ||
+  setweight(
+    to_tsvector('simple'::regconfig, course_id),
     'B'
   )
 ) stored;
@@ -167,12 +196,16 @@ begin
     return;
   end if;
 
+  -- A query of nothing but English stopwords ('IT') stems away to an empty
+  -- query. The literal configuration keeps it, and identifiers are indexed
+  -- under that configuration too, so a course code still finds its class.
   v_query := websearch_to_tsquery('english'::regconfig, v_query_text);
-  if numnode(v_query) = 0 then
-    return;
+  if numnode(v_query) = 0 or querytree(v_query)::text in ('', 'T') then
+    v_query := websearch_to_tsquery('simple'::regconfig, v_query_text);
   end if;
 
-  if querytree(v_query)::text in ('', 'T') then
+  -- A query that is empty, or only negations, would otherwise match everything.
+  if numnode(v_query) = 0 or querytree(v_query)::text in ('', 'T') then
     return;
   end if;
 

@@ -5,7 +5,7 @@ set local search_path = public, extensions;
 grant usage on schema extensions to anon, authenticated;
 grant execute on all functions in schema extensions to anon, authenticated;
 
-select plan(26);
+select plan(28);
 
 insert into auth.users (id, email)
 values
@@ -60,6 +60,8 @@ values (
 insert into public.classes (user_id, id, name)
 values
   ('11111111-1111-4111-8111-111111111111', 'MATH3012', 'Linear Algebra'),
+  ('11111111-1111-4111-8111-111111111111', 'IT', null),
+  ('11111111-1111-4111-8111-111111111111', 'STUDIES', 'Media studies'),
   ('22222222-2222-4222-8222-222222222222', 'MATH3012', 'Foreign linear algebra');
 
 insert into public.todos (id, user_id, text, class_id, assignment_type, updated_at)
@@ -310,6 +312,24 @@ select ok(
     from public.search_records('book')
   ),
   'a task without a class reports no parent'
+);
+
+select is(
+  (
+    select record_id
+    from public.search_records('IT')
+  ),
+  'IT'::text,
+  'a course code that is an English stopword is still found literally'
+);
+
+select is(
+  (
+    select record_id
+    from public.search_records('STUDIES')
+  ),
+  'STUDIES'::text,
+  'a course code whose stem is not itself is still found literally'
 );
 
 reset role;
