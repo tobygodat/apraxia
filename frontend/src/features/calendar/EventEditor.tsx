@@ -12,6 +12,7 @@ import {
   type EventInput,
 } from "./eventInput";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import { useDialogPresence } from "../../apps/workspaceStore";
 
 export function EventEditor({
   service,
@@ -28,6 +29,9 @@ export function EventEditor({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  // The native modal makes the rest of the shell inert, so shell shortcuts
+  // (Ctrl+K) must stay out while this editor is open.
+  useDialogPresence();
   const dialog = useRef<HTMLDialogElement>(null);
   const pending = useRef(false);
   const textEdits = useRef<Partial<Pick<EventInput, "title" | "location">>>({});
