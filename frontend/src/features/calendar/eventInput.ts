@@ -44,6 +44,39 @@ export function newEventInput(slot: CalendarSlot, timezone: string): EventInput 
     count: 10,
   };
 }
+/**
+ * The subset of the shared RRULE grammar the editor's own fields can express.
+ * Anything else stays on "keep" so the rule survives an edit untouched.
+ */
+const RULE =
+  /^RRULE:FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(?:;INTERVAL=([1-9]\d?))?(?:;BYDAY=(MO,TU,WE,TH,FR))?(?:;(?:COUNT=([1-9]\d{0,3})|UNTIL=(\d{8})(?:T(\d{6})Z)?))?$/;
+type RepeatFields = Pick<EventInput, "repeat" | "interval" | "repeatEnd" | "until" | "count">;
+function repeatInput(rule: string, timeZone: string): Partial<RepeatFields> | null {
+  const parts = RULE.exec(rule);
+  if (!parts) return null;
+  const [, frequency, interval, weekdays, count, untilDay, untilTime] = parts;
+  if (weekdays && frequency !== "WEEKLY") return null;
+  const fields: Partial<RepeatFields> = {
+    repeat: weekdays ? "weekdays" : frequency,
+    interval: interval ? Number(interval) : 1,
+  };
+  if (count) return { ...fields, repeatEnd: "count", count: Number(count) };
+  if (untilDay) {
+    // A date-only UNTIL is already the last repeat date; a UTC instant is the
+    // end of that date in the event timezone, so read it back there.
+    const day = `${untilDay.slice(0, 4)}-${untilDay.slice(4, 6)}-${untilDay.slice(6)}`;
+    const until = untilTime
+      ? Temporal.Instant.from(
+          `${day}T${untilTime.slice(0, 2)}:${untilTime.slice(2, 4)}:${untilTime.slice(4)}Z`,
+        )
+          .toZonedDateTimeISO(timeZone)
+          .toPlainDate()
+          .toString()
+      : day;
+    return { ...fields, repeatEnd: "until", until };
+  }
+  return { ...fields, repeatEnd: "never" };
+}
 export function detailInput(detail: EventDetail): EventInput {
   const { values } = detail;
   const asLocal = (value: string) =>
@@ -52,17 +85,24 @@ export function detailInput(detail: EventDetail): EventInput {
       .toPlainDateTime()
       .toString({ smallestUnit: "minute" });
   const allDay = values.timing.kind === "all_day";
+  const start = allDay ? `${values.timing.start}T09:00` : asLocal(values.timing.start);
   return {
-    ...newEventInput({ day: "2000-01-01", startMinute: 540, endMinute: 600 }, values.timeZone),
+    // The event's own start date seeds the repeat end field, so an unreadable
+    // rule still offers a plausible date instead of a placeholder year.
+    ...newEventInput(
+      { day: start.slice(0, 10), startMinute: 540, endMinute: 600 },
+      values.timeZone,
+    ),
     title: values.title,
     location: values.location,
     calendarId: detail.calendarId,
     allDay,
-    start: allDay ? `${values.timing.start}T09:00` : asLocal(values.timing.start),
+    start,
     end: allDay
       ? `${Temporal.PlainDate.from(values.timing.end).subtract({ days: 1 })}T10:00`
       : asLocal(values.timing.end),
     repeat: detail.recurring ? "keep" : "none",
+    ...(detail.recurring ? repeatInput(values.recurrence[0] ?? "", values.timeZone) : null),
   };
 }
 export function inputValues(
@@ -70,7 +110,17 @@ export function inputValues(
   instance: boolean,
   original?: EventDetail | null,
 ): EventValues {
-  let recurrence: string[] | null = input.repeat === "keep" || instance ? null : [];
+  const initial = original ? detailInput(original) : null;
+  // An untouched schedule is left to the server so a rule the editor rebuilt
+  // from its fields can never drift from the one Google already stores.
+  const unchangedRepeat =
+    !!initial &&
+    original!.recurring &&
+    (["repeat", "interval", "repeatEnd", "until", "count"] as const).every(
+      (key) => input[key] === initial[key],
+    );
+  let recurrence: string[] | null =
+    input.repeat === "keep" || instance || unchangedRepeat ? null : [];
   if (recurrence && input.repeat !== "none") {
     let rule = `RRULE:FREQ=${input.repeat === "weekdays" ? "WEEKLY" : input.repeat};INTERVAL=${input.interval}`;
     if (input.repeat === "weekdays") rule += ";BYDAY=MO,TU,WE,TH,FR";
@@ -98,7 +148,6 @@ export function inputValues(
       );
     }
   };
-  const initial = original ? detailInput(original) : null;
   const unchangedTiming =
     initial &&
     input.start === initial.start &&

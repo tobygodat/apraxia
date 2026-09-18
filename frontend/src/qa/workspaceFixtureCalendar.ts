@@ -118,7 +118,9 @@ export function createFixtureCalendar({
             timing,
             timeZone: timezone,
             location: "Fictional campus · Room 204",
-            recurrence: recurring ? ["RRULE:FREQ=WEEKLY"] : [],
+            // Deliberately not the editor's defaults, so a series that opens on
+            // interval 1 and no end date is a visible regression.
+            recurrence: recurring ? ["RRULE:FREQ=WEEKLY;INTERVAL=2;COUNT=12"] : [],
           },
         },
       });
