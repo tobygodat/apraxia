@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { createHealthResponse } from "../../api/health";
 import {
+  currentKeyVersion,
+  encryptionKeyForVersion,
   EnvironmentConfigurationError,
   requireApplicationEnvironment,
   requireCalendarEnvironment,
@@ -174,6 +176,54 @@ describe("typed environment parsing", () => {
     expect(response.status).toBe(200);
     expect(JSON.parse(body)).toMatchObject({ status: "degraded" });
     expect(body).not.toContain(key);
+  });
+
+  it("reads the key version and the previous key when a rotation is in progress", () => {
+    const previous = Buffer.alloc(32, 3).toString("base64");
+    const rotating = requireCalendarEnvironment({
+      ...configuredEnvironment,
+      GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS: previous,
+      GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION: "2",
+    });
+    expect(currentKeyVersion(rotating)).toBe(2);
+    expect(encryptionKeyForVersion(rotating, 2)).toBe(rotating.GOOGLE_TOKEN_ENCRYPTION_KEY);
+    expect(encryptionKeyForVersion(rotating, 1)).toBe(previous);
+    // Only the current key and the one it replaced are readable, so a rotation
+    // has to finish before the next one starts.
+    expect(encryptionKeyForVersion(rotating, 3)).toBeNull();
+    expect(encryptionKeyForVersion(rotating, null)).toBeNull();
+  });
+
+  it("defaults to key version 1 and reads nothing else without a previous key", () => {
+    const single = requireCalendarEnvironment(configuredEnvironment);
+    expect(currentKeyVersion(single)).toBe(1);
+    expect(encryptionKeyForVersion(single, 1)).toBe(single.GOOGLE_TOKEN_ENCRYPTION_KEY);
+    expect(encryptionKeyForVersion(single, 0)).toBeNull();
+    expect(encryptionKeyForVersion(single, 2)).toBeNull();
+  });
+
+  it.each([
+    [
+      { GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS: Buffer.alloc(32, 3).toString("base64") },
+      "GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION",
+    ],
+    [
+      {
+        GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS: configuredEnvironment.GOOGLE_TOKEN_ENCRYPTION_KEY,
+        GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION: "2",
+      },
+      "GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS",
+    ],
+    [{ GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION: "0" }, "GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION"],
+  ])("rejects an incoherent rotation configuration", (overrides, variable) => {
+    const environment = { ...configuredEnvironment, ...overrides };
+    expect(() => requireCalendarEnvironment(environment)).toThrow(EnvironmentConfigurationError);
+    try {
+      requireCalendarEnvironment(environment);
+    } catch (error) {
+      expect((error as EnvironmentConfigurationError).variables).toContain(variable);
+      expect(String(error)).not.toContain(configuredEnvironment.GOOGLE_TOKEN_ENCRYPTION_KEY);
+    }
   });
 
   it("normalizes equivalent origins and public keys before comparing them", () => {
