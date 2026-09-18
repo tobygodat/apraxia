@@ -15,6 +15,7 @@ import { readLegacyClasses, type Course, type ClassService } from "./classServic
 import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
+import { useWorkspaceRevision } from "../../apps/workspaceStore";
 import { useColdLoad } from "../../apps/coldLoad";
 import { useLocalToday } from "../todos/useLocalToday";
 
@@ -269,6 +270,10 @@ function ClassList({
     service ? peekRead(service, "list", userId, new AbortController().signal) : undefined,
   );
   const [overviews, setOverviews] = useState<Record<string, ClassOverview> | undefined>(cached);
+  // A task saved from the global Add dialog is an assignment when it carries a
+  // class, and it lands while this list is mounted. The store's revision is how
+  // a visible page hears about a write it did not make.
+  const revision = useWorkspaceRevision();
   useEffect(() => {
     if (!service) return;
     const controller = new AbortController();
@@ -281,7 +286,7 @@ function ClassList({
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [userId, service, reload]);
+  }, [userId, service, reload, revision]);
   if (!courses.length) return null;
   return (
     <div className="classes-list">

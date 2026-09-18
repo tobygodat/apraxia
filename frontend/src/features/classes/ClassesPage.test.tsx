@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useMemo, useState, type ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
+import { WorkspaceContext, type WorkspaceStore } from "../../apps/workspaceStore";
 import { ClassesPage } from "./ClassesPage";
 import { createClassPersistenceFixture } from "../../qa/classPersistenceFixture";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
@@ -249,6 +251,55 @@ it("gives each class row its next due date, open count, and note count", async (
   // A class the totals say nothing about is empty, not unknown.
   expect(screen.getByText("Nothing saved yet")).toBeTruthy();
   expect(screen.queryByText("Open class")).toBeNull();
+});
+/** The workspace store, stripped to the revision a write anywhere bumps. */
+function RevisionHarness({ children }: { children: ReactNode }) {
+  const [revision, setRevision] = useState(0);
+  const store = useMemo<WorkspaceStore>(
+    () => ({
+      profile: null,
+      profileError: false,
+      projects: [],
+      classes: [],
+      projectError: false,
+      revision,
+      invalidate: () => setRevision((value) => value + 1),
+      retryProfile: () => undefined,
+      dialogs: { isOpen: () => false, register: () => () => undefined },
+    }),
+    [revision],
+  );
+  return (
+    <WorkspaceContext.Provider value={store}>
+      <button onClick={store.invalidate}>Save an assignment elsewhere</button>
+      {children}
+    </WorkspaceContext.Provider>
+  );
+}
+it("re-reads the totals when a task saved from the global Add dialog invalidates them", async () => {
+  const data = createClassPersistenceFixture();
+  let open = 4;
+  const list = vi.fn(async () => ({
+    math3012: { assignments: 6, open, notes: 2, nextDue: { title: "Problem set 4", due } },
+  }));
+  render(
+    <MemoryRouter>
+      <RevisionHarness>
+        <ClassesPage
+          userId="user-a"
+          classService={data.classes}
+          noteService={data.notes}
+          overviewService={{ list }}
+          timezone="America/New_York"
+        />
+      </RevisionHarness>
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText("4 open · 2 notes")).toBeTruthy();
+  open = 5;
+  fireEvent.click(screen.getByRole("button", { name: "Save an assignment elsewhere" }));
+  expect(await screen.findByText("5 open · 2 notes")).toBeTruthy();
+  expect(list).toHaveBeenCalledTimes(2);
 });
 it("keeps the class list readable when the totals cannot be read", async () => {
   const data = createClassPersistenceFixture();
