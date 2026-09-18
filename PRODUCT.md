@@ -42,19 +42,38 @@ AGENTS.md.
   remain server-only.
 - Preserve date-only due dates, unchanged overdue dates, atomic Today ordering,
   and recoverable actions.
+- Visual theme is a device-local preference, not an account setting; classic is
+  the default. Changing it never changes what a screen can do.
 - Preserve legacy source and data. Hosted schema changes are forward-only.
 - New modules and broader access require scoped implementation decisions;
   neither is authorization to add unspecified features now.
 
 ## Brand Commitments
 
-The product name is apraxia. Favor direct, understandable language.
-The isolated study under frontend/qa/redesign/ records an experiment, not
-binding visual direction for the whole product.
+The product name is apraxia, lowercase. It is one of several things built on
+the Toby Godat design system, and it takes that system whole rather than
+keeping a look of its own: warm paper in two themes, Literata throughout, one
+green that only ever means "here", rules instead of boxes, and a word wherever
+another product would put a button. DESIGN.md records how apraxia applies it
+and is binding for every new surface and every change to an existing one.
+
+Voice follows from the same place. Interface words are lowercase; user content
+and proper nouns keep their own case. Items on a line are joined with a spaced
+middle dot. Facts are stated with their numbers rather than with adjectives.
+Errors say what happened and what to do, in a sentence, without blame. Section
+headings carry a green `// ` prefix, the only nod to code. No emoji.
+
+The workspace still ships the classic charcoal theme as its default while the
+Paper theme is built beside it; the two vocabularies are never mixed on one
+surface. The redesign study under frontend/qa/redesign/ and the apraxia
+redesign reference pages are where the system's application-facing patterns
+came from, not an experiment set aside.
 
 ## Evidence on Hand
 
 - README.md describes the app and development entry points.
+- DESIGN.md records the design system as apraxia applies it, and links the
+  system, the Paper mock, and the redesign reference pages it draws on.
 - frontend/src/ contains the current implementation.
 - frontend/qa/workspace.html provides fictional scenarios for local UI checks.
   Fixtures do not establish real persistence, provider access, or production
@@ -64,6 +83,7 @@ binding visual direction for the whole product.
 
 1. Reduce executive-function overhead through easy capture and clear next actions.
 2. Keep users in control of their own information and planning decisions.
-3. Keep each change minimal and consistent with the existing product.
+3. Keep each change minimal and consistent with the existing product, and with
+   the design system it is built on.
 4. Make mistakes recoverable and preserve user data.
 5. Expand through deliberately scoped modules as needs become clear.
