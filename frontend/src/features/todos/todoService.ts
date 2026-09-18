@@ -91,6 +91,18 @@ export type UpdateTodoDetailsInput = (
 ) &
   TodoParentFields;
 
+/**
+ * Completing a repeating task materializes its successor, and undoing that
+ * completion withdraws the successor again, both inside the same write. The
+ * answer therefore has to name the occurrence that appeared or disappeared
+ * alongside the row the caller asked about.
+ */
+export interface TodoCompletionResult {
+  readonly todo: Todo;
+  readonly spawned: Todo | null;
+  readonly withdrawn: UUID | null;
+}
+
 export interface TodayRankUpdate {
   readonly todoId: UUID;
   readonly todayRank: number;
@@ -112,7 +124,11 @@ export interface TodoService {
     options: TodoRequestOptions,
   ): Promise<Todo>;
 
-  setTodoCompleted(todoId: UUID, completed: boolean, options: TodoRequestOptions): Promise<Todo>;
+  setTodoCompleted(
+    todoId: UUID,
+    completed: boolean,
+    options: TodoRequestOptions,
+  ): Promise<TodoCompletionResult>;
 
   softDeleteTodo(todoId: UUID, options: TodoRequestOptions): Promise<DeleteUndoToken>;
 

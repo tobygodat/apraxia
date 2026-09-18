@@ -80,7 +80,9 @@ it("persists CRUD, exact Undo, completion, rescheduling, and denies cross-user a
   ).rejects.toThrow();
   expect((await a.loadToday(today, options()))[0]?.isOverdue).toBe(true);
   const completed = await a.setTodoCompleted(todo.id, true, options());
-  expect(completed.completedAt).not.toBeNull();
+  expect(completed.todo.completedAt).not.toBeNull();
+  // Nothing repeats here, so the completion neither creates nor withdraws one.
+  expect(completed).toMatchObject({ spawned: null, withdrawn: null });
   expect(await a.loadToday(today, options())).toHaveLength(0);
   await a.setTodoCompleted(todo.id, false, options());
   await a.updateTodoDetails(todo.id, { dueDate: addSqlDateDays(today, 1) }, options());

@@ -7,7 +7,7 @@ import {
   TodaySnapshotChangedError,
   verifyTodayReorderReceipt,
 } from "./todayRpcProtocol";
-import type { TodoRequestOptions, TodoService } from "./todoService";
+import type { TodoCompletionResult, TodoRequestOptions, TodoService } from "./todoService";
 import {
   isDeleteUndoToken,
   readTodoResponse,
@@ -232,12 +232,34 @@ export function createSupabaseTodoService(client: SupabaseClient<Database>): Tod
       const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
       return mapTodo(result(response, options));
     },
-    async setTodoCompleted(id, completed, options) {
+    async setTodoCompleted(id, completed, options): Promise<TodoCompletionResult> {
       // The database trigger owns completed_at and resets stale Today ranks.
       const query = client.from("todos").update({ completed }).eq("id", id).is("deleted_at", null);
       if (options.classId !== undefined) query.eq("class_id", options.classId);
-      const response = await query.select(TODO_FIELDS).abortSignal(requestSignal(options)).single();
-      return mapTodo(result(response, options));
+      const response = await query
+        .select(`${TODO_FIELDS},recurrence_spawned_id`)
+        .abortSignal(requestSignal(options))
+        .single();
+      const row = result(response, options);
+      const todo = mapTodo(row);
+      // The link is the only name the browser has for the occurrence this write
+      // created or withdrew. Reading it back answers both directions at once: a
+      // successor that is still active has just appeared, and one that is gone
+      // was withdrawn with the completion that made it.
+      const linked = row.recurrence_spawned_id ?? null;
+      if (linked === null) return { todo, spawned: null, withdrawn: null };
+      const successor = client
+        .from("todos")
+        .select(TODO_FIELDS)
+        .eq("id", linked)
+        .is("deleted_at", null);
+      if (options.classId !== undefined) successor.eq("class_id", options.classId);
+      const found = await successor.abortSignal(requestSignal(options)).maybeSingle();
+      options.signal.throwIfAborted();
+      if (found.error) failed();
+      return found.data
+        ? { todo, spawned: mapTodo(found.data), withdrawn: null }
+        : { todo, spawned: null, withdrawn: linked };
     },
     async softDeleteTodo(id, options) {
       const response = await client

@@ -42,8 +42,9 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `recurrence_freq` | `todo_recurrence_freq` | `daily`, `weekly`, or `monthly`, or null for a task that does not repeat. A rule requires a `due_date`, which is the anchor it is measured from. Added by `20260918060000_recurring_todos.sql`. |
 | `recurrence_interval` | `integer` | 1 through 52, so "every other week" is one rule. Defaults to 1 and is cleared with the frequency by `private.sync_todo_recurrence`. |
 | `recurrence_until` | `date` | Inclusive last date a new occurrence may land on; never earlier than `due_date`. Null repeats without an end. |
-| `recurrence_series_id` | `uuid` | Links the occurrences of one repeating task. Assigned by the database, cleared when the rule is removed; the browser can write neither it nor the marker below. |
-| `recurrence_spawned_at` | `timestamptz` | Set when this occurrence created its successor, so unchecking and rechecking cannot create a second one. |
+| `recurrence_series_id` | `uuid` | Links the occurrences of one repeating task. Assigned by the database, cleared when the rule is removed; the browser can write none of this column or the two below. |
+| `recurrence_anchor_date` | `date` | The due date the series counts from, carried unchanged to every successor so a monthly rule keeps its day of month. Rescheduling a repeating task by hand re-anchors it. |
+| `recurrence_spawned_id` | `uuid` | The occurrence this one created, a composite foreign key on `(user_id, recurrence_spawned_id)`. It is how a completion names the new occurrence to the browser, and how a later completion tells an open successor from a withdrawn one. |
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
@@ -58,15 +59,30 @@ UUID across retries.
 
 Completing a repeating task is what creates the next occurrence: the
 `todos_spawn_recurrence` trigger runs `private.spawn_recurring_todo`, which
-advances the due date by the interval until it reaches the owner's local today,
-stops at `recurrence_until`, and inserts one successor carrying the text, time
-of day, parent, rule, and series. Nothing is generated in advance and no
-scheduled job is involved, so exactly one occurrence of a series is ever open.
-The helper is `SECURITY DEFINER` because the successor names columns the browser
-may not write; its owner is read from the row the caller just updated under RLS,
-so the elevated insert can only land in that caller's own account. A monthly
-rule repeats on the same day of the month and clamps to shorter months, and
-moving one occurrence moves the ones after it.
+takes the first occurrence that is both past the completed one and not already
+behind the owner's local today, stops at `recurrence_until`, and inserts one
+successor carrying the text, time of day, parent, rule, series and anchor.
+Nothing is generated in advance and no scheduled job is involved, so exactly one
+occurrence of a series is ever open. The helper is `SECURITY DEFINER` because
+the successor names columns the browser may not write; its owner is read from
+the row the caller just updated under RLS, so the elevated insert can only land
+in that caller's own account.
+
+Every candidate is `recurrence_anchor_date` plus a whole number of periods,
+never the previous occurrence plus one, so a monthly rule anchored on the 31st
+comes back to the 31st after a February that clamped it. The count is reached by
+division rather than one step per period, so a series abandoned for years still
+completes in a single statement. Moving one occurrence by hand re-anchors the
+series from that date on.
+
+Undoing a completion runs `private.withdraw_recurring_todo` through
+`todos_withdraw_recurrence`, which soft-deletes the occurrence that completion
+created so exactly one is open again. A successor already edited — completed,
+deleted, or changed in any way — is left alone, since the edit outranks the
+bookkeeping; the link is kept either way, which is how re-completing knows not
+to create a third. `TodoService.setTodoCompleted` therefore answers with the
+occurrence that appeared or the id of the one that disappeared, and the browser
+shows both without a reload.
 
 The Today RPC projects `class_id`, `class_name`, and `assignment_type` alongside
 the project title, and the workspace snapshot carries paginated class summaries

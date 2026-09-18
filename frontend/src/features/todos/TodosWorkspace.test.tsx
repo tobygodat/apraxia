@@ -72,10 +72,9 @@ function createService(overrides: Partial<TodoService> = {}): TodoService {
     })),
     updateTodoDetails: vi.fn(async (id, input) => ({ ...TODO, id, ...input })),
     setTodoCompleted: vi.fn(async (id, completed) => ({
-      ...TODO,
-      id,
-      completed,
-      completedAt: completed ? "2026-09-03T19:00:00Z" : null,
+      todo: { ...TODO, id, completed, completedAt: completed ? "2026-09-03T19:00:00Z" : null },
+      spawned: null,
+      withdrawn: null,
     })),
     softDeleteTodo: vi.fn(async () => TOKEN),
     restoreTodo: vi.fn(async () => true),

@@ -6,12 +6,13 @@ import {
   asSqlDate,
   compareSqlDates,
   localToday,
+  parseSqlDate,
 } from "../features/todos/dateDomain";
 import { TodayPanel } from "../features/todos/TodayPanel";
 import { assignTodayRanks, sortTodayTodos } from "../features/todos/todayOrder";
 import type { TodoService } from "../features/todos/todoService";
 import { TodosWorkspace } from "../features/todos/TodosWorkspace";
-import type { DeleteUndoToken, LocalDate, TodayTodo, Todo } from "../types/domain";
+import type { DeleteUndoToken, LocalDate, TodayTodo, Todo, TodoRecurrence } from "../types/domain";
 import "../index.css";
 import "./todosWorkspaceFixture.css";
 
@@ -113,6 +114,36 @@ function todayRows(localDate: LocalDate): TodayTodo[] {
     }),
   );
 }
+/**
+ * The visible half of the repeat loop: a completed occurrence is replaced by the
+ * next one, and undoing that takes it away again. The database measures from
+ * where the series started, which this fixture does not model; it steps from the
+ * occurrence in hand, which is the same answer for every rule it seeds.
+ */
+const spawnedBy = new Map<string, string>();
+
+function occurrenceAfter(from: LocalDate, rule: TodoRecurrence, periods: number): LocalDate {
+  if (rule.freq !== "monthly")
+    return addSqlDateDays(from, rule.interval * periods * (rule.freq === "weekly" ? 7 : 1));
+  const { year, month, day } = parseSqlDate(from);
+  const shifted = new Date(Date.UTC(year, month - 1 + rule.interval * periods, 1));
+  const lastDay = new Date(
+    Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  shifted.setUTCDate(Math.min(day, lastDay));
+  return asSqlDate(shifted.toISOString().slice(0, 10));
+}
+
+/** The first occurrence past both the completed one and today, or none left. */
+function nextOccurrence(todo: Todo): LocalDate | null {
+  const rule = todo.recurrence;
+  if (!rule || todo.dueDate === null) return null;
+  let next = occurrenceAfter(todo.dueDate, rule, 1);
+  for (let periods = 2; compareSqlDates(next, today) < 0 && periods <= 400; periods += 1)
+    next = occurrenceAfter(todo.dueDate, rule, periods);
+  return rule.until !== null && compareSqlDates(next, rule.until) > 0 ? null : next;
+}
+
 function update(todoId: string, values: Partial<Todo>, signal: AbortSignal): Todo {
   requireActive(signal);
   const current = todos.find((todo) => todo.id === todoId);
@@ -145,11 +176,34 @@ const service: TodoService = {
     return update(todoId, input, signal);
   },
   async setTodoCompleted(todoId, completed, { signal }) {
-    return update(
+    const todo = update(
       todoId,
       { completed, completedAt: completed ? new Date().toISOString() : null },
       signal,
     );
+    const linked = spawnedBy.get(todoId) ?? null;
+    const open = linked !== null && todos.some((candidate) => candidate.id === linked);
+    if (!completed) {
+      if (!open) return { todo, spawned: null, withdrawn: null };
+      todos = todos.filter((candidate) => candidate.id !== linked);
+      return { todo, spawned: null, withdrawn: linked };
+    }
+    const due = open ? null : nextOccurrence(todo);
+    if (due === null) return { todo, spawned: null, withdrawn: null };
+    const stamp = new Date().toISOString();
+    const spawned: Todo = {
+      ...todo,
+      id: uuid(),
+      completed: false,
+      completedAt: null,
+      dueDate: due,
+      todayRank: null,
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    todos = [...todos, spawned];
+    spawnedBy.set(todoId, spawned.id);
+    return { todo, spawned, withdrawn: null };
   },
   async softDeleteTodo(todoId, { signal }) {
     requireActive(signal);

@@ -3,11 +3,14 @@ import { readFile, readdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
-// One account pair per test: the suite shares a single migrated database, so
+// One account per test: the suite shares a single migrated database, so
 // replaying nineteen migrations per case cannot push a case past its timeout.
 const SPAWN_OWNER = "11111111-1111-4111-8111-111111111111";
 const RULE_OWNER = "22222222-2222-4222-8222-222222222222";
 const ONLOOKER = "33333333-3333-4333-8333-333333333333";
+const UNDO_OWNER = "44444444-4444-4444-8444-444444444444";
+const ANCHOR_OWNER = "55555555-5555-4555-8555-555555555555";
+const OWNERS = [SPAWN_OWNER, RULE_OWNER, ONLOOKER, UNDO_OWNER, ANCHOR_OWNER];
 
 async function migrated(): Promise<PGlite> {
   const db = new PGlite();
@@ -22,11 +25,7 @@ async function migrated(): Promise<PGlite> {
     .filter((n) => n.endsWith(".sql"))
     .sort())
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
-  await db.query("insert into auth.users(id) values ($1), ($2), ($3)", [
-    SPAWN_OWNER,
-    RULE_OWNER,
-    ONLOOKER,
-  ]);
+  for (const owner of OWNERS) await db.query("insert into auth.users(id) values ($1)", [owner]);
   return db;
 }
 
@@ -59,6 +58,18 @@ describe("recurring tasks", () => {
     return rows.rows.map((row) => row.due_date);
   }
 
+  /** How many days the month of an ISO date has. */
+  function lastDayOfMonth(date: string): number {
+    return new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 0)).getUTCDate();
+  }
+
+  async function localToday(): Promise<string> {
+    const rows = await db.query<{ today: string }>(
+      "select (statement_timestamp() at time zone 'America/New_York')::date::text as today",
+    );
+    return rows.rows[0]!.today;
+  }
+
   it("creates the next occurrence on completion, once, and never past the end date", async () => {
     await signIn(SPAWN_OWNER);
     // Anchored in the past so the trigger must step forward, not repeat a date.
@@ -72,16 +83,15 @@ describe("recurring tasks", () => {
     ).rows;
     expect(seed?.series).toMatch(/^[0-9a-f-]{36}$/);
 
+    const started = Date.now();
     await db.query("update todos set completed = true where id = $1", [seed!.id]);
+    // Six years of missed Mondays are stepped over by arithmetic, not by one
+    // loop iteration each, so an abandoned series still completes at once.
+    expect(Date.now() - started).toBeLessThan(1000);
     const [next] = await openDueDates();
-    const today = (
-      await db.query<{ today: string }>(
-        "select (statement_timestamp() at time zone 'America/New_York')::date::text as today",
-      )
-    ).rows[0]!.today;
     // A weekly task completed years late lands on the next future Monday, not
     // on the Monday that has already gone by.
-    expect(next! >= today).toBe(true);
+    expect(next! >= (await localToday())).toBe(true);
     expect(new Date(`${next!}T00:00:00Z`).getUTCDay()).toBe(1);
 
     const carried = (
@@ -92,7 +102,7 @@ describe("recurring tasks", () => {
         series: string;
         spawned: string | null;
       }>(
-        "select due_time::text, recurrence_freq::text as freq, recurrence_interval as interval, recurrence_series_id::text as series, recurrence_spawned_at::text as spawned from todos where not completed",
+        "select due_time::text, recurrence_freq::text as freq, recurrence_interval as interval, recurrence_series_id::text as series, recurrence_spawned_id::text as spawned from todos where not completed",
       )
     ).rows[0]!;
     expect(carried).toMatchObject({
@@ -102,11 +112,15 @@ describe("recurring tasks", () => {
       series: seed!.series,
       spawned: null,
     });
-
-    // Unchecking and rechecking the same occurrence must not spawn a second one.
-    await db.query("update todos set completed = false where id = $1", [seed!.id]);
-    await db.query("update todos set completed = true where id = $1", [seed!.id]);
-    expect(await openDueDates()).toHaveLength(1);
+    // The completed occurrence names the one it created.
+    expect(
+      (
+        await db.query(
+          "select recurrence_spawned_id is not null as linked from todos where id = $1",
+          [seed!.id],
+        )
+      ).rows,
+    ).toEqual([{ linked: true }]);
 
     // The end date stops the series instead of producing one occurrence past it.
     await db.exec(
@@ -114,6 +128,72 @@ describe("recurring tasks", () => {
     );
     await db.exec("update todos set completed = true where not completed and deleted_at is null");
     expect(await openDueDates()).toEqual([]);
+  });
+
+  it("withdraws the occurrence an undone completion created, unless it was edited", async () => {
+    await signIn(UNDO_OWNER);
+    await db.exec(
+      "insert into todos(text,due_date,recurrence_freq) values ('Reading','2020-03-02','weekly')",
+    );
+    const id = (await db.query<{ id: string }>("select id::text from todos")).rows[0]!.id;
+
+    await db.query("update todos set completed = true where id = $1", [id]);
+    const [successor] = await openDueDates();
+    expect(successor).toBeDefined();
+
+    // Undoing the completion has to leave exactly one occurrence open again.
+    await db.query("update todos set completed = false where id = $1", [id]);
+    expect(await openDueDates()).toEqual(["2020-03-02"]);
+    // Re-completing produces one successor, not a second alongside the first.
+    await db.query("update todos set completed = true where id = $1", [id]);
+    expect(await openDueDates()).toEqual([successor]);
+
+    // A successor the user has already changed outranks the bookkeeping, so it
+    // survives the undo, and re-completing still cannot produce a third.
+    await db.exec("update todos set text = 'Reading, chapter 4' where not completed");
+    await db.query("update todos set completed = false where id = $1", [id]);
+    expect(await openDueDates()).toEqual(["2020-03-02", successor!]);
+    await db.query("update todos set completed = true where id = $1", [id]);
+    expect(await openDueDates()).toEqual([successor]);
+  });
+
+  it("measures every occurrence from where the series started", async () => {
+    await signIn(ANCHOR_OWNER);
+    // A monthly task anchored on a day later months are short of must come back
+    // to it rather than ratcheting earlier once February has clamped it.
+    await db.exec(
+      "insert into todos(text,due_date,recurrence_freq) values ('Rent','2026-01-31','monthly')",
+    );
+    const dates: string[] = [];
+    for (let occurrence = 0; occurrence < 6; occurrence += 1) {
+      await db.exec("update todos set completed = true where not completed and deleted_at is null");
+      const [due] = await openDueDates();
+      if (due === undefined) break;
+      dates.push(due);
+    }
+    expect(dates).toHaveLength(6);
+    expect([...dates].sort()).toEqual(dates);
+    expect(dates[0]! >= (await localToday())).toBe(true);
+    // An anchor on the 31st means every occurrence is the last day of its month:
+    // February clamps, and the month after it is back on the 31st.
+    expect(dates.map((due) => Number(due.slice(8)))).toEqual(dates.map(lastDayOfMonth));
+    expect(dates.map(lastDayOfMonth)).toContain(31);
+    expect(dates.map(lastDayOfMonth).some((day) => day < 31)).toBe(true);
+    expect(
+      (await db.query("select distinct recurrence_anchor_date::text as anchor from todos")).rows,
+    ).toEqual([{ anchor: "2026-01-31" }]);
+
+    // Rescheduling a repeating task by hand re-anchors its series.
+    await db.exec(
+      "update todos set due_date = (current_date + 400) where not completed and deleted_at is null",
+    );
+    expect(
+      (
+        await db.query(
+          "select recurrence_anchor_date = due_date as reanchored from todos where not completed and deleted_at is null",
+        )
+      ).rows,
+    ).toEqual([{ reanchored: true }]);
   });
 
   it("keeps the rule owner-scoped, database-owned, and anchored on a due date", async () => {
@@ -131,36 +211,37 @@ describe("recurring tasks", () => {
         "insert into todos(text,due_date,recurrence_freq,recurrence_until) values ('Ends first','2026-09-18','weekly','2026-09-01')",
       ),
     ).rejects.toThrow(/check constraint/);
-    await expect(
-      db.exec(
-        "insert into todos(text,due_date,recurrence_freq,recurrence_series_id) values ('Forged series','2026-09-18','weekly',gen_random_uuid())",
-      ),
-    ).rejects.toThrow(/permission denied/);
-    await expect(
-      db.exec(
-        "insert into todos(text,due_date,recurrence_freq,recurrence_spawned_at) values ('Pre-spawned','2026-09-18','weekly',now())",
-      ),
-    ).rejects.toThrow(/permission denied/);
+    for (const [column, value] of [
+      ["recurrence_series_id", "gen_random_uuid()"],
+      ["recurrence_anchor_date", "'2026-01-01'"],
+      ["recurrence_spawned_id", "gen_random_uuid()"],
+    ])
+      await expect(
+        db.exec(
+          `insert into todos(text,due_date,recurrence_freq,${column}) values ('Forged','2026-09-18','weekly',${value})`,
+        ),
+      ).rejects.toThrow(/permission denied/);
 
     await db.exec(
       "insert into todos(text,due_date,recurrence_freq) values ('Reading','2026-09-18','daily')",
     );
-    // Dropping the rule drops the series with it; the interval defaults to one.
+    // Dropping the rule drops the series and the anchor with it; the interval
+    // defaults to one.
     expect(
       (
         await db.query(
-          "select recurrence_interval as interval, recurrence_series_id is not null as linked from todos",
+          "select recurrence_interval as interval, recurrence_series_id is not null as linked, recurrence_anchor_date::text as anchor from todos",
         )
       ).rows,
-    ).toEqual([{ interval: 1, linked: true }]);
+    ).toEqual([{ interval: 1, linked: true, anchor: "2026-09-18" }]);
     await db.exec("update todos set recurrence_freq = null");
     expect(
       (
         await db.query(
-          "select recurrence_interval as interval, recurrence_series_id as series, recurrence_until as until from todos",
+          "select recurrence_interval as interval, recurrence_series_id as series, recurrence_until as until, recurrence_anchor_date as anchor from todos",
         )
       ).rows,
-    ).toEqual([{ interval: null, series: null, until: null }]);
+    ).toEqual([{ interval: null, series: null, until: null, anchor: null }]);
 
     // The elevated insert derives its owner from the completed row, so another
     // account can neither see the series nor complete into its own.

@@ -80,10 +80,13 @@ navigation cache, preload, and invalidation are the same code.
 Every fixture service is wrapped in `delayedFixtureService`, which adds the
 scenario's latency so loading states are visible.
 
-One seeded task repeats weekly, so the Repeats control and the row's repeat
-marker can be inspected. The fixture stops there: a database trigger creates the
-next occurrence, so completing the seeded task in a fixture shows no successor.
-That behavior is covered by `tests/contract/recurring-todos.test.ts` and
+One seeded task repeats weekly, so the Repeats control, the row's repeat marker
+and the loop around them can all be inspected: completing it produces the next
+occurrence and undoing that takes the occurrence away again. The Tasks fixture
+steps from the occurrence in hand rather than from where the series started,
+which the database does, so it demonstrates the flow without standing in for the
+trigger. What the database actually does is covered by
+`tests/contract/recurring-todos.test.ts` and
 `supabase/tests/160_recurring_todos.test.sql`.
 
 ## Adding a scenario

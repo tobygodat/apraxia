@@ -247,7 +247,14 @@ const todoService: TodoService = {
   },
   async setTodoCompleted(rowId, completed) {
     check();
-    return save(todos, { ...find(todos, rowId), completed, completedAt: completed ? now : null });
+    // The whole-workspace fixture exercises layout, not the repeat loop; the
+    // Tasks fixture is where a completion produces the next occurrence.
+    const todo = save(todos, {
+      ...find(todos, rowId),
+      completed,
+      completedAt: completed ? now : null,
+    });
+    return { todo, spawned: null, withdrawn: null };
   },
   async softDeleteTodo(rowId) {
     check();
