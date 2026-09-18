@@ -29,8 +29,10 @@ data-affecting change.
 
 ## Status
 
-All planned feature slices are implemented and deployed; Drive notes are
-implemented but their hosted setup and live verification are still pending.
+All planned feature slices are implemented and deployed. The hosted setup for
+Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified
+on `https://apraxia.dev` on 2026-09-18: the Picker added a PDF to a class, and a
+disconnect and reconnect completed through the production redirect.
 Real Calendar connection and reconnect/disconnect flows remain unverified since
 the last recorded check, so reinspect the current provider configuration before
 diagnosing an old failure as current.
