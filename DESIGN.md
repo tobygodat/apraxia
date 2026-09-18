@@ -3,7 +3,7 @@ name: "apraxia"
 description: "A personal workspace with charcoal surfaces, serif page headings, and restrained controls."
 colors:
   primary: "#f0efed"
-  today: "#8b9bff"
+  today: "#8fc981"
   canvas: "#191919"
   sidebar: "#202020"
   hover: "#292929"
@@ -167,7 +167,7 @@ Frontmatter records reusable observed values; most are still CSS literals or com
 
 ## Colors
 
-The palette is neutral charcoal, with warmth supplied by light text and muted grey labels, and one cool accent reserved for today.
+The palette is neutral charcoal, with warmth supplied by light text and muted grey labels, and one accent, the logo's green, reserved for today.
 
 ### Primary
 
@@ -175,7 +175,7 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 
 ### Secondary
 
-- **Today Periwinkle** (`today`): the Tasks board's single accent, and the board's only marker of the current day. In the ledger it colors the today column's date numeral, the 2px rule under its header, and the 2px rail that carries that rule down the column's full height; in the classic theme it colors the today column's 1px border, its header rule, and its heading text. It also tints text selection on the page at 35% alpha. It is a place marker, never a control color, a status color, or a fill. Its neutral alternative (a brightness step instead of a hue) was left unresolved in the surface brief; the shipped value is the periwinkle.
+- **Today Green** (`today`): the Tasks board's single accent, and the board's only marker of the current day. In the ledger it colors the today column's date numeral, the 2px rule under its header, and the 2px rail that carries that rule down the column's full height; in the classic theme it colors the today column's 1px border, its header rule, and its heading text. It also tints text selection on the page at 35% alpha. It is a place marker, never a control color, a status color, or a fill. It is the green of the apraxia mark (`#8fc981`, sampled from `public/brand/`), so the one lit column and the logo are the same ink.
 
 ### Neutral
 
@@ -195,7 +195,7 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 
 **The Semantic Color Rule.** Keep the interface neutral. Calendar fills identify calendars; warm error and overdue colors communicate status.
 
-**The One Lit Column Rule.** Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day column per Tasks board carries it, and it is always the current day. It draws that column's outline in the theme's own material — a rail and header rule in the ledger, the existing border in the classic theme — and never a fill. Nothing else on any surface borrows it.
+**The One Lit Column Rule.** Today Green is the recorded exception to the Semantic Color Rule: exactly one day column per Tasks board carries it, and it is always the current day. It draws that column's outline in the theme's own material — a rail and header rule in the ledger, the existing border in the classic theme — and never a fill. Nothing else on any surface borrows it.
 
 ## Typography
 
@@ -296,7 +296,7 @@ Collection entries and task-board “cards” are flat rows divided by thin rule
 The Tasks board's signature: a planner spread where every day is a ruled column and the ink shows how heavy the day is.
 
 - **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white.
-- **Today's bracket:** the today column swaps its date and header rule to Today Periwinkle and lifts its weekday to 60% white. That rule then turns the corner into a 2px rail down the column's full height, set 14px out into the gutter by an offsetting negative margin so the week's tracks stay aligned. The bracket is ruled ink, not a box: the column keeps the same border, background, and width as every other day.
+- **Today's bracket:** the today column swaps its date and header rule to Today Green and lifts its weekday to 60% white. That rule then turns the corner into a 2px rail down the column's full height, set 14px out into the gutter by an offsetting negative margin so the week's tracks stay aligned. The bracket is ruled ink, not a box: the column keeps the same border, background, and width as every other day.
 - **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown where the pointer is coarse or in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%. A repeating task adds its cadence ("Weekly", "Every 2 weeks") to the same metadata line, behind a 12px repeat glyph from the shared icon vocabulary at 85% opacity; the spoken form is the whole sentence, since the glyph alone says nothing.
 - **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. Where the pointer is coarse the label rests in muted white, since nothing would ever reveal it. It is a row that has not been written yet, not a button.
 - **Filler slot:** an inert 42px row with an 8% hairline; it keeps the column ruled to its fixed depth and carries no interaction.
@@ -309,26 +309,31 @@ The read-only `/review` page reuses the ledger vocabulary one level down: where
 the Tasks board rules the week by day, this page rules it by project and class,
 so the group name takes the place the date holds there.
 
-- **Sheet:** a sticky margin (`clamp(150px, 15vw, 212px)`) beside the bands, 28px
-  gutter. The margin holds the week's standing: a 2px 30% rule over three 40px
-  hairline rows, each a label with its count at the right in tabular numerals
-  and an anchor to its band. At 900px and below the margin lays down as a
-  horizontal tally strip above the bands; at 620px the bands become one column.
-- **Band:** Finished, Slipped and Next in that order, 56px apart, each a
-  section heading with a 12px muted caption naming its count and date range,
-  then its groups flowed into columns of at least 250px (220px below 1180px)
-  with the same 28px gutter, 40px apart down a column. Groups are flowed, not
-  laid on a grid: their heights differ with the work each one holds, and a grid
-  row would hold every group down to the tallest, leaving a hole under each
-  short one. A group never splits across two columns. A band with nothing in it
-  keeps one column, so its copy rules the full width.
-- **Group header:** the project or class name in 13px weight 500, its count at
-  the right in 11px muted tabular, 8px above the day header's 2px rule at 30%
-  white. The name links to that project or class while the workspace still
-  lists it, and is plain text once it no longer does; nothing else on the page
-  is interactive.
-- **Entry row:** the board's 40px hairline row without its controls. Nothing is
-  actionable, so rows have no hover raise and no checkbox. Finished entries are
+- **Standing strip:** under the toolbar, one line between two hairlines holds
+  the week's standing: Finished, Slipped and Next, each a muted label with its
+  count beside it in tabular numerals and an anchor to its band. It is sticky at
+  the top of the scroll, 36px above the first band; at 620px and below the three
+  spread across the width.
+- **Band:** Finished, Slipped and Next in that order, 56px apart. The section
+  heading and its 12px muted caption (count and date range) share a baseline,
+  heading left and caption right, 12px above the page's only 2px rule
+  (`#5f5f5f`, the 30% white made opaque). The band closes on a full-width
+  hairline.
+- **Group line:** each project or class is one ledger line on a shared grid: a
+  label column (`clamp(150px, 15vw, 212px)`) holding the name in 13px weight
+  500 with its count at the column's right edge in 11px muted tabular, a 28px
+  gutter, then its entries on auto-fill tracks of at least 220px. Every band
+  uses the same tracks, so names, counts and tasks fall on the same vertical
+  axes down the whole page and a short group leaves no hole. Groups are
+  separated by a `#4c4c4c` rule; wrapped entry rows by a `#353535` hairline.
+  The rule colors are opaque so overlapping lines never compound. The name
+  shares its first entry's baseline. It links to that project or class while
+  the workspace still lists it, and is plain text once it no longer does;
+  nothing else in a band is interactive. At 900px and below the label column
+  becomes a ruled header over the group's entries, groups 28px apart; at 620px
+  entries are one column.
+- **Entry row:** the board's 40px row without its controls or its 6px gutter
+  bleed. Nothing is actionable, so rows have no hover raise and no checkbox. Finished entries are
   deliberately *not* struck through: a whole band of struck text is unreadable
   and the heading already says Finished, so the completion date carries it.
   A due date already past today uses Overdue Clay and a "N days late" count,
@@ -339,7 +344,7 @@ so the group name takes the place the date holds there.
   its `rgba(255,255,255,0.1)` / `0.2` control-border pair as local tokens. Next
   is disabled on the current week: a week that has not happened has nothing to
   review. Text selection is a neutral warm paper at 22%, not the board's
-  periwinkle, which stays on the board.
+  green, which stays on the board.
 
 ### Calendar and Today
 
@@ -357,7 +362,7 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.
 - Do keep calendar data colors and error/overdue semantics distinct from interface chrome.
 - Do preserve local component variants when extending an existing surface.
-- Do keep Today Periwinkle to the Tasks board's today column: its date numeral, header rule, and rail in the ledger; its border, header rule, and heading in the classic theme. Nothing more, and never as a fill.
+- Do keep Today Green to the Tasks board's today column: its date numeral, header rule, and rail in the ledger; its border, header rule, and heading in the classic theme. Nothing more, and never as a fill.
 - Do open the current week on today so it leads the board, and let the week's earlier days wrap to the end rather than dropping them.
 - Do carry the ledger's rules and hairlines to a new surface that reports on the same records, stepping the type down rather than inventing a second vocabulary.
 - Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column.

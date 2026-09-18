@@ -10,7 +10,7 @@
   --todos-board-muted: rgba(255, 255, 255, 0.62);
   --todos-board-faint: rgba(255, 255, 255, 0.52);
   --todos-board-overdue: #ddb1a4;
-  --todos-board-today: #8b9bff;
+  --todos-board-today: #8fc981;
   --todos-board-row-raised: #262626;
   min-width: 0;
   min-height: calc(100vh - 64px);
@@ -22,7 +22,7 @@
 }
 
 .todos-board-page--ledger ::selection {
-  background: rgba(139, 155, 255, 0.35);
+  background: rgba(143, 201, 129, 0.35);
 }
 
 .todos-board-page--ledger .todos-board-range {

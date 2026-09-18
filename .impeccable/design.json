@@ -20,8 +20,8 @@
       },
       "today": {
         "role": "secondary",
-        "displayName": "Today Periwinkle",
-        "canonical": "#8b9bff",
+        "displayName": "Today Green",
+        "canonical": "#8fc981",
         "tonalRamp": [
           "oklch(15.00% 0.14 276)",
           "oklch(26.43% 0.14 276)",
@@ -316,7 +316,7 @@
       "Component snippets are documentation previews, not full application behavior.",
       "The source uses component-scoped CSS properties. Literal fallbacks make snippets render outside the app.",
       "Snapshot of local code, including pre-existing uncommitted work; not production certification.",
-      "Extended 2026-09-15 for the Tasks week ledger (features/todos/TodosBoard.css). The 22px ledger headers and 26px section heading are recorded additions off the earlier ramp, and Today Periwinkle is the recorded exception to the Semantic Color Rule."
+      "Extended 2026-09-15 for the Tasks week ledger (features/todos/TodosBoard.css). The 22px ledger headers and 26px section heading are recorded additions off the earlier ramp, and Today Green is the recorded exception to the Semantic Color Rule."
     ]
   },
   "components": [
@@ -374,7 +374,7 @@
       "refersTo": "ledger-day-header",
       "description": "A today column from the Tasks week ledger: Space Grotesk date and weekday over a 2px rule, one row, the hover-revealed add slot, and inert ruled filler slots.",
       "html": "<section class=\"ds-col ds-col--today\"><h2 class=\"ds-col-head\"><span class=\"ds-col-date\">15 Sep</span><span class=\"ds-col-day\">Tue</span></h2><div class=\"ds-col-row\"><span class=\"ds-col-box\" aria-hidden=\"true\"></span><p>Problem set 3</p></div><button type=\"button\" class=\"ds-col-add\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add task</button><div class=\"ds-col-slot\"></div><div class=\"ds-col-slot\"></div></section>",
-      "css": ".ds-col{--ds-today:#8b9bff;width:220px;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif}.ds-col-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0;padding-bottom:8px;border-bottom:2px solid rgba(255,255,255,.3)}.ds-col--today .ds-col-head{border-bottom-color:var(--ds-today)}.ds-col-date{font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:500;font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ds-col--today .ds-col-date{color:var(--ds-today)}.ds-col-day{margin-left:auto;font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:400;font-size:22px;color:rgba(255,255,255,.5)}.ds-col--today .ds-col-day{color:rgba(255,255,255,.6)}.ds-col-row{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-col-row:hover{background:#262626}.ds-col-row p{margin:0;font-size:13px;line-height:1.4}.ds-col-box{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55}.ds-col-row:hover .ds-col-box{opacity:1}.ds-col-add{width:100%;min-height:42px;display:flex;align-items:center;gap:6px;padding:0;border:0;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;background:transparent;color:transparent;font:12px \"Segoe UI\",system-ui,sans-serif;cursor:pointer;transition:color 120ms ease-out,background 120ms ease-out}.ds-col-add:hover,.ds-col-add:focus-visible{color:rgba(255,255,255,.62);background:#2b2b2b}.ds-col-add:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-col-slot{min-height:42px;border-bottom:1px solid rgba(255,255,255,.08)}@media(prefers-reduced-motion:reduce){.ds-col-row,.ds-col-add{transition:none}}"
+      "css": ".ds-col{--ds-today:#8fc981;width:220px;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif}.ds-col-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0;padding-bottom:8px;border-bottom:2px solid rgba(255,255,255,.3)}.ds-col--today .ds-col-head{border-bottom-color:var(--ds-today)}.ds-col-date{font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:500;font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ds-col--today .ds-col-date{color:var(--ds-today)}.ds-col-day{margin-left:auto;font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:400;font-size:22px;color:rgba(255,255,255,.5)}.ds-col--today .ds-col-day{color:rgba(255,255,255,.6)}.ds-col-row{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-col-row:hover{background:#262626}.ds-col-row p{margin:0;font-size:13px;line-height:1.4}.ds-col-box{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55}.ds-col-row:hover .ds-col-box{opacity:1}.ds-col-add{width:100%;min-height:42px;display:flex;align-items:center;gap:6px;padding:0;border:0;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;background:transparent;color:transparent;font:12px \"Segoe UI\",system-ui,sans-serif;cursor:pointer;transition:color 120ms ease-out,background 120ms ease-out}.ds-col-add:hover,.ds-col-add:focus-visible{color:rgba(255,255,255,.62);background:#2b2b2b}.ds-col-add:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-col-slot{min-height:42px;border-bottom:1px solid rgba(255,255,255,.08)}@media(prefers-reduced-motion:reduce){.ds-col-row,.ds-col-add{transition:none}}"
     }
   ],
   "narrative": {
@@ -394,7 +394,7 @@
       },
       {
         "name": "The One Lit Header Rule",
-        "body": "Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.",
+        "body": "Today Green is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.",
         "section": "colors"
       },
       {
@@ -423,7 +423,7 @@
       "Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.",
       "Do keep calendar data colors and error/overdue semantics distinct from interface chrome.",
       "Do preserve local component variants when extending an existing surface.",
-      "Do keep Today Periwinkle to the Tasks board's today header: the date numeral and its 2px rule, nothing more.",
+      "Do keep Today Green to the Tasks board's today header: the date numeral and its 2px rule, nothing more.",
       "Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column."
     ],
     "donts": [
