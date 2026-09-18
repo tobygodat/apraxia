@@ -384,6 +384,20 @@
   }
 }
 
+/* Touch has no hover, so the ledger's two reveal-on-hover affordances rest
+   visible instead: the add slot's label, and a row's edit and delete. Nothing
+   about the ruling or the geometry changes — the ink is simply already there,
+   because on a phone there is no pointer to bring it. */
+@media (pointer: coarse) {
+  .todos-board-page--ledger .todos-board-add {
+    color: var(--todos-board-muted);
+  }
+
+  .todos-board-page--ledger .todos-board-card__actions {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .todos-board-page--ledger .todos-board-week,
   .todos-board-page--ledger .todos-board-card,

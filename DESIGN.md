@@ -230,6 +230,13 @@ The desktop shell has a sticky sidebar (200px) and a flexible content column, wi
 
 The Tasks board is a week ledger, not a scrolling kanban. Day columns fill the content width in equal tracks (six on desktop) with 28px gutters and 40px between wrapped rows; no horizontal scroll. The current week opens on today and runs forward to Sunday, then wraps to the week's earlier days, so the day being worked on is always the board's first column; a navigated week holds no today and stays in Monday-first order. When seven dates are visible, the last two share the last track, stacked 36px apart with their own headers — on the current week those are the days furthest behind today, which carry completed work only. Each column runs to a fixed ruled depth: task rows (40px minimum), then a 42px add slot, then inert 42px filler slots so a full column reaches nine rows and a stacked one reaches four. Beneath the week, after 56px, the Inbox band lays unscheduled tasks in auto-fill columns of at least 220px with the same 28px gutter, on a repeating 41px ruled background at least three rules deep. At 1180px and below the week reflows to auto-fill tracks of at least 200px; at 620px and below it becomes a single column, the toolbar stacks, and filler slots collapse to one per day.
 
+At 620px and below the workspace is laid out for a phone rather than narrowed:
+
+- Home leads with Tasks. The panels swap in the markup, not with a CSS `order`, so the reading and tab order swap with the visible one. Today takes the height it needs and the page scroll runs through it; the week calendar follows, separated by 28px and a hairline, in its own scrolling region capped at `min(62dvh, 520px)`, its month title stepping from 19px to 15px so the toolbar holds one line. A row's edit and delete, which touch puts on a second line, sit at that line's end.
+- The classic board's sideways scroller becomes a vertical stack of full-width day columns at their natural height, led by the same today column the desktop board opens on. Its toolbar stacks the way the ledger's already does: title, week range, then the controls.
+
+Where a coarse pointer is reported, the ledger's two reveal-on-hover affordances rest visible instead — the add slot's label and a row's edit and delete — because a touch device has no pointer to bring them out. The ruling and the geometry are unchanged.
+
 These are observed responsive rules, not a claim that every mobile flow has been validated. Home cover sizing and scrolling are controlled by its existing layout logic.
 
 ## Elevation & Depth
@@ -288,8 +295,8 @@ The Tasks board's signature: a planner spread where every day is a ruled column 
 
 - **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white.
 - **Today's bracket:** the today column swaps its date and header rule to Today Periwinkle and lifts its weekday to 60% white. That rule then turns the corner into a 2px rail down the column's full height, set 14px out into the gutter by an offsetting negative margin so the week's tracks stay aligned. The bracket is ruled ink, not a box: the column keeps the same border, background, and width as every other day.
-- **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%.
-- **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. It is a row that has not been written yet, not a button.
+- **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown where the pointer is coarse or in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%.
+- **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. Where the pointer is coarse the label rests in muted white, since nothing would ever reveal it. It is a row that has not been written yet, not a button.
 - **Filler slot:** an inert 42px row with an 8% hairline; it keeps the column ruled to its fixed depth and carries no interaction.
 - **Inbox band:** the section heading followed by tasks flowing across auto-fill columns over a repeating 41px ruled background, so empty space is still ruled.
 - **Undo toast:** the board's only floating surface, fixed bottom-right, 440px wide at most, with the toast radius, a 20% white border, and its own shadow.
@@ -320,5 +327,6 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Don't turn flat collection and task rows into elevated cards by default.
 - Don't apply the dialog's pill buttons or larger radius to every toolbar.
 - Don't interpret the documented desktop density as a verified mobile accessibility standard.
+- Don't leave an affordance that only hover reveals without a coarse-pointer resting state; on a phone it is not there at all.
 - Don't put borders, backgrounds, or counts around ledger columns — today's rail is a rule beside a column, not a box around one — and don't return the week to a horizontally scrolling set of fixed-width columns.
 - Don't use Space Grotesk for anything in the workspace other than a date that is itself the heading.
