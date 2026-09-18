@@ -111,7 +111,7 @@
   color: inherit;
 }
 .search-result-type {
-  flex: 0 0 58px;
+  flex: 0 0 72px;
   font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 11px;
   color: #ada9a3;
@@ -126,6 +126,15 @@
   font-size: 15px;
   line-height: 1.5;
   font-weight: 500;
+}
+/* Wins on specificity over the snippet rule below, which also matches a direct span. */
+.search-result-content .search-result-parent {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #ada9a3;
 }
 .search-result-content > span {
   display: -webkit-box;

@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database";
 import type { DriveFile } from "./driveService";
 import { ServiceError } from "../../lib/serviceError";
-export type ClassNote = Database["public"]["Tables"]["class_notes"]["Row"];
+/** The columns the browser selects. The row also carries a search vector, which no client reads. */
+export type ClassNote = Omit<Database["public"]["Tables"]["class_notes"]["Row"], "search_vector">;
 export interface UploadDraft {
   id: string;
   name: string;

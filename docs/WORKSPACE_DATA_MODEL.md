@@ -42,7 +42,7 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
-| `search_vector` | `tsvector` | Generated from `text`. |
+| `search_vector` | `tsvector` | Generated from `text` (weight A) and `class_id`, stemmed and literal (weight B). See [Search](#search). |
 
 Browser grants: `select` on all columns, `insert (id, text, due_date, due_time,
 project_id, class_id, assignment_type)`, `update (text, completed, due_date,
@@ -116,6 +116,47 @@ public.restore_record(p_record_type, p_record_id, p_deleted_at) -> boolean
 - No browser role holds `DELETE` on these tables at all.
 
 Covered by `supabase/tests/030_soft_delete_restore.test.sql`.
+
+## Search
+
+`public.search_records(p_query, p_limit, p_offset)` is the only search the
+browser has. Since
+`supabase/migrations/20260918020000_search_classes_and_stemming.sql` it covers
+five tables and free text is stored and queried through the `english`
+configuration, so "book" matches "books" and "lectures" matches "lecture".
+
+Identifiers are not prose and are indexed literally as well as stemmed: course
+codes, class names, and note filenames all carry both an `english` and a
+`simple` vector, because a code can be an English stopword (`IT` stems to
+nothing) or a word whose stem is not itself (`STUDIES` stems to `studi`).
+`websearch_to_tsquery` drops stopwords the same way, so a query that English
+leaves empty is re-parsed with `simple` and matched against those literal
+tokens. A query that is still empty, or that is nothing but negations, returns
+no rows rather than everything. Stopwords inside longer free text stay
+unsearchable; only identifiers get the literal path.
+
+Each row reports a `public.search_record_type`, which is a wider set than the
+`public.orbitos_record_type` that `soft_delete_record` and `restore_record`
+accept:
+
+| Kind | Source | `record_id` | `parent_id` |
+| --- | --- | --- | --- |
+| `todo` | `todos` with no `class_id` | the task UUID | null |
+| `assignment` | `todos` with a `class_id` | the task UUID | the course code |
+| `idea` | `ideas` | the idea UUID | null |
+| `project` | `projects` | the project UUID | null |
+| `class` | `classes` | the course code | null |
+| `class_note` | `class_notes` | the note UUID | the course code |
+
+`record_id` is therefore `text`, not `uuid`: a class is identified by the course
+code that is its primary key. Soft-deleted todos, ideas, and projects are
+excluded; classes and notes are hard-deleted and have nothing to exclude.
+Relevance is `ts_rank_cd`, and every row carries the full unpaginated
+`total_count`.
+
+The QA workspace fixture's Ctrl+K is a substring stub, not this function, so it
+proves only that the result list renders. Behaviour is covered by
+`supabase/tests/040_search.test.sql` and `tests/contract/search-records.test.ts`.
 
 ## Ownership and RLS model
 

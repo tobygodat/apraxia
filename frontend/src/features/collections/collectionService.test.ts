@@ -83,6 +83,16 @@ describe("Collection service", () => {
         relevance: 2,
         total_count: 45,
       },
+      {
+        record_type: "assignment",
+        record_id: "assignment-id",
+        parent_id: "MATH3012",
+        title: "Problem set 4",
+        snippet: "",
+        updated_at: "now",
+        relevance: 1,
+        total_count: 45,
+      },
     ]);
     const found = await service.search("thought", 40);
     expect(client.rpc).toHaveBeenCalledWith("search_records", {
@@ -93,8 +103,15 @@ describe("Collection service", () => {
     expect(found[0]).toMatchObject({
       recordType: "idea",
       recordId: "id",
+      // A row with no class reports none, even though the generated type cannot say so.
+      parentId: null,
       relevance: 2,
       totalCount: 45,
+    });
+    expect(found[1]).toMatchObject({
+      recordType: "assignment",
+      recordId: "assignment-id",
+      parentId: "MATH3012",
     });
   });
 });

@@ -68,6 +68,7 @@ export type Database = {
           id: string;
           name: string;
           object_path: string | null;
+          search_vector: unknown;
           source: string;
           updated_at: string;
           uploaded_at: string | null;
@@ -82,6 +83,7 @@ export type Database = {
           id?: string;
           name: string;
           object_path?: string | null;
+          search_vector?: unknown;
           source: string;
           updated_at?: string;
           uploaded_at?: string | null;
@@ -96,6 +98,7 @@ export type Database = {
           id?: string;
           name?: string;
           object_path?: string | null;
+          search_vector?: unknown;
           source?: string;
           updated_at?: string;
           uploaded_at?: string | null;
@@ -116,6 +119,7 @@ export type Database = {
           created_at: string;
           id: string;
           name: string | null;
+          search_vector: unknown;
           updated_at: string;
           user_id: string;
         };
@@ -123,6 +127,7 @@ export type Database = {
           created_at?: string;
           id: string;
           name?: string | null;
+          search_vector?: unknown;
           updated_at?: string;
           user_id?: string;
         };
@@ -130,6 +135,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           name?: string | null;
+          search_vector?: unknown;
           updated_at?: string;
           user_id?: string;
         };
@@ -656,8 +662,9 @@ export type Database = {
       search_records: {
         Args: { p_limit?: number; p_offset?: number; p_query: string };
         Returns: {
+          parent_id: string;
           record_id: string;
-          record_type: Database["public"]["Enums"]["orbitos_record_type"];
+          record_type: Database["public"]["Enums"]["search_record_type"];
           relevance: number;
           snippet: string;
           title: string;
@@ -682,6 +689,7 @@ export type Database = {
       orbitos_record_type: "todo" | "idea" | "project";
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
+      search_record_type: "todo" | "assignment" | "idea" | "project" | "class" | "class_note";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -810,6 +818,7 @@ export const Constants = {
       orbitos_record_type: ["todo", "idea", "project"],
       project_status: ["active", "someday", "completed", "archived"],
       record_source: ["manual", "migration"],
+      search_record_type: ["todo", "assignment", "idea", "project", "class", "class_note"],
     },
   },
 } as const;

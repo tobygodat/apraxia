@@ -337,12 +337,20 @@ const collectionService: CollectionService = {
       { offset },
     );
   },
+  // A substring stub, not the search_records RPC: it proves the result list
+  // renders every kind, never what the database matches. See docs/CLOUD_DEVELOPMENT.md.
   async search(query, offset = 0) {
     check();
+    const signal = new AbortController().signal;
+    const courses = await classFixture.classes.list(userId, signal);
+    const notes = (
+      await Promise.all(courses.map((course) => classFixture.notes.list(userId, course.id, signal)))
+    ).flat();
     const rows: SearchResult[] = [
       ...projects.map((p) => ({
         recordType: "project" as const,
         recordId: p.id,
+        parentId: null,
         title: p.title,
         snippet: p.description ?? "",
         updatedAt: now,
@@ -352,6 +360,7 @@ const collectionService: CollectionService = {
       ...ideas.map((i) => ({
         recordType: "idea" as const,
         recordId: i.id,
+        parentId: null,
         title: i.title ?? i.body.split("\n")[0],
         snippet: i.body,
         updatedAt: now,
@@ -359,15 +368,38 @@ const collectionService: CollectionService = {
         totalCount: 0,
       })),
       ...todos.map((t) => ({
-        recordType: "todo" as const,
+        recordType: t.classId ? ("assignment" as const) : ("todo" as const),
         recordId: t.id,
+        parentId: t.classId ?? null,
         title: t.text,
         snippet: "",
         updatedAt: now,
         relevance: 1,
         totalCount: 0,
       })),
-    ].filter((r) => `${r.title} ${r.snippet}`.toLowerCase().includes(query.toLowerCase()));
+      ...courses.map((c) => ({
+        recordType: "class" as const,
+        recordId: c.id,
+        parentId: null,
+        title: c.name ?? c.id,
+        snippet: c.name ? c.id : "",
+        updatedAt: now,
+        relevance: 1,
+        totalCount: 0,
+      })),
+      ...notes.map((n) => ({
+        recordType: "class_note" as const,
+        recordId: n.id,
+        parentId: n.course_id,
+        title: n.name,
+        snippet: "",
+        updatedAt: now,
+        relevance: 1,
+        totalCount: 0,
+      })),
+    ].filter((r) =>
+      `${r.title} ${r.snippet} ${r.parentId ?? ""}`.toLowerCase().includes(query.toLowerCase()),
+    );
     return rows.slice(offset, offset + 40).map((r) => ({ ...r, totalCount: rows.length }));
   },
 };
