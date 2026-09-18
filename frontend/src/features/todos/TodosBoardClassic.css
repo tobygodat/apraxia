@@ -9,6 +9,7 @@
   --todos-board-text: rgba(255, 255, 255, 0.93);
   --todos-board-muted: rgba(255, 255, 255, 0.62);
   --todos-board-faint: rgba(255, 255, 255, 0.52);
+  --todos-board-today: #8b9bff;
   min-width: 0;
   min-height: calc(100vh - 64px);
   padding: var(--workspace-page-top, 36px) 0 48px;
@@ -54,6 +55,20 @@
   transition:
     background 120ms ease-out,
     border-color 120ms ease-out;
+}
+
+/* Classic columns are already bordered, so the current day is marked by lighting
+   the outline it already has, plus its header rule and heading. */
+.todos-board-page--classic .todos-board-column--today {
+  border-color: var(--todos-board-today);
+}
+
+.todos-board-page--classic .todos-board-column--today .todos-board-column__header {
+  border-bottom-color: var(--todos-board-today);
+}
+
+.todos-board-page--classic .todos-board-column--today .todos-board-column__header h2 {
+  color: var(--todos-board-today);
 }
 
 .todos-board-page--classic .todos-board-column--drop {
@@ -214,6 +229,13 @@
   .todos-board-page--classic .todos-board-undo,
   .todos-board-page--classic .todos-board-undo button {
     border: 1px solid CanvasText;
+  }
+
+  /* Author colors are discarded here, so the current day asks for a system
+     color to keep its outline distinct from the other columns'. This follows
+     the shared border shorthand above, which would otherwise reset it. */
+  .todos-board-page--classic .todos-board-column--today {
+    border-color: Highlight;
   }
 }
 

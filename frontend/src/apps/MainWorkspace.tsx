@@ -370,6 +370,7 @@ function ClassesRoute(props: MainWorkspaceProps) {
       assignmentService={props.workspaceData.assignments}
       classService={props.workspaceData.classes}
       noteService={props.workspaceData.notes}
+      overviewService={props.workspaceData.classOverview}
       timezone={profile?.timezone}
     />
   );

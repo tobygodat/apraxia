@@ -3,6 +3,7 @@ import { AssignmentTypePicker } from "./AssignmentTypePicker";
 import { AssignmentDatePicker } from "./AssignmentDatePicker";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { localToday } from "../todos/dateDomain";
+import { emptyClassOverview, summarizeClasses, type ClassOverview } from "./classOverview";
 import "./classAssignments.css";
 
 import type { DeleteUndoToken } from "../../types/domain";
@@ -183,6 +184,8 @@ export function ClassAssignments(props: {
   courseId: string;
   service: AssignmentService;
   timezone?: string;
+  /** Totals for the class header, or null while they are unknown. */
+  onOverview?(overview: ClassOverview | null): void;
 }) {
   return <AssignmentSession key={`${props.userId}:${props.courseId}`} {...props} />;
 }
@@ -191,11 +194,13 @@ function AssignmentSession({
   courseId,
   service,
   timezone,
+  onOverview,
 }: {
   userId: string;
   courseId: string;
   service: AssignmentService;
   timezone?: string;
+  onOverview?(overview: ClassOverview | null): void;
 }) {
   const today = localToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [items, setItems] = useState<Assignment[]>([]);
@@ -376,6 +381,19 @@ function AssignmentSession({
   const ordered = [...items].sort(
     (a, b) => Number(a.done) - Number(b.done) || (a.due || "9999").localeCompare(b.due || "9999"),
   );
+  // The header reads the same rows the table does, so a completion or a date
+  // change moves both at once.
+  useEffect(() => {
+    if (loading) return;
+    onOverview?.(
+      loadError
+        ? null
+        : (summarizeClasses(
+            items.map((item) => ({ ...item, classId: courseId, due: item.due || null })),
+            {},
+          )[courseId] ?? emptyClassOverview),
+    );
+  }, [items, loading, loadError, courseId, onOverview]);
   const editor = editing && (
     <AssignmentEditorRow
       today={today}

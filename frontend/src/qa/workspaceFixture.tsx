@@ -3,6 +3,8 @@ import type { DriveService } from "../features/classes/driveService";
 import { createFixturePdf } from "./fixturePdf";
 import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
 import { createTodoAssignmentService } from "../features/classes/assignmentService";
+import { summarizeClasses } from "../features/classes/classOverview";
+import { isNoteSaved } from "../features/classes/noteService";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -420,6 +422,32 @@ const calendarService = delayedFixtureService(
 const workspaceData = {
   ...classFixture,
   assignments: delayedFixtureService(createTodoAssignmentService(todoService), delay),
+  classOverview: delayedFixtureService(
+    {
+      list: async (owner: string, signal: AbortSignal) => {
+        check();
+        const courses = await classFixture.classes.list(owner, signal);
+        const noteCounts: Record<string, number> = {};
+        for (const course of courses)
+          noteCounts[course.id] = (await classFixture.notes.list(owner, course.id, signal)).filter(
+            isNoteSaved,
+          ).length;
+        return summarizeClasses(
+          todos
+            .filter((todo) => todo.classId)
+            .map((todo) => ({
+              id: todo.id,
+              classId: todo.classId!,
+              title: todo.text,
+              due: todo.dueDate,
+              done: todo.completed,
+            })),
+          noteCounts,
+        );
+      },
+    },
+    delay,
+  ),
   homeAppearance: delayedFixtureService(
     createFixtureAppearance(storage, appearanceKey, cover),
     delay,

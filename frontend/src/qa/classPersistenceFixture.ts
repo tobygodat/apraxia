@@ -12,7 +12,17 @@ export function createClassPersistenceFixture(empty = false): {
   let revision = 0;
   const rows = (owner: string) => {
     if (!owners.has(owner))
-      owners.set(owner, empty ? [] : [{ id: "math3012", name: "MATH3012", updatedAt: "seed" }]);
+      owners.set(
+        owner,
+        empty
+          ? []
+          : [
+              { id: "math3012", name: "MATH3012", updatedAt: "seed" },
+              // A second, untouched class so the list shows both a class with
+              // work in it and one with nothing saved yet.
+              { id: "hist2111", name: "HIST2111", updatedAt: "seed" },
+            ],
+      );
     return owners.get(owner)!;
   };
   return {
