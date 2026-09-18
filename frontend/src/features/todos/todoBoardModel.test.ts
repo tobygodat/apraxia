@@ -204,6 +204,22 @@ describe("buildTodoBoardModel", () => {
     expect(source.map(({ id }) => id)).toEqual(["b", "a"]);
   });
 
+  it("counts open past-due tasks as overdue whichever week is selected", () => {
+    const todos = [
+      todo({ id: "inbox", text: "Inbox" }),
+      todo({ id: "oldest", text: "Oldest", dueDate: "2026-08-30" }),
+      todo({ id: "yesterday", text: "Yesterday", dueDate: "2026-09-01" }),
+      todo({ id: "done", text: "Done", dueDate: "2026-08-30", completed: true }),
+      todo({ id: "today", text: "Today", dueDate: "2026-09-02" }),
+      todo({ id: "later", text: "Later", dueDate: "2026-09-06" }),
+    ];
+
+    for (const monday of ["2026-08-31", "2026-09-07"]) {
+      const model = buildTodoBoardModel(todos, monday, "2026-09-02");
+      expect(model.overdue.map(({ id }) => id)).toEqual(["oldest", "yesterday"]);
+    }
+  });
+
   it("rejects invalid selected weeks and duplicate rows", () => {
     expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow("Monday");
 
