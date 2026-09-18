@@ -37,7 +37,10 @@ export function assertLocalContainer(container) {
     running: container?.running === true,
     id: /^[a-f0-9]{64}$/.test(container?.id ?? ""),
     project: container?.labels?.["com.supabase.cli.project"] === PROJECT,
-    image: /^(?:public\.ecr\.aws\/|docker\.io\/)?supabase\/postgres:17\./.test(
+    // Registry prefixes the Supabase CLI has pulled this image from. The
+    // alternation is anchored and the repository path is fixed, so a prefix
+    // spelled inside a hostile image reference still fails.
+    image: /^(?:public\.ecr\.aws\/|docker\.io\/|ghcr\.io\/)?supabase\/postgres:17\./.test(
       container?.image ?? "",
     ),
   };
