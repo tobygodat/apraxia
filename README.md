@@ -33,9 +33,9 @@ All planned feature slices are implemented and deployed. The hosted setup for
 Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified
 on `https://apraxia.dev` on 2026-09-18: the Picker added a PDF to a class, and a
 disconnect and reconnect completed through the production redirect.
-Real Calendar connection and reconnect/disconnect flows remain unverified since
-the last recorded check, so reinspect the current provider configuration before
-diagnosing an old failure as current.
+Real Calendar connection and reconnect were verified on the same day. An
+explicit Calendar disconnect is still unverified, so reinspect the current
+provider configuration before diagnosing an old failure as current.
 
 ## Development
 
