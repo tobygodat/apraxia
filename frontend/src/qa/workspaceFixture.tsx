@@ -140,6 +140,9 @@ let todos: Todo[] = empty
       task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
       task("Ask Sam about the reading group", null),
       task("Measure the shelves", 2, { projectId }),
+      task("Turn in the problem set", 0, {
+        recurrence: { freq: "weekly", interval: 1, until: null },
+      }),
       task("Choose a paint sample", 0, { projectId, completed: true, completedAt: now }),
     ];
 let ideas: Idea[] = empty

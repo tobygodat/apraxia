@@ -4,6 +4,7 @@ export type LocalTime = string;
 type Timestamp = string;
 
 export type ProjectStatus = "active" | "someday" | "completed" | "archived";
+export type TodoRecurrenceFreq = "daily" | "weekly" | "monthly";
 type OrbitRecordType = "todo" | "idea" | "project";
 type GoogleCalendarConnectionState = "connected" | "reconnect_required" | "disconnected";
 
@@ -139,6 +140,18 @@ export interface ProjectSummary {
   title: string;
 }
 
+/**
+ * A repeat rule anchored on the task's own due date. Completing the task is
+ * what creates the next occurrence, so only one is ever open at a time.
+ */
+export interface TodoRecurrence {
+  freq: TodoRecurrenceFreq;
+  /** Repeat every N periods; 1 is "every week", 2 is "every other week". */
+  interval: number;
+  /** Inclusive last date a new occurrence may land on. */
+  until: LocalDate | null;
+}
+
 export interface Todo {
   id: UUID;
   text: string;
@@ -150,6 +163,8 @@ export interface Todo {
   className?: string | null;
   assignmentType?: string;
   projectId: UUID | null;
+  /** Absent on projections that do not carry the rule, such as Today. */
+  recurrence?: TodoRecurrence | null;
   todayRank: number | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -179,9 +194,15 @@ interface NewTodoInputBase {
   projectId?: UUID | null;
 }
 
-/** A due time can enter the service boundary only together with a due date. */
+/**
+ * A due time and a repeat rule can enter the service boundary only together
+ * with a due date, which is the anchor both are measured from.
+ */
 export type NewTodoInput = NewTodoInputBase &
-  ({ dueDate?: null; dueTime?: null } | { dueDate: LocalDate; dueTime?: LocalTime | null });
+  (
+    | { dueDate?: null; dueTime?: null; recurrence?: null }
+    | { dueDate: LocalDate; dueTime?: LocalTime | null; recurrence?: TodoRecurrence | null }
+  );
 
 export interface NewIdeaInput {
   title?: string | null;

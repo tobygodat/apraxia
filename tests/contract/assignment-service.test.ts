@@ -100,7 +100,7 @@ it("retains the draft UUID on retry without overwriting a stored assignment", as
     assignment_type: "Homework",
   });
 });
-it("uses the todo completion path and atomically clears time with date", async () => {
+it("uses the todo completion path and atomically clears time and repeat with date", async () => {
   const { service, fetch } = setup([
     { ...row, completed: true, completed_at: now },
     { ...row, due_date: null },
@@ -108,9 +108,13 @@ it("uses the todo completion path and atomically clears time with date", async (
   await service.update(owner, "math3012", id, { done: true }, signal());
   await service.update(owner, "math3012", id, { due: "" }, signal());
   expect(JSON.parse(String(request(fetch)[1].body))).toEqual({ completed: true });
+  // The date anchors both the time and any repeat rule, so one write clears all three.
   expect(JSON.parse(String(request(fetch, 1)[1].body))).toEqual({
     due_date: null,
     due_time: null,
+    recurrence_freq: null,
+    recurrence_interval: null,
+    recurrence_until: null,
   });
 });
 it("soft deletes through the existing RPC and preserves the exact Undo token", async () => {

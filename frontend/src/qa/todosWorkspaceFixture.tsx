@@ -56,6 +56,9 @@ let todos: Todo[] =
         task("Pick up the repaired headphones", 0, { dueTime: "17:00:00" }),
         task("Book a quiet afternoon to read", 1),
         task("Plan next week’s groceries", 3),
+        task("Turn in the problem set", 0, {
+          recurrence: { freq: "weekly", interval: 1, until: null },
+        }),
       ];
 if (scenario === "dense") {
   todos.push(

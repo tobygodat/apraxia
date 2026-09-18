@@ -174,3 +174,71 @@ it("rejects two parents and assignment types without a class", () => {
     dueTime: null,
   });
 });
+
+describe("repeat rules", () => {
+  it("emits a rule only when one is chosen and defaults its interval to one", () => {
+    expect(
+      todoInputSchema.parse({ text: "Problem set", dueDate: "2026-09-21", recurrenceFreq: "" }),
+    ).toEqual({ text: "Problem set", dueDate: "2026-09-21", dueTime: null, projectId: null });
+
+    expect(
+      todoInputSchema.parse({
+        text: "Problem set",
+        dueDate: "2026-09-21",
+        recurrenceFreq: "weekly",
+      }),
+    ).toEqual({
+      text: "Problem set",
+      dueDate: "2026-09-21",
+      dueTime: null,
+      projectId: null,
+      recurrence: { freq: "weekly", interval: 1, until: null },
+    });
+
+    expect(
+      todoInputSchema.parse({
+        text: "Readings",
+        dueDate: "2026-09-21",
+        recurrenceFreq: "daily",
+        recurrenceInterval: "3",
+        recurrenceUntil: "2026-12-11",
+      }),
+    ).toMatchObject({ recurrence: { freq: "daily", interval: 3, until: "2026-12-11" } });
+  });
+
+  it("rejects a rule with no anchor, an out-of-range interval, or an end before the due date", () => {
+    const noAnchor = validateTodoInput({ text: "Problem set", recurrenceFreq: "weekly" });
+    expect(noAnchor.success ? null : noAnchor.fieldErrors.recurrenceFreq).toEqual([
+      "Add a due date before setting a repeat.",
+    ]);
+
+    const tooOften = validateTodoInput({
+      text: "Problem set",
+      dueDate: "2026-09-21",
+      recurrenceFreq: "weekly",
+      recurrenceInterval: "0",
+    });
+    expect(tooOften.success ? null : tooOften.fieldErrors.recurrenceInterval).toEqual([
+      "Repeat every 1 to 52 periods.",
+    ]);
+
+    const backwards = validateTodoInput({
+      text: "Problem set",
+      dueDate: "2026-09-21",
+      recurrenceFreq: "weekly",
+      recurrenceUntil: "2026-09-01",
+    });
+    expect(backwards.success ? null : backwards.fieldErrors.recurrenceUntil).toEqual([
+      "End the repeat on or after the due date.",
+    ]);
+
+    const unknown = validateTodoInput({
+      text: "Problem set",
+      dueDate: "2026-09-21",
+      recurrenceFreq: "yearly",
+    });
+    expect(unknown.success ? null : unknown.fieldErrors.recurrenceFreq).toEqual([
+      "Choose how often this task repeats.",
+    ]);
+  });
+});

@@ -4,8 +4,10 @@ import type {
   Profile,
   ProjectSummary,
   Todo,
+  TodoRecurrence,
 } from "../../types/domain";
 import { isSqlDate } from "./dateDomain";
+import { isRecurrenceFreq, isRecurrenceInterval } from "./todoRecurrence";
 import type { TodoWorkspaceSnapshot, UpdateTodoDetailsInput } from "./todoService";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -90,6 +92,21 @@ function readProjectSummary(value: unknown): ProjectSummary | null {
   return { id: value.id, title: value.title };
 }
 
+/**
+ * A rule is accepted only in the shape the database can hold: a known frequency,
+ * an interval inside the stored range, and an end date no earlier than the due
+ * date the rule is anchored on.
+ */
+function isTodoRecurrence(value: unknown, dueDate: unknown): value is TodoRecurrence {
+  return (
+    isRecord(value) &&
+    isRecurrenceFreq(value.freq) &&
+    isRecurrenceInterval(value.interval) &&
+    (value.until === null ||
+      (isLocalDate(value.until) && isLocalDate(dueDate) && value.until >= dueDate))
+  );
+}
+
 /** Project the complete browser domain shape; unknown provider fields stay out. */
 export function readTodoResponse(value: unknown): Todo | null {
   if (
@@ -107,6 +124,8 @@ export function readTodoResponse(value: unknown): Todo | null {
     (value.assignmentType !== undefined &&
       (!ASSIGNMENT_TYPES.includes(value.assignmentType as string) ||
         (value.assignmentType !== "" && value.classId == null))) ||
+    (value.recurrence != null &&
+      (!isTodoRecurrence(value.recurrence, value.dueDate) || value.dueDate === null)) ||
     (value.todayRank !== null &&
       (typeof value.todayRank !== "number" ||
         !Number.isSafeInteger(value.todayRank) ||
@@ -124,6 +143,9 @@ export function readTodoResponse(value: unknown): Todo | null {
     dueDate: value.dueDate as string | null,
     dueTime: value.dueTime as string | null,
     projectId: value.projectId as string | null,
+    ...(value.recurrence !== undefined && {
+      recurrence: value.recurrence as TodoRecurrence | null,
+    }),
     ...(value.classId !== undefined && { classId: value.classId as string | null }),
     ...(value.className !== undefined && { className: value.className as string | null }),
     ...(value.assignmentType !== undefined && {
@@ -198,6 +220,13 @@ export function todoMatchesDetails(todo: Todo, input: UpdateTodoDetailsInput): b
     (input.assignmentType === undefined || (todo.assignmentType ?? "") === input.assignmentType) &&
     (input.projectId === undefined || todo.projectId === input.projectId) &&
     (input.dueDate === undefined || todo.dueDate === input.dueDate) &&
+    (input.recurrence === undefined ||
+      (input.recurrence === null
+        ? todo.recurrence == null
+        : todo.recurrence != null &&
+          todo.recurrence.freq === input.recurrence.freq &&
+          todo.recurrence.interval === input.recurrence.interval &&
+          todo.recurrence.until === input.recurrence.until)) &&
     (input.dueTime === undefined ||
       (input.dueTime === null
         ? todo.dueTime === null

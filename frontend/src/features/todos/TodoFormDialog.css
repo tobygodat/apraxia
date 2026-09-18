@@ -178,6 +178,42 @@
   background: rgba(135, 36, 36, 0.14);
 }
 
+/* A grouping element, not a boxed section: the flat form keeps its own rhythm. */
+.todo-dialog__repeat {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.todo-dialog__repeat .todo-dialog__details {
+  animation: todo-dialog-repeat-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* "Every [ 2 ] weeks" reads as one measurement, so the unit sits on the line. */
+.todo-dialog__measure {
+  display: grid;
+  grid-template-columns: minmax(0, 88px) auto;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.todo-dialog__measure-unit {
+  color: var(--dialog-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@keyframes todo-dialog-repeat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .todo-dialog__actions {
   display: flex;
   flex-wrap: wrap-reverse;
@@ -251,6 +287,11 @@
     grid-template-columns: 1fr;
   }
 
+  /* One column would strand "weeks" under its own field; keep the measure paired. */
+  .todo-dialog__measure {
+    grid-template-columns: minmax(0, 88px) auto;
+  }
+
   .todo-dialog__button {
     flex: 1 1 140px;
   }
@@ -258,6 +299,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .todo-dialog,
+  .todo-dialog__repeat .todo-dialog__details,
   .todo-dialog__field input,
   .todo-dialog__field select,
   .todo-dialog__button {

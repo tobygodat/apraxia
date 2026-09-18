@@ -265,6 +265,8 @@ Focus is generally a light 2px outline with a 3px offset. Pending/disabled actio
 
 ### Inputs
 
+The task dialog's Repeats menu reveals its interval and end date only once a frequency is chosen, so ordinary capture keeps its length. The interval is a narrow number box with its unit ("weeks") on the same line in muted text, which the box names as its description.
+
 Dark inset fields have visible borders, rounded corners, and comfortable inner padding. Collection and task-dialog fields have a 44px minimum height. Task-dialog borders strengthen on hover; invalid fields gain a rose border and accompanying error text. Keep labels and error messages connected to their controls.
 
 ### Navigation
@@ -284,7 +286,7 @@ Collection entries and task-board “cards” are flat rows divided by thin rule
 The Tasks board's signature: a planner spread where every day is a ruled column and the ink shows how heavy the day is.
 
 - **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white. The today column swaps date and rule to Today Periwinkle and lifts its weekday to 60% white. The header is the column's only emphasis.
-- **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%.
+- **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%. A repeating task adds its cadence ("Weekly", "Every 2 weeks") to the same metadata line, behind a 12px repeat glyph from the shared icon vocabulary at 85% opacity; the spoken form is the whole sentence, since the glyph alone says nothing.
 - **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. It is a row that has not been written yet, not a button.
 - **Filler slot:** an inert 42px row with an 8% hairline; it keeps the column ruled to its fixed depth and carries no interaction.
 - **Inbox band:** the section heading followed by tasks flowing across auto-fill columns over a repeating 41px ruled background, so empty space is still ruled.

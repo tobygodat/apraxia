@@ -314,6 +314,7 @@ describe("TodayPanel", () => {
         dueTime: "14:30:00.123456",
         text: TODO.text,
         projectId: TODO.projectId,
+        recurrence: null,
       },
       { signal: expect.any(AbortSignal) },
     );

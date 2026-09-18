@@ -196,6 +196,7 @@ describe("TodoFormDialog edit and reschedule modes", () => {
         projectId: PROJECT.id,
         dueDate: "2026-09-05",
         dueTime: "14:30:00.123456",
+        recurrence: null,
       },
       { signal: expect.any(AbortSignal) },
     );
@@ -340,6 +341,7 @@ describe("TodoFormDialog class fields", () => {
           assignmentType: "",
           dueDate: TODO.dueDate,
           dueTime: null,
+          recurrence: null,
         },
         { signal: expect.any(AbortSignal) },
       ),
@@ -364,9 +366,91 @@ describe("TodoFormDialog class fields", () => {
           assignmentType: "Homework",
           dueDate: TODO.dueDate,
           dueTime: null,
+          recurrence: null,
         },
         { signal: expect.any(AbortSignal) },
       ),
     );
+  });
+});
+
+describe("TodoFormDialog repeat rule", () => {
+  const REPEATING: Todo = {
+    ...TODO,
+    recurrence: { freq: "weekly", interval: 2, until: "2026-12-11" },
+  };
+
+  it("reveals the interval and end date only once a frequency is chosen", () => {
+    renderCreate();
+    expect(screen.queryByLabelText("Every")).toBeNull();
+    fireEvent.change(field("Repeats"), { target: { value: "weekly" } });
+    expect(screen.getByLabelText("Every")).toBeTruthy();
+    // The unit follows the frequency and is announced with the number box.
+    expect(
+      document.getElementById(field("Every").getAttribute("aria-describedby")!)?.textContent,
+    ).toBe("weeks");
+    fireEvent.change(field("Repeats"), { target: { value: "monthly" } });
+    expect(
+      document.getElementById(field("Every").getAttribute("aria-describedby")!)?.textContent,
+    ).toBe("months");
+  });
+
+  it("submits a rule with its due date and loads an existing one back into the form", async () => {
+    const { onCreate, onClose } = renderCreate();
+    fireEvent.change(field("Task"), { target: { value: "Problem set" } });
+    fireEvent.change(field("Due date"), { target: { value: "2026-09-21" } });
+    fireEvent.change(field("Repeats"), { target: { value: "weekly" } });
+    fireEvent.change(field("Every"), { target: { value: "2" } });
+    fireEvent.change(field("Until"), { target: { value: "2026-12-11" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onCreate).toHaveBeenCalledWith(
+      {
+        text: "Problem set",
+        dueDate: "2026-09-21",
+        dueTime: null,
+        projectId: null,
+        recurrence: { freq: "weekly", interval: 2, until: "2026-12-11" },
+      },
+      { signal: expect.any(AbortSignal) },
+    );
+
+    cleanup();
+    renderEdit({ todo: REPEATING });
+    expect(field("Repeats").value).toBe("weekly");
+    expect(field("Every").value).toBe("2");
+    expect(field("Until").value).toBe("2026-12-11");
+  });
+
+  it("clears the rule when the frequency or the anchoring date is removed", async () => {
+    const { props } = renderEdit({ todo: REPEATING });
+    fireEvent.change(field("Repeats"), { target: { value: "" } });
+    expect(screen.queryByLabelText("Until")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(props.onSave).toHaveBeenCalled());
+    expect(vi.mocked(props.onSave).mock.calls[0]![1]).toMatchObject({ recurrence: null });
+
+    cleanup();
+    const cleared = renderEdit({ todo: REPEATING });
+    fireEvent.change(field("Due date"), { target: { value: "" } });
+    expect(field("Repeats").value).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(cleared.props.onSave).toHaveBeenCalled());
+    expect(vi.mocked(cleared.props.onSave).mock.calls[0]![1]).toEqual({
+      text: REPEATING.text,
+      projectId: REPEATING.projectId,
+      dueDate: null,
+      dueTime: null,
+    });
+  });
+
+  it("leaves a rule untouched from the reschedule form, which never shows it", async () => {
+    const { props } = renderEdit({ todo: REPEATING, mode: "reschedule" });
+    expect(screen.queryByLabelText("Repeats")).toBeNull();
+    // Moving the task past its own end date must not fail on a hidden field.
+    fireEvent.change(field("Due date"), { target: { value: "2027-01-04" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(props.onSave).toHaveBeenCalled());
+    expect(vi.mocked(props.onSave).mock.calls[0]![1]).not.toHaveProperty("recurrence");
   });
 });

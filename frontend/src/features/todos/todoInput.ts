@@ -1,5 +1,6 @@
-import type { NewTodoInput } from "../../types/domain";
+import type { NewTodoInput, TodoRecurrence } from "../../types/domain";
 import { isSqlDate } from "./dateDomain";
+import { isRecurrenceFreq, MAX_RECURRENCE_INTERVAL } from "./todoRecurrence";
 import { ServiceError } from "../../lib/serviceError";
 
 export interface TodoInputValues {
@@ -9,6 +10,10 @@ export interface TodoInputValues {
   projectId?: string | null;
   classId?: string | null;
   assignmentType?: string;
+  /** Empty means "does not repeat"; the other two are then ignored. */
+  recurrenceFreq?: string | null;
+  recurrenceInterval?: string | null;
+  recurrenceUntil?: string | null;
 }
 
 export type TodoInputField = keyof TodoInputValues;
@@ -56,7 +61,11 @@ const KNOWN_FIELDS: readonly TodoInputField[] = [
   "projectId",
   "classId",
   "assignmentType",
+  "recurrenceFreq",
+  "recurrenceInterval",
+  "recurrenceUntil",
 ];
+const INTERVAL_PATTERN = /^\d{1,2}$/;
 const ASSIGNMENT_TYPES = ["", "Homework", "Quiz", "Reading", "Exam", "Other"];
 
 const INVALID = Symbol("invalid");
@@ -172,6 +181,59 @@ function parseTodoInput(input: unknown): TodoInputParseResult {
     });
   }
 
+  const rawFreq = optionalFormValue(values.recurrenceFreq);
+  let recurrence: TodoRecurrence | null = null;
+  if (rawFreq === INVALID || (rawFreq !== null && !isRecurrenceFreq(rawFreq))) {
+    issues.push({
+      code: "invalid_format",
+      path: ["recurrenceFreq"],
+      message: "Choose how often this task repeats.",
+    });
+  } else if (rawFreq !== null) {
+    const rawInterval = optionalFormValue(values.recurrenceInterval);
+    // An unset control means "every one", which is what the menu already says.
+    const interval = rawInterval === INVALID || rawInterval === null ? 1 : Number(rawInterval);
+    if (
+      rawInterval === INVALID ||
+      (rawInterval !== null &&
+        (!INTERVAL_PATTERN.test(rawInterval) || interval < 1 || interval > MAX_RECURRENCE_INTERVAL))
+    ) {
+      issues.push({
+        code: "invalid_format",
+        path: ["recurrenceInterval"],
+        message: `Repeat every 1 to ${MAX_RECURRENCE_INTERVAL} periods.`,
+      });
+    }
+
+    const rawUntil = optionalFormValue(values.recurrenceUntil);
+    let until: string | null = null;
+    if (rawUntil === INVALID || (rawUntil !== null && !isSqlDate(rawUntil))) {
+      issues.push({
+        code: "invalid_format",
+        path: ["recurrenceUntil"],
+        message: "Enter a valid date in YYYY-MM-DD format.",
+      });
+    } else if (rawUntil !== null && dueDate !== null && rawUntil < dueDate) {
+      issues.push({
+        code: "custom",
+        path: ["recurrenceUntil"],
+        message: "End the repeat on or after the due date.",
+      });
+    } else {
+      until = rawUntil;
+    }
+
+    if (dueDate === null) {
+      issues.push({
+        code: "custom",
+        path: ["recurrenceFreq"],
+        message: "Add a due date before setting a repeat.",
+      });
+    }
+
+    recurrence = { freq: rawFreq, interval, until };
+  }
+
   if (dueTimeValid && dueTime !== null && dueDate === null) {
     issues.push({
       code: "custom",
@@ -184,10 +246,14 @@ function parseTodoInput(input: unknown): TodoInputParseResult {
 
   // Class fields are emitted only for a class task, so ordinary creates stay unchanged.
   const base = { text, projectId, ...(classId !== null ? { classId, assignmentType } : {}) };
+  // Like the class fields, a repeat is emitted only when one is set, so an
+  // ordinary create carries exactly the fields it did before.
   return {
     success: true,
     data:
-      dueDate === null ? { ...base, dueDate: null, dueTime: null } : { ...base, dueDate, dueTime },
+      dueDate === null
+        ? { ...base, dueDate: null, dueTime: null }
+        : { ...base, dueDate, dueTime, ...(recurrence !== null && { recurrence }) },
   };
 }
 

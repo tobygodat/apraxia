@@ -39,15 +39,34 @@ serializes against Today ordering and clears ranks that are no longer eligible.
 | `project_id` | `uuid` | Composite foreign key on `(user_id, project_id)`, so a task can only reference the same owner's project. Set to null when the project is hard-deleted; a trigger also requires the project to be active. |
 | `class_id` | `text` | Composite foreign key on `(user_id, class_id)` to `classes`, `on delete set null`. A check forbids setting both `project_id` and `class_id`: a task has at most one parent. Added by `20260914000100_assignment_todos.sql`. |
 | `assignment_type` | `text` | `''`, `Homework`, `Quiz`, `Reading`, `Exam`, or `Other`; non-empty only with a `class_id`. A trigger clears it when the class link is removed. Class-only; not a general task kind. |
+| `recurrence_freq` | `todo_recurrence_freq` | `daily`, `weekly`, or `monthly`, or null for a task that does not repeat. A rule requires a `due_date`, which is the anchor it is measured from. Added by `20260918060000_recurring_todos.sql`. |
+| `recurrence_interval` | `integer` | 1 through 52, so "every other week" is one rule. Defaults to 1 and is cleared with the frequency by `private.sync_todo_recurrence`. |
+| `recurrence_until` | `date` | Inclusive last date a new occurrence may land on; never earlier than `due_date`. Null repeats without an end. |
+| `recurrence_series_id` | `uuid` | Links the occurrences of one repeating task. Assigned by the database, cleared when the rule is removed; the browser can write neither it nor the marker below. |
+| `recurrence_spawned_at` | `timestamptz` | Set when this occurrence created its successor, so unchecking and rechecking cannot create a second one. |
 | `today_rank` | `bigint` | Manual Today order. Positive when set. Cleared on completion, delete, and ineligible due-date changes. |
 | `source`, `legacy_id` | enum, `text` | `legacy_id` is only allowed with `source = 'migration'`; the browser can write neither. |
 | `deleted_at` | `timestamptz` | Soft delete marker and undo token. |
 | `search_vector` | `tsvector` | Generated from `text`. |
 
 Browser grants: `select` on all columns, `insert (id, text, due_date, due_time,
-project_id, class_id, assignment_type)`, `update (text, completed, due_date,
-due_time, project_id, class_id, assignment_type)`. The `id` insert grant lets
-the Classes editor keep a draft UUID across retries.
+project_id, class_id, assignment_type, recurrence_freq, recurrence_interval,
+recurrence_until)`, `update (text, completed, due_date, due_time, project_id,
+class_id, assignment_type, recurrence_freq, recurrence_interval,
+recurrence_until)`. The `id` insert grant lets the Classes editor keep a draft
+UUID across retries.
+
+Completing a repeating task is what creates the next occurrence: the
+`todos_spawn_recurrence` trigger runs `private.spawn_recurring_todo`, which
+advances the due date by the interval until it reaches the owner's local today,
+stops at `recurrence_until`, and inserts one successor carrying the text, time
+of day, parent, rule, and series. Nothing is generated in advance and no
+scheduled job is involved, so exactly one occurrence of a series is ever open.
+The helper is `SECURITY DEFINER` because the successor names columns the browser
+may not write; its owner is read from the row the caller just updated under RLS,
+so the elevated insert can only land in that caller's own account. A monthly
+rule repeats on the same day of the month and clamps to shorter months, and
+moving one occurrence moves the ones after it.
 
 The Today RPC projects `class_id`, `class_name`, and `assignment_type` alongside
 the project title, and the workspace snapshot carries paginated class summaries
@@ -145,7 +164,9 @@ Covered by `supabase/tests/030_soft_delete_restore.test.sql`.
 
 - `due_date` is a SQL `date` and `due_time` a `time without time zone`. There is
   no timestamp for a due date anywhere in the schema.
-- `todos_due_time_requires_date` forbids a time without a date.
+- `todos_due_time_requires_date` forbids a time without a date, and
+  `todos_recurrence_requires_due_date` forbids a repeat rule without one.
+  Clearing the date clears both, in the browser service and at the provider.
 - `supabase/migrations/20260902000300_todo_schedule_bounds.sql` bounds
   `due_date` to years 0001 through 9999 and `due_time` to `[00:00, 24:00)`, so
   persisted schedules stay representable by the browser domain.

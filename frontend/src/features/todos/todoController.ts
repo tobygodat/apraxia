@@ -713,7 +713,15 @@ export class TodoController {
       todo &&
       keys.length &&
       keys.every((key) =>
-        ["text", "projectId", "classId", "assignmentType", "dueDate", "dueTime"].includes(key),
+        [
+          "text",
+          "projectId",
+          "classId",
+          "assignmentType",
+          "dueDate",
+          "dueTime",
+          "recurrence",
+        ].includes(key),
       ) &&
       !(request.dueDate === null && request.dueTime !== null) &&
       !(
@@ -721,7 +729,13 @@ export class TodoController {
         typeof request.dueDate !== "string" &&
         todo.dueDate === null
       )
-        ? readTodoResponse({ ...todo, ...request })
+        ? // Clearing the date clears the repeat rule with it, the same way the
+          // provider does, so a reschedule off a repeating task stays valid.
+          readTodoResponse({
+            ...todo,
+            ...request,
+            ...(request.dueDate === null && { recurrence: null }),
+          })
         : null;
     if (!todo || !optimistic) {
       if (todo) this.replace({ mutationError: "update_failed" });

@@ -396,6 +396,11 @@ export type Database = {
           id: string;
           legacy_id: string | null;
           project_id: string | null;
+          recurrence_freq: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval: number | null;
+          recurrence_series_id: string | null;
+          recurrence_spawned_at: string | null;
+          recurrence_until: string | null;
           search_vector: unknown;
           source: Database["public"]["Enums"]["record_source"];
           text: string;
@@ -415,6 +420,11 @@ export type Database = {
           id?: string;
           legacy_id?: string | null;
           project_id?: string | null;
+          recurrence_freq?: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval?: number | null;
+          recurrence_series_id?: string | null;
+          recurrence_spawned_at?: string | null;
+          recurrence_until?: string | null;
           search_vector?: unknown;
           source?: Database["public"]["Enums"]["record_source"];
           text: string;
@@ -434,6 +444,11 @@ export type Database = {
           id?: string;
           legacy_id?: string | null;
           project_id?: string | null;
+          recurrence_freq?: Database["public"]["Enums"]["todo_recurrence_freq"] | null;
+          recurrence_interval?: number | null;
+          recurrence_series_id?: string | null;
+          recurrence_spawned_at?: string | null;
+          recurrence_until?: string | null;
           search_vector?: unknown;
           source?: Database["public"]["Enums"]["record_source"];
           text?: string;
@@ -682,6 +697,7 @@ export type Database = {
       orbitos_record_type: "todo" | "idea" | "project";
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
+      todo_recurrence_freq: "daily" | "weekly" | "monthly";
     };
     CompositeTypes: {
       [_ in never]: never;

@@ -8,6 +8,7 @@ import type {
   ProjectSummary,
   TodayTodo,
   Todo,
+  TodoRecurrence,
   UUID,
 } from "../../types/domain";
 
@@ -31,25 +32,29 @@ type TodoTextOrProjectUpdate =
       readonly projectId?: UUID | null;
       readonly dueDate?: never;
       readonly dueTime?: never;
+      readonly recurrence?: never;
     }
   | {
       readonly projectId: UUID | null;
       readonly text?: string;
       readonly dueDate?: never;
       readonly dueTime?: never;
+      readonly recurrence?: never;
     };
 
 type TodoScheduleUpdate =
   | {
       readonly dueDate: LocalDate;
       readonly dueTime?: LocalTime | null;
+      readonly recurrence?: TodoRecurrence | null;
       readonly text?: string;
       readonly projectId?: UUID | null;
     }
   | {
-      /** Clearing a date must clear any persisted time atomically. */
+      /** Clearing a date must clear any persisted time and repeat rule atomically. */
       readonly dueDate: null;
       readonly dueTime: null;
+      readonly recurrence?: null;
       readonly text?: string;
       readonly projectId?: UUID | null;
     }
@@ -57,6 +62,7 @@ type TodoScheduleUpdate =
       /** Clearing only the time is valid regardless of the current date. */
       readonly dueTime: null;
       readonly dueDate?: never;
+      readonly recurrence?: never;
       readonly text?: string;
       readonly projectId?: UUID | null;
     };
@@ -67,6 +73,7 @@ type TodoAssignmentUpdate = {
   readonly projectId?: never;
   readonly dueDate?: never;
   readonly dueTime?: never;
+  readonly recurrence?: never;
 };
 
 /** A task belongs to at most one project or class; the type is class-only. */
