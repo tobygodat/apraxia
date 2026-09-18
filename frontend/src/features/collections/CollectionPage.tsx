@@ -86,6 +86,7 @@ export function CollectionPage(props: Props) {
   const [composer, setComposer] = useState(false);
   const [editingTask, setEditingTask] = useState<Todo | null>(null);
   const [notice, setNotice] = useState("");
+  const [deleteNotice, setDeleteNotice] = useState(false);
   const [undo, setUndo] = useState<{
     kind: CollectionKind | "todo";
     id: string;
@@ -184,6 +185,7 @@ export function CollectionPage(props: Props) {
           : await service.softDelete(k, id);
       if (!mounted.current) return;
       setUndo({ kind: k, id, token });
+      setDeleteNotice(true);
       setNotice(
         `${k === "project" ? "Project deleted. Its tasks and ideas are kept." : "Deleted."}`,
       );
@@ -381,6 +383,9 @@ export function CollectionPage(props: Props) {
   const openTasks = tasks.filter((t) => !t.completed);
   const coldDetail = detail && loading && !project;
   const coldList = !detail && loading && !rows.length;
+  // The project detail page stays quiet about routine notices, but a deletion
+  // is only reversible while its Undo is on screen, so that one still shows.
+  const showNotice = Boolean(notice) && (!detail || deleteNotice);
   const showLoadingStatus = !error && (detail ? coldDetail : coldList);
   useColdLoad(!error && (detail ? coldDetail : coldList));
   return (
@@ -425,7 +430,7 @@ export function CollectionPage(props: Props) {
           </button>
         )}
       </header>
-      {notice && !detail && (
+      {showNotice && (
         <div className="collection-notice" role="status">
           {notice}
           {undo && (
@@ -588,6 +593,7 @@ export function CollectionPage(props: Props) {
           onClose={() => setEditor(null)}
           onSaved={() => {
             setEditor(null);
+            setDeleteNotice(Boolean(undo));
             if (editor.kind !== "project") setNotice("Saved.");
             else if (!undo) setNotice("");
             changed();

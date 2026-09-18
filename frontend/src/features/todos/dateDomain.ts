@@ -198,16 +198,16 @@ function inclusiveDateRange(start: string, end: string): SqlDate[] {
 }
 
 /**
- * Dates shown by the full Todos board. The current week starts at today;
- * every other selected week shows all seven Monday-through-Sunday dates.
+ * Dates shown by the full Todos board: all seven Monday-through-Sunday dates
+ * of the selected week. The current week used to start at today, which left
+ * this week's completed tasks with no column to appear in until the user
+ * stepped back to the previous week, where they are not.
  */
 export function visibleTodoWeekDates(visibleWeekMonday: string, today: string): SqlDate[] {
   const monday = assertMonday(visibleWeekMonday);
-  const validToday = asSqlDate(today);
-  const currentWeekMonday = startOfWeekMonday(validToday);
-  const start = monday === currentWeekMonday ? validToday : monday;
+  asSqlDate(today);
   const sunday = addSqlDateDays(monday, 6);
-  return inclusiveDateRange(start, sunday);
+  return inclusiveDateRange(monday, sunday);
 }
 
 export function classifyTodoDueDate(

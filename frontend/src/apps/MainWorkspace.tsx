@@ -42,6 +42,7 @@ import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
 import { WorkspaceDialog } from "./WorkspaceDialog";
+import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
 import "./workspace.css";
 
@@ -286,9 +287,11 @@ function WorkspaceContent() {
         </p>
       )}
       <ColdLoadGate key={location.pathname}>
-        <Suspense fallback={<RouteSuspenseFallback />}>
-          <Outlet />
-        </Suspense>
+        <WorkspaceErrorBoundary resetKey={location.pathname}>
+          <Suspense fallback={<RouteSuspenseFallback />}>
+            <Outlet />
+          </Suspense>
+        </WorkspaceErrorBoundary>
       </ColdLoadGate>
     </>
   );

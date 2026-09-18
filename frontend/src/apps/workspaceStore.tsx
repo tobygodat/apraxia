@@ -95,7 +95,14 @@ export function WorkspaceProvider({
     validatedAt.current = Date.now();
     setRevision((v) => v + 1);
   }, [ownCache]);
-  const retryProfile = useCallback(() => setProfileRevision((v) => v + 1), []);
+  // Retry has to drop the cached entry first: a well-formed value the store
+  // rejected (an owner mismatch, a bad snapshot) is still cached, so without
+  // this the retry re-reads the same value until the TTL expires.
+  const retryProfile = useCallback(() => {
+    ownCache.invalidate();
+    validatedAt.current = Date.now();
+    setProfileRevision((v) => v + 1);
+  }, [ownCache]);
   const dialogs = useMemo<WorkspaceDialogs>(() => {
     let count = 0;
     return {

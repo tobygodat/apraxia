@@ -27,7 +27,7 @@ import type {
   TodoWorkspaceSnapshot,
   UpdateTodoDetailsInput,
 } from "./todoService";
-import { peekRead } from "../../apps/navigationCache";
+import { invalidateReads, peekRead } from "../../apps/navigationCache";
 import { TODO_UNDO_COPY, type TodoLoadStatus, type TodoMutationErrorKind } from "./todoUiState";
 import {
   isDeleteUndoToken,
@@ -491,6 +491,10 @@ export class TodoController {
     } catch {
       if (!this.isCurrentLoad("workspace", abort)) return false;
       this.loads.workspace.abort = null;
+      // A snapshot this controller rejected is still in the read cache, so
+      // "Try again" would be served the same rejected value until the TTL
+      // expires. Drop it before the retry runs.
+      invalidateReads(this.service);
       this.replace({ workspaceStatus: "error" });
       return false;
     }
@@ -736,11 +740,15 @@ export class TodoController {
       if (!saved || !sameId(saved.id, todo.id) || !todoMatchesDetails(saved, request))
         throw new RangeError("Invalid details response.");
       const slices = this.confirmTodo(saved);
+      // A row that was never in Today cannot have left it. The controller is
+      // always pinned to today, so without this guard every edit made from the
+      // Tomorrow list announced a move the user did not make.
+      const wasToday = this.localDate !== null && asTodayTodo(todo, this.localDate) !== null;
       const stillToday = this.localDate !== null && asTodayTodo(saved, this.localDate) !== null;
       this.publish(slices, {
         announcement: saved.completed
           ? `${todoLabel(saved)} is complete and no longer in Today.`
-          : this.state.todayStatus !== "idle" && !stillToday
+          : this.state.todayStatus !== "idle" && wasToday && !stillToday
             ? `${todoLabel(saved)} moved out of Today.`
             : `${todoLabel(saved)} ${kind === "reschedule" ? "rescheduled" : "updated"}.`,
       });

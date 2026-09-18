@@ -134,6 +134,8 @@ function weekRangeLabel(monday: string): string {
 function TodoCard({
   todo,
   pending,
+  deleteLocked,
+  undoSummaryId,
   titleId,
   primaryControlId,
   projectTitle,
@@ -147,6 +149,8 @@ function TodoCard({
 }: {
   readonly todo: Todo;
   readonly pending: boolean;
+  readonly deleteLocked: boolean;
+  readonly undoSummaryId: string;
   readonly titleId: string;
   readonly primaryControlId: string;
   readonly projectTitle: string | null;
@@ -190,6 +194,7 @@ function TodoCard({
             {showDueDate && todo.dueDate ? (
               // Past-due tasks sit under Today; the original date stays visible in red.
               <time className="todos-board-card__due--past" dateTime={todo.dueDate}>
+                <span className="todos-board-sr-only">Past due. </span>
                 Due {formatTaskDate(todo.dueDate, RANGE_FORMAT)}
               </time>
             ) : null}
@@ -214,7 +219,11 @@ function TodoCard({
         <button
           type="button"
           disabled={pending}
-          onClick={() => onDeleteTodo(todo)}
+          aria-disabled={deleteLocked || undefined}
+          aria-describedby={deleteLocked ? undoSummaryId : undefined}
+          onClick={() => {
+            if (!deleteLocked) onDeleteTodo(todo);
+          }}
           aria-label={`Delete ${todo.text}`}
           title="Delete task"
         >
@@ -291,6 +300,10 @@ export function TodosBoard({
     | null
   >(null);
   const boardRegionId = `${idBase}-task-region`;
+  const undoSummaryId = `${idBase}-undo-summary`;
+  // A second delete while the Undo notice is open is refused by the
+  // controller, so the board has to say so instead of doing nothing.
+  const deleteLocked = undoNotice !== null;
   const projectTitles = new Map(projects.map((project) => [project.id, project.title] as const));
 
   const todoControlId = useCallback(
@@ -520,6 +533,8 @@ export function TodosBoard({
         key={todo.id}
         todo={todo}
         pending={pendingTodoIds.has(todo.id)}
+        deleteLocked={deleteLocked}
+        undoSummaryId={undoSummaryId}
         primaryControlId={todoControlId(todo.id)}
         projectTitle={todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null}
         showDueDate={!todo.completed && todo.dueDate !== null && todo.dueDate < model.today}
@@ -805,10 +820,10 @@ export function TodosBoard({
           aria-busy={undoNotice.pending || undefined}
         >
           <div>
-            <p role="status" aria-live="polite">
+            <p id={undoSummaryId} role="status" aria-live="polite">
               {undoNotice.pending
                 ? `Restoring ${undoNotice.todoText}…`
-                : `${undoNotice.todoText} deleted. Undo is available.`}
+                : `${undoNotice.todoText} deleted. Undo or dismiss before deleting another task.`}
             </p>
             {undoNotice.error ? <p role="alert">{undoNotice.error}</p> : null}
           </div>

@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { EventEditor } from "./EventEditor";
+import { useWorkspace, WorkspaceProvider, type WorkspaceDialogs } from "../../apps/workspaceStore";
 import { WeekGrid } from "./HomePage";
 import type { CalendarService } from "./calendarService";
 import type { EventDetail } from "../../../../shared/calendarEventContract";
@@ -219,4 +220,49 @@ it("selects forward and backward drag ranges in 15-minute steps, with a keyboard
   fireEvent.keyDown(column, { key: "Enter" });
   expect(onCreate).toHaveBeenLastCalledWith(slot);
   expect(screen.queryByLabelText("Add all-day event on 2026-09-07")).toBeNull();
+});
+it("counts itself as an open dialog so shell shortcuts stay out of the modal", async () => {
+  const workspaceData = {
+    profile: vi
+      .fn()
+      .mockResolvedValue({ userId: "user-a", timezone: "UTC", createdAt: "", updatedAt: "" }),
+    projects: vi.fn().mockResolvedValue([]),
+  };
+  // The shell reads this the way its Ctrl+K handler does: on the keystroke, not on render.
+  let dialogs: WorkspaceDialogs = { isOpen: () => false, register: () => () => undefined };
+  function ShortcutWitness() {
+    dialogs = useWorkspace().dialogs;
+    return null;
+  }
+  function Shell({ editing }: { editing: boolean }) {
+    return (
+      <WorkspaceProvider
+        identity={{ userId: "user-a", email: "a@example.com", expiresAt: null }}
+        workspaceData={workspaceData}
+      >
+        <MemoryRouter>
+          <ShortcutWitness />
+          {editing && (
+            <EventEditor
+              service={{ calendars: async () => preferences } as unknown as CalendarService}
+              timezone="UTC"
+              slot={slot}
+              onClose={vi.fn()}
+              onSaved={vi.fn()}
+            />
+          )}
+        </MemoryRouter>
+      </WorkspaceProvider>
+    );
+  }
+  const view = render(<Shell editing={false} />);
+  expect(dialogs.isOpen()).toBe(false);
+
+  view.rerender(<Shell editing />);
+  await screen.findByLabelText("Title");
+  expect(dialogs.isOpen()).toBe(true);
+
+  view.rerender(<Shell editing={false} />);
+  expect(screen.queryByLabelText("Title")).toBeNull();
+  expect(dialogs.isOpen()).toBe(false);
 });
