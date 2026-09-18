@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "npm run db:start && vercel dev",
     "dev:web": "cross-env APRAXIA_CLOUD_DEV=1 VITE_APRAXIA_RUNTIME=cloud npm run dev --workspace=frontend",
+    "qa:snapshot": "node scripts/qa-snapshot.mjs",
     "dev:legacy-web": "cross-env APRAXIA_CLOUD_DEV=0 VITE_APRAXIA_RUNTIME=legacy npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "typecheck": "npm run typecheck:server && npm run typecheck --workspace=frontend",

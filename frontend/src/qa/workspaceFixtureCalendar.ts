@@ -4,6 +4,7 @@ import { eventCommandSchema, type EventDetail } from "../../../shared/calendarEv
 import { CalendarServiceError, type CalendarService } from "../features/calendar/calendarService";
 import { addSqlDateDays } from "../features/todos/dateDomain";
 import type { CalendarEvent, CalendarPreference } from "../types/domain";
+import type { PersonalSnapshotEvent } from "./personalSnapshot";
 
 export interface FixtureStorage {
   getItem(key: string): string | null;
@@ -26,7 +27,10 @@ export function createFixtureCalendar({
   timezone,
   storage,
   storageKey,
+  weekEvents,
 }: {
+  /** The `personal` scenario's captured week, replayed in every week shown. */
+  weekEvents?: PersonalSnapshotEvent[];
   scenario: string;
   timezone: string;
   storage?: FixtureStorage;
@@ -142,7 +146,47 @@ export function createFixtureCalendar({
         color,
         recurring,
       );
-    if (scenario === "calendar") {
+    if (weekEvents) {
+      // The fixture's own calendars stand in for the account's, by index.
+      const calendars = ["personal", "work", "uncolored"];
+      // Days from Sunday, unwrapped: an event may end on the next week's Sunday.
+      const at = (days: number, minute: number) =>
+        Temporal.PlainDate.from(sunday)
+          .add({ days })
+          .toZonedDateTime({
+            timeZone: timezone,
+            plainTime: { hour: Math.floor(minute / 60), minute: minute % 60 },
+          })
+          .toInstant()
+          .toString();
+      weekEvents.forEach((event, index) => {
+        const calendarId = calendars[event.calendar % calendars.length];
+        if (event.kind === "all_day")
+          add(
+            `snapshot-${index}`,
+            calendarId,
+            event.title,
+            {
+              kind: "all_day",
+              start: addSqlDateDays(sunday, event.startDay),
+              end: addSqlDateDays(sunday, event.endDay),
+            },
+            event.color,
+          );
+        else
+          add(
+            `snapshot-${index}`,
+            calendarId,
+            event.title,
+            {
+              kind: "timed",
+              start: at(event.startDay, event.startMinute ?? 0),
+              end: at(event.endDay, event.endMinute ?? 0),
+            },
+            event.color,
+          );
+      });
+    } else if (scenario === "calendar") {
       add("open-day", "personal", "Campus open day and welcome activities", {
         kind: "all_day",
         start: addSqlDateDays(sunday, 1),

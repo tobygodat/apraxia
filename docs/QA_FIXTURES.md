@@ -1,7 +1,8 @@
 # QA fixtures
 
 The QA fixtures are development-only Vite entry points that render the real
-workspace components against in-memory fictional services. They exist so UI work
+workspace components against in-memory services seeded with fictional data, or,
+in the `personal` scenario, a private local snapshot. They exist so UI work
 can be checked without an account, a database, or Google. They throw if built
 outside `import.meta.env.DEV` and are excluded from the deployed bundle.
 
@@ -33,6 +34,7 @@ fixture defaults to `realistic`; the QA menu switches between them by reloading.
 
 | Scenario | What it gives you |
 | --- | --- |
+| `personal` | A private reproduction of the real account: its tasks, projects, ideas, classes, note names, and the captured week's calendar events. Check this first, then `dense`. See [The personal snapshot](#the-personal-snapshot). Without a snapshot it shows the `realistic` seed and says so in the QA menu. |
 | `realistic` | Default. A saved cover with an off-center crop, event-specific colors on one calendar, three-way overlaps, adjacent 15-minute events, 5 to 120-minute events, long and untitled events, multiple all-day lanes, midnight crossings, hidden and read-only calendars. |
 | `calendar` | Calendar-focused week seed. |
 | `typical` | No cover. Use this for the no-cover layout check. |
@@ -50,6 +52,26 @@ The standalone Todo fixtures accept `default`, `empty`, `dense`, and `error`.
 `?drive=disconnected` reports no Drive connection, `?drive=error` makes file
 listing fail. Omit it for a connected Drive. Pair it with
 `?route=/classes/math3012`.
+
+## The personal snapshot
+
+`npm run qa:snapshot` reads the account through the
+[personal agent API](AGENT_API.md) with GET requests only and writes
+`frontend/qa/local/workspace-snapshot.json`. It takes `APRAXIA_BASE_URL` and
+`APRAXIA_AGENT_TOKEN` from the environment or `.env.muse.local`. Run it again
+whenever the fixture should catch up with the account.
+
+The folder is gitignored. The file is personal data: never commit it, and treat
+screenshots of the `personal` scenario the same way. It leaves out the token,
+owner id, Drive file ids, event locations, and Google event URLs. Note PDFs are
+not captured, so opening a note behaves as in the other scenarios.
+
+`qa/personalSnapshot.ts` loads the file through `import.meta.glob`, so a checkout
+without it still builds. On load every task date moves forward by whole weeks,
+so the captured week is always the week on screen: what was due Thursday is
+still due Thursday and what had slipped has still slipped. The captured week's
+events replay in every calendar week, on the fixture's own calendars with their
+real colors. Edits behave as in any scenario and never reach the account.
 
 ## What persists
 

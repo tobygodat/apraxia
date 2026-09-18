@@ -1,22 +1,25 @@
-/* Weekly review: a ruled sheet with the week's standing in its margin. The
+/* Weekly review: a ruled sheet under a strip of the week's standing. The
    ledger vocabulary is the Tasks board's, stepped down one level — where the
    board rules the week by day, this page rules it by project and class, so the
-   group name takes the place the date holds there. */
+   group name takes the place the date holds there, as a label column beside
+   its entries. */
 
 .weekly-review {
-  --weekly-review-line: rgba(255, 255, 255, 0.12);
+  /* Opaque equivalents of the board's 12% / 22% / 30% whites on this ground,
+     so a group rule laid over an entry hairline does not compound. */
+  --weekly-review-line: #353535;
+  --weekly-review-group-line: #4c4c4c;
   /* The Tasks board's control-border pair, reused so prev/next here and there
      are the same object. */
   --weekly-review-control-line: rgba(255, 255, 255, 0.1);
   --weekly-review-control-line-strong: rgba(255, 255, 255, 0.2);
-  --weekly-review-rule: rgba(255, 255, 255, 0.3);
+  --weekly-review-rule: #5f5f5f;
   --weekly-review-text: rgba(255, 255, 255, 0.93);
   --weekly-review-muted: rgba(255, 255, 255, 0.62);
   --weekly-review-faint: rgba(255, 255, 255, 0.52);
   --weekly-review-late: #ddb1a4;
-  --weekly-review-margin: clamp(150px, 15vw, 212px);
+  --weekly-review-label: clamp(150px, 15vw, 212px);
   --weekly-review-gutter: 28px;
-  --weekly-review-group-gap: 40px;
   min-width: 0;
   min-height: calc(100vh - 64px);
   margin: 0;
@@ -111,13 +114,9 @@
   margin: 0;
 }
 
-/* Sheet: margin plus bands */
+/* Sheet: the standing strip, then the bands, all on one left edge. */
 
 .weekly-review__sheet {
-  display: grid;
-  grid-template-columns: minmax(0, var(--weekly-review-margin)) minmax(0, 1fr);
-  column-gap: var(--weekly-review-gutter);
-  align-items: start;
   padding: 0 var(--workspace-page-inset, 32px);
   animation: weekly-review-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -133,40 +132,41 @@
   }
 }
 
-/* The week's standing: three ruled tally rows, each an anchor to its band. */
+/* The week's standing: one ruled line of tallies, each an anchor to its band.
+   It stays at the top of the scroll so a long band never loses the other two. */
 
 .weekly-review__standing {
   position: sticky;
-  top: 28px;
+  top: 0;
+  z-index: 1;
   min-width: 0;
+  margin-bottom: 36px;
+  border-top: 1px solid var(--weekly-review-line);
+  border-bottom: 1px solid var(--weekly-review-line);
+  background: #1a1a1a;
 }
 
 .weekly-review__standing ul {
+  display: flex;
+  gap: var(--weekly-review-gutter);
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 2px solid var(--weekly-review-rule);
 }
 
 .weekly-review__standing a {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 40px;
-  padding: 10px 6px;
-  margin: 0 -6px;
-  border-bottom: 1px solid var(--weekly-review-line);
+  gap: 8px;
+  min-height: 44px;
+  padding: 13px 0 0;
   color: var(--weekly-review-muted);
   font-size: 13px;
   text-decoration: none;
-  transition:
-    color 140ms ease,
-    background-color 140ms ease;
+  transition: color 140ms ease;
 }
 
 .weekly-review__standing a:hover {
-  background: #242424;
   color: var(--weekly-review-text);
 }
 
@@ -185,12 +185,22 @@
 
 .weekly-review__band {
   min-width: 0;
-  scroll-margin-top: 24px;
+  /* Clears the sticky standing strip when a tally jumps here. */
+  scroll-margin-top: 68px;
   outline: none;
 }
 
+/* The band's heading and its caption share a baseline over the page's one
+   heavy rule, so the three bands are the first thing the eye separates. */
 .weekly-review__band-head {
-  margin: 0 0 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--weekly-review-rule);
 }
 
 .weekly-review__band-head h2 {
@@ -202,35 +212,10 @@
 }
 
 .weekly-review__band-caption {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--weekly-review-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-}
-
-/* Groups are columns of a ledger, not cards on a grid: a class with one task
-   finished and a class with six are not the same size, and a row-based grid
-   would hold every group in a row down to the tallest one, leaving a hole under
-   each short one. Flowing them into columns lets each take only the height it
-   needs and packs the next group under it. */
-.weekly-review__groups {
-  columns: 250px;
-  column-gap: var(--weekly-review-gutter);
-  /* The column flow's own bottom edge; the negative margin below takes the
-     trailing one back so a band still sits 56px from the next. */
-  margin-bottom: calc(-1 * var(--weekly-review-group-gap));
-}
-
-.weekly-review__groups > * {
-  margin-bottom: var(--weekly-review-group-gap);
-  /* A group is read as one unit, so it never splits across two columns. */
-  break-inside: avoid;
-}
-
-/* An empty band has one line of copy that rules the full width, so it keeps
-   the single-column flow rather than sitting in the first of five columns. */
-.weekly-review__groups--empty {
-  columns: auto;
 }
 
 /* An empty band keeps ruling rather than leaving a blank space, matching the
@@ -244,14 +229,31 @@
   background: repeating-linear-gradient(
     to bottom,
     transparent 0 40px,
-    rgba(255, 255, 255, 0.08) 40px 41px
+    var(--weekly-review-line) 40px 41px
   );
 }
 
-/* One project or class */
+/* One project or class: a ledger line. Its name and count hold the label
+   column, its entries fill shared tracks to the right, so every name, count
+   and task on the page sits on the same few vertical axes whatever the group
+   holds. */
 
 .weekly-review__group {
+  display: grid;
+  grid-template-columns: minmax(0, var(--weekly-review-label)) minmax(0, 1fr);
+  column-gap: var(--weekly-review-gutter);
   min-width: 0;
+  border-top: 1px solid var(--weekly-review-group-line);
+}
+
+.weekly-review__group:first-child {
+  border-top: 0;
+}
+
+/* Closes the band's last group with a full-width hairline, whatever its last
+   row of entries reaches. */
+.weekly-review__groups:not(.weekly-review__groups--empty) {
+  border-bottom: 1px solid var(--weekly-review-line);
 }
 
 .weekly-review__group-head {
@@ -260,10 +262,12 @@
   justify-content: space-between;
   gap: 12px;
   margin: 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--weekly-review-rule);
+  /* Matches an entry's top padding and line height, so the name shares the
+     first task's baseline. */
+  padding: 7px 0;
   font-size: 13px;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 .weekly-review__group-name {
@@ -289,20 +293,27 @@
 }
 
 .weekly-review__entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  column-gap: var(--weekly-review-gutter);
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  /* Entries rule their top edge; this clips the first row's, so hairlines fall
+     only between rows and the group's own rules are never doubled. */
+  overflow: hidden;
 }
 
 .weekly-review__entry {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 1px;
+  min-width: 0;
   min-height: 40px;
-  margin: 0 -6px;
-  padding: 7px 6px;
-  border-bottom: 1px solid var(--weekly-review-line);
+  margin-top: -1px;
+  padding: 7px 0;
+  border-top: 1px solid var(--weekly-review-line);
 }
 
 .weekly-review__entry-text {
@@ -340,39 +351,22 @@
   color: var(--weekly-review-late);
 }
 
-@media (max-width: 1180px) {
-  .weekly-review__groups {
-    columns: 220px;
-  }
-}
-
-/* The margin stops being a margin: it lays down as a tally strip above the
-   bands, still ruled, still the first thing read. */
+/* No room for a label column: the name and count become a ruled header over
+   the group's entries, and groups take the air the column gave them. */
 @media (max-width: 900px) {
-  .weekly-review__sheet {
+  .weekly-review__group {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 40px;
+    border-top: 0;
   }
 
-  .weekly-review__standing {
-    position: static;
+  .weekly-review__group + .weekly-review__group {
+    margin-top: 28px;
   }
 
-  .weekly-review__standing ul {
-    display: flex;
-  }
-
-  .weekly-review__standing li {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .weekly-review__standing a {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    margin: 0;
-    padding: 10px 6px;
+  .weekly-review__group-head {
+    margin-top: 14px;
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--weekly-review-group-line);
   }
 }
 
@@ -383,8 +377,13 @@
     gap: 14px;
   }
 
-  .weekly-review__groups {
-    columns: auto;
+  .weekly-review__standing ul {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .weekly-review__entries {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -405,12 +404,14 @@
   }
 
   .weekly-review__entry,
-  .weekly-review__standing a {
-    border-bottom: 1px solid CanvasText;
+  .weekly-review__groups {
+    border-color: CanvasText;
   }
 
+  .weekly-review__group,
   .weekly-review__group-head,
-  .weekly-review__standing ul {
+  .weekly-review__band-head,
+  .weekly-review__standing {
     border-color: CanvasText;
   }
 }
