@@ -445,6 +445,30 @@ describe("TodosBoard drag to reschedule", () => {
   });
 });
 
+it("returns the classic board to its leading column when a new day takes the lead", () => {
+  const boardProps = props({ theme: "classic" });
+  const { rerender } = render(<TodosBoard {...boardProps} />);
+  const region = screen.getByRole("region", { name: "Tasks by date" });
+
+  region.scrollLeft = 900;
+  expect(region.scrollLeft).toBe(900);
+
+  // Local midnight inside the same week: the visible Monday does not move, but
+  // Thursday rotates into the lead ahead of Wednesday, so the board has to
+  // return to it rather than staying scrolled where the user left it.
+  rerender(
+    <TodosBoard
+      {...boardProps}
+      model={buildTodoBoardModel([TODO, OVERDUE, INBOX], "2026-08-31", "2026-09-03")}
+    />,
+  );
+
+  expect(screen.getAllByRole("heading", { level: 2 })[0]?.textContent).toBe(
+    "Thursday, Sep 3 · Today",
+  );
+  expect(region.scrollLeft).toBe(0);
+});
+
 it("renders the classic theme with Today first, marked, and carrying a count badge", () => {
   render(<TodosBoard {...props({ theme: "classic" })} />);
   const headings = screen

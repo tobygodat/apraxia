@@ -498,11 +498,16 @@ export function TodosBoard({
   const navigationPending = loadStatus === "loading";
   useColdLoad(loadStatus === "loading" && !loaded);
 
-  // The classic board scrolls sideways. Every week opens on its first column so
-  // a week change never leaves Today scrolled out of view behind earlier days.
+  // The classic board scrolls sideways. Whenever a different column takes the
+  // lead the board returns to it, so neither a week change nor a local-midnight
+  // rollover leaves the leading day scrolled out of view. Keying on the leading
+  // column rather than the visible week covers the rollover, which rotates a new
+  // date into first place while the week's Monday stays put. Source filtering
+  // preserves column keys, so it never scrolls the board on its own.
+  const leadingColumnKey = model.columns[0]?.key;
   useLayoutEffect(() => {
     if (boardRegionRef.current) boardRegionRef.current.scrollLeft = 0;
-  }, [model.visibleWeekMonday]);
+  }, [leadingColumnKey]);
 
   function clearDrag() {
     draggedTodoRef.current = null;
