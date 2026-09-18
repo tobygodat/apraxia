@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionPage } from "./CollectionPage";
 import { ColdLoadGate } from "../../apps/coldLoad";
@@ -293,7 +293,7 @@ describe("Collection pages", () => {
     expect(screen.getByRole("heading", { name: "Home" })).toBeTruthy();
     expect(screen.queryByText("Loading…")).toBeNull();
   });
-  it("lists projects of every saved status without classifications or a status filter", async () => {
+  it("labels non-active projects and leaves the default list unfiltered", async () => {
     const records = ["active", "someday", "completed", "archived"].map((status, index) => ({
       id: `p-${index}`,
       title: `Project ${index}`,
@@ -308,11 +308,33 @@ describe("Collection pages", () => {
         todoService={{} as TodoService}
       />,
     );
-    await screen.findByRole("button", { name: "Project 3" });
+    await screen.findByRole("button", { name: /^Project 3/ });
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
-    expect(screen.queryByLabelText("Status")).toBeNull();
+    // The service drops archived rows itself, so the default call stays
+    // byte-identical to the route prefetch's and shares its cache entry.
     expect(listProjects.mock.calls[0][0]).not.toHaveProperty("status");
-    for (const { status } of records) expect(screen.queryByText(status)).toBeNull();
+    // "Active" is the ordinary state, so only the other three carry a badge.
+    const list = screen.getByRole("list");
+    expect(within(list).queryByText("Active")).toBeNull();
+    for (const label of ["Someday", "Completed", "Archived"])
+      expect(within(list).getByText(label)).toBeTruthy();
+  });
+  it("asks the service for one status when the filter changes", async () => {
+    const listProjects = vi.fn().mockResolvedValue([]);
+    render(
+      <Page
+        kind="project"
+        service={{ listProjects } as unknown as CollectionService}
+        todoService={{} as TodoService}
+      />,
+    );
+    const filter = await screen.findByLabelText("Status");
+    fireEvent.change(filter, { target: { value: "archived" } });
+    await waitFor(() =>
+      expect(listProjects).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, status: "archived" }),
+      ),
+    );
   });
   it("saves project details without a lingering Saved message", async () => {
     let project = { id: "p", title: "Home", description: null, status: "someday" };
@@ -324,7 +346,7 @@ describe("Collection pages", () => {
     } as unknown as CollectionService;
     render(<Page kind="project" recordId="p" service={service} todoService={{} as TodoService} />);
     fireEvent.click(await screen.findByRole("button", { name: "Edit project" }));
-    expect(screen.queryByLabelText("Status")).toBeNull();
+    expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("someday");
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await screen.findByRole("heading", { name: "Reading room" });

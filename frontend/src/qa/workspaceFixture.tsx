@@ -109,6 +109,7 @@ let projects: Project[] = empty
         status: "someday",
       },
       { ...base(), title: "Summer reading", description: null, status: "completed" },
+      { ...base(), title: "Old apartment move", description: null, status: "archived" },
     ];
 const projectId = projects[0]?.id ?? null;
 const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): Todo => ({
@@ -270,7 +271,11 @@ const rowsFor = (kind: CollectionKind) => (kind === "project" ? projects : ideas
 const collectionService: CollectionService = {
   async listProjects(o = {}) {
     return page(
-      projects.filter((p) => !o.status || o.status === "all" || p.status === o.status),
+      projects.filter((p) =>
+        o.status === undefined
+          ? p.status !== "archived"
+          : o.status === "all" || p.status === o.status,
+      ),
       o,
     );
   },

@@ -15,7 +15,7 @@ const idea: Idea = {
 };
 describe("Collection editor", () => {
   it.each(["active", "someday", "completed", "archived"] as const)(
-    "keeps a saved %s project intact while editing without a classification field",
+    "keeps a saved %s project's status while editing the rest of it",
     async (status) => {
       const record: Project = {
         id: "p",
@@ -36,7 +36,7 @@ describe("Collection editor", () => {
           onClose={vi.fn()}
         />,
       );
-      expect(screen.queryByLabelText("Status")).toBeNull();
+      expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(status);
       fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
       fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
       await waitFor(() =>
@@ -58,7 +58,7 @@ describe("Collection editor", () => {
         onClose={vi.fn()}
       />,
     );
-    expect(screen.queryByLabelText("Status")).toBeNull();
+    expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("active");
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Reading room" } });
     fireEvent.change(screen.getByLabelText("Description (optional)"), {
       target: { value: "Make space" },
@@ -68,6 +68,35 @@ describe("Collection editor", () => {
       expect(saveProject).toHaveBeenCalledWith(
         { title: "Reading room", description: "Make space", status: "active" },
         undefined,
+      ),
+    );
+  });
+  it("archives a project from the editor", async () => {
+    const record: Project = {
+      id: "p",
+      title: "Home",
+      description: "Make space",
+      status: "active",
+      createdAt: "",
+      updatedAt: "",
+    };
+    const saveProject = vi.fn().mockResolvedValue({ ...record, status: "archived" });
+    render(
+      <CollectionEditor
+        kind="project"
+        record={record}
+        projects={[]}
+        service={{ saveProject } as unknown as CollectionService}
+        onSaved={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "archived" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(saveProject).toHaveBeenCalledWith(
+        { title: "Home", description: "Make space", status: "archived" },
+        "p",
       ),
     );
   });
