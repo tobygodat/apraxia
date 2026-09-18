@@ -1,9 +1,12 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
+  currentKeyVersion,
+  encryptionKeyForVersion,
   requireApplicationEnvironment,
   requireCalendarEnvironment,
   EnvironmentConfigurationError,
   type ApplicationEnvironment,
+  type CalendarEnvironment,
 } from "../env/cloud.js";
 import {
   verifySupabaseSession,
@@ -143,15 +146,17 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
       if (action === "disconnect") {
         const previous = await store.read(userId);
         await store.clear(userId, "disconnected");
-        if (previous?.envelope && previous.keyVersion === 1) {
+        if (previous?.envelope && previous.keyVersion !== null) {
           try {
             const configuration = requireCalendarEnvironment(
               dependencies.environment ?? process.env,
             );
+            const storedKey = encryptionKeyForVersion(configuration, previous.keyVersion);
+            if (storedKey === null) throw new TokenEncryptionError();
             const refreshToken = decryptRefreshToken(
               previous.envelope,
-              { userId, connectionId: previous.connection.id, keyVersion: 1 },
-              configuration.GOOGLE_TOKEN_ENCRYPTION_KEY,
+              { userId, connectionId: previous.connection.id, keyVersion: previous.keyVersion },
+              storedKey,
             );
             await createGoogleOAuthTransport(
               adapter.runtime,
@@ -166,18 +171,34 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
         return json({ disconnected: true });
       }
       const prepared = (await adapter.prepare?.(action, request)) as P;
-      const google = requireCalendarEnvironment(dependencies.environment ?? process.env);
+      const google: CalendarEnvironment = requireCalendarEnvironment(
+        dependencies.environment ?? process.env,
+      );
       const key = google.GOOGLE_TOKEN_ENCRYPTION_KEY;
+      // New envelopes are always written under the current key; a stored one is
+      // read with whichever key its own version names.
+      const writeVersion = currentKeyVersion(google);
       const oauth = createGoogleOAuthTransport(adapter.runtime, google, request.signal, fetcher);
-      const context = (connectionId: string): TokenEncryptionContext => ({
+      const context = (
+        connectionId: string,
+        keyVersion = writeVersion,
+      ): TokenEncryptionContext => ({
         userId,
         connectionId,
-        keyVersion: 1,
+        keyVersion,
       });
       const decrypt = (stored: StoredGoogleCredentials): string => {
-        if (!stored.envelope || stored.keyVersion !== 1)
-          throw http.error("reconnect_required", 409);
-        return decryptRefreshToken(stored.envelope, context(stored.connection.id), key);
+        const storedKey = encryptionKeyForVersion(google, stored.keyVersion);
+        if (!stored.envelope || stored.keyVersion === null || storedKey === null) {
+          // No key this deployment holds can read it. Treated as a decryption
+          // failure, not a revoked grant, so the ciphertext survives.
+          throw new TokenEncryptionError();
+        }
+        return decryptRefreshToken(
+          stored.envelope,
+          context(stored.connection.id, stored.keyVersion),
+          storedKey,
+        );
       };
       const cacheFor = (tokens: GoogleTokens, connectionId: string): AccessTokenCache | null =>
         tokens.accessTokenExpiresAt === null
@@ -298,7 +319,17 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
           return await work();
         } catch (error) {
           if (recoverable(error)) {
-            await store.clear(userId, "reconnect_required", stored.connection.updatedAt);
+            // A credential this server cannot decrypt is a key problem, not a
+            // revoked grant: keep the ciphertext so restoring the key (or
+            // disconnecting, which needs the plaintext to revoke at Google)
+            // still works.
+            const keyFailure = error instanceof TokenEncryptionError;
+            await store.clear(
+              userId,
+              "reconnect_required",
+              stored.connection.updatedAt,
+              !keyFailure,
+            );
             throw http.error("reconnect_required", 409);
           }
           throw error;
@@ -309,9 +340,19 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
       );
       const refreshAccessToken = () =>
         failClosed(async () => {
-          const tokens = await oauth.refresh(decrypt(stored));
-          const envelope = tokens.refreshToken
-            ? encryptRefreshToken(tokens.refreshToken, context(stored.connection.id), key)
+          const refreshToken = decrypt(stored);
+          const tokens = await oauth.refresh(refreshToken);
+          // Re-encrypt when Google rotated the refresh token, and also when the
+          // stored envelope is still under the previous key: that is how a key
+          // rotation finishes without every user reconnecting. Otherwise keep
+          // the stored ciphertext byte for byte.
+          const rotateEnvelope = tokens.refreshToken !== null || stored.keyVersion !== writeVersion;
+          const envelope = rotateEnvelope
+            ? encryptRefreshToken(
+                tokens.refreshToken ?? refreshToken,
+                context(stored.connection.id),
+                key,
+              )
             : currentEnvelope;
           usedEnvelope = envelope;
           const saved = await store.save(
@@ -321,6 +362,7 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
             envelope,
             definition.scopes,
             cacheFor(tokens, stored.connection.id),
+            rotateEnvelope ? writeVersion : (stored.keyVersion ?? writeVersion),
           );
           if (!saved) {
             // A concurrent refresh can succeed; a disconnect or new grant must stop this request.
@@ -359,7 +401,15 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
           json,
           expireUsedGrant,
         });
-      const cached = readCachedAccessToken(stored, context(stored.connection.id), key);
+      const cachedKey = encryptionKeyForVersion(google, stored.keyVersion);
+      const cached =
+        cachedKey === null || stored.keyVersion === null
+          ? null
+          : readCachedAccessToken(
+              stored,
+              context(stored.connection.id, stored.keyVersion),
+              cachedKey,
+            );
       if (cached !== null) {
         try {
           return await run(cached);

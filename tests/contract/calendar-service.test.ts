@@ -17,6 +17,7 @@ const environment = {
   GOOGLE_CLIENT_SECRET: "google-secret",
   GOOGLE_TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 8).toString("base64"),
 };
+const OTHER_KEY = Buffer.alloc(32, 9).toString("base64");
 const state = Buffer.alloc(32, 1).toString("base64url");
 const request = (action: string, body?: unknown) =>
   new Request(`${environment.APP_URL}/api/calendar/${action}`, {
@@ -377,6 +378,93 @@ describe("Calendar endpoint session and callback boundary", () => {
       p_state: "reconnect_required",
       p_expected_updated_at: existing.connection.updated_at,
     });
+  });
+
+  it("keeps the stored credential when this server cannot decrypt it", async () => {
+    // The deployed key no longer matches the ciphertext, which is a key
+    // problem, not a revoked grant.
+    const existing = stored();
+    const fetcher = vi.fn<typeof fetch>(async (url) => {
+      if (String(url).endsWith("/auth/v1/user"))
+        return Response.json({ id: userId, role: "authenticated", is_anonymous: false });
+      if (String(url).endsWith("/read_calendar_credentials")) return Response.json(existing);
+      return Response.json(true);
+    });
+    const response = await createCalendarHandler("calendars", {
+      environment: { ...environment, GOOGLE_TOKEN_ENCRYPTION_KEY: OTHER_KEY },
+      fetch: fetcher,
+    })(request("calendars"));
+
+    expect(response.status).toBe(409);
+    const clear = fetcher.mock.calls.find(([url]) =>
+      String(url).endsWith("/clear_calendar_credentials"),
+    )!;
+    expect(JSON.parse(clear[1]!.body as string)).toMatchObject({
+      p_state: "reconnect_required",
+      p_expected_updated_at: existing.connection.updated_at,
+      p_delete_credentials: false,
+    });
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes("googleapis.com"))).toBe(false);
+  });
+
+  it("still deletes the credential when Google revoked the grant", async () => {
+    const existing = stored();
+    const fetcher = vi.fn<typeof fetch>(async (url) => {
+      if (String(url).endsWith("/auth/v1/user"))
+        return Response.json({ id: userId, role: "authenticated", is_anonymous: false });
+      if (String(url).endsWith("/read_calendar_credentials")) return Response.json(existing);
+      if (String(url).endsWith("/token"))
+        return Response.json({ error: "invalid_grant" }, { status: 400 });
+      return Response.json(true);
+    });
+    await createCalendarHandler("calendars", { environment, fetch: fetcher })(request("calendars"));
+
+    const clear = fetcher.mock.calls.find(([url]) =>
+      String(url).endsWith("/clear_calendar_credentials"),
+    )!;
+    expect(JSON.parse(clear[1]!.body as string)).toMatchObject({ p_delete_credentials: true });
+  });
+
+  it("reads a credential under the previous key and re-encrypts it under the current one", async () => {
+    const rotated = {
+      ...environment,
+      GOOGLE_TOKEN_ENCRYPTION_KEY: OTHER_KEY,
+      GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS: environment.GOOGLE_TOKEN_ENCRYPTION_KEY,
+      GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION: "2",
+    };
+    const existing = stored();
+    const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+      if (String(url).endsWith("/auth/v1/user"))
+        return Response.json({ id: userId, role: "authenticated", is_anonymous: false });
+      if (String(url).endsWith("/read_calendar_credentials")) return Response.json(existing);
+      if (String(url).endsWith("/token")) {
+        // Google did not rotate the refresh token; the key rotation must still
+        // finish, or the previous key could never be retired.
+        expect(new URLSearchParams(init!.body as string).get("refresh_token")).toBe(
+          "existing-refresh",
+        );
+        return Response.json({ ...tokens, refresh_token: undefined });
+      }
+      if (String(url).includes("/users/me/calendarList")) return Response.json({ items: [] });
+      if (String(url).endsWith("/sync_calendar_preferences")) return Response.json([]);
+      return Response.json(true);
+    });
+
+    const response = await createCalendarHandler("calendars", {
+      environment: rotated,
+      fetch: fetcher,
+    })(request("calendars"));
+    expect(response.status).toBe(200);
+
+    const save = JSON.parse(
+      fetcher.mock.calls.find(([url]) => String(url).endsWith("/save_calendar_credentials"))![1]!
+        .body as string,
+    ) as { p_key_version: number; p_envelope: string };
+    expect(save.p_key_version).toBe(2);
+    expect(save.p_envelope).not.toBe(existing.envelope);
+    expect(
+      decryptRefreshToken(save.p_envelope, { userId, connectionId, keyVersion: 2 }, OTHER_KEY),
+    ).toBe("existing-refresh");
   });
 
   it("can disconnect even when the Google configuration has been removed", async () => {
