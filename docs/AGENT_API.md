@@ -142,6 +142,24 @@ operation: inspect the current event before further action. A new key is not a
 safe blind retry. Google event timing uses RFC3339 instants for timed events and
 exclusive end dates for all-day events. Full command schemas are at `/openapi`.
 
+## MCP connector
+
+`POST /api/mcp` exposes the same API as a stateless Model Context Protocol server
+(Streamable HTTP, JSON responses) so a Claude project can use live records. It
+accepts the same bearer token; every tool call becomes an agent API request, so
+scopes, validation, versions and idempotency behave exactly as documented here.
+`tools/list` offers only tools the configured scopes allow: `guide`,
+`list_records`, `get_record`, `search`, `list_changes`, `create_record`,
+`update_record`, `list_calendars`, `get_week_events`, `get_event`, `write_event`
+and `list_drive_files`. Writes generate an `Idempotency-Key` when the caller
+omits `idempotency_key`. Saved PDF bytes are not exposed through MCP.
+
+The token must arrive in the `Authorization` header. In Claude's **Add custom
+connector** dialog choose **No sign-in** and add a required `authorization`
+request header with the value `Bearer <token>`. Request headers are a limited
+beta; without them Claude requires OAuth, which this endpoint does not provide.
+Never put the token in the connector URL.
+
 ## Scheduled operation and verification
 
 Muse should discover `/meta`, read relevant buckets and calendar weeks, follow
