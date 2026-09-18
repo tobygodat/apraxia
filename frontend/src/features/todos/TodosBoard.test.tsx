@@ -103,18 +103,33 @@ function MutationHarness({
 }
 
 describe("TodosBoard", () => {
-  it("renders Inbox, Today with past-due tasks, and the current-week remainder", () => {
+  it("renders Today first with past-due tasks, then the current-week remainder and Inbox", () => {
     render(<TodosBoard {...props()} />);
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    expect(headings.some((heading) => heading?.includes("· Today"))).toBe(true);
+    // Today opens the week and this week's earlier days wrap to the end, so the
+    // day being worked on never sits below or behind the rest of the week.
+    expect(headings[0]).toContain("· Today");
+    // Each day heading runs date, then weekday, then the screen-reader-only
+    // qualifier, with no whitespace between those spans.
+    expect(headings.slice(0, -1)).toEqual([
+      "2 SepWed · Today",
+      "3 SepThu · Tomorrow",
+      "4 SepFri",
+      "5 SepSat",
+      "6 SepSun",
+      "31 AugMon",
+      "1 SepTue",
+    ]);
     expect(headings[headings.length - 1]).toEqual("Inbox");
     expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
     // The current week shows all seven days, so this week's earlier days keep
     // a column for their completed tasks.
     expect(headings).toHaveLength(1 + 7);
     const today = screen.getByRole("region", { name: /· Today$/ });
+    // The marker is CSS-only, so the class is what a test can hold onto.
+    expect(today.classList.contains("todos-board-column--today")).toBe(true);
     const pastDate = within(today).getByText(/Due Aug 30/);
     expect(pastDate.getAttribute("datetime")).toBe("2026-08-30");
     expect(pastDate.classList.contains("todos-board-card__due--past")).toBe(true);
@@ -430,14 +445,41 @@ describe("TodosBoard drag to reschedule", () => {
   });
 });
 
-it("renders the classic theme with Inbox first and a count badge", () => {
+it("returns the classic board to its leading column when a new day takes the lead", () => {
+  const boardProps = props({ theme: "classic" });
+  const { rerender } = render(<TodosBoard {...boardProps} />);
+  const region = screen.getByRole("region", { name: "Tasks by date" });
+
+  region.scrollLeft = 900;
+  expect(region.scrollLeft).toBe(900);
+
+  // Local midnight inside the same week: the visible Monday does not move, but
+  // Thursday rotates into the lead ahead of Wednesday, so the board has to
+  // return to it rather than staying scrolled where the user left it.
+  rerender(
+    <TodosBoard
+      {...boardProps}
+      model={buildTodoBoardModel([TODO, OVERDUE, INBOX], "2026-08-31", "2026-09-03")}
+    />,
+  );
+
+  expect(screen.getAllByRole("heading", { level: 2 })[0]?.textContent).toBe(
+    "Thursday, Sep 3 · Today",
+  );
+  expect(region.scrollLeft).toBe(0);
+});
+
+it("renders the classic theme with Today first, marked, and carrying a count badge", () => {
   render(<TodosBoard {...props({ theme: "classic" })} />);
   const headings = screen
     .getAllByRole("heading", { level: 2 })
     .map((heading) => heading.textContent);
-  expect(headings[0]).toEqual("Inbox");
-  expect(headings.some((heading) => heading?.includes("· Today"))).toBe(true);
+  // The classic board scrolls sideways, so Today has to open the row of
+  // columns rather than sit behind that scroll.
+  expect(headings[0]).toEqual("Wednesday, Sep 2 · Today");
+  expect(headings[headings.length - 1]).toEqual("Inbox");
   const today = screen.getByRole("region", { name: /· Today$/ });
+  expect(today.classList.contains("todos-board-column--today")).toBe(true);
   const badge = within(today).getByText(/^\d+$/, { selector: "span[aria-hidden]" });
   expect(badge).toBeTruthy();
 });
