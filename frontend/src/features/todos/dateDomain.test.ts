@@ -124,8 +124,10 @@ describe("Monday-through-Sunday weeks", () => {
 });
 
 describe("full Todos board date visibility", () => {
-  it("shows today through Sunday for the current week", () => {
+  it("shows the whole current week, including days already past", () => {
     expect(visibleTodoWeekDates("2026-08-31", "2026-09-02")).toEqual([
+      "2026-08-31",
+      "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
@@ -134,8 +136,16 @@ describe("full Todos board date visibility", () => {
     ]);
   });
 
-  it("shows only Sunday when today is Sunday", () => {
-    expect(visibleTodoWeekDates("2026-08-31", "2026-09-06")).toEqual(["2026-09-06"]);
+  it("still shows Monday through Saturday when today is Sunday", () => {
+    expect(visibleTodoWeekDates("2026-08-31", "2026-09-06")).toEqual([
+      "2026-08-31",
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-05",
+      "2026-09-06",
+    ]);
   });
 
   it.each([

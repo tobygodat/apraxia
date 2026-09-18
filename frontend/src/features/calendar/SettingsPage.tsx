@@ -131,13 +131,22 @@ export function SettingsPage({
                         checked={calendar.isVisible}
                         onChange={(event) => {
                           const visible = event.target.checked;
-                          void act(async () => {
-                            await service.setVisibility(calendar.id, visible);
+                          const applyVisibility = (isVisible: boolean) =>
                             setCalendars((current) =>
                               current.map((item) =>
-                                item.id === calendar.id ? { ...item, isVisible: visible } : item,
+                                item.id === calendar.id ? { ...item, isVisible } : item,
                               ),
                             );
+                          // Show the tick immediately and roll back on failure:
+                          // waiting for the round trip made the box look stuck.
+                          applyVisibility(visible);
+                          void act(async () => {
+                            try {
+                              await service.setVisibility(calendar.id, visible);
+                            } catch (reason) {
+                              applyVisibility(!visible);
+                              throw reason;
+                            }
                           });
                         }}
                       />

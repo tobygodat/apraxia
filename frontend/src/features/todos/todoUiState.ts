@@ -22,8 +22,10 @@ export function todoMutationErrorCopy(kind: TodoMutationErrorKind): string {
       return "The task could not be deleted. Try again.";
     case "update_failed":
       return "The task changes were not saved. Your entered details can be retried.";
+    // The write may have committed before the response was lost, so this copy
+    // must not claim the previous order is what Today now holds.
     case "reorder_failed":
-      return "That order was not saved. The previous order was restored.";
+      return "We couldn't confirm that order. Reload to see what was saved.";
     case "reorder_too_large":
       return "Today has too many tasks to reorder at once.";
     case "cancelled":

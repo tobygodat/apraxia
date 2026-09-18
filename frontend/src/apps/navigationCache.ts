@@ -139,6 +139,20 @@ function keyArgsFor(args: unknown[]): unknown[] {
 /** Symbol used by cacheNavigationService's Proxy to expose a synchronous peek for reads. */
 export const PEEK = Symbol("navigationCache.peek");
 
+/** Symbol used by cacheNavigationService's Proxy to expose the cache's invalidate. */
+const INVALIDATE = Symbol("navigationCache.invalidate");
+
+/**
+ * Drop a proxied service's cached reads. A caller that rejects a well-formed
+ * response needs this before retrying, or the retry is served the same value
+ * from cache until the TTL expires. A no-op for an unproxied service.
+ */
+export function invalidateReads(service: object): void {
+  const invalidate = (service as unknown as Record<symbol, unknown>)[INVALIDATE] as
+    (() => void) | undefined;
+  invalidate?.();
+}
+
 /**
  * Synchronous read of a cached value already known for a proxied service's read method.
  * Returns undefined when nothing is cached yet, or when `service` is not a cached proxy.
@@ -165,6 +179,7 @@ export function cacheNavigationService<T extends object>(
 ): T {
   return new Proxy(service, {
     get(target, property) {
+      if (property === INVALIDATE) return cache.invalidate;
       if (property === PEEK) {
         return (peekProperty: PropertyKey, args: unknown[]) => {
           if (!reads.includes(peekProperty as keyof T)) return undefined;

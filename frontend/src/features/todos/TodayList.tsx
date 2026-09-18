@@ -41,7 +41,8 @@ interface MutationFocusRecovery {
   ownedFocus: HTMLElement;
 }
 
-/** A past-due row shows only its original date; the red style carries the status. */
+/** A past-due row shows only its original date; the red style carries the status
+ * visually, and the row adds a visually hidden "Past due" beside it. */
 function dueDateLabel(todo: TodayTodo, day: TodayListDay): string {
   const date = formatTaskDate(todo.dueDate);
   return todo.isOverdue ? date : `Due ${day.toLowerCase()} · ${date}`;
@@ -384,7 +385,12 @@ export function TodayList({
                     <div className="today-list-item__content">
                       <p id={titleId}>{todo.text}</p>
                       <div className="today-list-item__meta">
-                        <time dateTime={todo.dueDate}>{dueDateLabel(todo, day)}</time>
+                        <time dateTime={todo.dueDate}>
+                          {todo.isOverdue ? (
+                            <span className="today-list-sr-only">Past due. </span>
+                          ) : null}
+                          {dueDateLabel(todo, day)}
+                        </time>
                         {todo.dueTime ? (
                           <time dateTime={todo.dueTime}>{formatTaskTime(todo.dueTime)}</time>
                         ) : null}
