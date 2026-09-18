@@ -51,6 +51,18 @@ function compareDatedColumnTodos(left: Todo, right: Todo): number {
 }
 
 /**
+ * Open the current week on Today so the day being worked on is the board's
+ * first column instead of sitting behind a scroll. The rest of the week follows
+ * in order and then wraps to this week's earlier days, which stay reachable at
+ * the end. A navigated week holds no Today and keeps its Monday-first order.
+ */
+function orderDatesFromToday(dates: readonly SqlDate[], today: SqlDate): readonly SqlDate[] {
+  const todayIndex = dates.indexOf(today);
+  if (todayIndex <= 0) return dates;
+  return [...dates.slice(todayIndex), ...dates.slice(0, todayIndex)];
+}
+
+/**
  * Build the complete Todos workspace without interpreting date-only values as
  * JavaScript instants. Open past-due tasks join Today without changing their
  * dates. Completed historical tasks remain in their original date columns.
@@ -63,20 +75,18 @@ export function buildTodoBoardModel(
   assertUniqueTodoIds(todos);
 
   const validToday = asSqlDate(today);
-  const dates = visibleTodoWeekDates(visibleWeekMonday, validToday);
+  const dates = orderDatesFromToday(
+    visibleTodoWeekDates(visibleWeekMonday, validToday),
+    validToday,
+  );
   const validMonday = asSqlDate(visibleWeekMonday);
   const isCurrentWeek = validMonday === startOfWeekMonday(validToday);
 
   const inbox = todos.filter((todo) => todo.dueDate === null);
 
+  // Dated columns lead so Today can be first; the undated Inbox trails them in
+  // both themes rather than taking the opening column from the current day.
   const columns: TodoBoardColumn[] = [
-    {
-      key: "inbox",
-      kind: "inbox",
-      date: null,
-      canAdd: true,
-      todos: inbox,
-    },
     ...dates.map<TodoBoardColumn>((date) => ({
       key: date,
       kind: "date",
@@ -96,6 +106,13 @@ export function buildTodoBoardModel(
         })
         .sort(compareDatedColumnTodos),
     })),
+    {
+      key: "inbox",
+      kind: "inbox",
+      date: null,
+      canAdd: true,
+      todos: inbox,
+    },
   ];
 
   return {
