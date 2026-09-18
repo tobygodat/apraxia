@@ -233,7 +233,29 @@ describe("buildWeeklyReviewModel", () => {
       ],
       { classes: [] },
     );
-    expect(section(model, "slipped").groups[0]?.label).toBe("PHYS2211");
+    const group = section(model, "slipped").groups[0];
+    expect(group?.label).toBe("PHYS2211");
+    // Nothing to link to: the detail route would not find the class either.
+    expect(group?.href).toBeNull();
+  });
+
+  it("does not link a project the snapshot no longer lists, or name it by its id", () => {
+    // Deleting a project keeps its tasks, so the snapshot drops the project
+    // while the tasks still carry its id.
+    const model = build(
+      [
+        todo({
+          id: "orphan",
+          text: "Hang the shelf",
+          dueDate: "2026-09-15",
+          projectId: "project-gone",
+        }),
+      ],
+      { projects: [] },
+    );
+    const group = section(model, "slipped").groups[0];
+    expect(group?.label).toBe("Project");
+    expect(group?.href).toBeNull();
   });
 
   it("counts each section and leaves a section without tasks empty", () => {

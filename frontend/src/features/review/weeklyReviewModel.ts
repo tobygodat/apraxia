@@ -113,20 +113,27 @@ function groupOf(
   classNames: ReadonlyMap<string, string>,
 ): Pick<WeeklyReviewGroup, "key" | "kind" | "label" | "href"> {
   if (todo.classId) {
+    const name = classNames.get(todo.classId);
     return {
       key: `class:${todo.classId}`,
       kind: "class",
-      // A class the current snapshot no longer lists still has to name itself.
-      label: classNames.get(todo.classId) ?? todo.className ?? todo.classId,
-      href: `/classes/${encodeURIComponent(todo.classId)}`,
+      // A class the current snapshot no longer lists still has to name itself,
+      // from the name stored on the task's own row.
+      label: name ?? todo.className ?? "Class",
+      href: name === undefined ? null : `/classes/${encodeURIComponent(todo.classId)}`,
     };
   }
   if (todo.projectId) {
+    const title = projectTitles.get(todo.projectId);
     return {
       key: `project:${todo.projectId}`,
       kind: "project",
-      label: projectTitles.get(todo.projectId) ?? todo.projectId,
-      href: `/projects/${encodeURIComponent(todo.projectId)}`,
+      // Deleting a project leaves its tasks pointing at it, so the snapshot can
+      // omit a project some task still names. Such a group is named the way a
+      // task's own source chip names it and does not link: the detail route
+      // hides deleted rows, so the link could only fail.
+      label: title ?? "Project",
+      href: title === undefined ? null : `/projects/${encodeURIComponent(todo.projectId)}`,
     };
   }
   return { key: UNGROUPED_KEY, kind: "none", label: "No project or class", href: null };
