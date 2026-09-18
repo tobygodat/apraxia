@@ -180,6 +180,13 @@ describe("buildWeeklyReviewModel", () => {
     ]);
   });
 
+  it("counts a due date at the far edge of the calendar without walking to it", () => {
+    const started = Date.now();
+    const model = build([todo({ id: "ancient", text: "Ancient", dueDate: "0001-01-01" })]);
+    expect(section(model, "slipped").groups[0]?.entries[0]?.daysLate).toBe(739_875);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
   it("orders slipped tasks oldest first and next tasks by date then time", () => {
     const model = build([
       todo({ id: "s1", text: "Recent slip", dueDate: "2026-09-16" }),

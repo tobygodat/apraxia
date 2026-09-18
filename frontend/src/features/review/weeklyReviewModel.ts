@@ -4,6 +4,7 @@ import {
   asSqlDate,
   compareSqlDates,
   localDateInZone,
+  sqlDateDifferenceInDays,
   startOfWeekMonday,
   type SqlDate,
 } from "../todos/dateDomain";
@@ -77,19 +78,6 @@ function completionDate(todo: Todo, timezone: string): SqlDate | null {
 
 function within(date: string, from: string, to: string): boolean {
   return compareSqlDates(date, from) >= 0 && compareSqlDates(date, to) <= 0;
-}
-
-/** Whole days from `from` to `to`; both are validated application dates. */
-function daysBetween(from: string, to: string): number {
-  let days = 0;
-  let cursor = asSqlDate(from);
-  // Counting forward keeps the arithmetic on SqlDate and away from any
-  // machine-local Date interpretation. A review only ever spans a few weeks.
-  while (compareSqlDates(cursor, to) < 0) {
-    cursor = addSqlDateDays(cursor, 1);
-    days += 1;
-  }
-  return days;
 }
 
 function compareDueDates(left: Todo, right: Todo): number {
@@ -211,7 +199,7 @@ export function buildWeeklyReviewModel(input: WeeklyReviewInput): WeeklyReviewMo
     // A deadline already past is late wherever it is shown. Reviewing a
     // finished week, its overdue tasks land in Next because they belong to the
     // stretch after it, and they still have to read as overdue.
-    const late = daysBetween(dueDate, today);
+    const late = sqlDateDifferenceInDays(dueDate, today);
     const entry = { todo, completedOn: null, daysLate: late > 0 ? late : null };
     if (compareSqlDates(dueDate, nextFrom) < 0) {
       slipped.push(entry);

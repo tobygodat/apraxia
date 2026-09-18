@@ -105,6 +105,22 @@ export function compareSqlDates(left: string, right: string): -1 | 0 | 1 {
   return 0;
 }
 
+/**
+ * Whole days from `from` to `to`, negative when `to` precedes it. Both ends are
+ * anchored to UTC midnight, where a day is always exactly 24 hours, so this is
+ * one subtraction rather than a walk over the interval.
+ */
+export function sqlDateDifferenceInDays(from: string, to: string): number {
+  const days =
+    (utcDateFromSqlDate(to).getTime() - utcDateFromSqlDate(from).getTime()) / MILLISECONDS_PER_DAY;
+
+  if (!Number.isSafeInteger(days)) {
+    throw new RangeError("Date arithmetic exceeded the supported calendar range.");
+  }
+
+  return days;
+}
+
 export function addSqlDateDays(value: string, days: number): SqlDate {
   if (!Number.isSafeInteger(days)) {
     throw new RangeError("Date offset must be a safe integer number of days.");
