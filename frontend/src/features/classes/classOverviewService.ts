@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database";
 import { ServiceError } from "../../lib/serviceError";
 import { summarizeClasses, type ClassOverview, type OverviewAssignment } from "./classOverview";
+import { isNoteSaved } from "./noteService";
 
 export interface ClassOverviewService {
   /** Every class's totals in two reads, so the Classes list stays one request pair. */
@@ -50,7 +51,7 @@ export function createClassOverviewService(client: SupabaseClient<Database>): Cl
         collect((after) => {
           let query = client
             .from("class_notes")
-            .select("id,user_id,course_id")
+            .select("id,user_id,course_id,source,uploaded_at")
             .eq("user_id", userId)
             .order("id")
             .limit(PAGE);
@@ -59,7 +60,9 @@ export function createClassOverviewService(client: SupabaseClient<Database>): Cl
         }, userId),
       ]);
       const noteCounts: Record<string, number> = {};
-      for (const note of notes) noteCounts[note.course_id] = (noteCounts[note.course_id] ?? 0) + 1;
+      // An upload still waiting on its PDF is not a saved note yet.
+      for (const note of notes.filter(isNoteSaved))
+        noteCounts[note.course_id] = (noteCounts[note.course_id] ?? 0) + 1;
       const rows: OverviewAssignment[] = assignments.map((row) => ({
         id: row.id,
         classId: row.class_id!,

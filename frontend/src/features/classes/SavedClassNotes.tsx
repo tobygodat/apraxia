@@ -2,7 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DriveNotes } from "./DriveNotes";
 import type { DriveService, DriveFile } from "./driveService";
 import type { Course } from "./classService";
-import { prepareUpload, type ClassNote, type NoteService, type UploadDraft } from "./noteService";
+import {
+  isNoteSaved,
+  prepareUpload,
+  type ClassNote,
+  type NoteService,
+  type UploadDraft,
+} from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 
 export function SavedClassNotes({
@@ -72,7 +78,7 @@ export function SavedClassNotes({
   useEffect(() => {
     // A later upload failure leaves the loaded total standing; only a list that
     // never arrived is unknown.
-    if (loaded) onCount?.(notes.length);
+    if (loaded) onCount?.(notes.filter(isNoteSaved).length);
     else if (error) onCount?.(null);
   }, [notes, loaded, error, onCount]);
   async function upload(file: File, existing?: UploadDraft) {
@@ -179,7 +185,7 @@ export function SavedClassNotes({
       {notes.length > 0 && (
         <ul className="classes-saved-notes" aria-label="Saved notes">
           {notes.map((note) => {
-            const incomplete = note.source === "upload" && !note.uploaded_at;
+            const incomplete = !isNoteSaved(note);
             return (
               <li key={note.id}>
                 <div>

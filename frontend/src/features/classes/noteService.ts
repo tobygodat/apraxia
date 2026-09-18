@@ -27,6 +27,14 @@ export interface NoteService {
   finish(note: ClassNote, signal: AbortSignal): Promise<ClassNote>;
   download(note: ClassNote, signal: AbortSignal): Promise<File>;
 }
+/**
+ * A reserved upload is a row before it is a note: its PDF has not landed, the
+ * list offers to finish it, and nothing can open it. Only a finished upload or
+ * a Drive attachment counts as saved.
+ */
+export function isNoteSaved(note: Pick<ClassNote, "source" | "uploaded_at">): boolean {
+  return note.source !== "upload" || !!note.uploaded_at;
+}
 const PDF_MAX_BYTES = 50 * 1024 * 1024;
 export async function prepareUpload(
   file: File,

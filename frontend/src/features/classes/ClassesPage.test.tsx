@@ -288,3 +288,35 @@ it("summarizes the open class in its header and follows the table when one is co
   expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
   expect(screen.getByText("4 open")).toBeTruthy();
 });
+it("leaves an unfinished upload out of the class header's note count", async () => {
+  const { createFixtureAssignments } = await import("../../qa/ClassAssignmentsMock");
+  const { prepareUpload } = await import("./noteService");
+  const data = createClassPersistenceFixture();
+  const pdf = new File([new TextEncoder().encode("%PDF-1.4 fixture")], "lecture.pdf", {
+    type: "application/pdf",
+  });
+  const signal = new AbortController().signal;
+  const draft = await prepareUpload(pdf);
+  // Reserved, never uploaded: the list calls this one "Upload incomplete".
+  await data.notes.reserve("user-a", "math3012", draft, signal);
+  await data.notes.attachDrive(
+    "user-a",
+    "math3012",
+    { id: "lecture-one", name: "Lecture 1.pdf", folder: false, modifiedTime: null, size: null },
+    signal,
+  );
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        courseId="math3012"
+        classService={data.classes}
+        noteService={data.notes}
+        assignmentService={createFixtureAssignments()}
+        timezone="America/New_York"
+      />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText("Upload incomplete")).toBeTruthy();
+  expect(screen.getByText("5 open · 1 note")).toBeTruthy();
+});
