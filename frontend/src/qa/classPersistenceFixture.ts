@@ -2,7 +2,21 @@ import type { ClassService, Course } from "../features/classes/classService";
 import type { ClassNote, NoteService } from "../features/classes/noteService";
 import { prepareUpload } from "../features/classes/noteService";
 /** Fictional services only. Retained across navigation, reset on QA reload. */
-export function createClassPersistenceFixture(empty = false): {
+/**
+ * A full course load, so a scenario can exercise a surface that groups by
+ * class. Two classes cannot produce the ragged column layout a real term does.
+ */
+const DENSE_COURSES: Course[] = [
+  { id: "cs1332", name: "CS1332", updatedAt: "seed" },
+  { id: "cs2340", name: "CS2340", updatedAt: "seed" },
+  { id: "math2551", name: "MATH2551", updatedAt: "seed" },
+  { id: "phys2211", name: "PHYS2211", updatedAt: "seed" },
+];
+
+export function createClassPersistenceFixture(
+  empty = false,
+  dense = false,
+): {
   classes: ClassService;
   notes: NoteService;
 } {
@@ -21,6 +35,7 @@ export function createClassPersistenceFixture(empty = false): {
               // A second, untouched class so the list shows both a class with
               // work in it and one with nothing saved yet.
               { id: "hist2111", name: "HIST2111", updatedAt: "seed" },
+              ...(dense ? DENSE_COURSES : []),
             ],
       );
     return owners.get(owner)!;

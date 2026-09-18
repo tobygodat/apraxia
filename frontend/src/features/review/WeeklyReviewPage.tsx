@@ -115,7 +115,13 @@ function Band({ section, headingId }: { section: WeeklyReviewSection; headingId:
         <h2 id={headingId}>{SECTION_HEADINGS[section.key]}</h2>
         <p className="weekly-review__band-caption">{sectionCaption(section)}</p>
       </div>
-      <div className="weekly-review__groups">
+      <div
+        className={
+          section.groups.length === 0
+            ? "weekly-review__groups weekly-review__groups--empty"
+            : "weekly-review__groups"
+        }
+      >
         {section.groups.length === 0 ? (
           <p className="weekly-review__empty">{SECTION_EMPTY_COPY[section.key]}</p>
         ) : (

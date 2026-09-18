@@ -316,8 +316,12 @@ so the group name takes the place the date holds there.
   horizontal tally strip above the bands; at 620px the bands become one column.
 - **Band:** Finished, Slipped and Next in that order, 56px apart, each a
   section heading with a 12px muted caption naming its count and date range,
-  then its groups in auto-fill columns of at least 250px (220px below 1180px)
-  with the same 28px gutter.
+  then its groups flowed into columns of at least 250px (220px below 1180px)
+  with the same 28px gutter, 40px apart down a column. Groups are flowed, not
+  laid on a grid: their heights differ with the work each one holds, and a grid
+  row would hold every group down to the tallest, leaving a hole under each
+  short one. A group never splits across two columns. A band with nothing in it
+  keeps one column, so its copy rules the full width.
 - **Group header:** the project or class name in 13px weight 500, its count at
   the right in 11px muted tabular, 8px above the day header's 2px rule at 30%
   white. The name links to that project or class while the workspace still

@@ -16,6 +16,7 @@
   --weekly-review-late: #ddb1a4;
   --weekly-review-margin: clamp(150px, 15vw, 212px);
   --weekly-review-gutter: 28px;
+  --weekly-review-group-gap: 40px;
   min-width: 0;
   min-height: calc(100vh - 64px);
   margin: 0;
@@ -207,19 +208,34 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Groups are columns of a ledger, not cards on a grid: a class with one task
+   finished and a class with six are not the same size, and a row-based grid
+   would hold every group in a row down to the tallest one, leaving a hole under
+   each short one. Flowing them into columns lets each take only the height it
+   needs and packs the next group under it. */
 .weekly-review__groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  columns: 250px;
   column-gap: var(--weekly-review-gutter);
-  row-gap: 40px;
-  align-content: start;
-  align-items: start;
+  /* The column flow's own bottom edge; the negative margin below takes the
+     trailing one back so a band still sits 56px from the next. */
+  margin-bottom: calc(-1 * var(--weekly-review-group-gap));
+}
+
+.weekly-review__groups > * {
+  margin-bottom: var(--weekly-review-group-gap);
+  /* A group is read as one unit, so it never splits across two columns. */
+  break-inside: avoid;
+}
+
+/* An empty band has one line of copy that rules the full width, so it keeps
+   the single-column flow rather than sitting in the first of five columns. */
+.weekly-review__groups--empty {
+  columns: auto;
 }
 
 /* An empty band keeps ruling rather than leaving a blank space, matching the
    Tasks board's filler slots. */
 .weekly-review__empty {
-  grid-column: 1 / -1;
   min-height: 123px;
   margin: 0;
   padding: 12px 0 0;
@@ -326,7 +342,7 @@
 
 @media (max-width: 1180px) {
   .weekly-review__groups {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    columns: 220px;
   }
 }
 
@@ -368,7 +384,7 @@
   }
 
   .weekly-review__groups {
-    grid-template-columns: minmax(0, 1fr);
+    columns: auto;
   }
 }
 
