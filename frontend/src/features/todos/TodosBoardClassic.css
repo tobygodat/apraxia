@@ -9,6 +9,7 @@
   --todos-board-text: rgba(255, 255, 255, 0.93);
   --todos-board-muted: rgba(255, 255, 255, 0.62);
   --todos-board-faint: rgba(255, 255, 255, 0.52);
+  --todos-board-overdue: #ddb1a4;
   --todos-board-today: #8b9bff;
   min-width: 0;
   min-height: calc(100vh - 64px);
@@ -209,6 +210,31 @@
 
 .todos-board-page--classic .todos-board-card__metadata > .todo-source-chip {
   margin-left: 0;
+}
+
+/* A phone reads one column at a time, so the sideways scroller becomes a plain
+   vertical stack of full-width day cards, led by today. The columns keep their
+   own height instead of the desktop board's fixed 460px depth. */
+@media (max-width: 620px) {
+  .todos-board-page--classic .todos-board-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .todos-board-page--classic .todos-board-columns {
+    width: auto;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 14px;
+  }
+
+  .todos-board-page--classic .todos-board-column {
+    min-height: 0;
+  }
+
+  .todos-board-page--classic .todos-board-column__tasks {
+    padding-bottom: 6px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

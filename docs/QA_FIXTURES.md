@@ -24,7 +24,7 @@ studies, not the workspace fixture.
 
 **`?route=`** (workspace only) seeds the `MemoryRouter`'s initial entry, so the
 fixture opens on any workspace path: `/`, `/todos`, `/projects`,
-`/projects/<id>`, `/ideas`, `/classes`, `/classes/<courseId>`,
+`/projects/<id>`, `/ideas`, `/classes`, `/classes/<courseId>`, `/review`,
 `/settings`. Navigating inside the fixture rewrites `route` in the address bar,
 so a reload returns to the same page.
 

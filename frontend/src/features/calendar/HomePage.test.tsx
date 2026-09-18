@@ -591,3 +591,47 @@ it("clamps late-night scrolling at midnight and preserves manual scrolling until
   rerender(<WeekGrid week={week} now={new Date("2026-09-08T03:51:00Z")} scrollRevision={1} />);
   expect(viewport.scrollTop).toBe(420);
 });
+it("puts the task panel ahead of the calendar on a phone, and behind it otherwise", async () => {
+  const loadToday = vi.fn(async () => []);
+  const calendar = { status: () => new Promise(() => {}) } as unknown as CalendarService;
+  const home = (
+    <MemoryRouter>
+      <HomePage
+        todoService={{ loadToday } as unknown as TodoService}
+        calendarService={calendar}
+        profile={{ userId: "user", timezone: "UTC", createdAt: "", updatedAt: "" }}
+        projects={[]}
+        workspaceSessionKey="session"
+      />
+    </MemoryRouter>
+  );
+  const panelOrder = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll(".today-panel, .calendar-panel"), (panel) =>
+      panel.classList.contains("today-panel") ? "today" : "calendar",
+    );
+
+  const desktop = render(home);
+  await waitFor(() => expect(loadToday).toHaveBeenCalled());
+  expect(panelOrder(desktop.container)).toEqual(["calendar", "today"]);
+  desktop.unmount();
+
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((media: string) => ({
+      matches: media === "(max-width: 620px)",
+      media,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })),
+  );
+  try {
+    const phone = render(home);
+    await waitFor(() => expect(phone.container.querySelector(".today-panel")).toBeTruthy());
+    // Reading order, not just painting order: a phone stacks these, so what is
+    // due today has to come first in the markup as well.
+    expect(panelOrder(phone.container)).toEqual(["today", "calendar"]);
+    expect(phone.container.querySelector(".home-workspace--phone")).toBeTruthy();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

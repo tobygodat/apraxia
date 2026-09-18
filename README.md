@@ -8,6 +8,10 @@ Tasks aggregates ordinary tasks, project tasks, and class assignments into Inbox
 and date columns, filtered by source. Incomplete past-due tasks join Today with
 their original due dates shown in red; stored dates are never rewritten.
 
+Review is a read-only close of one Monday-to-Sunday week: what was finished in
+it, what is still open and overdue, and what the stretch ahead holds, each
+grouped by project and class.
+
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
 [apraxia.dev](https://apraxia.dev).
 

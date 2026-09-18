@@ -9,7 +9,9 @@
   --todos-board-text: rgba(255, 255, 255, 0.93);
   --todos-board-muted: rgba(255, 255, 255, 0.62);
   --todos-board-faint: rgba(255, 255, 255, 0.52);
+  --todos-board-overdue: #ddb1a4;
   --todos-board-today: #8b9bff;
+  --todos-board-row-raised: #262626;
   min-width: 0;
   min-height: calc(100vh - 64px);
   padding: var(--workspace-page-top, 36px) 0 64px;
@@ -176,8 +178,9 @@
 }
 
 .todos-board-page--ledger .todos-board-card {
+  position: relative;
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
   min-height: 40px;
@@ -198,7 +201,7 @@
 
 .todos-board-page--ledger .todos-board-card:hover,
 .todos-board-page--ledger .todos-board-card:focus-within {
-  background: #262626;
+  background: var(--todos-board-row-raised);
 }
 
 .todos-board-page--ledger .todos-board-card__check {
@@ -324,7 +327,20 @@
   );
 }
 
+/* Hidden at rest, an in-flow cluster still holds its column of the row open,
+   and a third action would narrow every title that offers it. The ledger floats
+   the cluster over the row's own hover raise instead, so the width is the
+   title's whether the row has two actions or three. */
 .todos-board-page--ledger .todos-board-card__actions {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 6px;
+  grid-column: auto;
+  grid-row: auto;
+  padding-left: 16px;
+  transform: translateY(-50%);
+  background: linear-gradient(to right, transparent, var(--todos-board-row-raised) 16px);
   opacity: 0;
 }
 
@@ -384,6 +400,20 @@
   }
 }
 
+/* Touch has no hover, so the ledger's two reveal-on-hover affordances rest
+   visible instead: the add slot's label, and a row's edit and delete. Nothing
+   about the ruling or the geometry changes — the ink is simply already there,
+   because on a phone there is no pointer to bring it. */
+@media (pointer: coarse) {
+  .todos-board-page--ledger .todos-board-add {
+    color: var(--todos-board-muted);
+  }
+
+  .todos-board-page--ledger .todos-board-card__actions {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .todos-board-page--ledger .todos-board-week,
   .todos-board-page--ledger .todos-board-card,
@@ -399,6 +429,11 @@
 }
 
 @media (forced-colors: active) {
+  /* The gradient scrim is dropped here, so the cluster needs a solid backing. */
+  .todos-board-page--ledger .todos-board-card__actions {
+    background: Canvas;
+  }
+
   /* Author colors are discarded here, so the rail keeps its meaning by asking
      for a system color instead of the periwinkle. */
   .todos-board-page--ledger .todos-board-column--today::before {

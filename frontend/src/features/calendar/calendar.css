@@ -534,6 +534,50 @@
     padding: 16px 20px;
   }
 }
+/* Phone: Today leads (HomePage swaps the markup order at this width) and takes
+   the height it needs, so the page scroll runs through the tasks rather than
+   past a full-height calendar. The week keeps its own scrolling region below,
+   sized so its first hours are visible without owning the whole screen. */
+@media (max-width: 620px) {
+  .home-page {
+    padding: 12px 16px 20px;
+  }
+  .home-workspace--phone {
+    gap: 0;
+  }
+  .home-workspace--phone .today-panel {
+    height: auto;
+    padding: 0;
+    border-top: 0;
+  }
+  .home-workspace--phone .today-list__scroll {
+    overflow-y: visible;
+  }
+  .home-workspace--phone .calendar-panel,
+  .home-page--cover .home-workspace--phone .calendar-panel {
+    height: min(62dvh, 520px);
+    margin-top: 28px;
+    border-top: 1px solid #303030;
+  }
+  .home-workspace--phone .calendar-header {
+    min-height: 0;
+    gap: 8px;
+    padding: 14px 0 10px;
+  }
+  /* Touch keeps its 44px targets, which put a row's edit and delete on a second
+     line. At phone width they belong at the end of that line rather than stacked
+     under the text with the gutter empty beside them. */
+  .home-workspace.home-workspace--phone .today-list-item__actions {
+    justify-content: end;
+  }
+  .home-workspace.home-workspace--phone .today-list-item__content {
+    padding-top: 4px;
+  }
+  .home-workspace--phone .calendar-toolbar .calendar-toolbar-title {
+    margin: 0;
+    font-size: 15px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .calendar-event {
     transition: none;

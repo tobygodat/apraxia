@@ -15,6 +15,7 @@ import type {
   ProjectSummary,
   WeekViewModel,
 } from "../../types/domain";
+import { usePhoneLayout } from "../../lib/usePhoneLayout";
 import { TodayPanel } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday, startOfWeekSunday } from "../todos/dateDomain";
@@ -75,20 +76,30 @@ export function HomePage({
   // plain ref set during the parent's commit isn't visible to a child's
   // layout effect until a later pass.
   const [page, setPage] = useState<HTMLDivElement | null>(null);
+  const phoneLayout = usePhoneLayout();
+  const calendar = (
+    <CalendarPanel key="calendar" service={calendarService} timezone={profile.timezone} />
+  );
+  const today = (
+    <TodayPanel
+      key="today"
+      heading="Tasks"
+      allowTomorrow
+      service={todoService}
+      profile={profile}
+      projects={projects}
+      classes={classes}
+      workspaceSessionKey={workspaceSessionKey}
+    />
+  );
+  // Side by side the calendar is the left column and reads first. Stacked on a
+  // phone it would push what is due today two screens down, so the order swaps
+  // in the markup rather than in CSS: the reading and tab order swap with it.
   return (
     <div className="home-page" ref={setPage}>
       <HomeHeader service={appearanceService} userId={profile.userId} pageElement={page} />
-      <div className="home-workspace">
-        <CalendarPanel service={calendarService} timezone={profile.timezone} />
-        <TodayPanel
-          heading="Tasks"
-          allowTomorrow
-          service={todoService}
-          profile={profile}
-          projects={projects}
-          classes={classes}
-          workspaceSessionKey={workspaceSessionKey}
-        />
+      <div className={`home-workspace${phoneLayout ? " home-workspace--phone" : ""}`}>
+        {phoneLayout ? [today, calendar] : [calendar, today]}
       </div>
     </div>
   );

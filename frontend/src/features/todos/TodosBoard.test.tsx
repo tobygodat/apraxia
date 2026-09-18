@@ -356,6 +356,133 @@ it("filters all sources across Inbox and date columns and labels source chips", 
   expect(screen.getByText("Due Sep 1").className).toContain("--past");
 });
 
+describe("TodosBoard one-tap tomorrow", () => {
+  const LATER: Todo = { ...TODO, id: "todo-later", text: "Later this week", dueDate: "2026-09-05" };
+
+  it("offers tomorrow on overdue and today rows only, and moves them a day past today", () => {
+    const callbacks = props({
+      model: model([TODO, OVERDUE, LATER, INBOX]),
+      onRescheduleTodo: vi.fn(),
+    });
+    render(<TodosBoard {...callbacks} />);
+
+    for (const text of [TODO.text, OVERDUE.text]) {
+      expect(screen.getByLabelText(`Move ${text} to tomorrow`)).toBeTruthy();
+    }
+    for (const text of [LATER.text, INBOX.text]) {
+      expect(screen.queryByLabelText(`Move ${text} to tomorrow`)).toBeNull();
+    }
+
+    fireEvent.click(screen.getByLabelText(`Move ${OVERDUE.text} to tomorrow`));
+    expect(callbacks.onRescheduleTodo).toHaveBeenCalledWith(
+      expect.objectContaining({ id: OVERDUE.id }),
+      "2026-09-03",
+    );
+  });
+
+  it("hides the action on completed rows and while the row has a write in flight", () => {
+    render(
+      <TodosBoard
+        {...props({
+          model: model([{ ...OVERDUE, completed: true }, TODO]),
+          pendingTodoIds: new Set([TODO.id]),
+          onRescheduleTodo: vi.fn(),
+        })}
+      />,
+    );
+
+    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to tomorrow`)).toBeNull();
+    expect(screen.getByLabelText<HTMLButtonElement>(`Move ${TODO.text} to tomorrow`).disabled).toBe(
+      true,
+    );
+  });
+
+  it("leaves the action out entirely when the board cannot reschedule", () => {
+    render(<TodosBoard {...props()} />);
+    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to tomorrow`)).toBeNull();
+  });
+
+  /** Mirrors the controller: pending plus an optimistic move, then a settlement. */
+  function DeferHarness({ status }: { status: "succeeded" | "failed" }) {
+    const original = [
+      OVERDUE,
+      { ...OVERDUE, id: "todo-next", text: "Next overdue", dueDate: "2026-08-31" },
+    ];
+    const [todos, setTodos] = useState<Todo[]>(original);
+    const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            if (status === "failed") setTodos(original);
+            setPending(new Set());
+          }}
+        >
+          Settle
+        </button>
+        <TodosBoard
+          {...props({
+            model: buildTodoBoardModel(todos, "2026-08-31", "2026-09-02"),
+            pendingTodoIds: pending,
+          })}
+          onRescheduleTodo={(todo, dueDate) => {
+            setPending(new Set([todo.id]));
+            setTodos((current) =>
+              current.map((candidate) =>
+                candidate.id === todo.id ? { ...candidate, dueDate } : candidate,
+              ),
+            );
+          }}
+        />
+      </>
+    );
+  }
+
+  function deferOverdue() {
+    const action = screen.getByLabelText<HTMLButtonElement>(`Move ${OVERDUE.text} to tomorrow`);
+    action.focus();
+    fireEvent.click(action);
+  }
+
+  it("hands keyboard focus to the next row once the rescheduled row leaves the column", () => {
+    render(<DeferHarness status="succeeded" />);
+    deferOverdue();
+    const nextRow = screen.getByText("Next overdue").closest("article")!;
+    expect(nextRow.contains(document.activeElement)).toBe(true);
+
+    fireEvent.click(screen.getByText("Settle"));
+    expect(nextRow.contains(document.activeElement)).toBe(true);
+  });
+
+  it("returns focus to the row when the reschedule rolls back", () => {
+    render(<DeferHarness status="failed" />);
+    deferOverdue();
+    expect(
+      screen.getByText("Next overdue").closest("article")!.contains(document.activeElement),
+    ).toBe(true);
+
+    fireEvent.click(screen.getByText("Settle"));
+    const restored = screen.getByText(OVERDUE.text).closest("article")!;
+    expect(restored.contains(document.activeElement)).toBe(true);
+  });
+});
+
+describe("TodosBoard overdue count", () => {
+  it("counts the open past-due pile and follows the source filter", () => {
+    render(<TodosBoard {...props()} />);
+
+    expect(screen.getByText("1 overdue")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: "Classes" } });
+    expect(screen.queryByText(/overdue$/)).toBeNull();
+  });
+
+  it("says nothing when nothing is overdue", () => {
+    render(<TodosBoard {...props({ model: model([TODO, INBOX]) })} />);
+    expect(screen.queryByText(/overdue$/)).toBeNull();
+  });
+});
+
 describe("TodosBoard drag to reschedule", () => {
   function dataTransferStub() {
     const store = new Map<string, string>();

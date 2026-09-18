@@ -6,8 +6,10 @@ import {
   classifyTodoDueDate,
   compareSqlDates,
   isSqlDate,
+  localDateInZone,
   localToday,
   parseSqlDate,
+  sqlDateDifferenceInDays,
   shiftWeekMonday,
   startOfWeekMonday,
   startOfWeekSunday,
@@ -102,6 +104,40 @@ describe("localToday", () => {
     expect(() => localToday("", new Date())).toThrow(RangeError);
     expect(() => localToday(" America/New_York", new Date())).toThrow(RangeError);
     expect(() => localToday("UTC", new Date(Number.NaN))).toThrow(RangeError);
+  });
+});
+
+describe("sqlDateDifferenceInDays", () => {
+  it("counts whole days in both directions, including across leap days", () => {
+    expect(sqlDateDifferenceInDays("2026-09-11", "2026-09-17")).toBe(6);
+    expect(sqlDateDifferenceInDays("2026-09-17", "2026-09-11")).toBe(-6);
+    expect(sqlDateDifferenceInDays("2026-09-17", "2026-09-17")).toBe(0);
+    expect(sqlDateDifferenceInDays("2024-02-28", "2024-03-01")).toBe(2);
+    expect(sqlDateDifferenceInDays("2026-11-01", "2026-11-02")).toBe(1);
+  });
+
+  it("spans the whole supported calendar in constant time", () => {
+    expect(sqlDateDifferenceInDays("0001-01-01", "9999-12-31")).toBe(3_652_058);
+  });
+
+  it("rejects a value that is not an application date", () => {
+    expect(() => sqlDateDifferenceInDays("2026-02-29", "2026-03-01")).toThrow(RangeError);
+  });
+});
+
+describe("localDateInZone", () => {
+  it("reads a stored completion instant in the account's timezone, not the machine's", () => {
+    // 03:30 UTC is still the previous evening in New York and already the
+    // following morning in Tokyo.
+    const instant = new Date("2026-09-21T03:30:00.000000Z");
+    expect(localDateInZone("America/New_York", instant)).toBe("2026-09-20");
+    expect(localDateInZone("UTC", instant)).toBe("2026-09-21");
+    expect(localDateInZone("Asia/Tokyo", instant)).toBe("2026-09-21");
+  });
+
+  it("rejects an invalid timezone or instant", () => {
+    expect(() => localDateInZone("Not/A_Timezone", new Date())).toThrow(RangeError);
+    expect(() => localDateInZone("UTC", new Date(Number.NaN))).toThrow(RangeError);
   });
 });
 
