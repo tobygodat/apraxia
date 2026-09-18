@@ -24,10 +24,10 @@ There are two Vitest configurations.
 | Config | Command | Includes | Runs |
 | --- | --- | --- | --- |
 | `vitest.config.ts` | `npm test`, and inside `npm run verify` | `tests/contract/**` and `frontend/src/**/*.test.{ts,tsx}` | Every local run and the CI **App checks** job. Needs no Docker; DOM files opt in with `// @vitest-environment happy-dom`. |
-| `vitest.local.config.ts` | `npx vitest run --config vitest.local.config.ts` | `tests/local/**` and `frontend/tests/local/**` | Manually, with local Supabase running. Files run serially with long timeouts. Not run in CI, not part of `verify`. |
+| `vitest.local.config.ts` | `npm run db:test:todos-http`, or `npx vitest run --config vitest.local.config.ts` | `tests/local/**` and `frontend/tests/local/**` | Needs local Supabase running; files run serially with long timeouts. Not part of `npm test` or `verify`, but `verify:db` runs it, so the **Database checks** job does too. |
 
-pgTAP (`npm run db:test`) and the two script suites below are separate again and
-belong to the **Database checks** job. Test placement rules are in
+pgTAP (`npm run db:test`) and the script suites below also belong to the
+**Database checks** job. Test placement rules are in
 [conventions](CONVENTIONS.md).
 
 ## Environment variables
@@ -65,12 +65,9 @@ read those from the deployment logs.
 ## Fast local feedback
 
 Install dependencies once with `npm ci`; repeat when the lockfile changes.
-Reuse the task's worktree, dev server, browser session, and test watcher. Confirm
-an existing server belongs to this checkout; use a free port for independent work.
-For a small change, inspect the relevant code, implement, verify, and finish.
-Use a plan when uncertainty or scope warrants it, and read supporting docs only
-when relevant. The change-to-check table in [AGENTS.md](../AGENTS.md#verification)
-defines the local iteration scope.
+Confirm an existing dev server belongs to this checkout, and use a free port for
+independent work. The change-to-check table in
+[AGENTS.md](../AGENTS.md#verification) defines the local iteration scope.
 
 Choose the command for the current phase; these examples are alternatives, not
 a sequence.
@@ -99,21 +96,18 @@ or broad refactors. A specific failure can also be rerun with
 ### One local check, then CI
 
 For code changes, run `verify:quick` once before pushing, or let the optional
-pre-push hook run it. Do not manually run it immediately before a hooked push.
-A successful `verify` includes those checks; it also builds and scans the bundle.
-When full app checks are needed and the hook is enabled, run `npm run build`
-and `npm run check:bundle`, then let the push supply `verify:quick`; together
-these perform the full app checks without repeating the quick suite.
-Documentation-only work needs consistency and diff checks locally; the optional
-hook remains a full check on every push if enabled.
+pre-push hook run it, not both. A successful `verify` includes those checks and
+also builds and scans the bundle; when full app checks are needed and the hook is
+enabled, run `npm run build` and `npm run check:bundle` and let the push supply
+`verify:quick`. Documentation-only work needs a consistency check and
+`git diff --check`.
 
-Require successful **App checks** and **Database checks** for the commit being
-released. CI's full `verify` is sufficient app verification for that commit;
-do not also run the identical full suite locally solely for release. Changes
-to source, dependencies, environment, or build configuration invalidate relevant
-earlier results. Test environment-specific concerns with the intended configuration,
-and check the deployed flow after release. A passing local check does not replace
-the required CI statuses or authenticated checks for data/provider changes.
+**App checks** and **Database checks** must pass for the commit being released,
+and CI's full `verify` is sufficient app verification for it, so do not repeat the
+identical suite locally just for a release. Changes to source, dependencies,
+environment, or build configuration invalidate earlier results. A passing local
+check replaces neither the required CI statuses nor the authenticated checks that
+data and provider changes need.
 
 Enable the optional pre-push gate once per clone, provided you do not
 already have a custom hooks path:
@@ -154,61 +148,19 @@ inputs, failures, or unresolved concerns. Do not repeat `npm ci`, start/stop
 Docker, or push just to discover whether a local fix worked. If a check cannot
 run locally, report the missing prerequisite or CI-only difference explicitly.
 
-## Using Codex and GPT-6 Astra
-
-Official guidance reviewed on 2026-09-15. The validation table and CI allowlist
-are apraxia policy choices applying that guidance; OpenAI does not prescribe
-these particular commands or file filters.
-
-- Give Codex the goal, relevant files/errors, constraints, and an observable
-  completion condition. For example: "Fix the calendar label in the existing
-  component. Done when it fits at both affected widths and the relevant checks
-  pass." Use Plan mode for difficult or ambiguous work, and review the final diff.
-- Match reasoning effort to the task and compare results: Low for narrow changes,
-  Medium/High for harder work or debugging, and Extra High for demanding extended
-  tasks. More reasoning is not a universal speed improvement. These are task
-  choices, not an instruction to change everyone's saved model settings.
-
-Source: [OpenAI's Codex best practices](https://learn.chatgpt.com/guides/best-practices).
-
-- Periodically audit overlapping skills and stale instructions. Keep skill
-  descriptions specific, and load supporting material only when its workflow
-  applies. The available catalog currently exposes both `impeccable` and
-  `impeccable:impeccable`; inspect whether both are needed before changing global
-  installations. This repository change does not manage installed plugins.
-- Keep repository instructions focused on consequential constraints and where to
-  find relevant context. Define completion so Astra continues through verification
-  and fixes rather than stopping at the first implementation. Keep routine local
-  fixture checks authorized without repeated permission requests.
-
-Source: [OpenAI Developers: Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
-
-- Astra responds strongly to instruction boundaries. Preserve explicit user scope,
-  explain the exact skill instruction if it blocks work, and calibrate tests to
-  the change. Set delegation expectations explicitly when requesting parallel
-  agent work; this workflow does not require subagents for routine edits.
-
-Source: [Official Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices).
-
 ## Windows Git path support
 
-Codex checkpoint refs can exceed Windows' traditional path limit even when the
-worktree path is short: their files live under the shared repository's `.git`.
-For this checkout, 269-character paths appeared as broken refs while their tree
-objects were intact. `git -c core.longpaths=true fsck --full --no-reflogs
---no-dangling` and fetch both succeeded with long-path support enabled.
-
-Enable it once per Windows clone with `git config --local core.longpaths true`;
-linked worktrees inherit this repository setting. If this error recurs, inspect
-the ref and object and test long-path support before deleting checkpoint refs.
-Verify the repair with normal `git fetch origin` and `git fsck --full
---no-reflogs --no-dangling`. This does not require changing GitHub settings.
+Agent checkpoint refs can exceed Windows' traditional path limit even when the
+worktree path is short, because their files live under the shared repository's
+`.git`; broken refs with intact tree objects are the symptom. Enable long paths
+once per Windows clone with `git config --local core.longpaths true`, which linked
+worktrees inherit, and verify the repair with `git fetch origin` and `git fsck
+--full --no-reflogs --no-dangling` before deleting any ref.
 
 ## GitHub Actions
 
 `.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual
-dispatch from the repository's **Actions → CI → Run workflow** page (once the
-workflow exists on the default branch).
+dispatch from the repository's **Actions → CI → Run workflow** page.
 
 - **App checks** runs `npm ci` and `npm run verify` on Node.js 22.
 - **Database checks** runs `npm run verify:db` on GitHub's Linux runner, applies and lints
@@ -234,12 +186,6 @@ hosted Supabase project. The CLI version comes from the lockfile. CI performs no
 deployment or hosted migration. Vercel's build runs `npm run build && npm run
 check:bundle` only, because CI already gates on the full `verify`; this workflow
 alone does not make Vercel wait for the database job.
-
-After publishing the workflow, open its first run under **Actions** and confirm
-both jobs are green. In the repository's branch protection/ruleset settings,
-require pull requests and the status checks **App checks** and **Database checks**
-for `main` if those controls are available for this repository. This prevents
-merging failed checks; direct pushes must also be restricted to enforce the gate.
 
 When a migration changes the schema, `npm run verify:db` generates the updated
 `frontend/src/types/database.ts` locally. Review and commit it with the change.
@@ -406,35 +352,13 @@ pretending to verify Google's behavior.
 
 ## Live releases
 
-Class assignments require `20260913000200_class_assignments.sql` before releasing
-the UI. It adds account-owned rows under RLS without modifying existing data.
-Task aggregation additionally requires
-`20260914000100_assignment_todos.sql` coordinated with the matching UI. Assignments
-then share `todos` with Tasks and Home; the legacy table remains a read-only backup.
-Do not deploy the new Classes adapter before that migration. Follow
-[TASK_AGGREGATION_RELEASE.md](history/TASK_AGGREGATION_RELEASE.md) for backup, validation,
-and release sequencing. Classes and notes additionally require
-`20260913000300_classes_and_notes.sql` and
-`20260913000400_class_pdf_storage.sql`. The first preserves existing assignments
-and recovers parent classes before enforcing account/class foreign keys. The
-second creates private PDF storage. Device uploads are permanent, with a 50 MiB
-limit and recoverable pending records; Drive notes store file references.
-Browser class data is imported without overwriting established cloud names and
-is retained unchanged as a recovery copy. See [Classes data model](CLASSES_DATA_MODEL.md).
-
-Owner delete policies for classes, notes, and the private PDF objects arrive in
-`20260914000300_class_deletes.sql`; apply it after the aggregation migration and
-before releasing any delete affordance. Assignments are todos, so they are
-removed through the soft-delete RPC with Undo; the legacy `class_assignments`
-backup gains no delete grant.
-
-
-Home page names and optional covers use the account-owned `home_appearance`
-table. Apply `20260907000100_home_appearance.sql` and
-`20260908000100_home_cover_position.sql` before releasing that UI.
-Uploads are resized in the browser; only a bounded image (at most 350 KB encoded)
-is saved with the title and crop coordinates under RLS. Expanding the cover
-reveals the complete resized image. No public image bucket is used.
+Hosted schema changes are forward-only
+([ADR 0003](adr/0003-forward-only-hosted-migrations.md)), and a migration goes in
+before the code that depends on it, never the other way round. [Classes data
+model](CLASSES_DATA_MODEL.md) and [workspace data model](WORKSPACE_DATA_MODEL.md)
+describe what each migration guarantees, and
+[TASK_AGGREGATION_RELEASE.md](history/TASK_AGGREGATION_RELEASE.md) records how the
+one coordinated migration-and-UI release was sequenced.
 
 | Environment | Database | Configuration |
 |---|---|---|
@@ -449,26 +373,13 @@ Vercel Production because sensitive variables cannot be renamed; the server
 accepts `APRAXIA_AGENT_TOKEN` or that name. `APP_URL` must be
 `https://apraxia.dev`, and Google OAuth redirect URIs plus the Supabase Site URL
 must match it, or Calendar and Drive connections fail.
-There is no required Preview environment. A main push may deploy immediately;
-apply required forward migrations before publishing dependent code. Inspect
-current hosted data and migration history, and preserve a backup/export when
-data exists. Never infer an empty database from a historical smoke test.
 
-This release adds two forward migrations after the already-applied
-`20260914000100_assignment_todos.sql`. Apply them, in order, before the code
-that depends on them:
-
-1. `20260914000300_class_deletes.sql` — owner-scoped delete policies for classes,
-   notes, and their private PDF objects, plus Storage hash verification and the
-   abandoned-upload reaper.
-2. `20260914000400_google_access_token_cache.sql` — encrypted access-token cache
-   columns, the `service_role` column grant on `public.profiles`, and the
-   eight-argument `save_calendar_credentials` / `save_drive_credentials`
-   overloads. See [Calendar](CALENDAR.md) and [Drive](DRIVE.md).
-
-Both change the schema, so `frontend/src/types/database.ts` must be regenerated:
-`npm run db:types` needs a local Supabase instance, which this checkout does not
-run, so take the types from CI's **database-types** artifact as described above.
+There is no required Preview environment, and a main push may deploy immediately.
+Before applying a migration, inspect current hosted data and migration history and
+preserve a backup or export when data exists; never infer an empty database from a
+historical smoke test. A schema change also means regenerating
+`frontend/src/types/database.ts`, with `npm run db:types` against local Supabase or
+from CI's **database-types** artifact as described above.
 
 Frontend Supabase configuration is embedded at build time. Only browser-safe
 `VITE_` values belong in the browser; privileged Supabase and Google credentials
@@ -491,12 +402,9 @@ commands are unverified since 2026-09 and are not covered by CI. Cloud is the fr
 explicitly enables its FastAPI proxy. Do not remove legacy source, data, or
 recovery files without an explicit request. Backup location is in the root README.
 
-## Personal agent API setup
+## Personal agent API
 
-See [Agent API](AGENT_API.md) for Muse/curl examples, endpoint discovery,
-permissions, and retry rules. The server-only variables are
-`APRAXIA_AGENT_TOKEN`, `APRAXIA_AGENT_USER_ID`, and `APRAXIA_AGENT_SCOPES`;
-`.env.cloud.example` includes placeholders. Apply the forward-only migration
-before deploying the API to the existing app, complete the normal database/app
-release gates, then verify authenticated hosted reads and intended writes.
-Token changes require redeployment; never expose the token in browser variables.
+Its server-only variables are `APRAXIA_AGENT_TOKEN`, `APRAXIA_AGENT_USER_ID`, and
+`APRAXIA_AGENT_SCOPES`, with placeholders in `.env.cloud.example`. Token changes
+require a redeployment, and the token never belongs in a browser variable.
+[Agent API](AGENT_API.md) has the endpoints, permissions, and retry rules.

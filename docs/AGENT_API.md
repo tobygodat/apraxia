@@ -20,13 +20,11 @@ service-role key, OAuth refresh token, or browser credentials. Store the same
 agent token in Muse's secret environment and send `Authorization: Bearer ...`.
 Do not place it in query strings, browser code, logs, or committed files.
 
-Apply the forward-only agent API migration before deploying the API. Follow the
-normal [release checks](CLOUD_DEVELOPMENT.md), including local database checks and
-successful App checks and Database checks for the release commit. Configure the
-server variables and redeploy the existing app. Rotate the token or remove it
-and redeploy to revoke access; also revoke obsolete deployment access if old
-Vercel deployments remain reachable. Missing configuration fails closed.
-Google features require the account's existing Calendar/Drive connection.
+The API is deployed on the existing app, with `20260916053826_agent_api.sql`
+applied. Rotate the token, or remove it and redeploy, to revoke access; also
+revoke obsolete deployment access if old Vercel deployments remain reachable.
+Missing configuration fails closed. Google features require the account's
+existing Calendar/Drive connection.
 
 ## Discover and read
 
@@ -159,9 +157,6 @@ conflict or provider-state reconciliation. 502/503 indicate unavailable services
 or configuration. Error envelopes contain `error.code` and `error.message`.
 Never interpret an error as permission to overwrite or create replacement data.
 
-After deployment, verify missing/wrong token rejection, discovery scopes, list,
-search, one intended real create/edit with repeat-key replay, stale-version
-rejection, and journal visibility. Verify calendar and saved-PDF reads with the
-intended connected account. Fixture tests cannot prove hosted persistence or
-Google access. Report any unverified authenticated flows. This API intentionally
-excludes appearance/settings, credentials, retired data, and raw database access.
+Fixture tests cannot prove hosted persistence or Google access, so report any
+authenticated flow a change leaves unverified. This API intentionally excludes
+appearance/settings, credentials, retired data, and raw database access.

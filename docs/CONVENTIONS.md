@@ -6,15 +6,13 @@ Repository-wide habits. Architecture and placement rules are in
 
 ## Folder layout
 
+[Architecture](ARCHITECTURE.md#where-code-lives) lists what each folder holds and
+where new code goes. Two rules matter everywhere:
+
 - `frontend/src/features/<area>/` is the unit of organization: components, their
-  CSS, the service that talks to Supabase or `/api`, and pure helpers all live
-  together. Current areas are `todos`, `collections`, `calendar`, `classes`.
-- `frontend/src/components/` is only for UI used by more than one feature.
-- `frontend/src/apps/` holds entry points and the shell runtime;
-  `frontend/src/auth/`, `config/`, `lib/`, `types/`, `qa/` hold their namesakes.
-- `api/` files are thin Vercel entry points; the logic lives in `server/`.
-- `shared/` is for contracts both sides import. It must stay free of React,
-  Supabase, and Node built-ins.
+  CSS, the service that talks to Supabase or `/api`, and pure helpers live
+  together. `frontend/src/components/` is only for UI used by more than one
+  feature.
 - `frontend/src/pages/`, `components/{Layout,Login,ResourcePage}.tsx`,
   `api/client.ts`, and `src/orbitos/` are preserved legacy. Do not extend them.
 
@@ -26,7 +24,7 @@ Repository-wide habits. Architecture and placement rules are in
 | Module of helpers or a service | `camelCase.ts` | `todoController.ts`, `collectionService.ts` |
 | Service factory | `create<Name>Service` returning an interface | `createNoteService` |
 | Test | sibling file, `<subject>.test.ts(x)` | `eventLayout.test.ts` |
-| CSS file | `camelCase.css` next to its component, or `<area>.css` for a shared sheet | `TodayList.css`, `calendar.css` |
+| CSS file | `<Component>.css` next to its component, or `<area>.css` for a sheet shared across a feature | `TodayList.css`, `calendar.css` |
 | Migration | `<UTC timestamp>_<snake_case>.sql` | `20260913000300_classes_and_notes.sql` |
 | pgTAP test | `<ordinal>_<snake_case>.test.sql` | `030_soft_delete_restore.test.sql` |
 | SQL function argument | `p_` prefix; local variable `v_` prefix | `p_local_date`, `v_uid` |
@@ -94,25 +92,20 @@ pgTAP, where they run against real Postgres.
 
 ## Tooling
 
-`.editorconfig`, Prettier (`.prettierrc`), ESLint (`eslint.config.js`), and
-`knip` (`knip.json`) are in place. `npm run lint` runs ESLint then
-`prettier --check`, and it is part of `npm run verify`;
-`npm run format -- <file> [<file> ...]` formats explicit paths, and `npm run knip`
-reports unused files, exports, and dependencies.
+The commands themselves are in
+[cloud development](CLOUD_DEVELOPMENT.md#lint-format-and-unused-code). The
+habits they enforce:
 
 - Prettier owns layout: 100 columns, two-space indent, double quotes,
   semicolons, trailing commas. Do not hand-format; use
-  `npm run format -- <changed-file>`. Avoid repository-wide formatting for a
-  scoped change.
-  Markdown and `supabase/**/*.sql` are excluded, so keep prose hand-wrapped.
+  `npm run format -- <changed-file>`, and avoid repository-wide formatting for a
+  scoped change. Markdown and `supabase/**/*.sql` are excluded, so keep prose
+  hand-wrapped.
 - ESLint uses `typescript-eslint`'s recommended (not type-checked) preset plus
-  `eslint-plugin-react-hooks`. The React Compiler rules that the 2026-09-14
-  audit's H3/H4/M3 refactors would satisfy are off with a note in the config;
-  everything else is on. Fix violations rather than widening a rule, and give
-  any `eslint-disable` a one-line reason.
-- `knip.json` covers `frontend/src`, `api/`, `server/`, `shared/`, `scripts/`,
-  and the test trees. The preserved legacy `frontend/src/api/**` and the
-  generated `frontend/src/types/database.ts` are in its ignore list; the legacy
-  `frontend/src/pages/**` stays reachable through `App.tsx` and needs none.
-  Prefer dropping an unnecessary `export` over deleting a used symbol.
+  `eslint-plugin-react-hooks`. Six React Compiler rules are off with a recorded
+  rationale in `eslint.config.js`; everything else is on. Fix violations rather
+  than widening a rule, and give any `eslint-disable` a one-line reason.
+- `knip` ignores the preserved legacy `frontend/src/api/**` and the generated
+  `frontend/src/types/database.ts`. Prefer dropping an unnecessary `export` over
+  deleting a used symbol.
 - `noUnusedLocals` and `noUnusedParameters` are on in both `tsconfig` files.

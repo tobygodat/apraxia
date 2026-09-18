@@ -1,8 +1,8 @@
 # Complete Today data without a product-sized row cap
 
 Today must contain every incomplete, non-deleted task due on or before the
-profile's local date. Long lists scroll; older tasks are not hidden. At the same
-time, SPEC section 18 requires bounded list queries and pagination.
+profile's local date. Long lists scroll; older tasks are not hidden. List
+queries stay bounded and paginated.
 
 ## Read protocol
 
@@ -74,11 +74,10 @@ the browser list API or use a table-returning reorder confirmation. Keep
 
 Embedded PostgreSQL tests feed real SQL envelopes through the same client
 protocol, including more than 1,000 tasks and mid-pagination project edits.
-The separate `npm run db:test:todos-http` passed on local Supabase on 2026-09-04:
-real Auth/JWT reads, response mapping, 1,005 eligible tasks, complete reload/order,
-and cross-user denial with the configured 1,000-row Data API limit unchanged.
-Check the live personal Todo flow after deployment. Larger-data fingerprint
-profiling is follow-up work if observed performance warrants it, not a release gate.
+`npm run db:test:todos-http` covers the rest on local Supabase: real Auth/JWT
+reads, response mapping, complete reload and ordering past the 1,000-row Data
+API limit, and cross-user denial. Larger-data fingerprint profiling is follow-up
+work if observed performance warrants it, not a release gate.
 
 PostgREST distinguishes scalar responses from table-valued responses, while
 table-valued functions support row limits and filters. This is why page metadata

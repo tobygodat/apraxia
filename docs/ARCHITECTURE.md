@@ -65,7 +65,7 @@ tokens stay out of the response. See [Calendar](CALENDAR.md) and
 | `shared/` | Contracts used by both sides: calendar event shapes, Today RPC wire names, Supabase environment normalizers. Must stay dependency-free and runtime-neutral. |
 | `supabase/` | `migrations/` (forward-only schema) and `tests/` (pgTAP). |
 | `tests/contract/` | Node/PGlite tests that run everywhere, including CI, with no Docker. |
-| `tests/local/` | Tests that require local Supabase in Docker. Not run in CI. |
+| `tests/local/` | Tests that require local Supabase. Run by `npm run verify:db`, not by `npm test`. |
 | `scripts/` | Node check scripts invoked by npm scripts: browser secret scan, local Todo HTTP suite, OAuth concurrency suite, migration rewind. |
 
 ## Where new code goes
@@ -84,13 +84,11 @@ tokens stay out of the response. See [Calendar](CALENDAR.md) and
 
 ## How the QA fixture relates to real services
 
-`WorkspaceRuntime` receives its services as props: `todoService`,
-`collectionService`, `calendarService`, `driveService`, and `workspaceData`.
-The authenticated app passes Supabase-backed implementations; the fixture passes
-in-memory ones with the same interfaces. The pages, navigation cache, preload,
-and invalidation are identical. The fixture proves layout, interaction, and
-error handling. It cannot prove RLS, persistence, OAuth, or Google behavior.
-See [QA fixtures](QA_FIXTURES.md).
+`WorkspaceRuntime` receives its services as props, so the authenticated app and
+the fixture differ only in which implementation is passed in. The fixture proves
+layout, interaction, and error handling; it cannot prove RLS, persistence,
+OAuth, or Google behavior. The service-by-service mapping is in
+[QA fixtures](QA_FIXTURES.md).
 
 ## Testing layers
 
@@ -99,7 +97,7 @@ See [QA fixtures](QA_FIXTURES.md).
 | Unit and component | Vitest, `node` by default with `// @vitest-environment happy-dom` per DOM file | `npm test` | Component behavior, pure domain logic, service mapping against fakes. |
 | Contract | Vitest; SQL cases run against embedded PostgreSQL (PGlite) | `npm test` | Migration and RPC logic, OAuth policy, transports, server session handling, no Docker required. |
 | pgTAP | Real Postgres in local or CI Supabase | `npm run db:test` | RLS isolation, role and ACL posture, function behavior on the real engine. |
-| Local integration | Local Supabase over HTTP | `npx vitest --config vitest.local.config.ts`, plus `db:test:todos-http` and `db:test:oauth-concurrency` | PostgREST row limits, real Auth/JWT reads, concurrency. Not run in CI. |
+| Local integration | Local Supabase over HTTP | `npm run db:test:todos-http`, which runs `vitest.local.config.ts`, plus `npm run db:test:oauth-concurrency` | PostgREST row limits, real Auth/JWT reads, concurrency. Part of `verify:db`, so the Database checks job runs it. |
 
 Details and when each suite runs are in
 [cloud development](CLOUD_DEVELOPMENT.md).

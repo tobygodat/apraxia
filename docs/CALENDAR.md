@@ -19,12 +19,10 @@ Retain the separate Supabase app sign-in redirect:
 `https://oidvvenjamgcezdptfjr.supabase.co/auth/v1/callback`.
 Supabase's Site URL and allowed app return are `https://apraxia.dev/`.
 Redeploy after changing environment settings; connect through Settings and
-complete the separate Calendar consent. Existing read-only connections must
-reconnect to grant event editing. App sign-in alone does not connect Calendar.
+complete the separate Calendar consent. App sign-in alone does not connect
+Calendar.
 
-On 2026-09-04, the live Calendar store returned upstream 401 and the Google
-settings were absent. Reinspect current configuration before taking action.
-For a repeated storage 401, check that `SUPABASE_SERVICE_ROLE_KEY` is an active
+For a storage 401, check that `SUPABASE_SERVICE_ROLE_KEY` is an active
 server key for this Supabase project. Modern `sb_secret_` keys use `apikey`;
 legacy JWT keys also use Bearer authentication. Never replace browser keys
 with a server key. Verify a real week, saved visibility, reconnect after revoked
@@ -92,8 +90,8 @@ unreadable, and those accounts must reconnect.
 
 ## Event editing
 
-Click **Add event**, select an all-day slot, or drag an empty time range in
-15-minute increments. Click an event to edit its title, location, calendar,
+Click **Add event** or drag an empty time range in 15-minute increments.
+Click an event to edit its title, location, calendar,
 dates, times, all-day status, and repeat schedule. Timed inputs use the event
 timezone; new events use the profile timezone. All-day end dates in the editor
 are inclusive and become exclusive Google dates. Skipped or ambiguous DST
@@ -108,11 +106,9 @@ Google expands repeat instances when the week reloads.
 The separate OAuth grant requests `calendar.events`,
 `calendar.calendarlist.readonly`, and `calendar.calendars.readonly` under
 `https://www.googleapis.com/auth/`. The metadata read permission resolves Google's
-per-calendar event label colors; existing two-scope connections need a one-time
-reconnect after this update. Add the metadata scope to the Google OAuth consent
-configuration before releasing. No additional write permission is requested.
+per-calendar event label colors. No additional write permission is requested.
 Server writes require the verified session, expected origin, and fresh Google
-writer/owner access. Read-only calendars remain viewable. No migration is needed.
+writer/owner access. Read-only calendars remain viewable.
 
 POST commands on `/api/calendar/events` validate bounded input. Details are
 projected to editor fields only. Conditional PATCH/DELETE requests reject stale
@@ -125,17 +121,18 @@ retried; creation uses a stable draft ID. After an uncertain result, close and
 refresh before retrying.
 
 The local workspace fixture exercises editor, drag selection, and CRUD with
-fictional data. It stores repeat settings but does not expand recurrence or
-verify Google OAuth, permissions, notifications, or persistence. Live Google
-verification remains required after deployment and renewed consent.
+fictional data. It rejects recurrence writes and verifies nothing about Google
+OAuth, permissions, notifications, or persistence, so live verification is still
+required after a release or renewed consent.
 
 ## Reads and contracts
 
 The calendar runs Sunday through Saturday, including navigation, all-day spans,
 and the `events?sunday=YYYY-MM-DD` read window. The response range contains
 inclusive `sunday` and `saturday` dates in the profile timezone.
-The week grid includes all 24 hours at 30 pixels per hour. On load and when
-pressing Today it scrolls toward the current profile-local time, clamped at the
+The week grid covers all 24 hours; its hour height is fit to the panel in
+`HomePage.tsx`, not a fixed step. On load and when pressing Today it scrolls
+toward the current profile-local time, clamped at the
 end of the day. Clock updates and refreshes preserve manual scrolling. A colored
 time label and line identify the current time. Event text clips at the right edge
 without wrapping or ellipses: roomy cards show title, time range, and optional

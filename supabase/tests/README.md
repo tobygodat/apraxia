@@ -3,38 +3,17 @@
 Database security and function tests live here. Every user-owned table must have
 allow/deny coverage for two isolated users before it receives personal data.
 
-The database suite covers:
+The files run in numeric order and each name states its area. Between them they
+cover the security contract (schema, role, function, and private-table ACL
+posture), two-account RLS isolation, Today ordering and pagination, soft delete
+and restore with exact undo tokens, search, schedule bounds, OAuth transactions,
+the calendar and home-appearance services, classes and notes, the
+assignment-to-todo aggregation, Classes deletion, browser-role posture, and the
+agent API.
 
-- `000_security_contract.test.sql` — schema, role, function, and private-table
-  ACL posture.
-- `010_rls_isolation.test.sql` — two-user access across every public table,
-  ownership derivation, cross-owner relationships, and hard-delete denial.
-- `020_today_reorder.test.sql` — eligibility, deterministic ordering, atomic
-  rank persistence, and non-oracular validation failures.
-- `030_soft_delete_restore.test.sql` — all four record types, foreign/stale
-  no-ops, exact undo tokens, replay denial, and stale-rank removal.
-- `040_search.test.sql` — all record types, ownership/deletion filtering,
-  negative terms, pagination bounds, and injection-like input.
-- `050_todo_schedule_bounds.test.sql` — authenticated INSERT/UPDATE schedule
-  boundaries, finite four-digit dates, microsecond preservation, and null rules.
-- `060_today_pagination.test.sql` — complete bounded Today pages beyond 1,000
-  rows, snapshot consistency, scalar reorder receipts, and API-role isolation.
-- `070_calendar_oauth_transactions.test.sql` — service-only OAuth creation and
-  consumption, exact ownership/redirect binding, database-time expiry, replay
-  rejection, and browser-role denial.
-- `120_assignment_todos.test.sql` — assignment backfill into `todos` preserving
-  IDs, dates, and completion; owner-scoped class foreign key; class-only
-  assignment type; one-parent check; read-only legacy backup; class deletion
-  detaching tasks.
-- `130_class_deletes.test.sql` — owner-scoped Classes deletion, cross-account
-  denial, foreign-key protection for a class that still has notes, task
-  detachment on class deletion, the private PDF object delete policy (asserted
-  through `pg_policies`, since hosted Storage forbids SQL deletes on
-  `storage.objects`), Storage SHA-256 verification at finalization, and
-  service-role-only access to the abandoned-upload reaper.
-- `140_browser_role_posture.test.sql` — row-level security on every personal
-  table, internal Today reader grants, read-only calendar connections, and the
-  visibility-only calendar preference write surface.
+Coverage is narrower than the whole schema: a new table or `SECURITY DEFINER`
+function needs the posture suites (`000` and `140`) widened deliberately, not
+assumed to reach it.
 
 Run the authoritative suite against local Supabase with:
 
