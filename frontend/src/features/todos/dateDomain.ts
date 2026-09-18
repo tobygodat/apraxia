@@ -115,12 +115,17 @@ export function addSqlDateDays(value: string, days: number): SqlDate {
   return sqlDateFromUtcDate(date);
 }
 
-/** Return the date at `now` in an IANA timezone. */
-export function localToday(timeZone: string, now: Date = new Date()): SqlDate {
+/**
+ * Return the calendar date an instant falls on in an IANA timezone. This is
+ * the only sanctioned way to turn a stored timestamp into an application date:
+ * reading a `Date`'s own components would use the machine's timezone instead of
+ * the account's.
+ */
+export function localDateInZone(timeZone: string, instant: Date): SqlDate {
   if (!timeZone || timeZone !== timeZone.trim()) {
     throw new RangeError("Timezone must be a non-empty IANA timezone name.");
   }
-  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+  if (!(instant instanceof Date) || Number.isNaN(instant.getTime())) {
     throw new RangeError("Current time must be a valid Date instant.");
   }
 
@@ -138,7 +143,7 @@ export function localToday(timeZone: string, now: Date = new Date()): SqlDate {
     throw new RangeError(`Invalid IANA timezone: ${timeZone}`);
   }
 
-  const parts = formatter.formatToParts(now);
+  const parts = formatter.formatToParts(instant);
   const part = (type: Intl.DateTimeFormatPartTypes): string | undefined =>
     parts.find((candidate) => candidate.type === type)?.value;
   const year = part("year");
@@ -150,6 +155,11 @@ export function localToday(timeZone: string, now: Date = new Date()): SqlDate {
   }
 
   return asSqlDate(`${year.padStart(4, "0")}-${month}-${day}`);
+}
+
+/** Return the date at `now` in an IANA timezone. */
+export function localToday(timeZone: string, now: Date = new Date()): SqlDate {
+  return localDateInZone(timeZone, now);
 }
 
 export function startOfWeekMonday(value: string): SqlDate {

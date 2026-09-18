@@ -290,6 +290,39 @@ The Tasks board's signature: a planner spread where every day is a ruled column 
 - **Inbox band:** the section heading followed by tasks flowing across auto-fill columns over a repeating 41px ruled background, so empty space is still ruled.
 - **Undo toast:** the board's only floating surface, fixed bottom-right, 440px wide at most, with the toast radius, a 20% white border, and its own shadow.
 
+### Weekly review ledger
+
+The read-only `/review` page reuses the ledger vocabulary one level down: where
+the Tasks board rules the week by day, this page rules it by project and class,
+so the group name takes the place the date holds there.
+
+- **Sheet:** a sticky margin (`clamp(150px, 15vw, 212px)`) beside the bands, 28px
+  gutter. The margin holds the week's standing: a 2px 30% rule over three 40px
+  hairline rows, each a label with its count at the right in tabular numerals
+  and an anchor to its band. At 900px and below the margin lays down as a
+  horizontal tally strip above the bands; at 620px the bands become one column.
+- **Band:** Finished, Slipped and Next in that order, 56px apart, each a
+  section heading with a 12px muted caption naming its count and date range,
+  then its groups in auto-fill columns of at least 250px (220px below 1180px)
+  with the same 28px gutter.
+- **Group header:** the project or class name in 13px weight 500, its count at
+  the right in 11px muted tabular, 8px above the day header's 2px rule at 30%
+  white. The name links to that project or class; nothing else on the page is
+  interactive.
+- **Entry row:** the board's 40px hairline row without its controls. Nothing is
+  actionable, so rows have no hover raise and no checkbox. Finished entries are
+  deliberately *not* struck through: a whole band of struck text is unreadable
+  and the heading already says Finished, so the completion date carries it.
+  A due date already past today uses Overdue Clay and a "N days late" count,
+  in Next as well as Slipped.
+- **Empty band:** the Inbox band's repeating 41px ruled ground, three rules
+  deep, with one faint line of copy on it rather than a blank space.
+- **Controls:** the Tasks board's own prev / This week / next rectangles, and
+  its `rgba(255,255,255,0.1)` / `0.2` control-border pair as local tokens. Next
+  is disabled on the current week: a week that has not happened has nothing to
+  review. Text selection is a neutral warm paper at 22%, not the board's
+  periwinkle, which stays on the board.
+
 ### Calendar and Today
 
 Solid calendar event blocks carry the calendar's color. Dense events truncate text to fit their geometry, while the surrounding time grid remains neutral. Today uses compact task rows, overdue-colored metadata, and small edit/delete controls. Retain their accessible names and keyboard reorder behavior.
@@ -307,6 +340,7 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Do keep calendar data colors and error/overdue semantics distinct from interface chrome.
 - Do preserve local component variants when extending an existing surface.
 - Do keep Today Periwinkle to the Tasks board's today header: the date numeral and its 2px rule, nothing more.
+- Do carry the ledger's rules and hairlines to a new surface that reports on the same records, stepping the type down rather than inventing a second vocabulary.
 - Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column.
 
 ### Don't

@@ -6,6 +6,7 @@ import {
   classifyTodoDueDate,
   compareSqlDates,
   isSqlDate,
+  localDateInZone,
   localToday,
   parseSqlDate,
   shiftWeekMonday,
@@ -102,6 +103,22 @@ describe("localToday", () => {
     expect(() => localToday("", new Date())).toThrow(RangeError);
     expect(() => localToday(" America/New_York", new Date())).toThrow(RangeError);
     expect(() => localToday("UTC", new Date(Number.NaN))).toThrow(RangeError);
+  });
+});
+
+describe("localDateInZone", () => {
+  it("reads a stored completion instant in the account's timezone, not the machine's", () => {
+    // 03:30 UTC is still the previous evening in New York and already the
+    // following morning in Tokyo.
+    const instant = new Date("2026-09-21T03:30:00.000000Z");
+    expect(localDateInZone("America/New_York", instant)).toBe("2026-09-20");
+    expect(localDateInZone("UTC", instant)).toBe("2026-09-21");
+    expect(localDateInZone("Asia/Tokyo", instant)).toBe("2026-09-21");
+  });
+
+  it("rejects an invalid timezone or instant", () => {
+    expect(() => localDateInZone("Not/A_Timezone", new Date())).toThrow(RangeError);
+    expect(() => localDateInZone("UTC", new Date(Number.NaN))).toThrow(RangeError);
   });
 });
 
