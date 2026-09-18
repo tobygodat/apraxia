@@ -5,25 +5,27 @@ navigation. **Open from Drive** opens the popup; selecting a PDF loads it in the
 existing notes reader. Cancel keeps the current document. Previously saved class
 folders are used as the initial location. No background sync or Drive writes run.
 
-## Deployment setup
+## Hosted configuration
 
-1. Apply `supabase/migrations/20260913000100_google_drive.sql` after inspecting
-   the hosted database and preserving a backup, following `CLOUD_DEVELOPMENT.md`.
-2. Enable Google Drive API and Google Picker API in the existing OAuth project.
-   Register `https://apraxia.dev/api/drive/callback` alongside the
-   Calendar redirect. Local full-stack work uses `APP_URL` plus that path.
-3. Keep `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
-   `GOOGLE_TOKEN_ENCRYPTION_KEY` on the server. Request the existing
-   `https://www.googleapis.com/auth/drive.readonly` scope.
-4. Create a browser API key restricted to **Google Picker API** and these website
-   referrers: `https://apraxia.dev/*` and `https://docs.google.com/*`.
-   Set server environment `GOOGLE_PICKER_API_KEY` to that key and
-   `GOOGLE_PICKER_APP_ID` to the Google Cloud project number. For local provider
-   testing, explicitly allow the local origin too. See
-   [Google's Picker setup](https://developers.google.com/workspace/drive/picker/guides/web-picker).
-5. Deploy to the existing app. Open a class, connect Drive if needed, then select
-   **Open from Drive**. Existing Drive consent works with the Picker; Calendar
-   consent alone does not grant Drive access.
+This is live on `https://apraxia.dev` and was verified there on 2026-09-18. What
+it depends on, for a new environment or a changed origin:
+
+- `supabase/migrations/20260913000100_google_drive.sql` applied.
+- Google Drive API and Google Picker API enabled in the existing OAuth project,
+  with `https://apraxia.dev/api/drive/callback` registered alongside the Calendar
+  redirect. Local full-stack work uses `APP_URL` plus that path.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_TOKEN_ENCRYPTION_KEY`
+  server-only, requesting the existing
+  `https://www.googleapis.com/auth/drive.readonly` scope.
+- `GOOGLE_PICKER_API_KEY`: a browser API key restricted to **Google Picker API**
+  and the website referrers `https://apraxia.dev/*` and
+  `https://docs.google.com/*`. Local provider testing needs the local origin
+  allowed too. `GOOGLE_PICKER_APP_ID` is the Google Cloud project number. See
+  [Google's Picker setup](https://developers.google.com/workspace/drive/picker/guides/web-picker).
+
+The OAuth redirect URI and the Picker key's referrers are both origin-bound, so a
+domain change breaks the Picker until each is updated. Existing Drive consent
+works with the Picker; Calendar consent alone does not grant Drive access.
 
 ## Security and recovery
 
@@ -72,5 +74,3 @@ The fictional workspace is `/qa/workspace.html?route=/classes/math3012`.
 Add `&drive=disconnected` or `&drive=error` for recovery states. Its Picker stub
 simulates selecting a fixture PDF; it does not render Google's popup or establish
 production OAuth, API-key restrictions, CSP, streaming, or provider permissions.
-After deployment, test the real Picker, cancel with an existing document, open a
-PDF, reopen an updated backup, and test disconnect/reconnect.
