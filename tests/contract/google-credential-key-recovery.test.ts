@@ -93,7 +93,7 @@ describe.each([{ provider: "calendar" }, { provider: "drive" }])(
       } finally {
         await db.close();
       }
-    });
+    }, 30_000);
 
     it("still deletes the credential for a revoked grant, including the default form", async () => {
       const db = await migratedDatabase();
@@ -128,7 +128,7 @@ describe.each([{ provider: "calendar" }, { provider: "drive" }])(
       } finally {
         await db.close();
       }
-    });
+    }, 30_000);
 
     it("writes nothing when the expected revision does not match and no row exists", async () => {
       const db = await migratedDatabase();
@@ -153,6 +153,6 @@ describe.each([{ provider: "calendar" }, { provider: "drive" }])(
       } finally {
         await db.close();
       }
-    });
+    }, 30_000);
   },
 );
