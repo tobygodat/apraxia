@@ -154,6 +154,16 @@ describe("WeeklyReviewPage", () => {
     const finished = await waitFor(() => band("Finished"));
     expect(within(finished).getByText("Nothing was finished in this week.")).toBeTruthy();
     expect(within(finished).queryByRole("heading", { level: 3 })).toBeNull();
+    // Populated sections flow their groups into columns; the one line of copy
+    // in an empty section has to keep ruling the full width instead of landing
+    // in the first of them.
+    const slipped = band("Slipped");
+    expect(finished.querySelector(".weekly-review__groups")?.className.split(" ")).toContain(
+      "weekly-review__groups--empty",
+    );
+    expect(slipped.querySelector(".weekly-review__groups")?.className.split(" ")).not.toContain(
+      "weekly-review__groups--empty",
+    );
   });
 
   it("links the standing's tallies to their bands", async () => {

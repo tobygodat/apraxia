@@ -116,6 +116,35 @@ let projects: Project[] = empty
 const projectId = projects[0]?.id ?? null;
 /** A completion instant on a date relative to the fixture's today, at local midday. */
 const completedOn = (offset: number) => `${addSqlDateDays(today, offset)}T16:00:00.000000Z`;
+/**
+ * Completed assignments spread over several classes, one to six apiece. The
+ * counts differ on purpose: equal-sized groups would hide how the review page
+ * lays out columns of different heights.
+ */
+function denseClassCompletions(): Todo[] {
+  const courses: [string, string, string[]][] = [
+    ["cs1332", "CS1332", ["Homework 4"]],
+    ["cs2340", "CS2340", ["Design review", "Sprint retrospective"]],
+    ["math2551", "MATH2551", ["Quiz 1", "Quiz 2", "Webwork 5", "Recitation worksheet"]],
+    [
+      "phys2211",
+      "PHYS2211",
+      ["Lab report 2", "Homework 6", "Homework 7", "Reading check", "Studio 4", "Quiz 3"],
+    ],
+    ["hist2111", "HIST2111", ["Primary source memo", "Discussion post", "Map exercise"]],
+  ];
+  return courses.flatMap(([classId, className, titles]) =>
+    titles.map((text, index) =>
+      task(text, null, {
+        classId,
+        className,
+        assignmentType: index % 2 === 0 ? "Homework" : "Quiz",
+        completed: true,
+        completedAt: completedOn(-(index % 5)),
+      }),
+    ),
+  );
+}
 const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): Todo => ({
   ...base(),
   text,
@@ -148,6 +177,10 @@ let todos: Todo[] = empty
             task(`Review reading note ${index + 1}`, -(index + 1)),
           )
         : []),
+      // A term's worth of finished coursework, deliberately uneven per class,
+      // so the weekly review's group columns are exercised the way a real week
+      // fills them rather than with a tidy row of equal cards.
+      ...(scenario === "dense" ? denseClassCompletions() : []),
       task(long ? longText : "Compare the lighting options", 0, { projectId }),
       task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
       task("Ask Sam about the reading group", null),
@@ -215,7 +248,7 @@ function currentToday(date: string): TodayTodo[] {
       })),
   );
 }
-const classFixture = createClassPersistenceFixture(empty);
+const classFixture = createClassPersistenceFixture(empty, scenario === "dense");
 async function withClassName<T extends Todo>(todo: T): Promise<T> {
   const classes = await classFixture.classes.list(userId, new AbortController().signal);
   return { ...todo, className: classes.find((course) => course.id === todo.classId)?.name ?? null };
