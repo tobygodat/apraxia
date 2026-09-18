@@ -147,6 +147,7 @@ function TodoCard({
   showDueDate,
   dragging,
   onToggleComplete,
+  onDeferToTomorrow,
   onEditTodo,
   onDeleteTodo,
   onDragStart,
@@ -162,6 +163,8 @@ function TodoCard({
   readonly showDueDate: boolean;
   readonly dragging: boolean;
   readonly onToggleComplete: (todo: Todo) => void;
+  /** null on rows where "tomorrow" would not move the task forward. */
+  readonly onDeferToTomorrow: ((todo: Todo) => void) | null;
   readonly onEditTodo: (todo: Todo) => void;
   readonly onDeleteTodo: (todo: Todo) => void;
   readonly onDragStart: (event: DragEvent<HTMLElement>) => void;
@@ -212,6 +215,17 @@ function TodoCard({
       </div>
 
       <div className="todos-board-card__actions">
+        {onDeferToTomorrow ? (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onDeferToTomorrow(todo)}
+            aria-label={`Move ${todo.text} to tomorrow`}
+            title="Move to tomorrow"
+          >
+            <WorkspaceIcon name="tomorrow" />
+          </button>
+        ) : null}
         <button
           type="button"
           disabled={pending}
@@ -281,6 +295,7 @@ export function TodosBoard({
               ...column,
               todos: column.todos.filter((todo) => matchesSource(todo, sourceFilter)),
             })),
+            overdue: fullModel.overdue.filter((todo) => matchesSource(todo, sourceFilter)),
           },
     [fullModel, sourceFilter],
   );
@@ -305,11 +320,32 @@ export function TodosBoard({
       } & FocusOwnership)
     | null
   >(null);
+  // A row sent to tomorrow leaves its column and remounts elsewhere, so the
+  // keyboard lands nowhere unless the column it left hands focus on.
+  const deferFocusRef = useRef<
+    | ({
+        readonly todoId: string;
+        readonly columnKey: string;
+        readonly controlId: string;
+        readonly targetIds: readonly string[];
+        sawPending: boolean;
+        handedOn: boolean;
+      } & FocusOwnership)
+    | null
+  >(null);
   const boardRegionId = `${idBase}-task-region`;
   const undoSummaryId = `${idBase}-undo-summary`;
   // A second delete while the Undo notice is open is refused by the
   // controller, so the board has to say so instead of doing nothing.
   const deleteLocked = undoNotice !== null;
+  const tomorrow = addSqlDateDays(model.today, 1);
+  // "Tomorrow" is offered only where it moves the task forward: the overdue
+  // pile and today itself. Later days and the undated Inbox keep the dialog.
+  const canDeferToTomorrow = (todo: Todo) =>
+    onRescheduleTodo !== undefined &&
+    !todo.completed &&
+    todo.dueDate !== null &&
+    todo.dueDate < tomorrow;
   const projectTitles = new Map(projects.map((project) => [project.id, project.title] as const));
 
   const todoControlId = useCallback(
@@ -322,7 +358,11 @@ export function TodosBoard({
 
   useLayoutEffect(() => {
     const preserveNewerFocus = (event: FocusEvent) => {
-      for (const ownership of [focusRecoveryRef.current, undoActionRef.current]) {
+      for (const ownership of [
+        focusRecoveryRef.current,
+        undoActionRef.current,
+        deferFocusRef.current,
+      ]) {
         if (
           ownership?.focusOwner &&
           event.target !== ownership.focusOwner &&
@@ -345,21 +385,29 @@ export function TodosBoard({
       : null;
   }
 
+  /** Where focus goes once a row leaves its column: neighbour, column, board. */
+  function focusTargetsAfterRowLeaves(
+    column: TodoBoardColumn,
+    todoIndex: number,
+  ): readonly string[] {
+    const adjacentTodo = [column.todos[todoIndex + 1], column.todos[todoIndex - 1]].find(
+      (candidate) => candidate !== undefined && !pendingTodoIds.has(candidate.id),
+    );
+    return [
+      adjacentTodo ? todoControlId(adjacentTodo.id) : null,
+      column.canAdd ? columnAddId(column.key) : null,
+      columnHeadingId(column.key),
+      boardRegionId,
+    ].filter((targetId): targetId is string => targetId !== null);
+  }
+
   function prepareFocusRecovery(
     column: TodoBoardColumn,
     todoIndex: number,
     todo: Todo,
     action: "complete" | "delete",
   ) {
-    const adjacentTodo = [column.todos[todoIndex + 1], column.todos[todoIndex - 1]].find(
-      (candidate) => candidate !== undefined && !pendingTodoIds.has(candidate.id),
-    );
-    const targetIds = [
-      adjacentTodo ? todoControlId(adjacentTodo.id) : null,
-      column.canAdd ? columnAddId(column.key) : null,
-      columnHeadingId(column.key),
-      boardRegionId,
-    ].filter((targetId): targetId is string => targetId !== null);
+    const targetIds = focusTargetsAfterRowLeaves(column, todoIndex);
 
     focusRecoveryRef.current = {
       sourceTodoId: todo.id,
@@ -495,6 +543,48 @@ export function TodosBoard({
     undoActionRef.current = null;
   }, [boardRegionId, model, todoControlId, undoNotice]);
 
+  useLayoutEffect(() => {
+    const defer = deferFocusRef.current;
+    if (!defer) return;
+    // A newer interaction took focus, so the row's departure is no longer ours.
+    if (defer.focusOwner === null) {
+      deferFocusRef.current = null;
+      return;
+    }
+
+    const column = model.columns.find((candidate) => candidate.key === defer.columnKey);
+    const stillInColumn = Boolean(column?.todos.some((todo) => todo.id === defer.todoId));
+    if (!stillInColumn && !defer.handedOn) {
+      focusFirstAvailable(defer, defer.targetIds);
+      defer.handedOn = true;
+    }
+
+    // The optimistic move lands before the write settles, so hold the recovery
+    // open: a rollback puts the row back and focus belongs on it again.
+    if (pendingTodoIds.has(defer.todoId)) {
+      defer.sawPending = true;
+      return;
+    }
+    if (!defer.sawPending) return;
+    if (stillInColumn) focusFirstAvailable(defer, [defer.controlId]);
+    deferFocusRef.current = null;
+  }, [model, pendingTodoIds]);
+
+  function deferToTomorrow(column: TodoBoardColumn, todoIndex: number, todo: Todo) {
+    deferFocusRef.current = {
+      todoId: todo.id,
+      columnKey: column.key,
+      controlId: todoControlId(todo.id),
+      targetIds: focusTargetsAfterRowLeaves(column, todoIndex),
+      sawPending: false,
+      handedOn: false,
+      focusOwner: focusedElementWithin(
+        document.getElementById(todoControlId(todo.id))?.closest("article") ?? null,
+      ),
+    };
+    onRescheduleTodo?.(todo, tomorrow);
+  }
+
   const navigationPending = loadStatus === "loading";
   useColdLoad(loadStatus === "loading" && !loaded);
 
@@ -563,6 +653,11 @@ export function TodosBoard({
             prepareFocusRecovery(column, todoIndex, selectedTodo, "complete");
           }
         }}
+        onDeferToTomorrow={
+          canDeferToTomorrow(todo)
+            ? (selectedTodo) => deferToTomorrow(column, todoIndex, selectedTodo)
+            : null
+        }
         onEditTodo={onEditTodo}
         onDeleteTodo={(selectedTodo) => {
           if (onDeleteTodo(selectedTodo)) {
@@ -720,11 +815,13 @@ export function TodosBoard({
       <header className="todos-board-toolbar">
         <div>
           <h1 id="todos-board-heading">Tasks</h1>
-          <p
-            className={theme === "classic" ? "todos-board-week" : "todos-board-range"}
-            aria-live="polite"
-          >
-            {weekRangeLabel(model.visibleWeekMonday)}
+          <p className={theme === "classic" ? "todos-board-week" : "todos-board-range"}>
+            <span aria-live="polite">{weekRangeLabel(model.visibleWeekMonday)}</span>
+            {/* Outside the live region: the controller already announces each
+                reschedule, and the count would repeat it on every write. */}
+            {model.overdue.length > 0 ? (
+              <span className="todos-board-overdue">{model.overdue.length} overdue</span>
+            ) : null}
           </p>
         </div>
 

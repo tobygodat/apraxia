@@ -23,6 +23,11 @@ export interface TodoBoardModel {
   readonly visibleWeekMonday: SqlDate;
   readonly isCurrentWeek: boolean;
   readonly columns: readonly TodoBoardColumn[];
+  /**
+   * Open tasks dated before today. The pile exists whichever week is on
+   * screen, so it is counted from every task rather than from the columns.
+   */
+  readonly overdue: readonly Todo[];
 }
 
 function assertUniqueTodoIds(todos: readonly Todo[]): void {
@@ -120,5 +125,9 @@ export function buildTodoBoardModel(
     visibleWeekMonday: validMonday,
     isCurrentWeek,
     columns,
+    overdue: todos.filter(
+      (todo) =>
+        !todo.completed && todo.dueDate !== null && compareSqlDates(todo.dueDate, validToday) < 0,
+    ),
   };
 }

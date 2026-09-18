@@ -46,6 +46,8 @@ const icons = {
       <path d="M12 6v6l4 2" />
     </>
   ),
+  // An arrow crossing the day's rule: move this past today, on to the next day.
+  tomorrow: <path d="M4 12h9m-3.5-3.5L13 12l-3.5 3.5M19 5v14" />,
 } satisfies Record<string, ReactNode>;
 
 export type WorkspaceIconName = keyof typeof icons;

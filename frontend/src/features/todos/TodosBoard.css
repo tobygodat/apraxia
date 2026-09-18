@@ -49,6 +49,19 @@
   font-size: 12px;
 }
 
+/* Trails the week range on the same line, in the clay a row uses for its own
+   past-due date, separated by the middle dot a row's metadata uses. */
+.todos-board-overdue {
+  color: var(--todos-board-overdue);
+  font-variant-numeric: tabular-nums;
+}
+
+.todos-board-overdue::before {
+  margin: 0 6px;
+  color: var(--todos-board-faint);
+  content: "·";
+}
+
 .todos-board-nav {
   display: flex;
   align-items: center;
@@ -135,7 +148,7 @@
 }
 
 .todos-board-card__due--past {
-  color: #ddb1a4;
+  color: var(--todos-board-overdue);
 }
 
 .todos-board-card__metadata > * + * {
