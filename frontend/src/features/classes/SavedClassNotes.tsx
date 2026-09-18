@@ -2,7 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DriveNotes } from "./DriveNotes";
 import type { DriveService, DriveFile } from "./driveService";
 import type { Course } from "./classService";
-import { prepareUpload, type ClassNote, type NoteService, type UploadDraft } from "./noteService";
+import {
+  isNoteSaved,
+  prepareUpload,
+  type ClassNote,
+  type NoteService,
+  type UploadDraft,
+} from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 
 export function SavedClassNotes({
@@ -10,12 +16,15 @@ export function SavedClassNotes({
   course,
   service,
   driveService,
+  onCount,
   renderReader,
 }: {
   userId: string;
   course: Course;
   service: NoteService;
   driveService?: DriveService;
+  /** Saved-note total for the class header, or null while it is unknown. */
+  onCount?(count: number | null): void;
   renderReader(file: File): ReactNode;
 }) {
   const [notes, setNotes] = useState<ClassNote[]>([]);
@@ -64,6 +73,14 @@ export function SavedClassNotes({
     // `refresh` is re-created every render; the provider identity is the real trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service, userId, course.id]);
+  // The class header counts the notes this list already holds, so an upload
+  // updates both without a second read.
+  useEffect(() => {
+    // A later upload failure leaves the loaded total standing; only a list that
+    // never arrived is unknown.
+    if (loaded) onCount?.(notes.filter(isNoteSaved).length);
+    else if (error) onCount?.(null);
+  }, [notes, loaded, error, onCount]);
   async function upload(file: File, existing?: UploadDraft) {
     await run("Saving PDF…", async (signal) => {
       const value = existing ?? (await prepareUpload(file, resume.current?.id));
@@ -168,7 +185,7 @@ export function SavedClassNotes({
       {notes.length > 0 && (
         <ul className="classes-saved-notes" aria-label="Saved notes">
           {notes.map((note) => {
-            const incomplete = note.source === "upload" && !note.uploaded_at;
+            const incomplete = !isNoteSaved(note);
             return (
               <li key={note.id}>
                 <div>

@@ -98,6 +98,31 @@
   transition: background 120ms ease-out;
 }
 
+/* The current day is bracketed rather than boxed: the 2px header rule turns the
+   corner and runs the column's full height as a rail in the gutter, so the
+   ledger keeps ruled ink as its only material and the tracks stay aligned. */
+.todos-board-page--ledger .todos-board-column--today {
+  position: relative;
+  margin-left: -14px;
+  padding-left: 14px;
+}
+
+.todos-board-page--ledger .todos-board-column--today::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--todos-board-today);
+  content: "";
+}
+
+.todos-board-page--ledger .todos-board-column--today .todos-board-column__header {
+  margin-left: -14px;
+  padding-left: 14px;
+  border-bottom-color: var(--todos-board-today);
+}
+
 .todos-board-page--ledger .todos-board-column--drop .todos-board-column__header {
   border-bottom-color: rgba(255, 255, 255, 0.7);
 }
@@ -112,10 +137,6 @@
 
 .todos-board-page--ledger .todos-board-inbox--drop .todos-board-inbox__tasks {
   background-color: rgba(255, 255, 255, 0.025);
-}
-
-.todos-board-page--ledger .todos-board-column--today .todos-board-column__header {
-  border-bottom-color: var(--todos-board-today);
 }
 
 .todos-board-page--ledger .todos-board-column__header h2 {
@@ -397,6 +418,12 @@
   /* The gradient scrim is dropped here, so the cluster needs a solid backing. */
   .todos-board-page--ledger .todos-board-card__actions {
     background: Canvas;
+  }
+
+  /* Author colors are discarded here, so the rail keeps its meaning by asking
+     for a system color instead of the periwinkle. */
+  .todos-board-page--ledger .todos-board-column--today::before {
+    background: Highlight;
   }
 
   .todos-board-page--ledger .todos-board-column,
