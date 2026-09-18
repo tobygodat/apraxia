@@ -10,12 +10,15 @@ export function SavedClassNotes({
   course,
   service,
   driveService,
+  onCount,
   renderReader,
 }: {
   userId: string;
   course: Course;
   service: NoteService;
   driveService?: DriveService;
+  /** Saved-note total for the class header, or null while it is unknown. */
+  onCount?(count: number | null): void;
   renderReader(file: File): ReactNode;
 }) {
   const [notes, setNotes] = useState<ClassNote[]>([]);
@@ -64,6 +67,14 @@ export function SavedClassNotes({
     // `refresh` is re-created every render; the provider identity is the real trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service, userId, course.id]);
+  // The class header counts the notes this list already holds, so an upload
+  // updates both without a second read.
+  useEffect(() => {
+    // A later upload failure leaves the loaded total standing; only a list that
+    // never arrived is unknown.
+    if (loaded) onCount?.(notes.length);
+    else if (error) onCount?.(null);
+  }, [notes, loaded, error, onCount]);
   async function upload(file: File, existing?: UploadDraft) {
     await run("Saving PDF…", async (signal) => {
       const value = existing ?? (await prepareUpload(file, resume.current?.id));

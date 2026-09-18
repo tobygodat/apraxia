@@ -1,5 +1,8 @@
 .classes-page {
   max-width: var(--workspace-page-max, 1120px);
+  /* Overdue Clay from DESIGN.md, and the ledger's faint separator dot. */
+  --classes-overdue: #ddb1a4;
+  --classes-faint: #858585;
 }
 .classes-page button {
   display: inline-flex;
@@ -44,6 +47,7 @@
   padding: 16px 12px;
   border-bottom: 1px solid var(--cloud-shell-line);
   text-decoration: none;
+  transition: background-color 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .classes-row:hover {
   background: var(--cloud-shell-surface);
@@ -62,6 +66,40 @@
 .classes-row p {
   margin: 0;
   font-size: 12px;
+}
+/* One ruled line of class facts, shared by a list row and the class header. */
+.classes-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+  margin: 0;
+  color: var(--cloud-shell-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.classes-summary__due--overdue {
+  color: var(--classes-overdue);
+}
+.classes-summary__counts {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* A list row sets its counts against the row's right edge, before the chevron;
+   a narrow row wraps them onto their own line instead. */
+.classes-summary--row {
+  justify-content: space-between;
+}
+.classes-summary--header {
+  column-gap: 0;
+  /* Keep the header's height while the totals are still loading. */
+  min-height: 17px;
+  margin-top: 8px;
+}
+.classes-summary--header .classes-summary__counts::before {
+  margin-inline: 7px;
+  color: var(--classes-faint);
+  content: "·";
 }
 .classes-notes-layout {
   display: grid;
@@ -257,6 +295,11 @@
 }
 .classes-note-error {
   margin-block: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .classes-row {
+    transition: none;
+  }
 }
 @media (pointer: coarse) {
   .classes-back {

@@ -6,6 +6,9 @@ import { ClassesPage } from "./ClassesPage";
 import { createClassPersistenceFixture } from "../../qa/classPersistenceFixture";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 import { ColdLoadGate } from "../../apps/coldLoad";
+import { addSqlDateDays, localToday } from "../todos/dateDomain";
+
+const due = addSqlDateDays(localToday("America/New_York"), 1);
 vi.mock("./PdfReader", () => ({
   default: ({ file, showTools }: { file: File; showTools: boolean }) => (
     <div data-testid="reader">
@@ -222,4 +225,66 @@ it("uses todo-backed assignments in the class detail while retaining the inline 
   expect(
     await screen.findByRole("button", { name: "Edit title for Updated assignment" }),
   ).toBeTruthy();
+});
+it("gives each class row its next due date, open count, and note count", async () => {
+  const data = createClassPersistenceFixture();
+  const overviewService = {
+    list: async () => ({
+      math3012: { assignments: 6, open: 4, notes: 2, nextDue: { title: "Problem set 4", due } },
+    }),
+  };
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        classService={data.classes}
+        noteService={data.notes}
+        overviewService={overviewService}
+        timezone="America/New_York"
+      />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
+  expect(screen.getByText("4 open · 2 notes")).toBeTruthy();
+  // A class the totals say nothing about is empty, not unknown.
+  expect(screen.getByText("Nothing saved yet")).toBeTruthy();
+  expect(screen.queryByText("Open class")).toBeNull();
+});
+it("keeps the class list readable when the totals cannot be read", async () => {
+  const data = createClassPersistenceFixture();
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        classService={data.classes}
+        noteService={data.notes}
+        overviewService={{ list: () => Promise.reject(new Error("offline")) }}
+      />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole("heading", { name: "MATH3012" })).toBeTruthy();
+  await waitFor(() => expect(screen.getAllByText("Open class").length).toBe(2));
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+it("summarizes the open class in its header and follows the table when one is completed", async () => {
+  const { createFixtureAssignments } = await import("../../qa/ClassAssignmentsMock");
+  const data = createClassPersistenceFixture();
+  render(
+    <MemoryRouter>
+      <ClassesPage
+        userId="user-a"
+        courseId="math3012"
+        classService={data.classes}
+        noteService={data.notes}
+        assignmentService={createFixtureAssignments()}
+        timezone="America/New_York"
+      />
+    </MemoryRouter>,
+  );
+  // Problem set 3 is two days past due, and none of the six is a saved note.
+  expect(await screen.findByText(/^Past due .* · Problem set 3$/)).toBeTruthy();
+  expect(screen.getByText("5 open")).toBeTruthy();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Mark Problem set 3 done" }));
+  expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
+  expect(screen.getByText("4 open")).toBeTruthy();
 });
