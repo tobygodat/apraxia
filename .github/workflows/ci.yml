@@ -93,12 +93,10 @@ jobs:
         run: node scripts/ci-database-scope.mjs
       - run: npm ci
         if: steps.scope.outputs.required != 'false'
-      # Same checks as the local `npm run verify:db`; only the container set is
-      # leaner, because CI needs no Studio, mail, or image services.
       - name: Verify database (reproduce locally with npm run verify:db)
         id: verify
         if: steps.scope.outputs.required != 'false'
-        run: npm run verify:db:ci
+        run: npm run verify:db
       - name: Upload generated database types
         if: steps.scope.outputs.required != 'false'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

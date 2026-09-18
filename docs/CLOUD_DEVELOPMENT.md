@@ -214,16 +214,10 @@ workflow exists on the default branch).
   **Contract tests** (`tests/contract/**`, the PGlite suites), and **Frontend
   tests** (`frontend/src/**`). Together they cover exactly what `npm run verify`
   covers locally. **App checks** fails if any of the three fails.
-- **Database checks** runs `npm run verify:db:ci` on GitHub's Linux runner, applies and lints
+- **Database checks** runs `npm run verify:db` on GitHub's Linux runner, applies and lints
   migrations, runs pgTAP, rewinds/reapplies disposable migrations, checks OAuth
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
-  `verify:db:ci` runs the same `db:checks` as the local `npm run verify:db`; it
-  only starts a leaner container set, because CI needs no Studio, mail, image,
-  edge-runtime, log, or pooler service. Postgres-meta stays: `supabase gen types`
-  uses it, and excluding it only defers the same image pull to `db:types`, where
-  it no longer overlaps the rest of the boot. Keep `verify:db` for local work,
-  where Studio is useful.
 
 The **Database checks** job always reports a status. Its scope step skips database
 execution only when every changed path is root `AGENTS.md`, `README.md`,
@@ -344,7 +338,7 @@ concern, rather than every unrelated pull request.
 
 ## Focused local database checks
 
-CI runs these checks automatically through `npm run verify:db:ci`. Use the individual
+CI runs these checks automatically through `npm run verify:db`. Use the individual
 commands below to iterate on a failure with disposable local Supabase running.
 
 ```bash
