@@ -78,7 +78,8 @@ function preloadable<P extends object>(
   return { preload, Component };
 }
 
-// Route-level chunks: calendar (Temporal polyfill), classes (pdfjs), todos board, collections.
+// Route-level chunks: calendar (Temporal polyfill), classes (pdfjs), todos board,
+// weekly review, collections.
 // Each call names its prop type explicitly via a type-only dynamic import
 // query (erased at build time, no extra bundling): letting `preloadable`'s
 // type parameter infer purely from the loader's return type hits a known
@@ -98,6 +99,11 @@ const todosChunk = preloadable<
 const classesChunk = preloadable<
   Parameters<(typeof import("../features/classes/ClassesPage"))["ClassesPage"]>[0]
 >(() => import("../features/classes/ClassesPage").then((m) => ({ default: m.ClassesPage })));
+const reviewChunk = preloadable<
+  Parameters<(typeof import("../features/review/WeeklyReviewPage"))["WeeklyReviewPage"]>[0]
+>(() =>
+  import("../features/review/WeeklyReviewPage").then((m) => ({ default: m.WeeklyReviewPage })),
+);
 const collectionChunk = preloadable<
   Parameters<(typeof import("../features/collections/CollectionPage"))["CollectionPage"]>[0]
 >(() =>
@@ -108,6 +114,7 @@ const HomePage = homeChunk.Component;
 const SettingsPage = settingsChunk.Component;
 const TodosWorkspaceContent = todosChunk.Component;
 const ClassesPage = classesChunk.Component;
+const WeeklyReviewPage = reviewChunk.Component;
 const CollectionPage = collectionChunk.Component;
 
 /** Warms the route chunks so navigation doesn't wait on network once data is cached. */
@@ -117,6 +124,7 @@ export function preloadWorkspaceChunks(): Promise<void> {
     settingsChunk.preload(),
     todosChunk.preload(),
     classesChunk.preload(),
+    reviewChunk.preload(),
     collectionChunk.preload(),
   ]).then(() => undefined);
 }
@@ -132,9 +140,11 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
           ? collectionChunk
           : pathname.startsWith("/classes")
             ? classesChunk
-            : pathname.startsWith("/settings")
-              ? settingsChunk
-              : undefined;
+            : pathname.startsWith("/review")
+              ? reviewChunk
+              : pathname.startsWith("/settings")
+                ? settingsChunk
+                : undefined;
   return chunk?.preload();
 }
 
@@ -247,6 +257,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="projects/:id" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="ideas" element={<CollectionRoute {...props} kind="idea" />} />
             <Route path="classes" element={<ClassesRoute {...props} />} />
+            <Route path="review" element={<ReviewRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
             <Route path="settings" element={<SettingsRoute {...props} />} />
             <Route
@@ -353,6 +364,18 @@ function SettingsRoute(props: MainWorkspaceProps) {
       profile={profile}
       onSignOut={props.onSignOut}
       onSaveTimezone={saveTimezone}
+    />
+  );
+}
+
+function ReviewRoute(props: MainWorkspaceProps) {
+  const { profile } = useWorkspace();
+  if (!profile) return <ProfilePlaceholder title="Weekly review" />;
+  return (
+    <WeeklyReviewPage
+      service={props.todoService}
+      profile={profile}
+      workspaceSessionKey={props.identity.userId}
     />
   );
 }

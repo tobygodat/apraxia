@@ -114,6 +114,8 @@ let projects: Project[] = empty
       { ...base(), title: "Old apartment move", description: null, status: "archived" },
     ];
 const projectId = projects[0]?.id ?? null;
+/** A completion instant on a date relative to the fixture's today, at local midday. */
+const completedOn = (offset: number) => `${addSqlDateDays(today, offset)}T16:00:00.000000Z`;
 const task = (text: string, offset: number | null, extra: Partial<Todo> = {}): Todo => ({
   ...base(),
   text,
@@ -132,7 +134,15 @@ let todos: Todo[] = empty
       // Open past-due tasks join Today; the completed task stays on its original date.
       task("Return the library books", -3),
       task("Send the venue confirmation", -1),
-      task("Renew the library card", -8, { completed: true, completedAt: now }),
+      // Completions spread across this week and the last one, so the weekly
+      // review has a week to close out and a previous week to step back to.
+      task("Renew the library card", -8, { completed: true, completedAt: completedOn(-9) }),
+      task("Draft the guest list", -2, {
+        projectId,
+        completed: true,
+        completedAt: completedOn(-2),
+      }),
+      task("Sort the reading pile", -1, { completed: true, completedAt: completedOn(-1) }),
       ...(scenario === "dense"
         ? Array.from({ length: 12 }, (_, index) =>
             task(`Review reading note ${index + 1}`, -(index + 1)),
@@ -142,7 +152,7 @@ let todos: Todo[] = empty
       task("Pick up repaired headphones", 0, { dueTime: "17:00:00" }),
       task("Ask Sam about the reading group", null),
       task("Measure the shelves", 2, { projectId }),
-      task("Choose a paint sample", 0, { projectId, completed: true, completedAt: now }),
+      task("Choose a paint sample", 0, { projectId, completed: true, completedAt: completedOn(0) }),
     ];
 let ideas: Idea[] = empty
   ? []
