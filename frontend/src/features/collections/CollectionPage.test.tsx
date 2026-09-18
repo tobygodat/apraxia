@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionPage } from "./CollectionPage";
 import { ColdLoadGate } from "../../apps/coldLoad";
@@ -146,6 +146,92 @@ describe("Collection pages", () => {
     await waitFor(() => expect(restore).toHaveBeenCalledWith("project", "p", "exact-token"));
     expect(softDelete).toHaveBeenCalledWith("project", "p");
     expect(onChanged).toHaveBeenCalledTimes(2);
+  });
+  it("offers Undo for a task deleted from the project detail page", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const projectTodos = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "t", text: "Draft the plan", completed: false, dueDate: null }])
+      .mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    const softDeleteTodo = vi.fn().mockResolvedValue("exact-token");
+    const restoreTodo = vi.fn().mockResolvedValue(true);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas } as unknown as CollectionService}
+        todoService={{ softDeleteTodo, restoreTodo } as unknown as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Delete Draft the plan" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Undo deletion" }));
+    await waitFor(() =>
+      expect(restoreTodo).toHaveBeenCalledWith("t", "exact-token", expect.anything()),
+    );
+    expect(softDeleteTodo).toHaveBeenCalledWith("t", expect.anything());
+  });
+  it("offers Undo for an idea deleted from the project detail page", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "i", title: "Keep this", body: "Keep this", projectId: "p" }])
+      .mockResolvedValue([]);
+    const softDelete = vi.fn().mockResolvedValue("exact-token");
+    const restore = vi.fn().mockResolvedValue(true);
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={
+          {
+            getProject,
+            projectTodos,
+            listIdeas,
+            softDelete,
+            restore,
+          } as unknown as CollectionService
+        }
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Delete Keep this" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Undo deletion" }));
+    await waitFor(() => expect(restore).toHaveBeenCalledWith("idea", "i", "exact-token"));
+    expect(softDelete).toHaveBeenCalledWith("idea", "i");
+  });
+  it("keeps the routine save notice off the project detail page", async () => {
+    const getProject = vi
+      .fn()
+      .mockResolvedValue({ id: "p", title: "Home", description: null, status: "active" });
+    const projectTodos = vi.fn().mockResolvedValue([]);
+    const listIdeas = vi.fn().mockResolvedValue([]);
+    const saveIdea = vi.fn().mockResolvedValue({ id: "i", title: "Keep this", projectId: "p" });
+    render(
+      <Page
+        kind="project"
+        recordId="p"
+        service={{ getProject, projectTodos, listIdeas, saveIdea } as unknown as CollectionService}
+        todoService={{} as TodoService}
+        projects={[{ id: "p", title: "Home" }]}
+        onChanged={vi.fn()}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Add idea" }));
+    fireEvent.change(screen.getByLabelText("Idea"), { target: { value: "Keep this" } });
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add idea" }));
+    await waitFor(() => expect(saveIdea).toHaveBeenCalled());
+    expect(screen.queryByText("Saved.")).toBeNull();
   });
   it("uses project context when creating an idea and presents completed tasks separately", async () => {
     const getProject = vi
