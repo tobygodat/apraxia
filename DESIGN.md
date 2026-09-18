@@ -129,6 +129,9 @@ components:
     padding: "0 0 8px"
   ledger-day-header-today:
     textColor: "{colors.today}"
+  ledger-today-rail:
+    backgroundColor: "{colors.today}"
+    width: "2px"
   ledger-add-slot:
     backgroundColor: "transparent"
     textColor: "transparent"
@@ -172,7 +175,7 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 
 ### Secondary
 
-- **Today Periwinkle** (`today`): the Tasks board's single accent. It colors only the today column's date numeral and the 2px rule under its header, and tints text selection on that page at 35% alpha. It is a place marker, never a control color, a status color, or a fill. Its neutral alternative (a brightness step instead of a hue) was left unresolved in the surface brief; the shipped value is the periwinkle.
+- **Today Periwinkle** (`today`): the Tasks board's single accent, and the board's only marker of the current day. In the ledger it colors the today column's date numeral, the 2px rule under its header, and the 2px rail that carries that rule down the column's full height; in the classic theme it colors the today column's 1px border, its header rule, and its heading text. It also tints text selection on the page at 35% alpha. It is a place marker, never a control color, a status color, or a fill. Its neutral alternative (a brightness step instead of a hue) was left unresolved in the surface brief; the shipped value is the periwinkle.
 
 ### Neutral
 
@@ -192,7 +195,7 @@ The palette is neutral charcoal, with warmth supplied by light text and muted gr
 
 **The Semantic Color Rule.** Keep the interface neutral. Calendar fills identify calendars; warm error and overdue colors communicate status.
 
-**The One Lit Header Rule.** Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.
+**The One Lit Column Rule.** Today Periwinkle is the recorded exception to the Semantic Color Rule: exactly one day column per Tasks board carries it, and it is always the current day. It draws that column's outline in the theme's own material — a rail and header rule in the ledger, the existing border in the classic theme — and never a fill. Nothing else on any surface borrows it.
 
 ## Typography
 
@@ -225,7 +228,7 @@ The desktop shell has a sticky sidebar (200px) and a flexible content column, wi
 - Task dialogs cap at 580px and scroll when needed. Below 560px, detail fields become one column and the dialog sits near the bottom with reduced outer spacing.
 - Classes uses a wider local layout (up to 1440px) and a notes split that stacks below 760px.
 
-The Tasks board is a week ledger, not a scrolling kanban. Day columns fill the content width in equal tracks (six on desktop) with 28px gutters and 40px between wrapped rows; no horizontal scroll. When seven dates are visible, Saturday and Sunday share the last track, stacked 36px apart with their own headers. Each column runs to a fixed ruled depth: task rows (40px minimum), then a 42px add slot, then inert 42px filler slots so a full column reaches nine rows and a stacked one reaches four. Beneath the week, after 56px, the Inbox band lays unscheduled tasks in auto-fill columns of at least 220px with the same 28px gutter, on a repeating 41px ruled background at least three rules deep. At 1180px and below the week reflows to auto-fill tracks of at least 200px; at 620px and below it becomes a single column, the toolbar stacks, and filler slots collapse to one per day.
+The Tasks board is a week ledger, not a scrolling kanban. Day columns fill the content width in equal tracks (six on desktop) with 28px gutters and 40px between wrapped rows; no horizontal scroll. The current week opens on today and runs forward to Sunday, then wraps to the week's earlier days, so the day being worked on is always the board's first column; a navigated week holds no today and stays in Monday-first order. When seven dates are visible, the last two share the last track, stacked 36px apart with their own headers — on the current week those are the days furthest behind today, which carry completed work only. Each column runs to a fixed ruled depth: task rows (40px minimum), then a 42px add slot, then inert 42px filler slots so a full column reaches nine rows and a stacked one reaches four. Beneath the week, after 56px, the Inbox band lays unscheduled tasks in auto-fill columns of at least 220px with the same 28px gutter, on a repeating 41px ruled background at least three rules deep. At 1180px and below the week reflows to auto-fill tracks of at least 200px; at 620px and below it becomes a single column, the toolbar stacks, and filler slots collapse to one per day.
 
 These are observed responsive rules, not a claim that every mobile flow has been validated. Home cover sizing and scrolling are controlled by its existing layout logic.
 
@@ -285,7 +288,8 @@ Collection entries and task-board “cards” are flat rows divided by thin rule
 
 The Tasks board's signature: a planner spread where every day is a ruled column and the ink shows how heavy the day is.
 
-- **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white. The today column swaps date and rule to Today Periwinkle and lifts its weekday to 60% white. The header is the column's only emphasis.
+- **Day header:** date left in the ledger-date treatment, weekday right in the ledger-weekday treatment, baseline-aligned with an 8px gap, 8px above a 2px rule at 30% white.
+- **Today's bracket:** the today column swaps its date and header rule to Today Periwinkle and lifts its weekday to 60% white. That rule then turns the corner into a 2px rail down the column's full height, set 14px out into the gutter by an offsetting negative margin so the week's tracks stay aligned. The bracket is ruled ink, not a box: the column keeps the same border, background, and width as every other day.
 - **Task row:** a 40px-minimum single-line row on a 1px hairline (12% white), bleeding 6px into the gutters so its hover raise (`#262626`, also on focus-within) reads as a band. A 15px compact-radius checkbox sits at 55% opacity until the row is hovered or focused; checked, it fills 72% white with an inset ring of the board surface. Edit and delete are 24px icon buttons at the row's end, hidden until hover or focus and always shown in forced-colors mode. Completed rows strike the title in faint white; past-due dates use Overdue Clay; a busy row dims to 58%. A repeating task adds its cadence ("Weekly", "Every 2 weeks") to the same metadata line, behind a 12px repeat glyph from the shared icon vocabulary at 85% opacity; the spoken form is the whole sentence, since the glyph alone says nothing.
 - **Add slot:** a 42px full-width ruled row whose 12px label is invisible at rest and appears in muted white on hover or focus over a `#2b2b2b` raise. It is a row that has not been written yet, not a button.
 - **Filler slot:** an inert 42px row with an 8% hairline; it keeps the column ruled to its fixed depth and carries no interaction.
@@ -308,7 +312,8 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.
 - Do keep calendar data colors and error/overdue semantics distinct from interface chrome.
 - Do preserve local component variants when extending an existing surface.
-- Do keep Today Periwinkle to the Tasks board's today header: the date numeral and its 2px rule, nothing more.
+- Do keep Today Periwinkle to the Tasks board's today column: its date numeral, header rule, and rail in the ledger; its border, header rule, and heading in the classic theme. Nothing more, and never as a fill.
+- Do open the current week on today so it leads the board, and let the week's earlier days wrap to the end rather than dropping them.
 - Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column.
 
 ### Don't
@@ -317,5 +322,5 @@ Account menus and dialogs use stronger borders and shadows to distinguish tempor
 - Don't turn flat collection and task rows into elevated cards by default.
 - Don't apply the dialog's pill buttons or larger radius to every toolbar.
 - Don't interpret the documented desktop density as a verified mobile accessibility standard.
-- Don't put borders, backgrounds, or counts around ledger columns, and don't return the week to a horizontally scrolling set of fixed-width columns.
+- Don't put borders, backgrounds, or counts around ledger columns — today's rail is a rule beside a column, not a box around one — and don't return the week to a horizontally scrolling set of fixed-width columns.
 - Don't use Space Grotesk for anything in the workspace other than a date that is itself the heading.

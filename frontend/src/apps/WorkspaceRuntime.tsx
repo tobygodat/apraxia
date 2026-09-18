@@ -76,6 +76,25 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
             ["create", "update", "remove", "restore"],
           )
         : undefined,
+      classOverview: props.workspaceData.classOverview
+        ? cacheNavigationService(
+            props.workspaceData.classOverview,
+            cache,
+            "classOverview",
+            ["list"],
+            [],
+          )
+        : undefined,
+      // Reads stay uncached; a saved note has to reach the class list's totals.
+      notes: props.workspaceData.notes
+        ? cacheNavigationService(
+            props.workspaceData.notes,
+            cache,
+            "notes",
+            [],
+            ["attachDrive", "reserve", "upload", "finish"],
+          )
+        : undefined,
       homeAppearance: props.workspaceData.homeAppearance
         ? cacheNavigationService(
             props.workspaceData.homeAppearance,

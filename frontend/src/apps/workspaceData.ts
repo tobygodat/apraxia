@@ -1,5 +1,9 @@
 import { createClassService, type ClassService } from "../features/classes/classService";
 import { createNoteService, type NoteService } from "../features/classes/noteService";
+import {
+  createClassOverviewService,
+  type ClassOverviewService,
+} from "../features/classes/classOverviewService";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
 import type { Profile, ProjectSummary } from "../types/domain";
@@ -22,6 +26,7 @@ const UNKNOWN_TIMEZONE_COPY = "That timezone isn’t recognised. Pick another on
 export interface WorkspaceData {
   classes?: ClassService;
   notes?: NoteService;
+  classOverview?: ClassOverviewService;
   assignments?: AssignmentService;
   homeAppearance?: HomeAppearanceService;
   profile(signal: AbortSignal): Promise<Profile>;
@@ -34,6 +39,7 @@ export function createWorkspaceData(client: SupabaseClient<Database>): Workspace
   return {
     classes: createClassService(client),
     notes: createNoteService(client),
+    classOverview: createClassOverviewService(client),
     assignments: createAssignmentService(client),
     homeAppearance: createHomeAppearanceService(client),
     async profile(signal) {

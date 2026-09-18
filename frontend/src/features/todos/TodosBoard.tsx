@@ -110,7 +110,12 @@ function columnWeekday(value: string): string {
   return formatTaskDate(value, { weekday: "short" });
 }
 
-/** Groups date columns into layout tracks: a 7-column week pairs Sat/Sun into one stacked track. */
+/**
+ * Groups date columns into layout tracks. A 7-column week pairs its last two
+ * columns into one stacked track: on the current week those are the two days
+ * furthest behind Today, which hold completed work only, so the half-height
+ * track falls on the week's lightest days.
+ */
 function buildTracks(dateColumns: readonly TodoBoardColumn[]): (readonly TodoBoardColumn[])[] {
   if (dateColumns.length === 7) {
     return [...dateColumns.slice(0, 5).map((column) => [column] as const), dateColumns.slice(5, 7)];
@@ -264,6 +269,7 @@ export function TodosBoard({
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
   const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
   const [dropColumnKey, setDropColumnKey] = useState<string | null>(null);
+  const boardRegionRef = useRef<HTMLDivElement | null>(null);
   const draggedTodoRef = useRef<Todo | null>(null);
   const draggedFromColumnKeyRef = useRef<string | null>(null);
   // Filtering keeps column order and each column's saved order intact.
@@ -494,6 +500,17 @@ export function TodosBoard({
   const navigationPending = loadStatus === "loading";
   useColdLoad(loadStatus === "loading" && !loaded);
 
+  // The classic board scrolls sideways. Whenever a different column takes the
+  // lead the board returns to it, so neither a week change nor a local-midnight
+  // rollover leaves the leading day scrolled out of view. Keying on the leading
+  // column rather than the visible week covers the rollover, which rotates a new
+  // date into first place while the week's Monday stays put. Source filtering
+  // preserves column keys, so it never scrolls the board on its own.
+  const leadingColumnKey = model.columns[0]?.key;
+  useLayoutEffect(() => {
+    if (boardRegionRef.current) boardRegionRef.current.scrollLeft = 0;
+  }, [leadingColumnKey]);
+
   function clearDrag() {
     draggedTodoRef.current = null;
     draggedFromColumnKeyRef.current = null;
@@ -667,8 +684,8 @@ export function TodosBoard({
     return (
       <section
         className={`todos-board-column todos-board-column--${column.kind}${
-          dropColumnKey === column.key ? " todos-board-column--drop" : ""
-        }`}
+          column.date === model.today ? " todos-board-column--today" : ""
+        }${dropColumnKey === column.key ? " todos-board-column--drop" : ""}`}
         key={column.key}
         aria-labelledby={headingId}
         onDragOver={(event) => handleColumnDragOver(event, column)}
@@ -778,6 +795,7 @@ export function TodosBoard({
       {theme === "classic" ? (
         <div
           className="todos-board-scroll"
+          ref={boardRegionRef}
           id={boardRegionId}
           role="region"
           aria-label="Tasks by date"
@@ -788,6 +806,7 @@ export function TodosBoard({
       ) : (
         <div
           className="todos-board-scroll"
+          ref={boardRegionRef}
           id={boardRegionId}
           role="region"
           aria-label="Tasks by date"
