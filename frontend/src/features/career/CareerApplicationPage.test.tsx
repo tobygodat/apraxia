@@ -119,6 +119,9 @@ describe("One application's page", () => {
 describe("The prep tab", () => {
   it("lists what is left to do before what is already done", async () => {
     await openApplication("prep");
+    // The tab's own rows arrive after the header does, so the list is waited
+    // for rather than read off whatever has painted by now.
+    await screen.findByLabelText("Re-read the payments primer done");
     const names = screen
       .getAllByRole("checkbox")
       .map((box) => box.getAttribute("aria-label") ?? "")
@@ -149,9 +152,11 @@ describe("The prep tab", () => {
 describe("The resources tab", () => {
   it("keeps files and links apart and says what each one is", async () => {
     await openApplication("resources");
-    expect(await screen.findByRole("heading", { name: "files" })).toBeTruthy();
+    // Both headings paint before the rows load, so the file is what says the
+    // tab has its data; waiting on a heading would not.
+    const file = (await screen.findByText("resume — september.pdf")).closest(".career-app-row");
+    expect(screen.getByRole("heading", { name: "files" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "links" })).toBeTruthy();
-    const file = screen.getByText("resume — september.pdf").closest(".career-app-row");
     expect(file?.textContent).toContain("pdf · 214 KB");
     // A file is opened or downloaded; there is no Drive picker on this page.
     expect(screen.getByRole("button", { name: "upload a file" })).toBeTruthy();
