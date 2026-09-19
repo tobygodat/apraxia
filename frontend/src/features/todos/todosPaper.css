@@ -450,11 +450,14 @@
   font: var(--small);
 }
 
+/* `width: 100%` would resolve against the page, not against what the side
+   margins leave, so the pile hung 20px past the right edge on a phone. A
+   max-width caps it at one measure and lets the margins take their room. */
 [data-theme^="paper"] .todos-board-page .todos-board-pile {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  width: min(100%, var(--measure));
+  max-width: var(--measure);
   margin: 0 var(--workspace-page-inset, var(--inset)) var(--space-lg);
 }
 
