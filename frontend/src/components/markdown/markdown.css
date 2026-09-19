@@ -1,0 +1,81 @@
+/* A markdown field and the note it renders, wherever one appears: an
+ * application's process notes, a class's written notes.
+ *
+ * This sheet holds geometry only — no colour, no type — so a note is laid out
+ * under classic as well as Paper, and its sibling `markdownPaper.css` adds the
+ * Paper look on top. Both are imported by `MarkdownField.tsx`, so a page that
+ * uses the field gets them without saying so.
+ */
+
+.markdown-field__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin: 8px 0 0;
+}
+
+.markdown-field__source {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+/* The rendered note is the field: clicking it writes, so it takes the whole
+   column rather than only the width of its text. */
+.markdown-field__rendered {
+  cursor: text;
+}
+
+/* ------------------------------------------------------- rendered markdown */
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown__list {
+  margin: 8px 0 0;
+  padding-left: 24px;
+}
+
+.markdown__list--tasks {
+  padding-left: 0;
+  list-style: none;
+}
+
+.markdown__item {
+  margin: 0;
+}
+
+.markdown__item--task {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+/* A task box sits on the first line of the text beside it, not on its middle.
+   Classic's unscoped `input` rule in `index.css` sets `flex: 1`, which would
+   stretch an 18px box across the row and squeeze the words it belongs to. */
+.markdown__box {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.markdown__p,
+.markdown__h,
+.markdown__pre,
+.markdown__quote {
+  margin: 12px 0 0;
+}
+
+.markdown__pre {
+  overflow-x: auto;
+}
+
+.markdown__rule {
+  margin: 16px 0 0;
+  border: 0;
+  border-top: 1px solid currentColor;
+  opacity: 0.4;
+}

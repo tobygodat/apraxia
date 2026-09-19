@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
-select plan(15);
+select plan(18);
 insert into auth.users(id,email) values
  ('11111111-1111-4111-8111-111111111111','class-a@example.test'),
  ('22222222-2222-4222-8222-222222222222','class-b@example.test');
@@ -29,7 +29,14 @@ insert into class_notes(course_id,name,source,drive_file_id) values ('math3012',
 insert into class_notes(course_id,name,source,drive_file_id) values ('math3012','Drive.pdf','drive','file')
  on conflict(user_id,course_id,drive_file_id) do nothing;
 select is((select count(*)::int from class_notes),2,'Drive retry does not duplicate');
+update classes set notes = '# Week 1
+
+- [ ] read chapter 2';
+select is((select notes from classes), E'# Week 1\n\n- [ ] read chapter 2', 'owner writes class notes');
+select throws_ok($$update classes set notes = repeat('x', 40001)$$, '23514', null, 'class notes are bounded');
 set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+update classes set notes = 'not mine';
+select is((select count(*)::int from classes where notes = 'not mine'),0,'class notes private');
 select is((select count(*)::int from classes),0,'classes private');
 select is((select count(*)::int from class_notes),0,'notes private');
 select is((select count(*)::int from storage.objects where bucket_id='class-pdfs'),0,'PDF objects private');

@@ -101,6 +101,10 @@
   color: var(--classes-faint);
   content: "·";
 }
+/* What you write about the class, between its assignments and its PDFs. */
+.classes-notes-written {
+  margin: 0 0 32px;
+}
 .classes-notes-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MarkdownField } from "./markdown/MarkdownField";
+import { MarkdownField } from "../../components/markdown/MarkdownField";
 import { tagsOf } from "./careerPresentation";
 import type { CareerService, CareerStory, CareerStoryUse } from "./careerService";
 import { useCareerRun } from "./useCareerRun";

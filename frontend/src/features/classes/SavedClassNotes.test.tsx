@@ -10,7 +10,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
-const course = { id: "math3012", name: "MATH3012", updatedAt: "seed" };
+const course = { id: "math3012", name: "MATH3012", notes: "", updatedAt: "seed" };
 const pdf = () =>
   new File(["%PDF-1.7\nfictional notes"], "Lecture.pdf", { type: "application/pdf" });
 const mount = (service: NoteService) =>

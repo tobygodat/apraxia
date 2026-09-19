@@ -1,6 +1,8 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { MarkdownView } from "./MarkdownView";
 import { copyMarkdown } from "./markdownClipboard";
+import "./markdown.css";
+import "./markdownPaper.css";
 
 /**
  * A markdown field that shows its result rather than its source. At rest it is
@@ -76,11 +78,11 @@ export function MarkdownField({
 
   if (writing)
     return (
-      <div className="career-field career-field--writing">
+      <div className="markdown-field markdown-field--writing">
         <textarea
           ref={area}
           id={id}
-          className="paper-field career-field__source"
+          className="paper-field markdown-field__source"
           aria-label={label}
           value={draft}
           rows={minRows}
@@ -96,11 +98,11 @@ export function MarkdownField({
           }}
           onBlur={commit}
         />
-        <p className="career-field__foot">
+        <p className="markdown-field__foot">
           <button type="button" className="paper-action" onClick={commit}>
             done
           </button>
-          <span className="career-field__hint">
+          <span className="markdown-field__hint">
             markdown · # heading, **bold**, - list, - [ ] task, ```code```
           </span>
         </p>
@@ -108,15 +110,15 @@ export function MarkdownField({
     );
 
   return (
-    <div className="career-field">
+    <div className="markdown-field">
       {value.trim() ? (
         <>
           {/* Clicking the note is the shortcut; `write` below is the control,
               so the field is reachable without a pointer. */}
-          <div className="career-field__rendered" onClick={write}>
-            <MarkdownView source={value} className="career-md" />
+          <div className="markdown-field__rendered" onClick={write}>
+            <MarkdownView source={value} className="markdown" />
           </div>
-          <p className="career-field__foot">
+          <p className="markdown-field__foot">
             <button
               type="button"
               className="paper-action paper-action--quiet"
@@ -128,15 +130,15 @@ export function MarkdownField({
             <button type="button" className="paper-action paper-action--quiet" onClick={copy}>
               copy
             </button>
-            {(copied || status) && <span className="career-field__hint">{copied || status}</span>}
+            {(copied || status) && <span className="markdown-field__hint">{copied || status}</span>}
           </p>
         </>
       ) : (
-        <p className="career-field__foot">
+        <p className="markdown-field__foot">
           <button type="button" className="paper-action" onClick={write} disabled={disabled}>
             {placeholder}
           </button>
-          {status && <span className="career-field__hint">{status}</span>}
+          {status && <span className="markdown-field__hint">{status}</span>}
         </p>
       )}
     </div>

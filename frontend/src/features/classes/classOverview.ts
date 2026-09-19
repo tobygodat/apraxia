@@ -3,7 +3,7 @@ import { formatTaskDate } from "../todos/taskFormatting";
 
 /**
  * What the Classes list and a class header answer at a glance: what is due
- * next, how much is still open, and how many notes are saved.
+ * next, how much is still open, and how many PDFs are saved.
  */
 export interface ClassOverview {
   readonly assignments: number;
@@ -72,8 +72,10 @@ export function summarizeClasses(
   return totals;
 }
 
+// The saved files are PDFs, and the class's own page is what "notes" now
+// names, so the count says which of the two it is counting.
 function countsLabel({ open, notes }: ClassOverview) {
-  return [open && `${open} open`, notes && `${notes} ${notes === 1 ? "note" : "notes"}`]
+  return [open && `${open} open`, notes && `${notes} ${notes === 1 ? "PDF" : "PDFs"}`]
     .filter(Boolean)
     .join(" · ");
 }

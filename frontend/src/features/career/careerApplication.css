@@ -1,5 +1,5 @@
-/* The layout of one application's page: where the header, the tabs, the rows and
- * the markdown fields sit. This sheet holds geometry only — no colour, no type —
+/* The layout of one application's page: where the header, the tabs and the rows
+ * sit. This sheet holds geometry only — no colour, no type —
  * so the page is laid out under classic as well as Paper, and its sibling
  * `careerApplicationPaper.css` adds the Paper look on top.
  *
@@ -151,8 +151,7 @@
    Classic's unscoped `input` rule in `index.css` sets `flex: 1`, which would
    stretch an 18px box across the row and squeeze the words it belongs to, so
    every control in a row says how much of it to take. */
-.career-app-row__line > input[type="checkbox"],
-.career-md__box {
+.career-app-row__line > input[type="checkbox"] {
   flex: none;
   align-self: flex-start;
   margin-top: 4px;
@@ -206,8 +205,7 @@
   max-width: 600px;
 }
 
-.career-app-row__note-field,
-.career-field__source {
+.career-app-row__note-field {
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
@@ -240,64 +238,6 @@
 
 .career-app-tags__spacer {
   flex-grow: 1;
-}
-
-/* -------------------------------------------------------- markdown fields */
-
-.career-field__foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 16px;
-  margin: 8px 0 0;
-}
-
-/* The rendered note is the field: clicking it writes, so it takes the whole
-   column rather than only the width of its text. */
-.career-field__rendered {
-  cursor: text;
-}
-
-.career-md > :first-child {
-  margin-top: 0;
-}
-
-.career-md__list {
-  margin: 8px 0 0;
-  padding-left: 24px;
-}
-
-.career-md__list--tasks {
-  padding-left: 0;
-  list-style: none;
-}
-
-.career-md__item {
-  margin: 0;
-}
-
-.career-md__item--task {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.career-md__p,
-.career-md__h,
-.career-md__pre,
-.career-md__quote {
-  margin: 12px 0 0;
-}
-
-.career-md__pre {
-  overflow-x: auto;
-}
-
-.career-md__rule {
-  margin: 16px 0 0;
-  border: 0;
-  border-top: 1px solid currentColor;
-  opacity: 0.4;
 }
 
 @media (max-width: 560px) {

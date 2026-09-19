@@ -164,6 +164,7 @@ export function ClassesPage({
           key={course.id}
           userId={userId}
           course={course}
+          classService={classService}
           driveService={driveService}
           assignmentService={assignmentService}
           noteService={noteService}
@@ -172,6 +173,9 @@ export function ClassesPage({
             setError("");
             setEditing({ course, isNew: false });
           }}
+          onSaved={(saved) =>
+            setCourses((rows) => rows.map((c) => (c.id === saved.id ? saved : c)))
+          }
         />
       ) : (
         <>
@@ -182,7 +186,7 @@ export function ClassesPage({
               onClick={() => {
                 setError("");
                 setEditing({
-                  course: { id: crypto.randomUUID(), name: "", updatedAt: "" },
+                  course: { id: crypto.randomUUID(), name: "", notes: "", updatedAt: "" },
                   isNew: true,
                 });
               }}

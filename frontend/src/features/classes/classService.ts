@@ -4,6 +4,8 @@ import { ServiceError } from "../../lib/serviceError";
 export interface Course {
   id: string;
   name: string | null;
+  /** The class's written notes, in markdown. Empty when nothing is written. */
+  notes: string;
   updatedAt: string;
 }
 export interface LegacyCourse {
@@ -15,18 +17,19 @@ export interface ClassService {
   importLegacy(courses: LegacyCourse[], signal: AbortSignal): Promise<void>;
   create(userId: string, course: LegacyCourse, signal: AbortSignal): Promise<Course>;
   rename(userId: string, course: Course, name: string, signal: AbortSignal): Promise<Course>;
+  saveNotes(userId: string, course: Course, notes: string, signal: AbortSignal): Promise<Course>;
 }
-const columns = "user_id,id,name,updated_at";
+const columns = "user_id,id,name,notes,updated_at";
 const bounded = (signal: AbortSignal) => AbortSignal.any([signal, AbortSignal.timeout(20_000)]);
 function fromRow(
   row: Pick<
     Database["public"]["Tables"]["classes"]["Row"],
-    "user_id" | "id" | "name" | "updated_at"
+    "user_id" | "id" | "name" | "notes" | "updated_at"
   >,
   owner: string,
 ): Course {
   if (row.user_id !== owner) throw new ServiceError("not_found", "Couldn’t load this class.");
-  return { id: row.id, name: row.name, updatedAt: row.updated_at };
+  return { id: row.id, name: row.name, notes: row.notes, updatedAt: row.updated_at };
 }
 function validName(name: string) {
   const value = name.trim();
@@ -142,6 +145,26 @@ export function createClassService(client: SupabaseClient<Database>): ClassServi
         "conflict",
         "This class changed elsewhere. Close this form and reload classes before editing again.",
       );
+    },
+    // The notes field is the whole document and the only place it is written,
+    // so the last save wins rather than asking which of two versions to keep.
+    async saveNotes(userId, course, notes, signal) {
+      if ([...notes].length > 40_000)
+        throw new ServiceError("invalid_input", "Use notes of 40,000 characters or fewer.");
+      const { data, error } = await client
+        .from("classes")
+        .update({ notes })
+        .eq("user_id", userId)
+        .eq("id", course.id)
+        .select(columns)
+        .abortSignal(bounded(signal))
+        .maybeSingle();
+      if (error || !data)
+        throw new ServiceError(
+          "unavailable",
+          "Couldn’t save these notes. What you wrote is still here; try again.",
+        );
+      return fromRow(data, userId);
     },
   };
 }

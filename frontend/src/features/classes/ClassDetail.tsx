@@ -1,12 +1,13 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { ClassAssignments } from "./ClassAssignments";
+import { ClassNotes } from "./ClassNotes";
 import { ClassSummary } from "./ClassSummary";
 import { SavedClassNotes } from "./SavedClassNotes";
 import { useLocalToday } from "../todos/useLocalToday";
 import type { AssignmentService } from "./assignmentService";
 import type { ClassOverview } from "./classOverview";
-import type { Course } from "./classService";
+import type { ClassService, Course } from "./classService";
 import type { DriveService } from "./driveService";
 import type { NoteService } from "./noteService";
 
@@ -20,19 +21,24 @@ const PdfReader = lazy(() => import("./PdfReader"));
 export function ClassDetail({
   userId,
   course,
+  classService,
   driveService,
   assignmentService,
   noteService,
   timezone,
   onEdit,
+  onSaved,
 }: {
   userId: string;
   course: Course;
+  classService?: ClassService;
   driveService?: DriveService;
   assignmentService?: AssignmentService;
   noteService?: NoteService;
   timezone?: string;
   onEdit(): void;
+  /** The class as saved, so the list behind this page holds the new text. */
+  onSaved(course: Course): void;
 }) {
   // Sampled so the header re-labels itself at local midnight; the assignment
   // table re-reads its own date on the render that follows.
@@ -72,6 +78,12 @@ export function ClassDetail({
           />
         )}
         <h2 className="classes-section-heading">Notes</h2>
+        {classService ? (
+          <ClassNotes userId={userId} course={course} service={classService} onSaved={onSaved} />
+        ) : (
+          <p role="alert">Class storage is unavailable. Reload to try again.</p>
+        )}
+        <h2 className="classes-section-heading">PDFs</h2>
         {noteService ? (
           <SavedClassNotes
             userId={userId}

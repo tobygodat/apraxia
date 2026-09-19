@@ -89,14 +89,14 @@ it("names an empty class and one that only has notes", () => {
   expect(describeClassOverview({ ...emptyClassOverview, notes: 1 }, TODAY)).toEqual({
     due: "No assignments yet",
     overdue: false,
-    counts: "1 note",
+    counts: "1 PDF",
   });
 });
 
 it("counts only what there is to count", () => {
   const counts = (overview: Parameters<typeof describeClassOverview>[0]) =>
     describeClassOverview(overview, TODAY).counts;
-  expect(counts({ assignments: 4, open: 3, notes: 2, nextDue: null })).toBe("3 open · 2 notes");
+  expect(counts({ assignments: 4, open: 3, notes: 2, nextDue: null })).toBe("3 open · 2 PDFs");
   expect(counts({ assignments: 4, open: 3, notes: 0, nextDue: null })).toBe("3 open");
-  expect(counts({ assignments: 4, open: 0, notes: 5, nextDue: null })).toBe("5 notes");
+  expect(counts({ assignments: 4, open: 0, notes: 5, nextDue: null })).toBe("5 PDFs");
 });

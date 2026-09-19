@@ -22,23 +22,23 @@ function renderBlock(block: Block): ReactNode {
       // h2, so they start at h3 and never climb above the page's own outline.
       const Tag = (["h3", "h4", "h5", "h6", "h6", "h6"] as const)[block.level - 1];
       return (
-        <Tag className={`career-md__h career-md__h--${block.level}`}>
+        <Tag className={`markdown__h markdown__h--${block.level}`}>
           {renderInline(block.children)}
         </Tag>
       );
     }
     case "paragraph":
-      return <p className="career-md__p">{renderInline(block.children)}</p>;
+      return <p className="markdown__p">{renderInline(block.children)}</p>;
     case "code":
       return (
-        <pre className="career-md__pre">
-          <code className="career-md__code">{block.text}</code>
+        <pre className="markdown__pre">
+          <code className="markdown__code">{block.text}</code>
         </pre>
       );
     case "rule":
-      return <hr className="career-md__rule" />;
+      return <hr className="markdown__rule" />;
     case "quote":
-      return <blockquote className="career-md__quote">{renderBlocks(block.blocks)}</blockquote>;
+      return <blockquote className="markdown__quote">{renderBlocks(block.blocks)}</blockquote>;
     case "list":
       return renderList(block);
   }
@@ -50,10 +50,10 @@ function renderList(block: Block & { kind: "list" }): ReactNode {
   return (
     <Tag
       className={[
-        "career-md__list",
-        block.ordered ? "career-md__list--ordered" : "career-md__list--bullet",
-        tasks && "career-md__list--tasks",
-        block.tight && "career-md__list--tight",
+        "markdown__list",
+        block.ordered ? "markdown__list--ordered" : "markdown__list--bullet",
+        tasks && "markdown__list--tasks",
+        block.tight && "markdown__list--tight",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -66,16 +66,16 @@ function renderList(block: Block & { kind: "list" }): ReactNode {
           <li
             key={index}
             className={[
-              "career-md__item",
-              item.task !== null && "career-md__item--task",
-              item.task && "career-md__item--done",
+              "markdown__item",
+              item.task !== null && "markdown__item--task",
+              item.task && "markdown__item--done",
             ]
               .filter(Boolean)
               .join(" ")}
           >
             {item.task !== null && (
               <input
-                className="paper-check career-md__box"
+                className="paper-check markdown__box"
                 type="checkbox"
                 checked={item.task}
                 // The box mirrors the note's own text. Editing the note is how
@@ -85,7 +85,7 @@ function renderList(block: Block & { kind: "list" }): ReactNode {
                 aria-hidden="true"
               />
             )}
-            <span className="career-md__item-body">
+            <span className="markdown__item-body">
               {inline ? renderInline(first.children) : renderBlocks(item.blocks)}
             </span>
           </li>
@@ -110,10 +110,10 @@ function renderInlineChild(child: Inline): ReactNode {
     case "emphasis":
       return <em>{renderInline(child.children)}</em>;
     case "code":
-      return <code className="career-md__inline-code">{child.text}</code>;
+      return <code className="markdown__inline-code">{child.text}</code>;
     case "link":
       return (
-        <a href={child.href} target="_blank" rel="noreferrer noopener">
+        <a className="markdown__link" href={child.href} target="_blank" rel="noreferrer noopener">
           {renderInline(child.children)}
         </a>
       );
