@@ -20,6 +20,7 @@ import { createWorkspaceData } from "./workspaceData";
 import { createDriveService } from "../features/classes/driveService";
 import { createCollectionService } from "../features/collections/collectionService";
 import { createCalendarService } from "../features/calendar/calendarService";
+import { createCareerService } from "../features/career/careerService";
 
 const DriveCallback = lazy(() =>
   import("./DriveCallback").then((m) => ({ default: m.DriveCallback })),
@@ -211,6 +212,7 @@ function CloudWorkspace({
   const { state, signOut } = useAuth();
   const collectionService = useMemo(() => createCollectionService(client), [client]);
   const calendarService = useMemo(() => createCalendarService(client), [client]);
+  const careerService = useMemo(() => createCareerService(client), [client]);
   const driveService = useMemo(() => createDriveService(client), [client]);
   const workspaceData = useMemo(() => createWorkspaceData(client), [client]);
   const signOutStatus = state.status === "authenticated" ? state.signOutStatus : "idle";
@@ -235,6 +237,7 @@ function CloudWorkspace({
               todoService={service}
               collectionService={collectionService}
               calendarService={calendarService}
+              careerService={careerService}
               driveService={driveService}
               workspaceData={workspaceData}
             />

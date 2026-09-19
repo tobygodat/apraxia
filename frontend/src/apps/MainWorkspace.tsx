@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Link,
+  Navigate,
   Outlet,
   Route,
   Routes,
@@ -38,6 +39,8 @@ import type {
   CollectionService,
 } from "../features/collections/collectionService";
 import type { DriveService } from "../features/classes/driveService";
+import type { CareerService } from "../features/career/careerService";
+import type { CareerTab } from "../features/career/CareerApplicationPage";
 import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
@@ -105,12 +108,22 @@ const collectionChunk = preloadable<
 >(() =>
   import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage })),
 );
+const careerChunk = preloadable<
+  Parameters<
+    (typeof import("../features/career/CareerApplicationPage"))["CareerApplicationPage"]
+  >[0]
+>(() =>
+  import("../features/career/CareerApplicationPage").then((m) => ({
+    default: m.CareerApplicationPage,
+  })),
+);
 
 const HomePage = homeChunk.Component;
 const SettingsPage = settingsChunk.Component;
 const TodosWorkspaceContent = todosChunk.Component;
 const ClassesPage = classesChunk.Component;
 const CollectionPage = collectionChunk.Component;
+const CareerApplicationPage = careerChunk.Component;
 
 /** Warms the route chunks so navigation doesn't wait on network once data is cached. */
 export function preloadWorkspaceChunks(): Promise<void> {
@@ -120,6 +133,7 @@ export function preloadWorkspaceChunks(): Promise<void> {
     todosChunk.preload(),
     classesChunk.preload(),
     collectionChunk.preload(),
+    careerChunk.preload(),
   ]).then(() => undefined);
 }
 
@@ -132,11 +146,13 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
         ? todosChunk
         : pathname.startsWith("/projects") || pathname.startsWith("/ideas")
           ? collectionChunk
-          : pathname.startsWith("/classes")
-            ? classesChunk
-            : pathname.startsWith("/settings")
-              ? settingsChunk
-              : undefined;
+          : pathname.startsWith("/career")
+            ? careerChunk
+            : pathname.startsWith("/classes")
+              ? classesChunk
+              : pathname.startsWith("/settings")
+                ? settingsChunk
+                : undefined;
   return chunk?.preload();
 }
 
@@ -158,6 +174,7 @@ export interface MainWorkspaceProps {
   todoService: TodoService;
   collectionService: CollectionService;
   calendarService: CalendarService;
+  careerService: CareerService;
   driveService?: DriveService;
   workspaceData: WorkspaceData;
   /** Shared session read cache; the store creates a private one when omitted. */
@@ -248,6 +265,12 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="projects" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="projects/:id" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="ideas" element={<CollectionRoute {...props} kind="idea" />} />
+            <Route path="career/:id" element={<CareerRoute {...props} tab="structure" />} />
+            <Route path="career/:id/prep" element={<CareerRoute {...props} tab="prep" />} />
+            <Route
+              path="career/:id/resources"
+              element={<CareerRoute {...props} tab="resources" />}
+            />
             <Route path="classes" element={<ClassesRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
             <Route path="settings" element={<SettingsRoute {...props} />} />
@@ -374,6 +397,35 @@ function ClassesRoute(props: MainWorkspaceProps) {
       noteService={props.workspaceData.notes}
       overviewService={props.workspaceData.classOverview}
       timezone={profile?.timezone}
+    />
+  );
+}
+
+function CareerRoute({ tab, ...props }: MainWorkspaceProps & { tab: CareerTab }) {
+  const { profile } = useWorkspace();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  // The list page owns `/career`; an application with no id in the path is a
+  // link that lost it, so it goes back there rather than rendering empty.
+  if (!id) return <Navigate to="/career" replace />;
+  return (
+    <CareerApplicationPage
+      key={id}
+      userId={props.identity.userId}
+      applicationId={id}
+      tab={tab}
+      service={props.careerService}
+      timezone={profile?.timezone}
+      onOpenTab={(next) =>
+        navigate(
+          next === "structure"
+            ? `/career/${encodeURIComponent(id)}`
+            : `/career/${encodeURIComponent(id)}/${next}`,
+          { replace: true },
+        )
+      }
+      onBack={() => navigate("/career")}
+      onDeleted={() => navigate("/career", { replace: true })}
     />
   );
 }

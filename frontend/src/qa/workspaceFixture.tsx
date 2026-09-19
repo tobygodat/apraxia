@@ -5,6 +5,7 @@ import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
 import { createTodoAssignmentService } from "../features/classes/assignmentService";
 import { summarizeClasses } from "../features/classes/classOverview";
 import { isNoteSaved } from "../features/classes/noteService";
+import { createCareerFixtureService } from "./careerFixture";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -519,6 +520,7 @@ const workspaceData = {
     return profile;
   },
 };
+const careerService = delayedFixtureService(createCareerFixtureService(today, scenario), delay);
 const runtimeTodos = delayedFixtureService(todoService, delay);
 const runtimeCollections = delayedFixtureService(collectionService, delay);
 const runtimeData = delayedFixtureService(workspaceData, delay);
@@ -599,6 +601,7 @@ createRoot(document.getElementById("root")!).render(
         todoService={runtimeTodos}
         collectionService={runtimeCollections}
         calendarService={calendarService}
+        careerService={careerService}
         driveService={driveService}
         workspaceData={runtimeData}
       />
