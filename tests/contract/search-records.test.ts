@@ -74,6 +74,21 @@ beforeAll(async () => {
        'Reglaze the greenhouse');
     insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
       ('a4000000-0000-4000-8000-000000000006','${owner}','MATH3012','Week 3 lecture slides','drive','drive-file-1');
+    -- One record of every kind, so a branch that goes missing is caught.
+    insert into public.classes(user_id,id,name) values
+      ('${owner}','BIO2200','Orchard ecology');
+    insert into public.todos(id,user_id,text,class_id,assignment_type) values
+      ('a4000000-0000-4000-8000-00000000000a','${owner}','Orchard field notes','BIO2200','Homework');
+    insert into public.todos(id,user_id,text) values
+      ('a4000000-0000-4000-8000-00000000000b','${owner}','Walk the orchard');
+    insert into public.ideas(id,user_id,title,body) values
+      ('a4000000-0000-4000-8000-00000000000c','${owner}','Orchard planting','Rows of apple trees');
+    insert into public.projects(id,user_id,title,description) values
+      ('a4000000-0000-4000-8000-00000000000d','${owner}','Orchard fence','Replace the posts');
+    insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
+      ('a4000000-0000-4000-8000-00000000000e','${owner}','BIO2200','Orchard survey','drive','drive-file-2');
+    insert into public.career_applications(id,user_id,company,role) values
+      ('a4000000-0000-4000-8000-00000000000f','${owner}','Orchard Labs','Field engineer');
     update public.todos set deleted_at = statement_timestamp()
       where id = 'a4000000-0000-4000-8000-000000000005';
   `);
@@ -195,4 +210,20 @@ it("continues a cut title in the snippet instead of restarting it", async () => 
   ]);
   // Title and snippet together are the task, each word once and in order.
   expect(rows.map((r) => `${r.title} ${r.snippet}`)).toEqual([longTask]);
+});
+
+it("keeps a branch for every kind the result type names", async () => {
+  // A later migration that replaces search_records can drop a branch and leave
+  // its kind in the enum, which is how applications went missing once.
+  const { rows } = await database.query<{ kinds: string[] }>(
+    "select enum_range(null::public.search_record_type)::text[] as kinds",
+  );
+  const found = [...new Set((await search("orchard")).map((r) => r.record_type))];
+  expect(found.sort()).toEqual([...rows[0]!.kinds].sort());
+});
+
+it("titles an application by its company and puts the role under it", async () => {
+  expect((await search("Orchard Labs")).map((r) => [r.record_type, r.title, r.snippet])).toEqual([
+    ["application", "Orchard Labs", "Field engineer"],
+  ]);
 });
