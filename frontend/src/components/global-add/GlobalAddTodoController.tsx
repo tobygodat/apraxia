@@ -13,6 +13,7 @@ import type { ClassSummary, LocalDate, ProjectSummary, Todo } from "../../types/
 import { TodoComposerDialog } from "../../features/todos/TodoFormDialog";
 import type { TodoService } from "../../features/todos/todoService";
 import "./GlobalAddTodoController.css";
+import "./globalAddPaper.css";
 
 export interface OpenTodoComposerOptions {
   readonly initialDueDate?: LocalDate | null;
@@ -113,7 +114,11 @@ export function GlobalAddTodoController({
       {refreshIssueScope === scope ? (
         <aside className="global-add-notice" aria-label="Task added">
           <p role="status">Task added, but this view may be out of date. Refresh to see it.</p>
-          <button type="button" onClick={() => setRefreshIssueScope(null)}>
+          <button
+            type="button"
+            className="paper-action paper-action--quiet"
+            onClick={() => setRefreshIssueScope(null)}
+          >
             Dismiss
           </button>
         </aside>
