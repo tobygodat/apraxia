@@ -828,8 +828,10 @@
   color: var(--faint);
 }
 
+/* Today is a fact about the calendar, not where you are, so it is a plain
+   rule in `muted`; the green below belongs to the day you chose. */
 [data-theme^="paper"] .assignment-calendar-days button[aria-current="date"] {
-  text-decoration: underline 1px var(--accent);
+  text-decoration: underline 1px var(--muted);
   text-underline-offset: 4px;
   text-decoration-thickness: 1px;
 }
@@ -877,6 +879,13 @@
 [data-theme^="paper"] .assignment-calendar-time input:disabled {
   opacity: 1;
   color: var(--faint);
+}
+
+[data-theme^="paper"] .assignment-calendar-time button {
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
 }
 
 [data-theme^="paper"] .assignment-calendar-footer {
