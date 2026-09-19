@@ -377,6 +377,35 @@
   text-transform: none;
 }
 
+/* A select keeps its own chevron, drawn here as two hairlines in the field's
+ * own ink so both presets get it from the tokens. The rule above sets
+ * `background-color`, never the `background` shorthand, so this image
+ * survives it. The right padding is the glyph's gutter: the chevron ends
+ * 22px in, and without it a long calendar name runs underneath. */
+[data-theme^="paper"] .event-editor select {
+  padding-right: calc(var(--space-sm) + var(--space-md));
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.5px),
+      currentcolor calc(50% - 0.5px),
+      currentcolor calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      -45deg,
+      transparent calc(50% - 0.5px),
+      currentcolor calc(50% - 0.5px),
+      currentcolor calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+  background-repeat: no-repeat;
+  background-position:
+    right 17px center,
+    right 12px center;
+  background-size: 5px 5px;
+}
+
 [data-theme^="paper"] .event-editor input::placeholder {
   color: var(--muted);
   text-transform: lowercase;
