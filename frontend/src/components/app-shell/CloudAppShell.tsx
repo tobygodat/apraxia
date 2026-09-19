@@ -6,6 +6,7 @@ import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { useColdLoadState } from "../../apps/coldLoad";
 import { WorkspaceIcon } from "../WorkspaceIcon";
 import "./CloudAppShell.css";
+import "./CloudAppShellPaper.css";
 
 /** Delay before showing the indeterminate bar, so fast loads never flash it. */
 const LOADING_BAR_DELAY_MS = 150;
