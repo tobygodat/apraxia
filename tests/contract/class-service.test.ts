@@ -7,6 +7,7 @@ const row = {
   user_id: owner,
   id: "math3012",
   name: "MATH3012",
+  notes: "",
   updated_at: "2026-09-13T00:00:00.123456+00:00",
 };
 const signal = () => new AbortController().signal;
@@ -47,7 +48,7 @@ it("renames using the exact loaded revision and refuses to overwrite a conflict"
   await expect(
     service.rename(
       owner,
-      { id: row.id, name: row.name, updatedAt: row.updated_at },
+      { id: row.id, name: row.name, notes: row.notes, updatedAt: row.updated_at },
       "New name",
       signal(),
     ),
@@ -61,4 +62,34 @@ it("uses conflict-safe creates and confirms stored data", async () => {
   expect((await service.create(owner, { id: row.id, name: row.name }, signal())).id).toBe(row.id);
   const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
   expect(new Headers(init.headers).get("prefer")).toContain("resolution=ignore-duplicates");
+});
+it("writes the whole note and reads the saved class back", async () => {
+  const note = "# Week 6\n\n- [ ] read chapter 2";
+  const { service, fetch } = setup([{ ...row, notes: note }]);
+  const saved = await service.saveNotes(
+    owner,
+    { id: row.id, name: row.name, notes: "", updatedAt: row.updated_at },
+    note,
+    signal(),
+  );
+  expect(saved.notes).toBe(note);
+  const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+  expect(JSON.parse(String(init.body))).toEqual({ notes: note });
+  // A note is not a rename: it carries no revision, so a save never has to be
+  // abandoned because something else touched the class.
+  expect(new URL(url).searchParams.get("updated_at")).toBeNull();
+  expect(new URL(url).searchParams.get("id")).toBe(`eq.${row.id}`);
+});
+
+it("refuses a note past the column's bound before it reaches the network", async () => {
+  const { service, fetch } = setup([]);
+  await expect(
+    service.saveNotes(
+      owner,
+      { id: row.id, name: row.name, notes: "", updatedAt: row.updated_at },
+      "x".repeat(40_001),
+      signal(),
+    ),
+  ).rejects.toThrow("40,000 characters");
+  expect(fetch).not.toHaveBeenCalled();
 });

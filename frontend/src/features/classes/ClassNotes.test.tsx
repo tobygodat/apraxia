@@ -7,8 +7,11 @@ import { createClassPersistenceFixture } from "../../qa/classPersistenceFixture"
 import type { ClassService, Course } from "./classService";
 afterEach(cleanup);
 const course: Course = { id: "math3012", name: "MATH3012", notes: "", updatedAt: "seed" };
-const mount = (service: ClassService, value: Course = course, onSaved = () => {}) =>
-  render(<ClassNotes userId="owner" course={value} service={service} onSaved={onSaved} />);
+const mount = (
+  service: ClassService,
+  value: Course = course,
+  onSaved: (row: Course) => void = () => {},
+) => render(<ClassNotes userId="owner" course={value} service={service} onSaved={onSaved} />);
 
 async function write(text: string) {
   fireEvent.click(await screen.findByRole("button", { name: "write notes" }));
