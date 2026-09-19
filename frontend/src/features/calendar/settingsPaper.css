@@ -1,0 +1,168 @@
+/* Settings in the Paper theme.
+ *
+ * Sibling of `calendar.css`, which keeps the classic look and is never edited.
+ * Everything here is scoped `[data-theme^="paper"]`, which matches the `paper`
+ * and `paper-light` presets and never matches classic. The classic sheet still
+ * loads under Paper, so each rule below outranks the classic rule it replaces
+ * rather than relying on stylesheet order. `paper.css` owns every value and the
+ * primitives; nothing is re-declared here.
+ *
+ * The page frame is not restated: classic reads `--workspace-page-top` and
+ * `--workspace-page-inset`, and the shell's Paper sheet already redefines both
+ * to `--space-top` and `--inset`, so the padding is right without a rule.
+ */
+
+[data-theme^="paper"] .calendar-settings {
+  /* A page of prose and controls, so it keeps to the reading measure. Regions
+     sit `space-lg` apart, which is where a classic section's rule used to be. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: var(--measure);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .calendar-settings h1 {
+  margin: 0;
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  text-transform: lowercase;
+}
+
+/* Space separates the regions; the classic rule under each one goes. */
+[data-theme^="paper"] .calendar-settings section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* An interface word is lowercase. `Google Calendar` carries no such class,
+   because a proper noun keeps its own case. */
+[data-theme^="paper"] .calendar-settings .settings-heading {
+  text-transform: lowercase;
+}
+
+/* Supporting lines. Addressed as children so the error banner's own sentence,
+   which `paper.css` sets in `danger`, is left alone. */
+[data-theme^="paper"] .calendar-settings > section > p,
+[data-theme^="paper"] .calendar-settings fieldset p {
+  margin: 0;
+  max-width: 62ch;
+  font: var(--small);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+[data-theme^="paper"] .calendar-settings fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+[data-theme^="paper"] .calendar-settings legend {
+  margin: 0 0 var(--space-sm);
+  padding: 0;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* A list is opened by a hairline above its first row; `.paper-row` closes each
+   row with the one below it. */
+[data-theme^="paper"] .calendar-settings .settings-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--hairline);
+}
+
+/* A theme choice: the radio beside its name, its description under the name. */
+[data-theme^="paper"] .calendar-settings .settings-choice {
+  display: grid;
+  grid-template-columns: var(--icon) minmax(0, 1fr);
+  column-gap: var(--space-sm);
+  align-items: start;
+}
+
+/* Hold the control to the middle of the name's first line, derived from the
+   line box rather than nudged by a number. */
+[data-theme^="paper"] .calendar-settings .settings-choice .paper-radio {
+  grid-row: span 2;
+  margin-top: calc((1.6em - var(--icon)) / 2);
+}
+
+[data-theme^="paper"] .calendar-settings .settings-choice__name {
+  font: var(--body);
+}
+
+[data-theme^="paper"] .calendar-settings .settings-choice__note {
+  font: var(--small);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* A visible calendar: its tick, then its colour as a rule, then its name. */
+[data-theme^="paper"] .calendar-settings .settings-calendar {
+  align-items: center;
+  column-gap: var(--space-8);
+}
+
+[data-theme^="paper"] .calendar-settings .settings-calendar .paper-check {
+  margin-right: var(--space-xs);
+}
+
+/* The calendar's own colour, as the 1px rule an event carries rather than a
+   filled dot. The colour itself stays inline: it is Google's data, not a token. */
+[data-theme^="paper"] .calendar-settings .calendar-swatch {
+  width: 1px;
+  height: 1.1em;
+  border-radius: 0;
+}
+
+[data-theme^="paper"] .calendar-settings .calendar-controls {
+  align-items: baseline;
+  gap: var(--space-md);
+}
+
+/* What the classic button rule leaves behind once the word is a `.paper-action`:
+   its box is gone, so its height, corners and hover surface go with it. The
+   classic rule also centres the label inside a full-width box, which a word set
+   in the page has to undo. Action words are interface words, so they lowercase
+   here rather than in the markup both themes render. */
+[data-theme^="paper"] .calendar-settings button {
+  min-height: 0;
+  border-radius: 0;
+  gap: var(--space-8);
+  justify-content: flex-start;
+  text-transform: lowercase;
+}
+
+/* A word that sits straight in a region is only as wide as itself, so the
+   pointer finds the word rather than the whole line. */
+[data-theme^="paper"] .calendar-settings > section > button {
+  align-self: start;
+}
+
+[data-theme^="paper"] .calendar-settings button:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-settings button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* The timezone field. `.paper-field` carries the look; this holds it to a width
+   a zone name fits in rather than the whole measure. */
+[data-theme^="paper"] .calendar-settings select {
+  max-width: calc(var(--measure) * 0.6);
+}
+
+[data-theme^="paper"] .calendar-settings select:disabled {
+  opacity: 1;
+  color: var(--faint);
+  cursor: default;
+}
