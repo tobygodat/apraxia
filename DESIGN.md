@@ -509,9 +509,8 @@ previous and next week — and it carries an `aria-label`. Icons never replace a
 word, never carry a status, never take a colour of their own, and are never
 filled. No icon fonts, no emoji.
 
-The favicon is one lowercase serif letter on `ground`. Imagery is rare, small
-and never structural. The optional Home cover is user content and stays; it is
-not licence for imagery elsewhere.
+The favicon is one lowercase serif letter on `ground`. There is no imagery: the
+Home cover was removed, and the page is type on a ruled ground throughout.
 
 ## Components
 

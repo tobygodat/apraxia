@@ -121,22 +121,16 @@ describe("calendar QA coverage", () => {
 });
 
 describe("QA appearance and delayed requests", () => {
-  it("saves the full cover and crop coordinates and respects reset", async () => {
+  it("saves the page name and falls back to the seed after a reset", async () => {
     const storage = memoryStorage();
     const signal = new AbortController().signal;
-    const service = createFixtureAppearance(storage, "appearance", null);
-    const value = {
-      title: "My page",
-      coverImage: "data:image/png;base64,YQ==",
-      coverPositionX: 81,
-      coverPositionY: 16,
-    };
-    await service.save("fictional", value, signal);
+    const service = createFixtureAppearance(storage, "appearance", "seeded");
+    await service.save("fictional", { title: "My page" }, signal);
     expect(
-      await createFixtureAppearance(storage, "appearance", null).load("fictional", signal),
-    ).toEqual(value);
+      await createFixtureAppearance(storage, "appearance", "seeded").load("fictional", signal),
+    ).toEqual({ title: "My page" });
     storage.removeItem("appearance");
-    expect((await service.load("fictional", signal)).coverImage).toBeNull();
+    expect((await service.load("fictional", signal)).title).toBe("seeded");
   });
 
   it("surfaces storage failure rather than reporting a successful save", async () => {
@@ -144,13 +138,9 @@ describe("QA appearance and delayed requests", () => {
     storage.setItem = () => {
       throw new Error("Storage full");
     };
-    const service = createFixtureAppearance(storage, "appearance", null);
+    const service = createFixtureAppearance(storage, "appearance", "");
     await expect(
-      service.save(
-        "fictional",
-        { title: "changed", coverImage: null },
-        new AbortController().signal,
-      ),
+      service.save("fictional", { title: "changed" }, new AbortController().signal),
     ).rejects.toThrow("Storage full");
   });
 

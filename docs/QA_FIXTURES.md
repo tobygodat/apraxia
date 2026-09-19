@@ -35,13 +35,12 @@ fixture defaults to `realistic`; the QA menu switches between them by reloading.
 | Scenario | What it gives you |
 | --- | --- |
 | `personal` | A private reproduction of the real account: its tasks, projects, ideas, classes, note names, and the captured week's calendar events. Check this first, then `dense`. See [The personal snapshot](#the-personal-snapshot). Without a snapshot it shows the `realistic` seed and says so in the QA menu. |
-| `realistic` | Default. A saved cover with an off-center crop, event-specific colors on one calendar, three-way overlaps, adjacent 15-minute events, 5 to 120-minute events, long and untitled events, multiple all-day lanes, midnight crossings, hidden and read-only calendars. |
+| `realistic` | Default. Event-specific colors on one calendar, three-way overlaps, adjacent 15-minute events, 5 to 120-minute events, long and untitled events, multiple all-day lanes, midnight crossings, hidden and read-only calendars. |
 | `calendar` | Calendar-focused week seed. |
-| `typical` | No cover. Use this for the no-cover layout check. |
-| `empty` | No tasks, collections, events, classes, or cover. |
+| `typical` | A quiet week. |
+| `empty` | No tasks, collections, events, classes, or page name. |
 | `dense` | Crowded week (eight events per day) plus long text. |
 | `long` | Long titles and descriptions without the crowded week. |
-| `portrait` | Portrait-aspect cover. |
 | `slow` | Every service call delayed 1.5 s instead of the usual 180 ms. |
 | `error` | Calendar, tasks, and collection services reject, so error and retry states render. |
 | `disconnected` | Calendar reports no connection. |
@@ -83,7 +82,7 @@ real colors. Edits behave as in any scenario and never reach the account.
 Calendar edits, visibility, and page appearance are written to `sessionStorage`
 under `apraxia:qa:workspace:v3:<scenario>:<local date>`, so reload checks are
 meaningful and each scenario, day, and tab stays isolated. **Reset calendar and
-cover** in the QA menu clears those keys. Tasks and collections are in-memory
+page name** in the QA menu clears those keys. Tasks and collections are in-memory
 and reset on reload. Classes, notes, and assignments persist across navigation
 and reset on reload. Nothing is written to account storage.
 
@@ -121,8 +120,8 @@ trigger. What the database actually does is covered by
 1. Add the name to the scenario list in the `FixtureTools` menu in
    `frontend/src/qa/workspaceFixture.tsx`.
 2. Branch on it where the seed data is built. Most scenarios only need to appear
-   in one or two places: the `empty` / `long` flags near the top, the `cover`
-   list, the `delay` constant, or `createFixtureCalendar` in
+   in one or two places: the `empty` / `long` flags near the top, the
+   `pageTitle` seed, the `delay` constant, or `createFixtureCalendar` in
    `frontend/src/qa/workspaceFixtureCalendar.ts`.
 3. Keep every identity, title, and address fictional, and keep `.invalid`
    domains. No real data or credentials belong in a fixture.

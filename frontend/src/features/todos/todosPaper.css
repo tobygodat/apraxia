@@ -663,6 +663,10 @@
 }
 
 [data-theme^="paper"] .today-list-item article {
+  position: relative;
+  /* The handle below is out of flow, so the row reads as the reference draws
+     it: the box, the task, and its one action out at the right margin. */
+  grid-template-columns: var(--icon) minmax(0, 1fr) auto;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--gutter);
   transition: none;
@@ -673,8 +677,49 @@
   background: transparent;
 }
 
+/* The reference draws no handle: a row is the thing, not a thing with a grip
+ * on it. The row is the drag source either way, so the handle only has to be
+ * reachable, not visible — it sits in the page's own left inset, out of the
+ * row's measure, and shows itself when the row is under the pointer or the
+ * handle has focus. Removing it outright would take the keyboard's only way
+ * to reorder with it. */
 [data-theme^="paper"] .today-list-item__drag {
+  position: absolute;
+  left: calc(-1 * var(--space-md));
   color: var(--faint);
+  opacity: 0;
+  transition: none;
+}
+
+/* With the handle out of flow there is no column for the other day to hold. */
+[data-theme^="paper"] .today-list-item__drag-placeholder {
+  display: none;
+}
+
+/* Beside the task rather than under it: one line, one action. */
+[data-theme^="paper"] .today-list-item__actions {
+  grid-column: 3;
+  grid-row: 1;
+  margin-top: 0;
+}
+
+[data-theme^="paper"] .today-list-item article:hover .today-list-item__drag,
+[data-theme^="paper"] .today-list-item__drag:focus-visible {
+  opacity: 1;
+}
+
+/* The way out of a single day, at the foot of the panel. */
+[data-theme^="paper"] .today-list__all {
+  display: inline-block;
+  margin: var(--space-md) var(--gutter) 0;
+  color: var(--muted);
+  font: var(--small);
+  text-transform: lowercase;
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .today-list__all:hover {
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .today-list-item__check input {

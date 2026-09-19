@@ -1,4 +1,5 @@
 import { useCallback, useId, useLayoutEffect, useRef, useState, type DragEvent } from "react";
+import { Link } from "react-router-dom";
 import { useColdLoad } from "../../apps/coldLoad";
 import type { TodayTodo, UUID } from "../../types/domain";
 import { isDocumentFocus } from "../../components/dialog/Dialog";
@@ -359,7 +360,9 @@ export function TodayList({
                         <DragIcon />
                       </span>
                     ) : (
-                      <span aria-hidden="true" />
+                      // Holds the handle's column open so both days' rows line
+                      // up. Paper takes the handle out of flow and drops this.
+                      <span className="today-list-item__drag-placeholder" aria-hidden="true" />
                     )}
 
                     <label className="today-list-item__check">
@@ -490,6 +493,11 @@ export function TodayList({
           </div>
         </footer>
       ) : null}
+
+      {/* The panel shows one day; the way out of it belongs at its foot. */}
+      <Link className="today-list__all" to="/todos">
+        All tasks this week
+      </Link>
 
       <p className="today-list-sr-only" aria-live="polite" aria-atomic="true">
         <span key={state.announcement.sequence}>

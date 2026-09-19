@@ -1,6 +1,21 @@
 // @vitest-environment happy-dom
 
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderBare,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
+import type { RenderOptions } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+
+// The list links to the tasks board, so every render needs a router around it.
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  renderBare(ui, { wrapper: MemoryRouter, ...options });
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeleteUndoToken, Profile, TodayTodo, Todo } from "../../types/domain";
 import { TodayPanel, type TodayPanelProps } from "./TodayPanel";

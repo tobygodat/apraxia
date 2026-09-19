@@ -96,6 +96,56 @@ it("uses one, two or three clipped rows with time and location in the requested 
   }
 });
 
+it("marks an event named Work, and leaves every other name alone", () => {
+  const titles = ["Work", "  work  ", "Work on the thesis", "Homework"];
+  const events: CalendarEvent[] = titles.map((title, index) => ({
+    kind: "timed",
+    calendarId: "personal",
+    eventId: String(index),
+    title,
+    calendarColor: { background: "#0b8043", foreground: null },
+    googleEventUrl: "https://calendar.google.com",
+    startAt: `2026-09-${String(7 + index).padStart(2, "0")}T09:00:00Z`,
+    endAt: `2026-09-${String(7 + index).padStart(2, "0")}T10:00:00Z`,
+    startTimeZone: null,
+    endTimeZone: null,
+  }));
+  const week: WeekViewModel = {
+    range: { sunday: "2026-09-06", saturday: "2026-09-12" },
+    timezone: "UTC",
+    visibleCalendars: [],
+    partialErrors: [],
+    events,
+  };
+  const { container } = render(<WeekGrid week={week} now={new Date("2026-09-07T12:00:00Z")} />);
+  // One event per day, in day order, so the rendered order is the list's own.
+  const cards = [...container.querySelectorAll(".calendar-event--timed")];
+  expect(cards.map((card) => card.querySelector("strong")?.textContent)).toEqual(titles);
+  // The whole title has to be the word, so a shift is marked and a task that
+  // merely mentions work is not. Paper prints the marked one in the quiet
+  // colour, which is what the week's footer line describes.
+  expect(cards.map((card) => card.classList.contains("calendar-event--work"))).toEqual([
+    true,
+    true,
+    false,
+    false,
+  ]);
+});
+
+it("prints the current time on the line it marks rather than in the hour gutter", () => {
+  const week: WeekViewModel = {
+    range: { sunday: "2026-09-06", saturday: "2026-09-12" },
+    timezone: "UTC",
+    visibleCalendars: [],
+    partialErrors: [],
+    events: [],
+  };
+  const { container } = render(<WeekGrid week={week} now={new Date("2026-09-07T15:48:00Z")} />);
+  const line = container.querySelector(".week-now");
+  expect(line?.getAttribute("aria-label")).toBe("Current time: 3:48 PM");
+  expect(line?.querySelector(".week-now__label")?.textContent).toBe("now · 3:48 PM");
+});
+
 it("opens a full preview for timed and all-day events and keeps Google navigation explicit", () => {
   const events: CalendarEvent[] = [
     {
@@ -503,6 +553,15 @@ it("shows only month and year and omits the calendar source legend", async () =>
     expect(screen.getByRole("heading", { name: "September 2026" })).toBeTruthy();
     expect(screen.queryByLabelText("Visible calendars")).toBeNull();
     expect(screen.queryByText("Work calendar")).toBeNull();
+    // The footer says how to read the week's type, and where its hours are
+    // kept. Paper prints the first; classic hides it and keeps the second.
+    expect(screen.getByText(/in bold · work in grey · everything else plain/)).toBeTruthy();
+    expect(screen.getByText("UTC")).toBeTruthy();
+    // The arrows belong to Today, so one group moves the week.
+    const actions = [...document.querySelectorAll(".calendar-toolbar-actions > button")].map(
+      (button) => button.getAttribute("aria-label") ?? button.textContent,
+    );
+    expect(actions.slice(0, 3)).toEqual(["Previous week", "Today", "Next week"]);
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
     expect(screen.getByRole("heading", { name: "September 2026" })).toBeTruthy();
   } finally {

@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import { registerUserStateResetter } from "../auth/userState";
-import { primeCoverImage } from "../features/calendar/coverImageCache";
 import { MainWorkspace, preloadWorkspaceChunks, type MainWorkspaceProps } from "./MainWorkspace";
 import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { cacheNavigationService, NavigationCache } from "./navigationCache";
@@ -125,9 +124,7 @@ export function WorkspaceRuntime(props: MainWorkspaceProps) {
         // 72 requests alongside Home's own reads.
         collectionService.listProjects({ offset: 0, signal }),
         collectionService.listIdeas({ offset: 0, signal }),
-        workspaceData.homeAppearance?.load(props.identity.userId, signal).then((appearance) => {
-          if (appearance.coverImage) primeCoverImage(appearance.coverImage);
-        }),
+        workspaceData.homeAppearance?.load(props.identity.userId, signal),
       ]);
     }, 100);
     let idleHandle: number | undefined;

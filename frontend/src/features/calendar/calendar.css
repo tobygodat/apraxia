@@ -553,8 +553,7 @@
   .home-workspace--phone .today-list__scroll {
     overflow-y: visible;
   }
-  .home-workspace--phone .calendar-panel,
-  .home-page--cover .home-workspace--phone .calendar-panel {
+  .home-workspace--phone .calendar-panel {
     height: min(62dvh, 520px);
     margin-top: 28px;
     border-top: 1px solid #303030;
@@ -894,101 +893,17 @@
   opacity: 0.5;
   cursor: wait;
 }
-.home-header__frame {
-  position: relative;
-}
 .home-header__actions {
   display: flex;
   flex-shrink: 0;
   gap: 4px;
   margin-left: auto;
 }
-.home-header__cover {
-  display: block;
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-.home-header--cover .home-header__frame {
-  overflow: hidden;
-  border-radius: 4px;
-  background: #191919;
-}
-.home-header--cover .home-header__line {
-  position: absolute;
-  inset: auto 0 0;
-  min-height: 64px;
-  margin: 0;
-  padding: 12px 20px;
-  align-items: end;
-  background: linear-gradient(transparent, #000b);
-}
-.home-header--cover h1:not(.cloud-shell__sr-only) {
-  margin: 0;
-  min-width: 0;
-  font-size: 32px;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.home-header--cover .home-header__customize {
-  color: #f0efed;
-  background: #191919cc;
-}
-.home-header--cover .home-header__customize:hover {
-  background: #353535;
-}
 .home-header :focus-visible {
   outline: 2px solid #f0efed;
   outline-offset: 2px;
 }
-/* The stage supplies native scroll distance; its shrinking sticky frame stays
-   joined to the workspace below without intercepting either panel's scrolling. */
-.home-page--cover {
-  height: 100dvh;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-anchor: none;
-  overscroll-behavior-y: contain;
-  scrollbar-width: thin;
-  scrollbar-color: #4a4a4a #191919;
-}
-.home-page--cover .home-header {
-  height: var(--home-cover-height);
-}
-.home-page--cover .home-header__frame {
-  position: sticky;
-  top: 0;
-}
-.home-page--cover .home-header__cover {
-  position: absolute;
-  max-width: none;
-  object-fit: fill;
-  border-radius: 0;
-}
-.home-page--cover .home-workspace {
-  flex: 0 0 var(--home-workspace-height);
-}
-@media (max-width: 1400px) {
-  .home-page--cover .home-workspace {
-    flex-basis: auto;
-  }
-  /* Stacked: the tasks panel sits below the fold, so fit the calendar alone
-     to the space the resting cover leaves instead of a fixed 700px. */
-  .home-page--cover .calendar-panel {
-    height: var(--home-workspace-height);
-  }
-}
 @media (max-width: 900px) {
-  .home-header--cover .home-header__line {
-    padding-inline: 12px;
-    gap: 8px;
-  }
-  .home-header--cover h1:not(.cloud-shell__sr-only) {
-    font-size: 27px;
-  }
   .home-header__actions {
     flex-wrap: wrap;
     justify-content: end;
@@ -1049,24 +964,6 @@
 }
 .home-appearance-form button:disabled {
   opacity: 0.5;
-}
-.home-appearance-preview {
-  display: block;
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin: 12px 0;
-}
-.home-appearance-position {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-.home-appearance-position input {
-  padding: 0;
-  accent-color: #ddd6ca;
-  cursor: pointer;
 }
 
 .calendar-toolbar {
@@ -1348,4 +1245,16 @@
   .event-preview-actions button {
     width: 44px;
   }
+}
+
+/* Paper prints these; classic keeps the legend off and the time in the gutter. */
+.calendar-legend,
+.week-now__label {
+  display: none;
+}
+.today-list__all {
+  display: inline-block;
+  margin-top: 12px;
+  color: #9a948a;
+  font-size: 13px;
 }

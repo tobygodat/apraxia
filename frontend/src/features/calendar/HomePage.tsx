@@ -43,6 +43,15 @@ import "./calendar.css";
 import "./homePaper.css";
 import "./weekPaper.css";
 
+/**
+ * A shift rather than something to read: the week prints it in the quiet colour
+ * so the day's shape still shows through. The match is the whole title, so
+ * "Work on the thesis" stays an ordinary event.
+ */
+function isWorkEvent(title: string): boolean {
+  return title.trim().toLowerCase() === "work";
+}
+
 const VISIBLE_HOURS = 15;
 /** Below this the hour rows stop being readable, so the grid scrolls instead. */
 const MIN_HOUR_HEIGHT = 32;
@@ -73,12 +82,6 @@ export function HomePage({
   workspaceSessionKey,
   appearanceService,
 }: HomePageProps) {
-  // A callback ref (rather than useRef) so the element is available to
-  // HomeHeader's layout effect on the very first commit: React flushes a
-  // setState made from a ref callback synchronously before paint, whereas a
-  // plain ref set during the parent's commit isn't visible to a child's
-  // layout effect until a later pass.
-  const [page, setPage] = useState<HTMLDivElement | null>(null);
   // The counts belong to the header's date line, but the rows that produce them
   // are loaded by the Today panel, so the panel hands them up rather than the
   // page opening a second read of the same slice.
@@ -105,11 +108,10 @@ export function HomePage({
   // phone it would push what is due today two screens down, so the order swaps
   // in the markup rather than in CSS: the reading and tab order swap with it.
   return (
-    <div className="home-page" ref={setPage}>
+    <div className="home-page">
       <HomeHeader
         service={appearanceService}
         userId={profile.userId}
-        pageElement={page}
         date={localDate}
         summary={summary}
       />
@@ -210,6 +212,14 @@ export function CalendarPanel({
     <section className="calendar-panel" aria-label="Weekly calendar">
       <header className="calendar-header calendar-toolbar">
         <div className="calendar-toolbar-month">
+          <h2 className="calendar-toolbar-title">
+            <span>{label.slice(0, label.lastIndexOf(" "))}</span>{" "}
+            <span className="calendar-toolbar-year">{label.slice(label.lastIndexOf(" ") + 1)}</span>
+          </h2>
+        </div>
+        <div className="calendar-toolbar-actions">
+          {/* The arrows sit around Today rather than around the month, so one
+              group holds everything that moves the week. */}
           <button
             className="calendar-icon-button"
             aria-label="Previous week"
@@ -218,21 +228,8 @@ export function CalendarPanel({
           >
             <WorkspaceIcon name="left" />
           </button>
-          <h2 className="calendar-toolbar-title">
-            <span>{label.slice(0, label.lastIndexOf(" "))}</span>{" "}
-            <span className="calendar-toolbar-year">{label.slice(label.lastIndexOf(" ") + 1)}</span>
-          </h2>
           <button
-            className="calendar-icon-button"
-            aria-label="Next week"
-            title="Next week"
-            onClick={() => setSunday(addSqlDateDays(sunday, 7))}
-          >
-            <WorkspaceIcon name="right" />
-          </button>
-        </div>
-        <div className="calendar-toolbar-actions">
-          <button
+            className="calendar-today"
             onClick={() => {
               setSunday(startOfWeekSunday(today));
               setNow(new Date());
@@ -240,6 +237,14 @@ export function CalendarPanel({
             }}
           >
             Today
+          </button>
+          <button
+            className="calendar-icon-button"
+            aria-label="Next week"
+            title="Next week"
+            onClick={() => setSunday(addSqlDateDays(sunday, 7))}
+          >
+            <WorkspaceIcon name="right" />
           </button>
           <button
             className="calendar-icon-button calendar-refresh"
@@ -354,8 +359,10 @@ export function CalendarPanel({
         </>
       )}
       <footer className="calendar-footer">
-        <WorkspaceIcon name="clock" />
-        <span>{timezone.replace(/_/g, " ")}</span>
+        <p className="calendar-legend">
+          <strong>Classes</strong> in bold · work in grey · everything else plain
+        </p>
+        <span className="calendar-timezone">{timezone.replace(/_/g, " ")}</span>
       </footer>
     </section>
   );
@@ -513,7 +520,9 @@ export function WeekGrid({
             {allDaySegments.map(({ event, startColumn, endColumn, lane }) => (
               <button
                 type="button"
-                className="calendar-event calendar-event--all-day"
+                className={`calendar-event calendar-event--all-day${
+                  isWorkEvent(event.title) ? " calendar-event--work" : ""
+                }`}
                 key={`${event.calendarId}/${event.eventId}`}
                 onClick={(e) => setPreview({ event, anchor: e.currentTarget })}
                 aria-haspopup="dialog"
@@ -666,7 +675,9 @@ export function WeekGrid({
                       <button
                         type="button"
                         key={`${segment.event.calendarId}/${segment.event.eventId}`}
-                        className={`calendar-event calendar-event--timed calendar-event--rows-${rows}`}
+                        className={`calendar-event calendar-event--timed calendar-event--rows-${rows}${
+                          isWorkEvent(segment.event.title) ? " calendar-event--work" : ""
+                        }`}
                         onClick={(e) =>
                           setPreview({ event: segment.event, anchor: e.currentTarget })
                         }
@@ -749,7 +760,13 @@ export function WeekGrid({
                       ),
                     }}
                     aria-label={`Current time: ${time(now.toISOString())}`}
-                  />
+                  >
+                    {/* Paper prints the time on the line itself; the classic
+                        sheet hides this and keeps it in the hour gutter. */}
+                    <span className="week-now__label" aria-hidden="true">
+                      now · {time(now.toISOString())}
+                    </span>
+                  </div>
                 )}
               </div>
             ))}
