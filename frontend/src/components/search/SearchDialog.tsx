@@ -4,6 +4,7 @@ import type { CollectionService } from "../../features/collections/collectionSer
 import type { SearchRecordType, SearchResult } from "../../types/domain";
 import { useDialogPresence, useWorkspaceRevision } from "../../apps/workspaceStore";
 import "./SearchDialog.css";
+import "./searchPaper.css";
 
 export interface SearchDialogProps {
   open: boolean;
@@ -208,7 +209,12 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
       >
         <header className="search-header">
           <h2 id={`${id}-title`}>Search</h2>
-          <button type="button" aria-disabled={Boolean(selection)} onClick={close}>
+          <button
+            type="button"
+            className="paper-action paper-action--quiet"
+            aria-disabled={Boolean(selection)}
+            onClick={close}
+          >
             Close
           </button>
         </header>
@@ -228,7 +234,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
           placeholder="Search your workspace"
         />
         {error && (
-          <div className="search-error" role="alert">
+          <div className="search-error paper-error" role="alert">
             <p>{error}</p>
             {!selection && (
               <button type="button" onClick={() => setRetry((value) => value + 1)}>
@@ -277,7 +283,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
         {hasMore && !previousResults && (
           <button
             type="button"
-            className="search-more"
+            className="search-more paper-action"
             disabled={loading || Boolean(selection)}
             onClick={() => void fetchResults(loadedQuery, nextOffset)}
           >

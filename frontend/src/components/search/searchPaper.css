@@ -1,0 +1,213 @@
+/* Search in Paper. Sibling of SearchDialog.css, which stays untouched so
+ * classic keeps rendering exactly as it does today.
+ *
+ * Every rule is scoped `[data-theme^="paper"]`, which matches both Paper
+ * presets and never classic. The attribute plus the surface's own class beats
+ * the classic rule it replaces, so nothing here needs `!important`.
+ *
+ * The dialog stops being a rounded, shadowed card and becomes the one surface
+ * that floats: `ground-raised` on a hairline over the scrim. The results stop
+ * being a list of buttons and become a ruled index. Green appears once, under
+ * the row being pointed at.
+ *
+ * `close`, `load more` and the error's `retry search` carry `.paper-action`
+ * and `.paper-error` in the markup; what is left here is undoing the classic
+ * button box those rules do not declare away.
+ */
+
+[data-theme^="paper"] .search-backdrop {
+  padding: var(--space-top) var(--inset) var(--space-24);
+  background: var(--scrim);
+}
+
+[data-theme^="paper"] .search-dialog {
+  /* A results list is a reading column, so it takes `measure` rather than the
+   * 520px a form dialog is capped at. */
+  width: min(var(--measure), 100%);
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  box-shadow: none;
+  scrollbar-color: var(--hairline-strong) var(--ground-raised);
+}
+
+[data-theme^="paper"] .search-header {
+  align-items: baseline;
+  gap: var(--space-md);
+  margin-bottom: var(--space-24);
+}
+
+[data-theme^="paper"] .search-header h2 {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  text-transform: lowercase;
+}
+
+/* The classic sheet gives these three a 36px box the action primitive has no
+ * reason to declare away, and interface words are lowercase in Paper. */
+[data-theme^="paper"] .search-header button,
+[data-theme^="paper"] .search-more,
+[data-theme^="paper"] .search-error button {
+  min-height: 0;
+  border-radius: 0;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .search-dialog button:hover:not(:disabled) {
+  background: transparent;
+}
+
+[data-theme^="paper"] .search-dialog button:disabled,
+[data-theme^="paper"] .search-dialog button[aria-disabled="true"] {
+  opacity: 1;
+  color: var(--faint);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .search-label {
+  margin-bottom: var(--space-8);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .search-input {
+  min-height: 0;
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  font: var(--body);
+  color: var(--text);
+  caret-color: var(--accent);
+  --search-clear-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+}
+
+/* The placeholder is an interface phrase, so it is lowercase like the label
+ * above it. The transform sits on the placeholder alone; what gets typed into
+ * the field keeps its own case. */
+[data-theme^="paper"] .search-input::placeholder {
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* The browser draws its own clear control inside a search field, and on light
+ * paper it draws it blue. Repaint it rather than remove it: it keeps working,
+ * and it stops being the one colour on the page that is not a token. */
+[data-theme^="paper"] .search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  background: var(--muted);
+  -webkit-mask: var(--search-clear-glyph) center / contain no-repeat;
+  mask: var(--search-clear-glyph) center / contain no-repeat;
+}
+
+/* The foundations set one focus ring for the whole app; the classic sheet sets
+ * its own inside this dialog, so it has to be answered here. */
+[data-theme^="paper"] .search-dialog :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+[data-theme^="paper"] .search-status {
+  margin: var(--space-md) 0;
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* Rules, not boxes: the list opens on a hairline and every row closes on one.
+ * The list element is always present, so an empty one must not draw a rule
+ * under nothing on the empty and no-match screens. */
+[data-theme^="paper"] .search-results:not(:empty) {
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .search-results li {
+  border-top: 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .search-results button {
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  color: var(--text);
+}
+
+/* The kind keeps its own column, the way the classes table carries a type. */
+[data-theme^="paper"] .search-result-type {
+  flex-basis: 5.5em;
+  font: var(--fine);
+  color: var(--muted);
+}
+
+/* On a phone the column costs more than it is worth: 5.5em out of the width
+ * leaves a title wrapping every three words. The kind goes above the title
+ * instead, where it reads as the row's first meta line. */
+@media (max-width: 560px) {
+  [data-theme^="paper"] .search-results button {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  [data-theme^="paper"] .search-result-type {
+    flex: 0 0 100%;
+    margin-bottom: var(--space-xs);
+  }
+
+  /* A `flex-basis` of 0 still fits beside a full-width item, so the content
+   * would stay on the first line at zero width. Give it a line of its own. */
+  [data-theme^="paper"] .search-result-content {
+    flex-basis: 100%;
+  }
+}
+
+[data-theme^="paper"] .search-result-content strong {
+  font: var(--body);
+}
+
+/* The row you can act on is the row you are pointing at: the one green. */
+[data-theme^="paper"] .search-results button:hover:not(:disabled) .search-result-content strong,
+[data-theme^="paper"] .search-results button:focus-visible .search-result-content strong {
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .search-result-content .search-result-parent {
+  margin-top: var(--space-xs);
+  font: var(--fine);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .search-result-content > span {
+  margin-top: var(--space-xs);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .search-more {
+  margin-top: var(--space-md);
+}
+
+/* `.paper-error` carries the danger rule and the retry word; the sentence and
+ * the word beside it just need to stack on the primitive's own gap. */
+[data-theme^="paper"] .search-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+[data-theme^="paper"] .search-error p {
+  margin: 0;
+}
+
+[data-theme^="paper"] .search-dialog ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
