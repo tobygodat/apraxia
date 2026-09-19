@@ -7,11 +7,35 @@ import type { PersonalSnapshotNote } from "./personalSnapshot";
  * A full course load, so a scenario can exercise a surface that groups by
  * class against more than the two classes the default seed carries.
  */
+const MATH_NOTES = `# Week 6 — generating functions
+
+A generating function turns a sequence into a single power series, so counting
+becomes algebra.
+
+- ordinary generating functions for unordered counts
+- exponential ones when the order inside a block matters
+- partial fractions are how a closed form falls out
+- the [course page](https://example.invalid/math3012) has the worked examples
+
+## before the quiz
+
+- [x] rework the recurrence from lecture 11
+- [ ] the two starred problems in the notes
+- [ ] office hours friday, bring the partial-fraction question
+
+> “Every counting problem is a generating function you have not written down
+> yet.” — lecture 12
+
+\`\`\`
+a(n) = 3a(n-1) - 2a(n-2),  a(0) = 1, a(1) = 3
+\`\`\`
+`;
+
 const DENSE_COURSES: Course[] = [
-  { id: "cs1332", name: "CS1332", updatedAt: "seed" },
-  { id: "cs2340", name: "CS2340", updatedAt: "seed" },
-  { id: "math2551", name: "MATH2551", updatedAt: "seed" },
-  { id: "phys2211", name: "PHYS2211", updatedAt: "seed" },
+  { id: "cs1332", name: "CS1332", notes: "", updatedAt: "seed" },
+  { id: "cs2340", name: "CS2340", notes: "", updatedAt: "seed" },
+  { id: "math2551", name: "MATH2551", notes: "", updatedAt: "seed" },
+  { id: "phys2211", name: "PHYS2211", notes: "", updatedAt: "seed" },
 ];
 
 export function createClassPersistenceFixture(
@@ -34,7 +58,7 @@ export function createClassPersistenceFixture(
   if (seed) {
     owners.set(
       seed.owner,
-      seed.classes.map((course) => ({ ...course, updatedAt: "seed" })),
+      seed.classes.map((course) => ({ ...course, notes: "", updatedAt: "seed" })),
     );
     for (const note of seed.notes)
       notes.set(note.id, {
@@ -60,10 +84,10 @@ export function createClassPersistenceFixture(
         empty
           ? []
           : [
-              { id: "math3012", name: "MATH3012", updatedAt: "seed" },
+              { id: "math3012", name: "MATH3012", notes: MATH_NOTES, updatedAt: "seed" },
               // A second, untouched class so the list shows both a class with
               // work in it and one with nothing saved yet.
-              { id: "hist2111", name: "HIST2111", updatedAt: "seed" },
+              { id: "hist2111", name: "HIST2111", notes: "", updatedAt: "seed" },
               ...(dense ? DENSE_COURSES : []),
             ],
       );
@@ -80,8 +104,15 @@ export function createClassPersistenceFixture(
       async create(owner, value) {
         const existing = rows(owner).find((c) => c.id === value.id);
         if (existing) return { ...existing };
-        const course = { ...value, updatedAt: String(++revision) };
+        const course = { ...value, notes: "", updatedAt: String(++revision) };
         rows(owner).push(course);
+        return { ...course };
+      },
+      async saveNotes(owner, value, notes) {
+        const course = rows(owner).find((c) => c.id === value.id);
+        if (!course) throw new Error("Couldn’t save these notes. Try again.");
+        course.notes = notes;
+        course.updatedAt = String(++revision);
         return { ...course };
       },
       async rename(owner, value, name) {

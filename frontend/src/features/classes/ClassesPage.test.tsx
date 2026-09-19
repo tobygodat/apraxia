@@ -247,7 +247,7 @@ it("gives each class row its next due date, open count, and note count", async (
     </MemoryRouter>,
   );
   expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
-  expect(screen.getByText("4 open · 2 notes")).toBeTruthy();
+  expect(screen.getByText("4 open · 2 PDFs")).toBeTruthy();
   // A class the totals say nothing about is empty, not unknown.
   expect(screen.getByText("Nothing saved yet")).toBeTruthy();
   expect(screen.queryByText("Open class")).toBeNull();
@@ -295,10 +295,10 @@ it("re-reads the totals when a task saved from the global Add dialog invalidates
       </RevisionHarness>
     </MemoryRouter>,
   );
-  expect(await screen.findByText("4 open · 2 notes")).toBeTruthy();
+  expect(await screen.findByText("4 open · 2 PDFs")).toBeTruthy();
   open = 5;
   fireEvent.click(screen.getByRole("button", { name: "Save an assignment elsewhere" }));
-  expect(await screen.findByText("5 open · 2 notes")).toBeTruthy();
+  expect(await screen.findByText("5 open · 2 PDFs")).toBeTruthy();
   expect(list).toHaveBeenCalledTimes(2);
 });
 it("keeps the class list readable when the totals cannot be read", async () => {
@@ -372,7 +372,7 @@ it("leaves an unfinished upload out of the class header's note count", async () 
   // The header count and the note list resolve from different promises, so the
   // list arriving does not mean the count has. Awaiting the list and then
   // reading the count has failed under a loaded parallel run.
-  expect(await screen.findByText("5 open · 1 note")).toBeTruthy();
+  expect(await screen.findByText("5 open · 1 PDF")).toBeTruthy();
 });
 it("re-dates the class list when local midnight passes with the page still open", async () => {
   const data = createClassPersistenceFixture();

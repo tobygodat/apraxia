@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MarkdownField } from "./markdown/MarkdownField";
+import { MarkdownField } from "../../components/markdown/MarkdownField";
 import { stepTiming } from "./careerPresentation";
 import {
   nextStepOf,

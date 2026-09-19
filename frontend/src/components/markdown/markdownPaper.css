@@ -1,0 +1,127 @@
+/* A markdown note in the Paper theme: its type, its colour and its rules.
+ *
+ * Sibling of `markdown.css`, imported straight after it. Every rule is scoped
+ * `[data-theme^="paper"]`, so classic keeps the plain fallback.
+ *
+ * Each selector names the block as well as the element — `.markdown
+ * .markdown__p`, not `.markdown__p` — which lands it at (0,3,0). That is the
+ * weight the page frame forces: `workspacePaper.css` styles
+ * `.workspace-page p` and `.workspace-page a` at (0,2,1), so a note written at
+ * the element's own weight would have its paragraphs greyed and its links
+ * recoloured by the frame around it. The block class is already on the
+ * rendered tree, so nothing in the markup pays for this.
+ */
+
+[data-theme^="paper"] .markdown-field .markdown-field__hint {
+  font: var(--fine);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .markdown-field .markdown-field__source {
+  min-height: calc(var(--space-lg) * 2);
+  /* Writing shows the source, so the source is set in the face it is written
+     for: markers line up in a column instead of drifting under proportional
+     letters, which is what makes a list readable while it is being typed. */
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* A note's own headings sit under the page's `h1` and its section `h2`, so they
+   are told apart by weight and the space above them, not by size. */
+[data-theme^="paper"] .markdown .markdown__h {
+  font: var(--heading);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .markdown .markdown__h--1 {
+  margin-top: var(--space-md);
+}
+
+[data-theme^="paper"] .markdown .markdown__h--3,
+[data-theme^="paper"] .markdown .markdown__h--4,
+[data-theme^="paper"] .markdown .markdown__h--5,
+[data-theme^="paper"] .markdown .markdown__h--6 {
+  font: var(--small);
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .markdown .markdown__p {
+  font: var(--body);
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+[data-theme^="paper"] .markdown .markdown__list {
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .markdown .markdown__list--ordered {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .markdown .markdown__list--ordered::marker,
+[data-theme^="paper"] .markdown .markdown__item::marker {
+  color: var(--muted);
+}
+
+/* A ticked task reads as done the way a done row does. */
+[data-theme^="paper"] .markdown .markdown__item--done .markdown__item-body {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* A quote is a rule at its edge, not a tinted block. */
+[data-theme^="paper"] .markdown .markdown__quote {
+  margin-inline: 0;
+  padding-left: var(--space-sm);
+  border-left: 1px solid var(--hairline-strong);
+  color: var(--muted);
+}
+
+/* Code is the one place mono appears outside the sign-in screens, and the one
+   documented step outside Literata: a fragment of code has to be read
+   character by character, which a proportional face makes harder. */
+[data-theme^="paper"] .markdown .markdown__pre {
+  padding: var(--space-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+}
+
+[data-theme^="paper"] .markdown .markdown__code,
+[data-theme^="paper"] .markdown .markdown__inline-code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .markdown .markdown__inline-code {
+  padding: 1px var(--space-xs);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--ground-raised);
+}
+
+[data-theme^="paper"] .markdown .markdown__rule {
+  border-top-color: var(--hairline);
+  opacity: 1;
+}
+
+/* A link inside a note is underlined in green like every other word you can
+   act on, and the box beside a task is the note's text, not a control. */
+[data-theme^="paper"] .markdown .markdown__link {
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .markdown .markdown__link:hover {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .markdown .markdown__box {
+  cursor: inherit;
+}

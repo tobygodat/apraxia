@@ -181,9 +181,9 @@ export function SavedClassNotes({
           )}
         </div>
       )}
-      {loaded && !notes.length && <p>No saved notes yet.</p>}
+      {loaded && !notes.length && <p>No PDFs yet.</p>}
       {notes.length > 0 && (
-        <ul className="classes-saved-notes" aria-label="Saved notes">
+        <ul className="classes-saved-notes" aria-label="Saved PDFs">
           {notes.map((note) => {
             const incomplete = !isNoteSaved(note);
             return (

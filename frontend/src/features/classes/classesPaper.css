@@ -191,6 +191,15 @@
   font-weight: 400;
 }
 
+/* ----------------------------------------------------------- written notes */
+
+/* The class's own page, between the assignments and the PDFs saved beside it.
+   `paper-measure` keeps the writing to a readable line; the markdown field
+   brings its own type and rules from `markdownPaper.css`. */
+[data-theme^="paper"] .classes-notes-written {
+  margin: 0 0 var(--space-lg);
+}
+
 /* ------------------------------------------------------------ assignments */
 
 [data-theme^="paper"] .class-assignments {
