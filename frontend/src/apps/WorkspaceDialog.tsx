@@ -1,6 +1,7 @@
 import { type ReactNode, useId } from "react";
 import { Dialog } from "../components/dialog/Dialog";
 import "./workspace.css";
+import "./workspacePaper.css";
 
 export function WorkspaceDialog({
   title,

@@ -76,10 +76,30 @@
   --radius-sm: 2px;
   --radius: 6px;
 
+  /* The icon box. A control that has to restore an icon's size says
+     `var(--icon)` rather than repeating the number. */
+  --icon: 18px;
+
   --gutter: 20px;
+  /* A screen's side padding: the main area's `space-lg`, stepped down to the
+     `gutter` floor on a phone, where 32px a side costs a row of words. Read
+     this rather than writing the query, so every surface insets alike. */
+  --inset: var(--space-lg);
   --sidebar: 208px;
   --measure: 600px;
   --measure-wide: 960px;
+}
+
+/* A phone gets a shorter long step and a shallower top and bottom, so a screen
+   does not open on 64px of nothing. Only these three move; everything else is
+   the same scale at every width. */
+@media (max-width: 560px) {
+  :root[data-theme^="paper"] {
+    --space-lg: 32px;
+    --space-top: 40px;
+    --space-bottom: 40px;
+    --inset: var(--gutter);
+  }
 }
 
 /* The page itself. */
@@ -107,8 +127,8 @@
 
 /* Words first. An icon rides beside its word at text size, never instead of it. */
 [data-theme^="paper"] .paper-icon {
-  width: 18px;
-  height: 18px;
+  width: var(--icon);
+  height: var(--icon);
   flex: none;
   fill: none;
   stroke: currentColor;
@@ -147,6 +167,13 @@
   cursor: pointer;
 }
 
+/* Hover turns the word, and any icon riding beside it, accent. Nothing moves,
+   grows or lifts, and a disabled word does not respond. */
+[data-theme^="paper"] .paper-action:hover:not(:disabled) {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
 [data-theme^="paper"] .paper-action--completing {
   font-weight: 600;
 }
@@ -156,7 +183,9 @@
   text-decoration: none;
 }
 
-[data-theme^="paper"] .paper-action--danger {
+/* A destructive word stays `danger` on hover: green would say the opposite. */
+[data-theme^="paper"] .paper-action--danger,
+[data-theme^="paper"] .paper-action--danger:hover:not(:disabled) {
   color: var(--danger);
   text-decoration-color: var(--danger);
 }
@@ -210,14 +239,69 @@
   color: var(--muted);
 }
 
-[data-theme^="paper"] .paper-check {
+/* A checkbox and a radio are drawn, not filled: the box keeps the page's own
+   ground and only the mark is green, because a filled green square would read
+   as a state and green only ever means "here". Put the class on the input. */
+[data-theme^="paper"] .paper-check,
+[data-theme^="paper"] .paper-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
   width: 18px;
   height: 18px;
   flex: none;
+  margin: 0;
   border: 1px solid var(--outline);
-  border-radius: var(--radius-sm);
   background: var(--ground-raised);
-  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .paper-check {
+  border-radius: var(--radius-sm);
+}
+
+[data-theme^="paper"] .paper-radio {
+  border-radius: 50%;
+}
+
+/* The tick: two sides of a square, turned. */
+[data-theme^="paper"] .paper-check::before {
+  content: "";
+  width: 10px;
+  height: 5px;
+  border-left: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-1px) rotate(-45deg);
+  visibility: hidden;
+}
+
+[data-theme^="paper"] .paper-radio::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  visibility: hidden;
+}
+
+[data-theme^="paper"] .paper-check:checked::before,
+[data-theme^="paper"] .paper-radio:checked::before {
+  visibility: visible;
+}
+
+[data-theme^="paper"] .paper-check:disabled,
+[data-theme^="paper"] .paper-radio:disabled {
+  border-color: var(--hairline-strong);
+  cursor: default;
+}
+
+[data-theme^="paper"] .paper-check:disabled::before {
+  border-color: var(--faint);
+}
+
+[data-theme^="paper"] .paper-radio:disabled::before {
+  background: var(--faint);
 }
 
 /* Navigation: a word in `muted`, and where you are is a green rule under it. */
@@ -229,6 +313,10 @@
   font: var(--body);
   color: var(--muted);
   cursor: pointer;
+}
+
+[data-theme^="paper"] .paper-nav__item:hover {
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .paper-nav__item--current {
@@ -261,6 +349,65 @@
 
 [data-theme^="paper"] .paper-event__meta {
   color: var(--muted);
+}
+
+/* Something went wrong: a line of text against a rule, not a tinted banner.
+   The retry beside it is a `.paper-action--danger`.
+   `.workspace-error` is the classic banner's class, rendered from eight files
+   across every surface, so it answers to this rule too rather than each page
+   adding the class to markup it does not own. The alias goes when the classic
+   class names do; it carries the resets that undo the classic box. */
+:root[data-theme^="paper"] .paper-error,
+:root[data-theme^="paper"] .workspace-error {
+  gap: var(--space-8) var(--space-sm);
+  margin: var(--space-md) 0;
+  padding: 0 0 0 var(--space-sm);
+  border: 0;
+  border-left: 2px solid var(--danger);
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+}
+
+/* The retry inside the banner is an action word, not a bordered button. It
+   comes with the classic button's rules from the shell sheet, so each state
+   is undone by the matching pseudo-class: without them the classic hover,
+   disabled and focus rules outweigh this one and the pill returns. */
+:root[data-theme^="paper"] .paper-error button,
+:root[data-theme^="paper"] .workspace-error button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+  text-decoration: underline 1px var(--danger);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+:root[data-theme^="paper"] .paper-error button:hover:not(:disabled),
+:root[data-theme^="paper"] .workspace-error button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+}
+
+:root[data-theme^="paper"] .paper-error button:disabled,
+:root[data-theme^="paper"] .workspace-error button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  text-decoration: none;
+  cursor: default;
+}
+
+:root[data-theme^="paper"] .paper-error button:focus-visible,
+:root[data-theme^="paper"] .workspace-error button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 /* Reading widths: one column of prose, and the wide one for a dense screen. */
