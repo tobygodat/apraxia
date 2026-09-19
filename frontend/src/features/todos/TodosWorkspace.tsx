@@ -42,7 +42,7 @@ function BoardPlaceholder({ failed, onRetry }: { failed: boolean; onRetry: () =>
         <h1 id="todos-loading-heading">Tasks</h1>
       </header>
       {failed ? (
-        <div className="todos-board-error" role="alert">
+        <div className="todos-board-error paper-error" role="alert">
           <p>{todoLoadErrorCopy("Tasks")}</p>
           <button type="button" onClick={onRetry}>
             Try again

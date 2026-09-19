@@ -24,6 +24,7 @@ import {
   type TodoMutationErrorKind,
 } from "./todoUiState";
 import "./TodosBoard.css";
+import "./todosPaper.css";
 
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
@@ -145,6 +146,7 @@ function TodoCard({
     >
       <label className="todos-board-card__check">
         <input
+          className="paper-check"
           id={primaryControlId}
           type="checkbox"
           checked={todo.completed}
@@ -187,6 +189,7 @@ function TodoCard({
             title="Move to tomorrow"
           >
             <WorkspaceIcon name="tomorrow" />
+            <span className="todos-board-sr-only todos-board-action-word">tomorrow</span>
           </button>
         ) : null}
         <button
@@ -197,6 +200,7 @@ function TodoCard({
           title="Edit task"
         >
           <WorkspaceIcon name="edit" />
+          <span className="todos-board-sr-only todos-board-action-word">edit</span>
         </button>
         <button
           type="button"
@@ -210,6 +214,7 @@ function TodoCard({
           title="Delete task"
         >
           <WorkspaceIcon name="trash" />
+          <span className="todos-board-sr-only todos-board-action-word">delete</span>
         </button>
       </div>
     </article>
@@ -746,7 +751,7 @@ export function TodosBoard({
       </header>
 
       {loadStatus === "error" ? (
-        <div className="todos-board-error" role="alert">
+        <div className="todos-board-error paper-error" role="alert">
           <p>{todoLoadErrorCopy("Tasks")}</p>
           <button type="button" onClick={onRetry}>
             Try again
@@ -761,7 +766,7 @@ export function TodosBoard({
       ) : null}
 
       {mutationError ? (
-        <p className="todos-board-error todos-board-error--mutation" role="alert">
+        <p className="todos-board-error todos-board-error--mutation paper-error" role="alert">
           {todoMutationErrorCopy(mutationError)}
         </p>
       ) : null}
