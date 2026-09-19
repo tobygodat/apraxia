@@ -11,7 +11,7 @@
  * here are outranking one of theirs rather than dressing a bare element, which
  * is why a value the primitives already carry is sometimes restated.
  *
- * `var(--icon, 1em)` appears wherever an icon's classic size has to be
+ * `var(--icon)` appears wherever an icon's classic size has to be
  * replaced. The fallback is for this branch's base, which predates `--icon`;
  * it goes when main is merged, because a bare `var(--icon)` there computes to
  * `auto` and an SVG in a flex row stretches to the line.
@@ -62,8 +62,8 @@
 }
 
 [data-theme^="paper"] .classes-page .classes-back .workspace-icon {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
 }
 
 /* The class name and the line of facts under it are one block, so the shell's
@@ -135,8 +135,8 @@
 }
 
 [data-theme^="paper"] .classes-row > .workspace-icon:last-child {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
   align-self: center;
   color: var(--faint);
 }
@@ -375,8 +375,8 @@
 }
 
 [data-theme^="paper"] .assignment-draft-marker {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
   border: 1px dashed var(--hairline-strong);
   border-radius: var(--radius-sm);
 }
@@ -504,8 +504,8 @@
 }
 
 [data-theme^="paper"] .drive-menu summary .workspace-icon {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
 }
 
 [data-theme^="paper"] .drive-menu > div {
@@ -665,8 +665,8 @@
 }
 
 [data-theme^="paper"] .classes-reader-tools .workspace-icon {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
   vertical-align: -0.2em;
 }
 
@@ -810,8 +810,8 @@
 }
 
 [data-theme^="paper"] .assignment-calendar .workspace-icon {
-  width: var(--icon, 1em);
-  height: var(--icon, 1em);
+  width: var(--icon);
+  height: var(--icon);
 }
 
 [data-theme^="paper"] .assignment-calendar-weekdays {
