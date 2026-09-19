@@ -1,0 +1,822 @@
+/* Paper: the Tasks board, the Today list, and the task dialog.
+ *
+ * Sibling of TodosBoard.css / TodayList.css / TodoFormDialog.css, which stay
+ * as they are. Every rule here is scoped `[data-theme^="paper"]`, so classic
+ * renders exactly as before. Tokens and primitives come from paper.css;
+ * nothing below writes a literal colour, size, or space.
+ */
+
+/* ── the board ─────────────────────────────────────────────────────────── */
+
+/* The classic sheet's own variable names, pointed at Paper tokens, so the
+   rules that read them (a past-due date, the overdue count) land in Paper's
+   palette without the classic sheet being touched. */
+[data-theme^="paper"] .todos-board-page {
+  --todos-board-line: var(--hairline);
+  --todos-board-line-strong: var(--hairline-strong);
+  --todos-board-surface: var(--ground);
+  --todos-board-surface-raised: var(--ground);
+  --todos-board-text: var(--text);
+  --todos-board-muted: var(--muted);
+  --todos-board-faint: var(--faint);
+  --todos-board-overdue: var(--warning);
+  --todos-board-today: var(--accent);
+  min-height: 0;
+  /* The shell owns a page's edges: under Paper it sets `workspace-page-top`
+     and `workspace-page-inset` from the tokens, so the board reads them
+     rather than restating an inset of its own. */
+  padding-top: var(--workspace-page-top, var(--space-top));
+  padding-bottom: var(--space-bottom);
+  color: var(--text);
+  font: var(--body);
+}
+
+/* Literata throughout: the classic sheet sets Segoe UI on five selectors. */
+[data-theme^="paper"] .todos-board-column__header,
+[data-theme^="paper"] .todos-board-nav button,
+[data-theme^="paper"] .todos-board-add,
+[data-theme^="paper"] .todos-board-card__actions button,
+[data-theme^="paper"] .todos-board-error,
+[data-theme^="paper"] .todos-board-undo,
+[data-theme^="paper"] .todos-board-page .todos-board-week,
+[data-theme^="paper"] .todos-board-page .todos-board-card__metadata {
+  font-family: var(--font);
+}
+
+[data-theme^="paper"] .todos-board-toolbar {
+  align-items: baseline;
+  gap: var(--space-24);
+  padding-bottom: var(--space-24);
+}
+
+/* The shell already sets this `display`; the board only lowercases it. */
+[data-theme^="paper"] .todos-board-toolbar h1 {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-week {
+  margin-top: var(--space-xs);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todos-board-overdue {
+  color: var(--warning);
+}
+
+[data-theme^="paper"] .todos-board-overdue::before {
+  margin: 0 var(--space-xs);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .todos-board-controls {
+  gap: var(--space-24);
+}
+
+[data-theme^="paper"] .todos-board-filter {
+  gap: var(--space-8);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* A word with the green rule under it, not a boxed control. */
+[data-theme^="paper"] .todos-board-page .todos-board-filter select {
+  padding: 0 0 var(--space-xs);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-transform: lowercase;
+  text-decoration: underline 2px var(--accent);
+  text-underline-offset: 0.3em;
+  appearance: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-filter select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+[data-theme^="paper"] .todos-board-nav {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .todos-board-nav button {
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-8) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+/* "Today" is a word; the two chevrons are the one icon that may stand alone. */
+[data-theme^="paper"] .todos-board-nav button:not([aria-label]) {
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .todos-board-nav button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+}
+
+[data-theme^="paper"] .todos-board-nav button:hover:not(:disabled),
+[data-theme^="paper"] .todos-board-error button:hover,
+[data-theme^="paper"] .todos-board-card__actions button:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .todos-board-nav svg {
+  width: var(--icon);
+  height: var(--icon);
+  stroke-width: 1.5;
+}
+
+/* Both error banners carry `.paper-error`, which draws the danger rule and
+   turns the retry into an action word. The page only insets them. */
+[data-theme^="paper"] .todos-board-error {
+  margin-inline: var(--workspace-page-inset, var(--inset));
+}
+
+[data-theme^="paper"] .todos-board-error button {
+  min-width: 0;
+}
+
+/* ── the week ──────────────────────────────────────────────────────────── */
+
+[data-theme^="paper"] .todos-board-page .todos-board-scroll {
+  padding-bottom: var(--space-24);
+}
+
+/* The eight columns share the width instead of scrolling sideways: seven days
+   led by today, then the inbox. A window too narrow for the floor width still
+   scrolls, as classic does. */
+[data-theme^="paper"] .todos-board-page .todos-board-columns {
+  width: auto;
+  min-width: 100%;
+  grid-auto-columns: minmax(150px, 1fr);
+  column-gap: var(--space-24);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  transition: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column--drop {
+  border: 0;
+  background: transparent;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column--drop .todos-board-column__tasks {
+  box-shadow: inset 2px 0 0 var(--accent);
+  padding-left: var(--space-8);
+}
+
+/* A day is a table header: the floor of the type scale, and a rule under it. */
+[data-theme^="paper"] .todos-board-page .todos-board-column__header {
+  min-height: 0;
+  align-items: baseline;
+  gap: var(--space-8);
+  padding: 0 0 var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--ground);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column__header h2 {
+  min-height: 2lh;
+  font: var(--fine);
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: lowercase;
+  text-wrap: balance;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column__header > span {
+  min-width: 0;
+  min-height: 0;
+  display: inline;
+  border: 0;
+  border-radius: 0;
+  color: var(--faint);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Today is the one green thing on the board: it marks where you are. */
+[data-theme^="paper"] .todos-board-page .todos-board-column--today .todos-board-column__header {
+  padding-bottom: calc(var(--space-sm) - 1px);
+  border-bottom: 2px solid var(--accent);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column--today .todos-board-column__header h2 {
+  color: var(--text);
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-column__tasks {
+  padding: 0;
+}
+
+/* ── a task ────────────────────────────────────────────────────────────── */
+
+[data-theme^="paper"] .todos-board-page .todos-board-card {
+  grid-template-columns: var(--icon) minmax(0, 1fr);
+  gap: var(--space-8) var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  transition: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-card:hover {
+  background: transparent;
+}
+
+[data-theme^="paper"] .todos-board-card--dragging {
+  opacity: 0.45;
+}
+
+/* The real input carries `.paper-check` and draws itself, so classic's
+   clipped input and its stand-in square both step aside. */
+[data-theme^="paper"] .todos-board-page .todos-board-card__check {
+  width: var(--icon);
+  height: auto;
+  align-items: start;
+  padding-top: var(--space-xs);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-card__check input {
+  position: static;
+  width: var(--icon);
+  height: var(--icon);
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-card__check > span[aria-hidden="true"] {
+  display: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-card__body p {
+  margin: 0;
+  font: var(--body);
+  text-wrap: pretty;
+}
+
+[data-theme^="paper"] .todos-board-card--completed .todos-board-card__body p {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-card__metadata {
+  gap: var(--space-xs) var(--space-8);
+  margin-top: var(--space-xs);
+  color: var(--muted);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Items are joined by ` · `, sitting in the line rather than beside it. */
+[data-theme^="paper"] .todos-board-page .todos-board-card__metadata > * + *::before,
+[data-theme^="paper"]
+  .todos-board-page
+  .todos-board-card__metadata
+  > *
+  + *.todo-source-chip::before {
+  position: static;
+  right: auto;
+  margin-right: var(--space-xs);
+  color: var(--faint);
+  content: "·";
+}
+
+/* Dates and clock times are interface words: "due sep 6", "11:59 pm". A
+   class code or a project's name is the user's own and keeps its case. */
+[data-theme^="paper"] .todos-board-page .todos-board-card__metadata time {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todos-board-card__due--past {
+  color: var(--warning);
+}
+
+/* No pill: a task's class or project is a word in the row's metadata. */
+[data-theme^="paper"] .todo-source-chip {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font: var(--fine);
+}
+
+/* "Repeats every 2 weeks" says it; the glyph beside it does not. */
+[data-theme^="paper"] .todo-repeat-mark .todo-repeat-mark__icon {
+  display: none;
+}
+
+[data-theme^="paper"] .todo-repeat-mark__assistive {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* Words, not a row of glyphs: the actions sit under the task they act on. */
+[data-theme^="paper"] .todos-board-page .todos-board-card__actions {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  gap: var(--space-sm);
+  margin-top: 0;
+  opacity: 1;
+  transition: none;
+}
+
+/* A row's actions repeat down the whole board, so they stay plain words:
+   the one green on this screen is the rule under today. */
+[data-theme^="paper"] .todos-board-card__actions button {
+  width: auto;
+  min-height: 0;
+  display: inline;
+  padding: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font: var(--fine);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .todos-board-card__actions button:last-child:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .todos-board-card__actions button[aria-disabled="true"],
+[data-theme^="paper"] .todos-board-card__actions button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .todos-board-card__actions .workspace-icon {
+  display: none;
+}
+
+/* The word each action button carries, hidden in classic, shown here. */
+[data-theme^="paper"] .todos-board-card__actions .todos-board-action-word {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-add {
+  min-height: 0;
+  padding: var(--space-sm) 0;
+  border-radius: 0;
+  color: var(--muted);
+  font: var(--small);
+  text-decoration: none;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-add:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-add svg {
+  display: none;
+}
+
+/* ── undo ──────────────────────────────────────────────────────────────── */
+
+[data-theme^="paper"] .todos-board-undo {
+  right: var(--workspace-page-inset, var(--inset));
+  bottom: var(--space-24);
+  min-height: 0;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .todos-board-undo p {
+  font: var(--small);
+}
+
+[data-theme^="paper"] .todos-board-undo p[role="alert"] {
+  margin-top: var(--space-xs);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .todos-board-undo button {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todos-board-undo button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+}
+
+[data-theme^="paper"] .todos-board-undo .todos-board-undo__dismiss {
+  width: auto;
+  min-width: 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .todos-board-undo__dismiss svg {
+  width: var(--icon);
+  height: var(--icon);
+}
+
+/* ── the phone ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 620px) {
+  [data-theme^="paper"] .todos-board-toolbar {
+    gap: var(--space-md);
+  }
+
+  [data-theme^="paper"] .todos-board-page .todos-board-columns {
+    gap: var(--space-24);
+  }
+
+  /* A day's name leads its own stack, so it carries the section heading, on
+     one line: nothing below it has to line up with a neighbour. */
+  [data-theme^="paper"] .todos-board-page .todos-board-column__header h2 {
+    min-height: 0;
+    font: var(--heading);
+    color: var(--text);
+  }
+
+  [data-theme^="paper"] .todos-board-page .todos-board-column__header > span {
+    font: var(--small);
+  }
+}
+
+/* ── the today list ────────────────────────────────────────────────────── */
+
+[data-theme^="paper"] .today-list {
+  --today-list-line: var(--hairline);
+  --today-list-line-strong: var(--hairline-strong);
+  --today-list-text: var(--text);
+  --today-list-muted: var(--muted);
+  --today-list-faint: var(--faint);
+  --today-list-overdue: var(--warning);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+}
+
+[data-theme^="paper"] .today-list__header p,
+[data-theme^="paper"] .today-list__add,
+[data-theme^="paper"] .today-list__error,
+[data-theme^="paper"] .today-list__empty,
+[data-theme^="paper"] .today-list__undo,
+[data-theme^="paper"] .today-list-item__meta,
+[data-theme^="paper"] .today-list-item__actions button {
+  font-family: var(--font);
+}
+
+[data-theme^="paper"] .today-list__header {
+  gap: var(--space-md);
+  padding: var(--space-24) var(--gutter) var(--space-md);
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .today-list__header h2 {
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .today-list__header p {
+  margin-top: var(--space-xs);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .today-list__add,
+[data-theme^="paper"] .today-list__error button,
+[data-theme^="paper"] .today-list__empty button,
+[data-theme^="paper"] .today-list__undo button,
+[data-theme^="paper"] .today-list-item__actions button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  font-weight: 400;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .today-list__add:hover,
+[data-theme^="paper"] .today-list__error button:hover,
+[data-theme^="paper"] .today-list__empty button:hover,
+[data-theme^="paper"] .today-list__undo button:hover:not([aria-disabled="true"]),
+[data-theme^="paper"] .today-list-item__actions button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .today-list__add svg {
+  display: none;
+}
+
+/* Today and tomorrow are two words; where you are carries the green rule. */
+[data-theme^="paper"] .today-list__day-switch {
+  display: flex;
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .today-list__day-switch button {
+  padding: var(--space-xs) 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .today-list__day-switch button[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .today-list__error {
+  margin-inline: var(--gutter);
+}
+
+[data-theme^="paper"] .today-list-item {
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .today-list-item--drop-before::before,
+[data-theme^="paper"] .today-list-item--drop-after::after {
+  background: var(--accent);
+}
+
+[data-theme^="paper"] .today-list-item article {
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--gutter);
+  transition: none;
+}
+
+[data-theme^="paper"] .today-list-item article:hover,
+[data-theme^="paper"] .today-list-item article:focus-within {
+  background: transparent;
+}
+
+[data-theme^="paper"] .today-list-item__drag {
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .today-list-item__check input {
+  position: static;
+  width: var(--icon);
+  height: var(--icon);
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+}
+
+[data-theme^="paper"] .today-list-item__check > span[aria-hidden="true"] {
+  display: none;
+}
+
+[data-theme^="paper"] .today-list-item__content > p {
+  margin: 0;
+  font: var(--body);
+  text-wrap: pretty;
+}
+
+[data-theme^="paper"] .today-list-item__meta {
+  gap: var(--space-xs) var(--space-8);
+  margin-top: var(--space-xs);
+  color: var(--muted);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .today-list-item__meta time {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .today-list-item--overdue .today-list-item__meta time:first-child {
+  color: var(--warning);
+}
+
+[data-theme^="paper"] .today-list-item__actions {
+  margin-top: var(--space-8);
+}
+
+[data-theme^="paper"] .today-list-item__manage {
+  gap: var(--space-sm);
+}
+
+[data-theme^="paper"] .today-list-item__actions button {
+  color: var(--muted);
+  font: var(--fine);
+  text-decoration: none;
+}
+
+[data-theme^="paper"]
+  .today-list-item__actions
+  button:last-child:hover:not([aria-disabled="true"]) {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .today-list-item__actions svg {
+  display: none;
+}
+
+[data-theme^="paper"] .today-list__empty,
+[data-theme^="paper"] .today-list__pending-empty {
+  min-height: 0;
+  place-content: start;
+  justify-items: start;
+  gap: var(--space-sm);
+  padding: var(--space-24) var(--gutter);
+  color: var(--muted);
+  font: var(--small);
+  text-align: left;
+}
+
+[data-theme^="paper"] .today-list__undo {
+  gap: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) var(--gutter);
+  border-top: 1px solid var(--hairline);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .today-list__undo p[role="alert"] {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .today-list__undo-actions {
+  gap: var(--space-md);
+}
+
+/* ── the task dialog ───────────────────────────────────────────────────── */
+
+[data-theme^="paper"] .todo-dialog-backdrop {
+  padding: var(--space-24);
+  background: var(--scrim);
+}
+
+/* The dialog itself is `.paper-dialog`; what is left here is what the classic
+   sheet adds on top of a box: a shadow and an entrance. Paper is still. */
+[data-theme^="paper"] .todo-dialog {
+  box-shadow: none;
+  font: var(--body);
+  animation: none;
+}
+
+[data-theme^="paper"] .todo-dialog__header {
+  padding-block-end: var(--space-md);
+  border-block-end: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .todo-dialog__header h2 {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todo-dialog__header p {
+  margin-top: var(--space-8);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .todo-dialog__form {
+  gap: var(--space-md);
+  padding-block-start: var(--space-md);
+}
+
+[data-theme^="paper"] .todo-dialog__details {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .todo-dialog__field {
+  gap: var(--space-xs);
+}
+
+[data-theme^="paper"] .todo-dialog__field label {
+  color: var(--muted);
+  font: var(--fine);
+  letter-spacing: normal;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .todo-dialog__field input,
+[data-theme^="paper"] .todo-dialog__field select {
+  min-height: 0;
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground);
+  color: var(--text);
+  caret-color: var(--accent);
+  font: var(--body);
+  transition: none;
+}
+
+[data-theme^="paper"] .todo-dialog__field input::placeholder {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .todo-dialog__field input[aria-invalid="true"],
+[data-theme^="paper"] .todo-dialog__field select[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+[data-theme^="paper"] .todo-dialog__hint {
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .todo-dialog__field-error,
+[data-theme^="paper"] .todo-dialog__submit-error {
+  color: var(--danger);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .todo-dialog__repeat {
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--space-md);
+}
+
+[data-theme^="paper"] .todo-dialog__actions {
+  gap: var(--space-24);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .todo-dialog__button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .todo-dialog__button--primary {
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .todo-dialog__button--quiet {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .todo-edit-dialog__task {
+  color: var(--text);
+  font: var(--body);
+}
