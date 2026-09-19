@@ -6,9 +6,34 @@ import type {
 } from "../../types/domain";
 import type { CalendarService } from "./calendarService";
 import "./calendar.css";
+import "./settingsPaper.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
+import {
+  WORKSPACE_THEME_PRESETS,
+  useWorkspacePreferences,
+  type WorkspaceThemePreset,
+} from "../../apps/workspacePreferences";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
+
+/**
+ * What each preset is called and what it looks like. The names are interface
+ * words, so Paper lowercases them; classic prints them as written.
+ */
+const THEME_COPY: Record<WorkspaceThemePreset, { name: string; description: string }> = {
+  classic: {
+    name: "Classic",
+    description: "Charcoal surfaces, Georgia headings, the workspace as it is today.",
+  },
+  paper: {
+    name: "Paper",
+    description: "Warm dark paper, Literata throughout, rules instead of boxes.",
+  },
+  "paper-light": {
+    name: "Paper light",
+    description: "The same page on light paper.",
+  },
+};
 
 /** `Intl.supportedValuesOf` is ES2022; this build targets ES2020. */
 type IntlWithSupportedValues = typeof Intl & {
@@ -112,13 +137,46 @@ export function SettingsPage({
       }
     })();
   };
+  const { preferences, setTheme } = useWorkspacePreferences();
   useColdLoad(loading && status === null && !error);
   return (
     <section className="calendar-settings" aria-labelledby="calendar-settings-title">
       <h1 id="calendar-settings-title">Settings</h1>
 
       <section>
-        <h2>Google Calendar</h2>
+        {/* The heading names the group, so there is no legend repeating it. */}
+        <h2 className="paper-heading settings-heading" id="settings-appearance-title">
+          Appearance
+        </h2>
+        <fieldset role="radiogroup" aria-labelledby="settings-appearance-title">
+          <div className="settings-list">
+            {WORKSPACE_THEME_PRESETS.map((preset) => (
+              <label key={preset} className="paper-row settings-choice">
+                {/* The name alone names the control; the sentence describes it,
+                    rather than both running together into one long label. */}
+                <input
+                  className="paper-radio"
+                  type="radio"
+                  name="workspace-theme"
+                  value={preset}
+                  checked={preferences.theme === preset}
+                  onChange={() => setTheme(preset)}
+                  aria-label={THEME_COPY[preset].name}
+                  aria-describedby={`settings-theme-${preset}-note`}
+                />
+                <span className="settings-choice__name">{THEME_COPY[preset].name}</span>
+                <span className="settings-choice__note" id={`settings-theme-${preset}-note`}>
+                  {THEME_COPY[preset].description}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <p className="calendar-muted">This choice is saved on this device only.</p>
+      </section>
+
+      <section>
+        <h2 className="paper-heading">Google Calendar</h2>
         <p>
           Add, edit, and delete events on calendars you can edit. Choose which calendars appear on
           Home.
@@ -140,6 +198,7 @@ export function SettingsPage({
             <div className="calendar-controls">
               {
                 <button
+                  className="paper-action paper-action--completing"
                   disabled={busy}
                   onClick={() =>
                     void act(async () => {
@@ -154,6 +213,7 @@ export function SettingsPage({
               }
               {status && status.connectionState !== "disconnected" && (
                 <button
+                  className="paper-action paper-action--danger"
                   disabled={busy}
                   onClick={() =>
                     void act(async () => {
@@ -171,39 +231,42 @@ export function SettingsPage({
               <fieldset disabled={busy}>
                 <legend>Visible calendars</legend>
                 {calendars.length ? (
-                  calendars.map((calendar) => (
-                    <label key={calendar.id}>
-                      <input
-                        type="checkbox"
-                        checked={calendar.isVisible}
-                        onChange={(event) => {
-                          const visible = event.target.checked;
-                          const applyVisibility = (isVisible: boolean) =>
-                            setCalendars((current) =>
-                              current.map((item) =>
-                                item.id === calendar.id ? { ...item, isVisible } : item,
-                              ),
-                            );
-                          // Show the tick immediately and roll back on failure:
-                          // waiting for the round trip made the box look stuck.
-                          applyVisibility(visible);
-                          void act(async () => {
-                            try {
-                              await service.setVisibility(calendar.id, visible);
-                            } catch (reason) {
-                              applyVisibility(!visible);
-                              throw reason;
-                            }
-                          });
-                        }}
-                      />
-                      <span
-                        className="calendar-swatch"
-                        style={{ backgroundColor: calendar.color.background ?? "#b7bcc9" }}
-                      />
-                      <span>{calendar.displayName}</span>
-                    </label>
-                  ))
+                  <div className="settings-list">
+                    {calendars.map((calendar) => (
+                      <label key={calendar.id} className="paper-row settings-calendar">
+                        <input
+                          className="paper-check"
+                          type="checkbox"
+                          checked={calendar.isVisible}
+                          onChange={(event) => {
+                            const visible = event.target.checked;
+                            const applyVisibility = (isVisible: boolean) =>
+                              setCalendars((current) =>
+                                current.map((item) =>
+                                  item.id === calendar.id ? { ...item, isVisible } : item,
+                                ),
+                              );
+                            // Show the tick immediately and roll back on failure:
+                            // waiting for the round trip made the box look stuck.
+                            applyVisibility(visible);
+                            void act(async () => {
+                              try {
+                                await service.setVisibility(calendar.id, visible);
+                              } catch (reason) {
+                                applyVisibility(!visible);
+                                throw reason;
+                              }
+                            });
+                          }}
+                        />
+                        <span
+                          className="calendar-swatch"
+                          style={{ backgroundColor: calendar.color.background ?? "#b7bcc9" }}
+                        />
+                        <span>{calendar.displayName}</span>
+                      </label>
+                    ))}
+                  </div>
                 ) : (
                   <p>No calendars found.</p>
                 )}
@@ -223,7 +286,7 @@ export function SettingsPage({
       </section>
 
       <section>
-        <h2>Timezone</h2>
+        <h2 className="paper-heading settings-heading">Timezone</h2>
         {onSaveTimezone ? (
           <>
             {/* The section heading already names it; the label is for the control. */}
@@ -231,6 +294,7 @@ export function SettingsPage({
               Timezone
             </label>
             <select
+              className="paper-field"
               id="settings-timezone"
               value={timezone}
               disabled={timezoneBusy}
@@ -261,8 +325,9 @@ export function SettingsPage({
       </section>
 
       <section>
-        <h2>Account</h2>
+        <h2 className="paper-heading settings-heading">Account</h2>
         <button
+          className="paper-action"
           disabled={busy}
           onClick={() =>
             void act(async () => {
