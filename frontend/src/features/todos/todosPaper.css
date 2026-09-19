@@ -184,7 +184,9 @@
   padding-left: var(--space-8);
 }
 
-/* A day is a table header: the floor of the type scale, and a rule under it. */
+/* A day is a rule with its name above it, at the reading size. The redesign
+ * reference sets a day column's head at body size, not at the floor of the
+ * scale, so the count beside it carries the smaller step on its own. */
 [data-theme^="paper"] .todos-board-page .todos-board-column__header {
   min-height: 0;
   align-items: baseline;
@@ -196,8 +198,7 @@
 
 [data-theme^="paper"] .todos-board-page .todos-board-column__header h2 {
   min-height: 2lh;
-  font: var(--fine);
-  font-weight: 400;
+  font: var(--body);
   color: var(--muted);
   text-transform: lowercase;
   text-wrap: balance;

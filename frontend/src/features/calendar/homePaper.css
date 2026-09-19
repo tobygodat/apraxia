@@ -482,10 +482,13 @@
   font: var(--body);
 }
 
+/* The panel holds a handful of rows in a 300px column rather than a week's
+ * worth in seven, so the redesign reference gives its metadata the `small`
+ * step and keeps the floor of the scale for the denser board. */
 [data-theme^="paper"] .home-workspace .today-list-item__meta {
   display: block;
   margin-top: 0;
-  font: var(--fine);
+  font: var(--small);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }

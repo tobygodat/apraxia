@@ -35,23 +35,26 @@
   border-bottom: 1px solid var(--hairline);
 }
 
-/* A day is its name over its date, aligned with the text of its events. */
+/* A day is its name and its date on one line, centred over its column, as the
+ * redesign reference draws it: `sun 13`, both halves at the reading size. */
 [data-theme^="paper"] .week-head .week-days > div {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: var(--space-xs);
   padding: var(--space-8) var(--space-8) var(--space-sm);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  text-align: left;
 }
 
 [data-theme^="paper"] .week-head span {
   color: var(--muted);
-  font: var(--fine);
+  font: var(--body);
   text-transform: lowercase;
   letter-spacing: normal;
 }
 
 [data-theme^="paper"] .week-head strong {
-  display: block;
   width: auto;
   height: auto;
   margin-top: 0;
@@ -73,8 +76,10 @@
   font-weight: 600;
 }
 
+/* Today carries its whole label, name and date alike, at 600 in `--text`. */
 [data-theme^="paper"] .week-head .is-today span {
   color: var(--text);
+  font-weight: 600;
 }
 
 [data-theme^="paper"] .week-all-day > span {
