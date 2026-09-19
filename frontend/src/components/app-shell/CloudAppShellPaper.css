@@ -15,8 +15,13 @@
 
 [data-theme^="paper"] .cloud-shell {
   --cloud-shell-sidebar-width: var(--sidebar);
-  --workspace-page-inset: var(--space-lg);
-  --workspace-page-top: var(--space-lg);
+  /* The page's sides and the strip's both read this one name. It takes the
+     foundations' `--inset`; the fallback is this branch's base, which predates
+     it, and carries the same values rather than classic's clamp. */
+  --workspace-page-inset: var(--inset, var(--space-lg));
+  /* Three page sheets read this one for their own top padding, so Paper's
+     value has to live here rather than only in `.workspace-page`. */
+  --workspace-page-top: var(--space-top);
   background: var(--ground);
   color: var(--text);
   font: var(--body);
@@ -447,9 +452,9 @@
   [data-theme^="paper"] .cloud-shell {
     /* A screen keeps at least `gutter` at its sides, and on a phone that
        floor is what the strip needs: `space-lg` here costs a fifth of the
-       width and pushes the strip's own words onto a third row. The top and
-       bottom keep their tokens, which the 560px query shrinks. */
-    --workspace-page-inset: var(--gutter);
+       width and pushes the strip's own words onto a third row. `--inset`
+       says the same thing at 560px and below, so this goes when it lands. */
+    --workspace-page-inset: var(--inset, var(--gutter));
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
   }
