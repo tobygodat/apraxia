@@ -121,9 +121,8 @@
 
 /* ------------------------------------------------------- the status filter */
 
-/* Paper draws the filter as a row of words, so the page renders those instead
-   of the `select`; both spellings are styled here because the select is what
-   a browser without the words falls back to. */
+/* Paper draws the filter as a row of words; the page renders those in place of
+   the classic `select`, so nothing here styles one. */
 [data-theme^="paper"] .collection-page .collection-filter {
   display: flex;
   align-items: baseline;
@@ -150,18 +149,8 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .collection-page .collection-filter label,
 [data-theme^="paper"] .collection-page .collection-filter__label {
   text-transform: lowercase;
-}
-
-[data-theme^="paper"] .collection-page .collection-filter select {
-  padding: var(--space-8) var(--space-sm);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius);
-  background-color: var(--ground-raised);
-  color: var(--text);
-  font: var(--small);
 }
 
 /* ----------------------------------------------------------- ruled rows */
@@ -424,6 +413,7 @@
 [data-theme^="paper"] .collection-page .collection-task-text .collection-meta,
 [data-theme^="paper"] .collection-page--project .collection-task-text .collection-meta {
   display: inline;
+  text-transform: lowercase;
   margin: 0;
   font: var(--fine);
   font-family: var(--font);
@@ -578,6 +568,10 @@
 [data-theme^="paper"] .collection-editor .collection-field textarea {
   font-family: var(--font);
   resize: vertical;
+}
+
+[data-theme^="paper"] .collection-editor .collection-field select {
+  text-transform: lowercase;
 }
 
 [data-theme^="paper"] .collection-editor .collection-field input::placeholder,
