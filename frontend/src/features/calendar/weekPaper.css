@@ -283,11 +283,11 @@
 
 /* Words first: these two are an icon alone in classic, so each takes its word
  * beside the icon, as the toolbar's refresh does in `homePaper.css`. */
-[data-theme^="paper"] .event-preview-actions button::after {
+[data-theme^="paper"] .event-preview-actions button[aria-label="Edit event"]::after {
   content: "edit";
 }
 
-[data-theme^="paper"] .event-preview-actions button + button::after {
+[data-theme^="paper"] .event-preview-actions button[aria-label="Close"]::after {
   content: "close";
 }
 
