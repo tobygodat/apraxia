@@ -27,8 +27,10 @@
 /* Classic neutralises the browser's button font here. Paper needs the same for
    plain controls, but an action sets its own type in `paper.css`, so it is
    excluded: `font: inherit` would otherwise hand it the page's `body` size and,
-   being a shorthand, reset a completing action's weight back to 400. */
-[data-theme^="paper"] .collection-page button:not(.paper-action),
+   being a shorthand, reset a completing action's weight back to 400. The guard
+   is `:where()`, not `:not()`, because `:not()` would add its argument's
+   specificity and let this rule outrank the class overrides further down. */
+[data-theme^="paper"] .collection-page button:where(:not(.paper-action)),
 [data-theme^="paper"] .collection-page select {
   font: inherit;
 }

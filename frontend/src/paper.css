@@ -239,6 +239,16 @@
   color: var(--muted);
 }
 
+/* The classic `select` rule declares `color-scheme: dark` on the element, which
+   beats the `light` the paper-light root hands down, so the native menu would
+   open dark over a light page. The chevron that rule draws is a separate
+   problem, but it belongs to whichever sheet sizes the control: a boxed field
+   needs one, and a select styled as an underlined word, like the tasks board
+   filter, already says it opens. */
+[data-theme^="paper"] select {
+  color-scheme: inherit;
+}
+
 /* A checkbox and a radio are drawn, not filled: the box keeps the page's own
    ground and only the mark is green, because a filled green square would read
    as a state and green only ever means "here". Put the class on the input. */
