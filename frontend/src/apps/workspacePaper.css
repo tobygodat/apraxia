@@ -58,9 +58,17 @@
 }
 
 /* There are no buttons in Paper: an action is a word with a rule under it.
-   A page's own Paper sheet overrides this for anything it shapes itself. */
-[data-theme^="paper"] .workspace-page button,
-[data-theme^="paper"] .workspace-notice button {
+   A page's own Paper sheet overrides this for anything it shapes itself.
+ *
+ * A word that already carries `.paper-action` is excluded, because this rule
+ * restates the primitive's own `color` and `text-decoration` and outranks it:
+ * a container class plus `button` is (0,2,1) against the primitive's (0,2,0),
+ * so `--quiet` and `--danger` would lose their colour, and the hover below
+ * would turn a destructive word green. The guard is `:where()`, not bare
+ * `:not()`, which would add a class's weight and lift this rule a step against
+ * everything else it meets. */
+[data-theme^="paper"] .workspace-page button:where(:not(.paper-action)),
+[data-theme^="paper"] .workspace-notice button:where(:not(.paper-action)) {
   min-height: 0;
   padding: 0;
   border: 0;
@@ -72,13 +80,13 @@
   text-underline-offset: 0.2em;
 }
 
-[data-theme^="paper"] .workspace-page button:hover:not(:disabled),
-[data-theme^="paper"] .workspace-notice button:hover:not(:disabled) {
+[data-theme^="paper"] .workspace-page button:where(:not(.paper-action)):hover:not(:disabled),
+[data-theme^="paper"] .workspace-notice button:where(:not(.paper-action)):hover:not(:disabled) {
   color: var(--accent);
 }
 
-[data-theme^="paper"] .workspace-page button:disabled,
-[data-theme^="paper"] .workspace-notice button:disabled {
+[data-theme^="paper"] .workspace-page button:where(:not(.paper-action)):disabled,
+[data-theme^="paper"] .workspace-notice button:where(:not(.paper-action)):disabled {
   color: var(--faint);
   text-decoration: none;
 }
