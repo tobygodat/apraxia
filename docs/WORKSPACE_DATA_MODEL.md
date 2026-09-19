@@ -183,6 +183,15 @@ accept:
 | `class` | `classes` | the course code | null |
 | `class_note` | `class_notes` | the note UUID | the course code |
 
+Each row also reports a `title` and a `snippet`, and since
+`supabase/migrations/20260919010000_search_snippet.sql` the two never carry the
+same text. A record with a name of its own (an idea's title, a project's title,
+a class name, a note filename) is titled by it and shows its longer text as the
+snippet. A record without one (a task, an untitled idea) is titled by the
+opening of its own text, cut back to a word boundary at 160 characters, and the
+snippet is the remainder of that text, empty when the title already showed all
+of it. A snippet equal to its title is dropped.
+
 `record_id` is therefore `text`, not `uuid`: a class is identified by the course
 code that is its primary key. Soft-deleted todos, ideas, and projects are
 excluded; classes and notes are hard-deleted and have nothing to exclude.
