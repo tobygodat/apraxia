@@ -1,12 +1,394 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-15T00:00:00.000Z",
+  "generatedAt": "2026-09-19T03:45:00.000Z",
   "title": "Design System: apraxia",
   "extensions": {
     "colorMeta": {
-      "primary": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Paper Dark",
+        "canonical": "#1b1a19",
+        "tonalRamp": [
+          "oklch(15.00% 0.00248 67.70)",
+          "oklch(26.43% 0.00248 67.70)",
+          "oklch(37.86% 0.00248 67.70)",
+          "oklch(49.29% 0.00248 67.70)",
+          "oklch(60.71% 0.00248 67.70)",
+          "oklch(72.14% 0.00248 67.70)",
+          "oklch(83.57% 0.00248 67.70)",
+          "oklch(95.00% 0.00248 67.70)"
+        ],
+        "note": "The page itself. Nothing is layered on it but rules and type."
+      },
+      "ground-raised": {
+        "role": "neutral",
+        "displayName": "Paper Raised",
+        "canonical": "#252422",
+        "tonalRamp": [
+          "oklch(15.00% 0.00397 84.58)",
+          "oklch(26.43% 0.00397 84.58)",
+          "oklch(37.86% 0.00397 84.58)",
+          "oklch(49.29% 0.00397 84.58)",
+          "oklch(60.71% 0.00397 84.58)",
+          "oklch(72.14% 0.00397 84.58)",
+          "oklch(83.57% 0.00397 84.58)",
+          "oklch(95.00% 0.00397 84.58)"
+        ],
+        "note": "The one step up, for a dialog or a drawn control. No shadow accompanies it."
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#e8e5df",
+        "tonalRamp": [
+          "oklch(15.00% 0.00869 84.57)",
+          "oklch(26.43% 0.00869 84.57)",
+          "oklch(37.86% 0.00869 84.57)",
+          "oklch(49.29% 0.00869 84.57)",
+          "oklch(60.71% 0.00869 84.57)",
+          "oklch(72.14% 0.00869 84.57)",
+          "oklch(83.57% 0.00869 84.57)",
+          "oklch(95.00% 0.00869 84.57)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#a39e96",
+        "tonalRamp": [
+          "oklch(15.00% 0.01287 79.77)",
+          "oklch(26.43% 0.01287 79.77)",
+          "oklch(37.86% 0.01287 79.77)",
+          "oklch(49.29% 0.01287 79.77)",
+          "oklch(60.71% 0.01287 79.77)",
+          "oklch(72.14% 0.01287 79.77)",
+          "oklch(83.57% 0.01287 79.77)",
+          "oklch(95.00% 0.01287 79.77)"
+        ],
+        "note": "Supporting lines and quiet actions."
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint Ink",
+        "canonical": "#6f6b65",
+        "tonalRamp": [
+          "oklch(15.00% 0.01050 78.24)",
+          "oklch(26.43% 0.01050 78.24)",
+          "oklch(37.86% 0.01050 78.24)",
+          "oklch(49.29% 0.01050 78.24)",
+          "oklch(60.71% 0.01050 78.24)",
+          "oklch(72.14% 0.01050 78.24)",
+          "oklch(83.57% 0.01050 78.24)",
+          "oklch(95.00% 0.01050 78.24)"
+        ],
+        "note": "A control that cannot be used."
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#3b3936",
+        "tonalRamp": [
+          "oklch(15.00% 0.00585 78.25)",
+          "oklch(26.43% 0.00585 78.25)",
+          "oklch(37.86% 0.00585 78.25)",
+          "oklch(49.29% 0.00585 78.25)",
+          "oklch(60.71% 0.00585 78.25)",
+          "oklch(72.14% 0.00585 78.25)",
+          "oklch(83.57% 0.00585 78.25)",
+          "oklch(95.00% 0.00585 78.25)"
+        ],
+        "note": "The 1px rule that separates rows, in place of a card edge."
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "#5a5752",
+        "tonalRamp": [
+          "oklch(15.00% 0.00887 80.70)",
+          "oklch(26.43% 0.00887 80.70)",
+          "oklch(37.86% 0.00887 80.70)",
+          "oklch(49.29% 0.00887 80.70)",
+          "oklch(60.71% 0.00887 80.70)",
+          "oklch(72.14% 0.00887 80.70)",
+          "oklch(83.57% 0.00887 80.70)",
+          "oklch(95.00% 0.00887 80.70)"
+        ]
+      },
+      "outline": {
+        "role": "neutral",
+        "displayName": "Outline",
+        "canonical": "#7d7972",
+        "tonalRamp": [
+          "oklch(15.00% 0.01161 81.78)",
+          "oklch(26.43% 0.01161 81.78)",
+          "oklch(37.86% 0.01161 81.78)",
+          "oklch(49.29% 0.01161 81.78)",
+          "oklch(60.71% 0.01161 81.78)",
+          "oklch(72.14% 0.01161 81.78)",
+          "oklch(83.57% 0.01161 81.78)",
+          "oklch(95.00% 0.01161 81.78)"
+        ],
+        "note": "The edge of a drawn field or checkbox."
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Selection",
+        "canonical": "#4a463f",
+        "tonalRamp": [
+          "oklch(15.00% 0.01270 81.76)",
+          "oklch(26.43% 0.01270 81.76)",
+          "oklch(37.86% 0.01270 81.76)",
+          "oklch(49.29% 0.01270 81.76)",
+          "oklch(60.71% 0.01270 81.76)",
+          "oklch(72.14% 0.01270 81.76)",
+          "oklch(83.57% 0.01270 81.76)",
+          "oklch(95.00% 0.01270 81.76)"
+        ]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Here Green",
+        "canonical": "#8fd18a",
+        "tonalRamp": [
+          "oklch(15.00% 0.11888 142.73)",
+          "oklch(26.43% 0.11888 142.73)",
+          "oklch(37.86% 0.11888 142.73)",
+          "oklch(49.29% 0.11888 142.73)",
+          "oklch(60.71% 0.11888 142.73)",
+          "oklch(72.14% 0.11888 142.73)",
+          "oklch(83.57% 0.11888 142.73)",
+          "oklch(95.00% 0.11888 142.73)"
+        ],
+        "note": "The only colour with a meaning: it marks where you are, and the one action that completes a screen. Never a fill, never decoration."
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger Clay",
+        "canonical": "#e8907c",
+        "tonalRamp": [
+          "oklch(15.00% 0.11150 33.56)",
+          "oklch(26.43% 0.11150 33.56)",
+          "oklch(37.86% 0.11150 33.56)",
+          "oklch(49.29% 0.11150 33.56)",
+          "oklch(60.71% 0.11150 33.56)",
+          "oklch(72.14% 0.11150 33.56)",
+          "oklch(83.57% 0.11150 33.56)",
+          "oklch(95.00% 0.11150 33.56)"
+        ],
+        "note": "A destructive word, and the 2px rule beside an error."
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Late Amber",
+        "canonical": "#e0b565",
+        "tonalRamp": [
+          "oklch(15.00% 0.11042 81.58)",
+          "oklch(26.43% 0.11042 81.58)",
+          "oklch(37.86% 0.11042 81.58)",
+          "oklch(49.29% 0.11042 81.58)",
+          "oklch(60.71% 0.11042 81.58)",
+          "oklch(72.14% 0.11042 81.58)",
+          "oklch(83.57% 0.11042 81.58)",
+          "oklch(95.00% 0.11042 81.58)"
+        ],
+        "note": "Late, and nothing else."
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "rgba(0, 0, 0, 0.55)",
+        "note": "Behind the one surface that floats."
+      },
+      "light-ground": {
+        "role": "neutral",
+        "displayName": "Paper Light",
+        "canonical": "#f4f1eb",
+        "tonalRamp": [
+          "oklch(15.00% 0.00861 84.57)",
+          "oklch(26.43% 0.00861 84.57)",
+          "oklch(37.86% 0.00861 84.57)",
+          "oklch(49.29% 0.00861 84.57)",
+          "oklch(60.71% 0.00861 84.57)",
+          "oklch(72.14% 0.00861 84.57)",
+          "oklch(83.57% 0.00861 84.57)",
+          "oklch(95.00% 0.00861 84.57)"
+        ]
+      },
+      "light-ground-raised": {
+        "role": "neutral",
+        "displayName": "Paper Light Raised",
+        "canonical": "#fbf9f5",
+        "tonalRamp": [
+          "oklch(15.00% 0.00571 84.57)",
+          "oklch(26.43% 0.00571 84.57)",
+          "oklch(37.86% 0.00571 84.57)",
+          "oklch(49.29% 0.00571 84.57)",
+          "oklch(60.71% 0.00571 84.57)",
+          "oklch(72.14% 0.00571 84.57)",
+          "oklch(83.57% 0.00571 84.57)",
+          "oklch(95.00% 0.00571 84.57)"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Light Ink",
+        "canonical": "#1b1a19",
+        "tonalRamp": [
+          "oklch(15.00% 0.00248 67.70)",
+          "oklch(26.43% 0.00248 67.70)",
+          "oklch(37.86% 0.00248 67.70)",
+          "oklch(49.29% 0.00248 67.70)",
+          "oklch(60.71% 0.00248 67.70)",
+          "oklch(72.14% 0.00248 67.70)",
+          "oklch(83.57% 0.00248 67.70)",
+          "oklch(95.00% 0.00248 67.70)"
+        ]
+      },
+      "light-muted": {
+        "role": "neutral",
+        "displayName": "Light Muted Ink",
+        "canonical": "#6b665e",
+        "tonalRamp": [
+          "oklch(15.00% 0.01388 79.73)",
+          "oklch(26.43% 0.01388 79.73)",
+          "oklch(37.86% 0.01388 79.73)",
+          "oklch(49.29% 0.01388 79.73)",
+          "oklch(60.71% 0.01388 79.73)",
+          "oklch(72.14% 0.01388 79.73)",
+          "oklch(83.57% 0.01388 79.73)",
+          "oklch(95.00% 0.01388 79.73)"
+        ]
+      },
+      "light-faint": {
+        "role": "neutral",
+        "displayName": "Light Faint Ink",
+        "canonical": "#9a948a",
+        "tonalRamp": [
+          "oklch(15.00% 0.01611 80.68)",
+          "oklch(26.43% 0.01611 80.68)",
+          "oklch(37.86% 0.01611 80.68)",
+          "oklch(49.29% 0.01611 80.68)",
+          "oklch(60.71% 0.01611 80.68)",
+          "oklch(72.14% 0.01611 80.68)",
+          "oklch(83.57% 0.01611 80.68)",
+          "oklch(95.00% 0.01611 80.68)"
+        ]
+      },
+      "light-hairline": {
+        "role": "neutral",
+        "displayName": "Light Hairline",
+        "canonical": "#d9d3c9",
+        "tonalRamp": [
+          "oklch(15.00% 0.01513 80.70)",
+          "oklch(26.43% 0.01513 80.70)",
+          "oklch(37.86% 0.01513 80.70)",
+          "oklch(49.29% 0.01513 80.70)",
+          "oklch(60.71% 0.01513 80.70)",
+          "oklch(72.14% 0.01513 80.70)",
+          "oklch(83.57% 0.01513 80.70)",
+          "oklch(95.00% 0.01513 80.70)"
+        ]
+      },
+      "light-hairline-strong": {
+        "role": "neutral",
+        "displayName": "Light Hairline Strong",
+        "canonical": "#b8b1a5",
+        "tonalRamp": [
+          "oklch(15.00% 0.01860 81.32)",
+          "oklch(26.43% 0.01860 81.32)",
+          "oklch(37.86% 0.01860 81.32)",
+          "oklch(49.29% 0.01860 81.32)",
+          "oklch(60.71% 0.01860 81.32)",
+          "oklch(72.14% 0.01860 81.32)",
+          "oklch(83.57% 0.01860 81.32)",
+          "oklch(95.00% 0.01860 81.32)"
+        ]
+      },
+      "light-outline": {
+        "role": "neutral",
+        "displayName": "Light Outline",
+        "canonical": "#857f75",
+        "tonalRamp": [
+          "oklch(15.00% 0.01654 80.67)",
+          "oklch(26.43% 0.01654 80.67)",
+          "oklch(37.86% 0.01654 80.67)",
+          "oklch(49.29% 0.01654 80.67)",
+          "oklch(60.71% 0.01654 80.67)",
+          "oklch(72.14% 0.01654 80.67)",
+          "oklch(83.57% 0.01654 80.67)",
+          "oklch(95.00% 0.01654 80.67)"
+        ]
+      },
+      "light-selection": {
+        "role": "neutral",
+        "displayName": "Light Selection",
+        "canonical": "#e3dccf",
+        "tonalRamp": [
+          "oklch(15.00% 0.01910 83.06)",
+          "oklch(26.43% 0.01910 83.06)",
+          "oklch(37.86% 0.01910 83.06)",
+          "oklch(49.29% 0.01910 83.06)",
+          "oklch(60.71% 0.01910 83.06)",
+          "oklch(72.14% 0.01910 83.06)",
+          "oklch(83.57% 0.01910 83.06)",
+          "oklch(95.00% 0.01910 83.06)"
+        ]
+      },
+      "light-accent": {
+        "role": "secondary",
+        "displayName": "Here Green, on light paper",
+        "canonical": "#2e7d4f",
+        "tonalRamp": [
+          "oklch(15.00% 0.10614 154.60)",
+          "oklch(26.43% 0.10614 154.60)",
+          "oklch(37.86% 0.10614 154.60)",
+          "oklch(49.29% 0.10614 154.60)",
+          "oklch(60.71% 0.10614 154.60)",
+          "oklch(72.14% 0.10614 154.60)",
+          "oklch(83.57% 0.10614 154.60)",
+          "oklch(95.00% 0.10614 154.60)"
+        ],
+        "note": "Darkened rather than reused: the dark preset's green does not hold its contrast on light paper."
+      },
+      "light-danger": {
+        "role": "semantic",
+        "displayName": "Danger Clay, on light paper",
+        "canonical": "#a63d2a",
+        "tonalRamp": [
+          "oklch(15.00% 0.14259 32.40)",
+          "oklch(26.43% 0.14259 32.40)",
+          "oklch(37.86% 0.14259 32.40)",
+          "oklch(49.29% 0.14259 32.40)",
+          "oklch(60.71% 0.14259 32.40)",
+          "oklch(72.14% 0.14259 32.40)",
+          "oklch(83.57% 0.14259 32.40)",
+          "oklch(95.00% 0.14259 32.40)"
+        ]
+      },
+      "light-warning": {
+        "role": "semantic",
+        "displayName": "Late Amber, on light paper",
+        "canonical": "#8a5a00",
+        "tonalRamp": [
+          "oklch(15.00% 0.10800 73.30)",
+          "oklch(26.43% 0.10800 73.30)",
+          "oklch(37.86% 0.10800 73.30)",
+          "oklch(49.29% 0.10800 73.30)",
+          "oklch(60.71% 0.10800 73.30)",
+          "oklch(72.14% 0.10800 73.30)",
+          "oklch(83.57% 0.10800 73.30)",
+          "oklch(95.00% 0.10800 73.30)"
+        ]
+      },
+      "light-scrim": {
+        "role": "neutral",
+        "displayName": "Light Scrim",
+        "canonical": "rgba(27, 26, 25, 0.32)"
+      },
+      "classic-primary": {
         "role": "primary",
-        "displayName": "Warm Paper",
+        "displayName": "Classic Primary",
+        "canonical": "#f0efed",
         "tonalRamp": [
           "oklch(15.00% 0.00288 84.56)",
           "oklch(26.43% 0.00288 84.56)",
@@ -16,26 +398,29 @@
           "oklch(72.14% 0.00288 84.56)",
           "oklch(83.57% 0.00288 84.56)",
           "oklch(95.00% 0.00288 84.56)"
-        ]
+        ],
+        "note": "Legacy. Classic is the default preset until Toby retires it."
       },
-      "today": {
+      "classic-today": {
         "role": "secondary",
-        "displayName": "Today Green",
+        "displayName": "Classic Today Green",
         "canonical": "#8fc981",
         "tonalRamp": [
-          "oklch(15.00% 0.14 276)",
-          "oklch(26.43% 0.14 276)",
-          "oklch(37.86% 0.14 276)",
-          "oklch(49.29% 0.14 276)",
-          "oklch(60.71% 0.14 276)",
-          "oklch(72.14% 0.14 276)",
-          "oklch(83.57% 0.14 276)",
-          "oklch(95.00% 0.14 276)"
-        ]
+          "oklch(15.00% 0.11592 139.62)",
+          "oklch(26.43% 0.11592 139.62)",
+          "oklch(37.86% 0.11592 139.62)",
+          "oklch(49.29% 0.11592 139.62)",
+          "oklch(60.71% 0.11592 139.62)",
+          "oklch(72.14% 0.11592 139.62)",
+          "oklch(83.57% 0.11592 139.62)",
+          "oklch(95.00% 0.11592 139.62)"
+        ],
+        "note": "Legacy. One day header on the Tasks board carries it."
       },
-      "canvas": {
+      "classic-canvas": {
         "role": "neutral",
-        "displayName": "Charcoal Canvas",
+        "displayName": "Classic Canvas",
+        "canonical": "#191919",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -45,11 +430,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "sidebar": {
+      "classic-sidebar": {
         "role": "neutral",
-        "displayName": "Sidebar Charcoal",
+        "displayName": "Classic Sidebar",
+        "canonical": "#202020",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -59,11 +446,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "hover": {
+      "classic-hover": {
         "role": "neutral",
-        "displayName": "Hover Charcoal",
+        "displayName": "Classic Hover",
+        "canonical": "#292929",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -73,11 +462,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "selected": {
+      "classic-selected": {
         "role": "neutral",
-        "displayName": "Selected Charcoal",
+        "displayName": "Classic Selected",
+        "canonical": "#2c2c2c",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -87,11 +478,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "line": {
+      "classic-line": {
         "role": "neutral",
-        "displayName": "Graphite Rule",
+        "displayName": "Classic Line",
+        "canonical": "#303030",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -101,11 +494,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "muted": {
+      "classic-muted": {
         "role": "neutral",
-        "displayName": "Warm Grey",
+        "displayName": "Classic Muted",
+        "canonical": "#ada9a3",
         "tonalRamp": [
           "oklch(15.00% 0.00969 78.27)",
           "oklch(26.43% 0.00969 78.27)",
@@ -115,11 +510,13 @@
           "oklch(72.14% 0.00969 78.27)",
           "oklch(83.57% 0.00969 78.27)",
           "oklch(95.00% 0.00969 78.27)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "field": {
+      "classic-field": {
         "role": "neutral",
-        "displayName": "Ink Field",
+        "displayName": "Classic Field",
+        "canonical": "#111111",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -129,11 +526,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "dialog": {
+      "classic-dialog": {
         "role": "neutral",
-        "displayName": "Dialog Charcoal",
+        "displayName": "Classic Dialog",
+        "canonical": "#181818",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -143,11 +542,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "raised": {
+      "classic-raised": {
         "role": "neutral",
-        "displayName": "Raised Charcoal",
+        "displayName": "Classic Raised",
+        "canonical": "#242424",
         "tonalRamp": [
           "oklch(15.00% 0.00000 89.88)",
           "oklch(26.43% 0.00000 89.88)",
@@ -157,11 +558,13 @@
           "oklch(72.14% 0.00000 89.88)",
           "oklch(83.57% 0.00000 89.88)",
           "oklch(95.00% 0.00000 89.88)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "error": {
+      "classic-error": {
         "role": "semantic",
-        "displayName": "Soft Error Rose",
+        "displayName": "Classic Error",
+        "canonical": "#ffb4b4",
         "tonalRamp": [
           "oklch(15.00% 0.08779 19.07)",
           "oklch(26.43% 0.08779 19.07)",
@@ -171,11 +574,13 @@
           "oklch(72.14% 0.08779 19.07)",
           "oklch(83.57% 0.08779 19.07)",
           "oklch(95.00% 0.08779 19.07)"
-        ]
+        ],
+        "note": "Legacy."
       },
-      "overdue": {
+      "classic-overdue": {
         "role": "semantic",
-        "displayName": "Overdue Clay",
+        "displayName": "Classic Overdue",
+        "canonical": "#ddb1a4",
         "tonalRamp": [
           "oklch(15.00% 0.05474 37.08)",
           "oklch(26.43% 0.05474 37.08)",
@@ -185,254 +590,253 @@
           "oklch(72.14% 0.05474 37.08)",
           "oklch(83.57% 0.05474 37.08)",
           "oklch(95.00% 0.05474 37.08)"
-        ]
+        ],
+        "note": "Legacy."
       }
     },
     "typographyMeta": {
-      "headline": {
-        "displayName": "Page heading",
-        "purpose": "Shared workspace page titles."
+      "display": {
+        "displayName": "Display",
+        "purpose": "A page's own name, and nothing else. Literata is self-hosted at /fonts/apraxia-8.woff2 and carries the whole theme. Only 400 and 600 are drawn; no synthetic bold is used."
       },
-      "section-heading": {
-        "displayName": "Section heading",
-        "purpose": "Georgia band heading beneath a page's main content; the Tasks Inbox band."
+      "title": {
+        "displayName": "Title",
+        "purpose": "A dialog's title, or a month above the calendar."
       },
-      "ledger-date": {
-        "displayName": "Ledger date",
-        "purpose": "Tasks board day-column date and month; tabular numerals."
-      },
-      "ledger-weekday": {
-        "displayName": "Ledger weekday",
-        "purpose": "Weekday beside the ledger date, white at 50% alpha (60% on today)."
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "A section within a page. Paper draws a green `// ` before it, which is the one place the accent appears without marking position."
       },
       "body": {
-        "displayName": "Task body",
-        "purpose": "Compact task text."
+        "displayName": "Body",
+        "purpose": "The reading size. A row's own text."
       },
-      "navigation": {
-        "displayName": "Navigation",
-        "purpose": "Sidebar destinations."
+      "small": {
+        "displayName": "Small",
+        "purpose": "Actions, dates, metadata, help and error text, footers."
       },
-      "label": {
-        "displayName": "Toolbar label",
-        "purpose": "Shell Add and related controls."
+      "fine": {
+        "displayName": "Fine",
+        "purpose": "The floor: a column header, an event's time and place. Figures here are tabular."
       },
-      "dialog-action": {
-        "displayName": "Dialog action",
-        "purpose": "Task-dialog primary and quiet actions."
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Italic, for a caption under an image."
+      },
+      "classic-headline": {
+        "displayName": "Classic Headline",
+        "purpose": "Legacy: Georgia, classic only."
+      },
+      "classic-section-heading": {
+        "displayName": "Classic Section Heading",
+        "purpose": "Legacy: Georgia, classic only."
+      },
+      "classic-body": {
+        "displayName": "Classic Body",
+        "purpose": "Legacy: Segoe UI, classic only."
+      },
+      "classic-label": {
+        "displayName": "Classic Label",
+        "purpose": "Legacy: Segoe UI, classic only."
+      },
+      "classic-dialog-action": {
+        "displayName": "Classic Dialog Action",
+        "purpose": "Legacy: Segoe UI, classic only."
+      },
+      "sign-in-headline": {
+        "displayName": "Sign-in Headline",
+        "purpose": "Space Grotesk, on the signed-out screen only. That screen predates both themes and is not themed."
+      },
+      "sign-in-eyebrow": {
+        "displayName": "Sign-in Eyebrow",
+        "purpose": "JetBrains Mono, on the signed-out screen only."
       }
     },
-    "shadows": [
-      {
-        "name": "account-menu",
-        "value": "0 12px 32px #0005",
-        "purpose": "Floating account menu."
-      },
-      {
-        "name": "workspace-notice",
-        "value": "0 8px 24px #0006",
-        "purpose": "Temporary notice."
-      },
-      {
-        "name": "workspace-dialog",
-        "value": "0 20px 60px #0008",
-        "purpose": "General workspace dialog."
-      },
-      {
-        "name": "task-dialog",
-        "value": "0 24px 70px rgba(0, 0, 0, 0.48)",
-        "purpose": "Task creation and editing."
-      },
-      {
-        "name": "tasks-undo-toast",
-        "value": "0 18px 48px rgba(0, 0, 0, 0.42)",
-        "purpose": "Fixed undo toast on the Tasks board."
-      }
-    ],
-    "motion": [
-      {
-        "name": "navigation",
-        "value": "140ms ease",
-        "purpose": "Color and background transitions."
-      },
-      {
-        "name": "task-dialog-controls",
-        "value": "150ms ease-out",
-        "purpose": "Field and action states."
-      },
-      {
-        "name": "task-dialog-enter",
-        "value": "180ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Dialog entry; disabled with reduced motion."
-      },
-      {
-        "name": "ledger-row-raise",
-        "value": "160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
-        "purpose": "Tasks row hover/focus-within background raise; disabled with reduced motion."
-      },
-      {
-        "name": "ledger-reveal",
-        "value": "120ms ease-out",
-        "purpose": "Checkbox, action, and add-slot label reveal on hover or focus; disabled with reduced motion."
-      },
-      {
-        "name": "ledger-week-in",
-        "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Week change: the ledger fades in from 8px below, keyed to the visible week; disabled with reduced motion."
-      }
-    ],
+    "shadows": [],
+    "motion": [],
     "breakpoints": [
       {
-        "name": "sidebar-narrow",
-        "value": "1200px"
+        "name": "home-cover-narrow",
+        "value": "1400px",
+        "purpose": "Home's cover gives up its height."
       },
       {
-        "name": "ledger-autofill",
-        "value": "1180px"
+        "name": "sidebar-narrow",
+        "value": "1200px",
+        "purpose": "The sidebar narrows."
       },
       {
         "name": "icon-rail",
-        "value": "980px"
+        "value": "980px",
+        "purpose": "The sidebar collapses to its rail."
       },
       {
         "name": "home-stack",
-        "value": "900px"
+        "value": "900px",
+        "purpose": "Home stacks the calendar over the task list."
+      },
+      {
+        "name": "shell-phone",
+        "value": "760px",
+        "purpose": "The shell becomes a phone layout."
+      },
+      {
+        "name": "board-stack",
+        "value": "620px",
+        "purpose": "The tasks board and Home's week stop scrolling sideways."
       },
       {
         "name": "classes-stack",
-        "value": "760px"
+        "value": "600px",
+        "purpose": "A class page reads as one column."
       },
       {
-        "name": "horizontal-navigation",
-        "value": "620px"
-      },
-      {
-        "name": "task-dialog-stack",
-        "value": "560px"
+        "name": "phone-gutter",
+        "value": "560px",
+        "purpose": "The one Paper token step-down: `space-lg` drops to 32px and `inset` to the 20px gutter, because 32px a side costs a phone a row of words."
       }
     ],
     "notes": [
-      "Tonal ramps are synthesized preview metadata, not observed application tokens.",
-      "Component snippets are documentation previews, not full application behavior.",
-      "The source uses component-scoped CSS properties. Literal fallbacks make snippets render outside the app.",
-      "Snapshot of local code, including pre-existing uncommitted work; not production certification.",
-      "Extended 2026-09-15 for the Tasks week ledger (features/todos/TodosBoard.css). The 22px ledger headers and 26px section heading are recorded additions off the earlier ramp, and Today Green is the recorded exception to the Semantic Color Rule."
+      "Paper carries no elevation and no motion. Both arrays above are empty on purpose, not unfilled: the theme separates with rules and space, and a dialog is the one surface that floats, with a hairline and a scrim rather than a shadow.",
+      "Four rules in the Paper sheets are written as `box-shadow: inset 2px 0 0 var(--accent)`. They draw a 2px rule where a border would change an element's box, so they are geometry, not elevation.",
+      "Classic still ships as the default preset and does carry shadows and transitions. They are deliberately not recorded here: this sidecar describes the system new work is written against, and DESIGN.md names classic frozen.",
+      "Tonal ramps are synthesized preview metadata at each colour's own chroma and hue. The shipped token is `canonical`; a ramp step is not an application token.",
+      "A scrim is the one colour with no ramp: it ships as a translucent black, and a ramp of it would describe the paper underneath rather than the colour itself.",
+      "Component snippets below are documentation previews with values inlined from the Paper dark preset. The application reads them as custom properties, which switch with the preset."
     ]
   },
   "components": [
     {
-      "name": "Task dialog primary action",
+      "name": "Action word",
       "kind": "button",
-      "refersTo": "button-primary",
-      "description": "Task-dialog save button; the collection variant uses smaller corners.",
-      "html": "<button class=\"ds-primary\">Save task</button>",
-      "css": ".ds-primary{min-height:42px;padding:9px 17px;border:1px solid transparent;border-radius:999px;background:#f0efed;color:#181818;font:500 11px/1.2 \"Segoe UI\",system-ui,sans-serif;letter-spacing:.025em;cursor:pointer;transition:background 150ms ease-out}.ds-primary:hover:not(:disabled){background:#fff}.ds-primary:disabled{opacity:.52;cursor:wait}.ds-primary:focus-visible,.ds-quiet:focus-visible,.ds-field:focus-visible,.ds-nav:focus-visible{outline:2px solid #f0efed;outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+      "refersTo": "action-word",
+      "description": "There are no buttons in Paper. An action is a word with a 1px green rule under it. The word that completes a screen is the same word at 600; a quiet action drops the rule; a destructive one is clay and stays clay on hover.",
+      "html": "<div class=\"ds-actions\"><button class=\"ds-act\">add task</button><button class=\"ds-act ds-act--completing\">add project</button><button class=\"ds-act ds-act--quiet\">open</button><button class=\"ds-act ds-act--danger\">delete</button></div>",
+      "css": ".ds-actions{display:flex;gap:24px;align-items:baseline;background:#1b1a19;padding:16px}.ds-act{padding:0;border:0;background:transparent;color:#e8e5df;font:400 15px/1.6 Literata,Georgia,serif;text-align:left;text-decoration:underline 1px #8fd18a;text-underline-offset:.2em;cursor:pointer}.ds-act:hover:not(:disabled){color:#8fd18a;text-decoration-color:#8fd18a}.ds-act--completing{font-weight:600}.ds-act--quiet{color:#a39e96;text-decoration:none}.ds-act--danger,.ds-act--danger:hover:not(:disabled){color:#e8907c;text-decoration-color:#e8907c}.ds-act:focus-visible{outline:2px solid #8fd18a;outline-offset:3px}"
     },
     {
-      "name": "Shell Add action",
-      "kind": "button",
-      "refersTo": "button-quiet",
-      "description": "Compact outlined toolbar action.",
-      "html": "<button class=\"ds-quiet\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add</button>",
-      "css": ".ds-quiet{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 12px;border:1px solid #484848;border-radius:5px;background:transparent;color:var(--cloud-shell-text,#f0efed);font:12px/1.4 \"Segoe UI\",system-ui,sans-serif;cursor:pointer}.ds-quiet:hover:not(:disabled){background:#292929;border-color:#707070}.ds-quiet:disabled{opacity:.55;cursor:wait}.ds-primary:focus-visible,.ds-quiet:focus-visible,.ds-field:focus-visible,.ds-nav:focus-visible{outline:2px solid #f0efed;outline-offset:3px}"
+      "name": "Row",
+      "kind": "list-item",
+      "refersTo": "row",
+      "description": "A list is rows separated by a hairline, never cards. `now` carries a 2px green rule at its left; `done` is muted and struck through; late metadata turns amber. Figures in metadata are tabular.",
+      "html": "<ul class=\"ds-rows\"><li class=\"ds-row ds-row--now\">Return the library books<span class=\"ds-meta\">due sep 15</span></li><li class=\"ds-row\">Problem set 3<span class=\"ds-meta ds-meta--late\">sep 12</span></li><li class=\"ds-row ds-row--done\">Send the venue confirmation</li></ul>",
+      "css": ".ds-rows{list-style:none;margin:0;padding:16px;background:#1b1a19}.ds-row{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:12px 0;border-bottom:1px solid #3b3936;background:transparent;font:400 17px/1.6 Literata,Georgia,serif;color:#e8e5df}.ds-row--now{border-left:2px solid #8fd18a;padding-left:12px}.ds-row--done{color:#a39e96;text-decoration:line-through}.ds-meta{font:400 13px/1.5 Literata,Georgia,serif;color:#a39e96;font-variant-numeric:tabular-nums}.ds-meta--late{color:#e0b565}"
     },
     {
-      "name": "Collection text field",
+      "name": "Section heading",
+      "kind": "heading",
+      "refersTo": "heading",
+      "description": "A section within a page, with the green `// ` that opens it. This is the one place the accent appears without marking position.",
+      "html": "<h2 class=\"ds-heading\">appearance</h2>",
+      "css": ".ds-heading{margin:0;padding:16px;background:#1b1a19;font:600 17px/1.3 Literata,Georgia,serif;color:#e8e5df;text-wrap:balance}.ds-heading::before{content:\"// \";color:#8fd18a}"
+    },
+    {
+      "name": "Field",
       "kind": "input",
-      "refersTo": "input",
-      "description": "Labeled inset text field from collection editors.",
-      "html": "<label class=\"ds-label\">Title<input class=\"ds-field\" placeholder=\"Add a title\" /></label>",
-      "css": ".ds-label{display:grid;gap:8px;color:#ada9a3;font:11px \"Segoe UI\",system-ui,sans-serif}.ds-field{min-width:0;min-height:44px;padding:10px 12px;border:1px solid #747474;border-radius:8px;background:#111111;color:#f0efed;font:15px/1.55 \"Segoe UI\",system-ui,sans-serif;caret-color:white}.ds-field::placeholder{color:#ada9a3}.ds-field:disabled{opacity:.6}.ds-primary:focus-visible,.ds-quiet:focus-visible,.ds-field:focus-visible,.ds-nav:focus-visible{outline:2px solid #f0efed;outline-offset:3px}"
+      "refersTo": "field",
+      "description": "The one place Paper draws a box, because a field has to say where typing goes. 6px corners, a 1px outline, the raised ground.",
+      "html": "<div class=\"ds-wrap\"><input class=\"ds-field\" placeholder=\"what needs doing\"></div>",
+      "css": ".ds-wrap{padding:16px;background:#1b1a19}.ds-field{width:100%;padding:8px 12px;border:1px solid #7d7972;border-radius:6px;background:#252422;color:#e8e5df;font:400 17px/1.6 Literata,Georgia,serif}.ds-field::placeholder{color:#a39e96}.ds-field:focus-visible{outline:2px solid #8fd18a;outline-offset:3px}"
     },
     {
-      "name": "Active navigation item",
+      "name": "Checkbox",
+      "kind": "checkbox",
+      "refersTo": "checkbox",
+      "description": "Drawn, not filled: the box keeps the page's ground and only the tick is green, because a filled green square would read as a state and green only ever means here. 18px, and `padding: 0` against the classic `input` rule.",
+      "html": "<label class=\"ds-check-row\"><input class=\"ds-check\" type=\"checkbox\" checked> Work and study</label>",
+      "css": ".ds-check-row{display:flex;align-items:center;gap:8px;padding:16px;background:#1b1a19;font:400 17px/1.6 Literata,Georgia,serif;color:#e8e5df}.ds-check{appearance:none;-webkit-appearance:none;display:inline-grid;place-content:center;width:18px;height:18px;flex:none;margin:0;padding:0;border:1px solid #7d7972;border-radius:2px;background:#252422;cursor:pointer}.ds-check::before{content:\"\";width:10px;height:5px;border-left:2px solid #8fd18a;border-bottom:2px solid #8fd18a;transform:translateY(-1px) rotate(-45deg);visibility:hidden}.ds-check:checked::before{visibility:visible}.ds-check:focus-visible{outline:2px solid #8fd18a;outline-offset:3px}"
+    },
+    {
+      "name": "Navigation item",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Sidebar link with the existing Home icon and active fill.",
-      "html": "<nav aria-label=\"Example navigation\"><a class=\"ds-nav\" href=\"#home\" aria-current=\"page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 10 9-7 9 7v10H3Z M9 20v-7h6v7\"/></svg>Home</a></nav>",
-      "css": ".ds-nav{display:flex;align-items:center;gap:12px;min-height:39px;padding:9px 11px;border-radius:5px;background:#2c2c2c;color:var(--cloud-shell-text,#f0efed);font:13px \"Segoe UI\",system-ui,sans-serif;text-decoration:none;transition:color 140ms ease,background-color 140ms ease}.ds-nav:hover{background:#292929}.ds-primary:focus-visible,.ds-quiet:focus-visible,.ds-field:focus-visible,.ds-nav:focus-visible{outline:2px solid #f0efed;outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-nav{transition:none}}"
+      "description": "Where you are is a 2px green rule under the word, and the word in full ink. Everything else is muted. No pill, no fill.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item ds-nav-item--current\">current</button><button class=\"ds-nav-item\">active</button><button class=\"ds-nav-item\">someday</button></nav>",
+      "css": ".ds-nav{display:flex;gap:16px;padding:16px;background:#1b1a19}.ds-nav-item{padding:8px 0;border:0;border-bottom:2px solid transparent;background:transparent;font:400 17px/1.6 Literata,Georgia,serif;color:#a39e96;cursor:pointer}.ds-nav-item:hover{color:#8fd18a}.ds-nav-item--current{color:#e8e5df;border-bottom-color:#8fd18a}.ds-nav-item:focus-visible{outline:2px solid #8fd18a;outline-offset:3px}"
     },
     {
-      "name": "Today and Tomorrow choices",
-      "kind": "chip",
-      "refersTo": "day-choice",
-      "description": "Snapshot of the existing day switch; preview buttons do not change application state.",
-      "html": "<div class=\"ds-days\" role=\"group\" aria-label=\"Task day\"><button class=\"ds-day\" aria-pressed=\"true\">Today</button><button class=\"ds-day\" aria-pressed=\"false\">Tomorrow</button></div>",
-      "css": ".ds-days{display:flex;gap:3px}.ds-day{min-height:26px;padding:3px 9px;border:0;border-radius:4px;color:#ada9a3;background:transparent;font:11px/1.4 \"Segoe UI\",system-ui,sans-serif;cursor:pointer}.ds-day[aria-pressed=true]{color:#f0efed;background:#303030}.ds-day:hover:not(:disabled){color:#f0efed;background:#2c2c2c}.ds-day:focus-visible{outline:2px solid #f0efed;outline-offset:2px}.ds-day:disabled{opacity:.5;cursor:wait}"
+      "name": "Dialog",
+      "kind": "dialog",
+      "refersTo": "dialog",
+      "description": "The one surface that floats: the raised ground, a 1px hairline, 6px corners, at most 520px, over a scrim. No shadow. Its actions sit at the end of the last line, the completing one at 600 and cancel quiet beside it.",
+      "html": "<div class=\"ds-scrim\"><div class=\"ds-dialog\"><h2 class=\"ds-dialog-title\">new task</h2><p class=\"ds-dialog-body\">It will go to today unless you give it a date.</p><div class=\"ds-dialog-actions\"><button class=\"ds-act ds-act--quiet\">cancel</button><button class=\"ds-act ds-act--completing\">save task</button></div></div></div>",
+      "css": ".ds-scrim{padding:24px;background:rgba(0,0,0,.55)}.ds-dialog{max-width:520px;padding:24px;border:1px solid #3b3936;border-radius:6px;background:#252422;color:#e8e5df}.ds-dialog-title{margin:0 0 24px;font:600 20px/1.3 Literata,Georgia,serif;letter-spacing:-.005em}.ds-dialog-body{margin:0 0 24px;font:400 15px/1.6 Literata,Georgia,serif;color:#a39e96}.ds-dialog-actions{display:flex;gap:24px;justify-content:flex-end;align-items:baseline}"
     },
     {
-      "name": "Ledger task row",
-      "kind": "card",
-      "refersTo": "task-row",
-      "description": "Tasks-board row on a single hairline: faint checkbox and hidden actions until hover or focus, metadata inline after the title.",
-      "html": "<article class=\"ds-row\"><label class=\"ds-check\"><input type=\"checkbox\" aria-label=\"Mark example task complete\"/><span aria-hidden=\"true\"></span></label><div class=\"ds-row-body\"><p>Return the library books</p><div class=\"ds-meta\"><span>Due Sep 12</span><span>Studio refresh</span></div></div><div class=\"ds-row-actions\"><button type=\"button\" aria-label=\"Edit task\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20h4l10-10-4-4L4 16v4Z\"/></svg></button><button type=\"button\" aria-label=\"Delete task\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13\"/></svg></button></div></article>",
-      "css": ".ds-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif;transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-row:hover,.ds-row:focus-within{background:#262626}.ds-row-body{display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 8px;min-width:0;padding:6px 0}.ds-row-body p{margin:0;font-size:13px;line-height:1.4;overflow-wrap:break-word}.ds-meta{display:flex;flex-wrap:wrap;gap:0 9px;color:rgba(255,255,255,.62);font-size:11px;line-height:1.4}.ds-meta>*+*{position:relative}.ds-meta>*+*::before{position:absolute;right:calc(100% + 4px);color:rgba(255,255,255,.52);content:\"\\00b7\"}.ds-check{width:22px;height:22px;display:grid;place-items:center;cursor:pointer}.ds-check input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.ds-check span{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55;transition:opacity 120ms ease-out}.ds-row:hover .ds-check span,.ds-row:focus-within .ds-check span{opacity:1}.ds-check input:checked+span{opacity:1;border-color:rgba(255,255,255,.72);background:rgba(255,255,255,.72);box-shadow:inset 0 0 0 4px #1c1c1c}.ds-check input:focus-visible+span{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-row-actions{display:flex;gap:2px;opacity:0;transition:opacity 120ms ease-out}.ds-row:hover .ds-row-actions,.ds-row:focus-within .ds-row-actions{opacity:1}.ds-row-actions button{width:24px;min-height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:4px;background:transparent;color:rgba(255,255,255,.52);cursor:pointer}.ds-row-actions button:hover{color:rgba(255,255,255,.93)}.ds-row-actions button:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-row,.ds-check span,.ds-row-actions{transition:none}}"
+      "name": "Error banner",
+      "kind": "alert",
+      "refersTo": "error",
+      "description": "A 2px clay rule at the left and the sentence beside it. No box, no fill. Retry is an action word in clay, and stays clay on hover, because green there would say the opposite of what the banner means.",
+      "html": "<div class=\"ds-wrap\"><div class=\"ds-error\">We could not reach your tasks. <button class=\"ds-error-retry\">retry</button></div></div>",
+      "css": ".ds-error{display:flex;gap:8px 12px;align-items:baseline;margin:16px 0;padding:0 0 0 12px;border:0;border-left:2px solid #e8907c;border-radius:0;background:transparent;font:400 15px/1.6 Literata,Georgia,serif;color:#e8907c}.ds-error-retry{min-height:0;padding:0;border:0;border-radius:0;background:transparent;font:400 15px/1.6 Literata,Georgia,serif;color:#e8907c;text-transform:lowercase;text-decoration:underline 1px #e8907c;text-underline-offset:.2em;cursor:pointer}"
     },
     {
-      "name": "Ledger day column",
-      "kind": "custom",
-      "refersTo": "ledger-day-header",
-      "description": "A today column from the Tasks week ledger: Space Grotesk date and weekday over a 2px rule, one row, the hover-revealed add slot, and inert ruled filler slots.",
-      "html": "<section class=\"ds-col ds-col--today\"><h2 class=\"ds-col-head\"><span class=\"ds-col-date\">15 Sep</span><span class=\"ds-col-day\">Tue</span></h2><div class=\"ds-col-row\"><span class=\"ds-col-box\" aria-hidden=\"true\"></span><p>Problem set 3</p></div><button type=\"button\" class=\"ds-col-add\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add task</button><div class=\"ds-col-slot\"></div><div class=\"ds-col-slot\"></div></section>",
-      "css": ".ds-col{--ds-today:#8fc981;width:220px;color:rgba(255,255,255,.93);font-family:\"Segoe UI\",system-ui,sans-serif}.ds-col-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0;padding-bottom:8px;border-bottom:2px solid rgba(255,255,255,.3)}.ds-col--today .ds-col-head{border-bottom-color:var(--ds-today)}.ds-col-date{font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:500;font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ds-col--today .ds-col-date{color:var(--ds-today)}.ds-col-day{margin-left:auto;font-family:\"Space Grotesk\",\"Segoe UI\",system-ui,sans-serif;font-weight:400;font-size:22px;color:rgba(255,255,255,.5)}.ds-col--today .ds-col-day{color:rgba(255,255,255,.6)}.ds-col-row{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px;min-height:40px;margin:0 -6px;padding:0 6px;border-bottom:1px solid rgba(255,255,255,.12);transition:background 160ms cubic-bezier(.2,.8,.2,1)}.ds-col-row:hover{background:#262626}.ds-col-row p{margin:0;font-size:13px;line-height:1.4}.ds-col-box{width:15px;height:15px;display:block;border:1px solid rgba(255,255,255,.32);border-radius:4px;opacity:.55}.ds-col-row:hover .ds-col-box{opacity:1}.ds-col-add{width:100%;min-height:42px;display:flex;align-items:center;gap:6px;padding:0;border:0;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;background:transparent;color:transparent;font:12px \"Segoe UI\",system-ui,sans-serif;cursor:pointer;transition:color 120ms ease-out,background 120ms ease-out}.ds-col-add:hover,.ds-col-add:focus-visible{color:rgba(255,255,255,.62);background:#2b2b2b}.ds-col-add:focus-visible{outline:2px solid rgba(255,255,255,.88);outline-offset:3px}.ds-col-slot{min-height:42px;border-bottom:1px solid rgba(255,255,255,.08)}@media(prefers-reduced-motion:reduce){.ds-col-row,.ds-col-add{transition:none}}"
+      "name": "Calendar event",
+      "kind": "list-item",
+      "refersTo": "event-rule",
+      "description": "An event is a name with its time and place under it, and a 1px rule at its left carrying the Google calendar's own colour. Nothing is filled, so nothing shouts. Figures are tabular.",
+      "html": "<div class=\"ds-wrap\"><div class=\"ds-event\" style=\"--event-rule:#7986cb\">Library study<span class=\"ds-event-meta\">7:30pm – 12:30am · Fictional campus</span></div></div>",
+      "css": ".ds-event{display:flex;flex-direction:column;gap:2px;padding:0 0 0 8px;border-left:1px solid var(--event-rule,#7d7972);background:transparent;font:400 13px/1.5 Literata,Georgia,serif;font-variant-numeric:tabular-nums;color:#e8e5df}.ds-event-meta{color:#a39e96}"
     }
   ],
   "narrative": {
-    "northStar": "The Quiet Desk",
-    "overview": "apraxia uses dark neutral surfaces, warm light text, and familiar document typography. Georgia page headings give the workspace a personal character; Segoe UI keeps navigation, forms, and dense task information practical.\n\nHierarchy comes from spacing, fine rules, and small changes in surface tone. Calendar fills and status colors carry information; the surrounding interface stays restrained.",
+    "northStar": "Paper, Not Chrome",
+    "overview": "apraxia is one person's workspace, so it reads like their own page rather than a product someone shipped at them. Paper is the theme that does that: warm paper in two presets, Literata throughout, hairlines instead of card edges, and words instead of buttons. Nothing is filled, nothing floats but a dialog, and nothing moves. The one colour with a job is a green that marks where you are. Classic remains the default preset and is frozen as it is; Paper is what new work is written in.",
     "keyCharacteristics": [
-      "Charcoal surfaces with warm light text.",
-      "Serif page headings and compact sans-serif controls.",
-      "Fine dividers, flat rows, and quiet interaction states.",
-      "Ruled ledgers: hairlines keep ruling where nothing is written."
+      "Rules, not boxes: a 1px hairline separates rows where another interface would draw a card.",
+      "Words, not buttons: an action is a word with a green rule under it.",
+      "One green, one meaning: the accent marks where you are and the action that completes a screen, and is never used as decoration or as a fill.",
+      "Literata throughout, at seven sizes and two weights, in both presets.",
+      "No shadow, no gradient, no motion, no pill.",
+      "Interface words are lowercase; the account's own words keep their case."
     ],
     "rules": [
       {
-        "name": "The Semantic Color Rule",
-        "body": "Keep the interface neutral. Calendar fills identify calendars; warm error and overdue colors communicate status.",
+        "name": "The Green Means Here Rule",
+        "body": "The accent marks position — today's column, the current page, the current-time line — and the one action that completes a screen. It is never a fill and never decoration. A destructive word stays in `danger` even on hover, because turning it green would say the opposite of what it does.",
         "section": "colors"
       },
       {
-        "name": "The One Lit Header Rule",
-        "body": "Today Green is the recorded exception to the Semantic Color Rule: exactly one day header per Tasks board carries it, on the date and its rule only. Nothing else on any surface borrows it.",
-        "section": "colors"
-      },
-      {
-        "name": "The Heading Rule",
-        "body": "Use the shared serif treatment for workspace page titles. Keep controls, metadata, and dialog titles in their existing sans-serif styles.",
-        "section": "typography"
-      },
-      {
-        "name": "The Grotesk Numeral Rule",
-        "body": "Space Grotesk enters the workspace only where a date is the heading itself. It is not a second body face, a label face, or a replacement for Georgia on page or section titles.",
-        "section": "typography"
-      },
-      {
-        "name": "The Flat Workspace Rule",
-        "body": "Use tonal surfaces and rules for persistent content. Reserve substantial shadows for temporary menus, notices, and dialogs.",
+        "name": "The Rules Not Boxes Rule",
+        "body": "Separation is a 1px hairline and space. A dialog is the only surface that floats, and it floats with a hairline and a scrim rather than a shadow. `elevation` and `motion` in this sidecar are empty because the theme has neither.",
         "section": "elevation"
       },
       {
-        "name": "The Three Moments Rule",
-        "body": "A ruled surface animates only on hover raise, action reveal, and a change of the whole page's subject. Rules, headers, and filler slots never move.",
-        "section": "elevation"
+        "name": "The Words Before Icons Rule",
+        "body": "An action is its own word. Icons ride beside a word rather than replacing it; the two calendar chevrons are the one icon allowed to stand alone.",
+        "section": "components"
+      },
+      {
+        "name": "The Lowercase Interface Rule",
+        "body": "Interface words are lowercase, and they are lowercased in the Paper sheet with `text-transform`, never by editing a string both themes render. An element that mixes interface words with the account's own content is not a candidate.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sibling Sheet Rule",
+        "body": "Every Paper rule lives in a sibling `*Paper.css` scoped `[data-theme^=\"paper\"]`, which matches both presets and never matches classic. A classic sheet is never edited, so classic stays pixel-identical while Paper is built beside it.",
+        "section": "overview"
+      },
+      {
+        "name": "The Classic Globals Rule",
+        "body": "`index.css` carries unscoped `input`, `button` and `select` rules that apply under Paper too. A Paper rule only wins a property it names, and `font` is a shorthand that silently resets weight. Clear every property you care about, and guard an exclusion with `:where(:not(...))` rather than `:not(...)`, which carries its argument's specificity.",
+        "section": "components"
       }
     ],
     "dos": [
-      "Do reuse the cloud shell palette, shared page insets, and serif page-heading treatment.",
-      "Do retain visible keyboard focus, accessible icon labels, and reduced-motion behavior.",
-      "Do keep calendar data colors and error/overdue semantics distinct from interface chrome.",
-      "Do preserve local component variants when extending an existing surface.",
-      "Do keep Today Green to the Tasks board's today header: the date numeral and its 2px rule, nothing more.",
-      "Do let a ruled surface keep ruling through empty space with inert filler slots rather than collapsing to a blank column."
+      "Do read tokens from `paper.css` and scope every rule `[data-theme^=\"paper\"]`.",
+      "Do reach for `.paper-action`, `.paper-row`, `.paper-field`, `.paper-check`, `.paper-nav__item`, `.paper-dialog`, `.paper-error` and `.paper-event` before writing a new primitive; escalate a missing one rather than inventing a local copy.",
+      "Do let a calendar event's rule carry that calendar's own colour, which is Google's data rather than a token.",
+      "Do keep figures that line up in columns on `tabular-nums`.",
+      "Do keep a visible focus ring: 2px `accent`, 3px offset, and the same shape everywhere.",
+      "Do measure with computed styles in the QA fixture rather than judging by eye."
     ],
     "donts": [
-      "Don't treat the isolated QA redesign study or legacy orbit-shell styles as the cloud workspace design authority.",
-      "Don't turn flat collection and task rows into elevated cards by default.",
-      "Don't apply the dialog's pill buttons or larger radius to every toolbar.",
-      "Don't interpret the documented desktop density as a verified mobile accessibility standard.",
-      "Don't put borders, backgrounds, or counts around ledger columns, and don't return the week to a horizontally scrolling set of fixed-width columns.",
-      "Don't use Space Grotesk for anything in the workspace other than a date that is itself the heading."
+      "Don't add a shadow, a gradient, a transition or a pill. If something needs separating, give it a rule or space.",
+      "Don't fill anything with the accent, or use it to decorate. It means here.",
+      "Don't edit a classic sheet or a shared string to make Paper look right; the fix belongs in a Paper sheet.",
+      "Don't draw a weight other than 400 or 600; Literata ships only those two, and anything else is synthetic.",
+      "Don't treat the signed-out screen's Space Grotesk and JetBrains Mono as part of the system: that screen predates both themes and is not themed.",
+      "Don't use `.paper-field`'s `background` shorthand on a `select` without restoring the chevron; the shorthand wipes the background image the classic rule draws it with."
     ]
   }
 }
