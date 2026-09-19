@@ -20,6 +20,7 @@ const RESULT_KIND: Record<SearchRecordType, string> = {
   project: "project",
   class: "class",
   class_note: "note",
+  application: "application",
 };
 
 /** Remains mounted in the authenticated shell so closing search keeps its place. */
