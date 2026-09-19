@@ -362,10 +362,11 @@
   text-transform: lowercase;
 }
 
-/* `:not(.paper-check)` keeps this off the all-day box: the shared primitive
- * draws that one, and this rule would otherwise outrank it and give it a
- * field's padding and corner. */
-[data-theme^="paper"] .event-editor input:not(.paper-check),
+/* The guard keeps this off the all-day box: the shared primitive draws that
+ * one, and this rule would otherwise outrank it and give it a field's padding
+ * and corner. It is wrapped in `:where()` so excluding the box costs no
+ * specificity and the rule stays where it was against everything else. */
+[data-theme^="paper"] .event-editor input:where(:not(.paper-check)),
 [data-theme^="paper"] .event-editor select {
   padding: var(--space-8) var(--space-sm);
   border: 1px solid var(--outline);
@@ -376,7 +377,7 @@
   text-transform: none;
 }
 
-[data-theme^="paper"] .event-editor input:not(.paper-check)::placeholder {
+[data-theme^="paper"] .event-editor input::placeholder {
   color: var(--muted);
   text-transform: lowercase;
 }
