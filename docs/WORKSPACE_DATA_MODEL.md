@@ -182,6 +182,7 @@ accept:
 | `project` | `projects` | the project UUID | null |
 | `class` | `classes` | the course code | null |
 | `class_note` | `class_notes` | the note UUID | the course code |
+| `application` | `career_applications` | the application UUID | null |
 
 Each row also reports a `title` and a `snippet`, and since
 `supabase/migrations/20260919010000_search_snippet.sql` the two never carry the
@@ -190,7 +191,15 @@ a class name, a note filename) is titled by it and shows its longer text as the
 snippet. A record without one (a task, an untitled idea) is titled by the
 opening of its own text, cut back to a word boundary at 160 characters, and the
 snippet is the remainder of that text, empty when the title already showed all
-of it. A snippet equal to its title is dropped.
+of it. A snippet equal to its title is dropped. An application is titled by its
+company and shows its role as the snippet.
+
+A migration that replaces `search_records` replaces every branch of it, which
+is how the applications branch went missing between
+`20260919000100_career_prep.sql` and the snippet rewrite;
+`20260919020000_search_applications.sql` restored it.
+`tests/contract/search-records.test.ts` seeds one record of every kind and
+asserts the function still reaches all of them.
 
 `record_id` is therefore `text`, not `uuid`: a class is identified by the course
 code that is its primary key. Soft-deleted todos, ideas, and projects are
