@@ -339,6 +339,8 @@
    class names do; it carries the resets that undo the classic box. */
 :root[data-theme^="paper"] .paper-error,
 :root[data-theme^="paper"] .workspace-error {
+  gap: var(--space-8) var(--space-sm);
+  margin: var(--space-md) 0;
   padding: 0 0 0 var(--space-sm);
   border: 0;
   border-left: 2px solid var(--danger);
@@ -346,6 +348,46 @@
   background: transparent;
   font: var(--small);
   color: var(--danger);
+}
+
+/* The retry inside the banner is an action word, not a bordered button. It
+   comes with the classic button's rules from the shell sheet, so each state
+   is undone by the matching pseudo-class: without them the classic hover,
+   disabled and focus rules outweigh this one and the pill returns. */
+:root[data-theme^="paper"] .paper-error button,
+:root[data-theme^="paper"] .workspace-error button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+  text-decoration: underline 1px var(--danger);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+:root[data-theme^="paper"] .paper-error button:hover:not(:disabled),
+:root[data-theme^="paper"] .workspace-error button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+}
+
+:root[data-theme^="paper"] .paper-error button:disabled,
+:root[data-theme^="paper"] .workspace-error button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  text-decoration: none;
+  cursor: default;
+}
+
+:root[data-theme^="paper"] .paper-error button:focus-visible,
+:root[data-theme^="paper"] .workspace-error button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 /* Reading widths: one column of prose, and the wide one for a dense screen. */
