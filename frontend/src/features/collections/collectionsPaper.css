@@ -1,0 +1,593 @@
+/* Paper for the two collection routes and the project detail page.
+ *
+ * Sibling of `collections.css`, imported straight after it. Every rule is
+ * scoped `[data-theme^="paper"]`, which matches both Paper presets and never
+ * classic, so classic stays pixel-identical. `collections.css` is unscoped, so
+ * everything it sets that Paper answers differently is restated here rather
+ * than edited there; that is the seam, not a duplication to tidy up.
+ *
+ * Tokens and primitives come from `paper.css`. DESIGN.md is the authority for
+ * every value; nothing below is a literal.
+ */
+
+/* ---------------------------------------------------------------- the page */
+
+/* Space separates first, so the page is one column with a rhythm of its own
+   and the classic sheet's per-child margins are dropped. The top inset is the
+   shell's to set; the sides are `--inset`, which steps down on a phone. */
+[data-theme^="paper"] .collection-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--workspace-page-top, var(--space-top)) var(--inset) var(--space-bottom);
+  color: var(--text);
+  font: var(--body);
+}
+
+[data-theme^="paper"] .collection-page button,
+[data-theme^="paper"] .collection-page select {
+  font: inherit;
+}
+
+/* Classic dims a disabled control and shows a wait cursor. Paper is still:
+   a control you cannot use is `faint`, and nothing else changes. */
+[data-theme^="paper"] .collection-page button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------- the heading */
+
+[data-theme^="paper"] .collection-page .collection-heading h1 {
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  color: var(--text);
+  text-wrap: balance;
+}
+
+/* Interface words are lowercase. A list page's name and its line underneath
+   are the interface talking; a project's own title and description are not. */
+[data-theme^="paper"] .collection-page .collection-heading:not(.collection-heading--detail) h1,
+[data-theme^="paper"] .collection-page .collection-heading:not(.collection-heading--detail) p {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-heading p {
+  margin: var(--space-xs) 0 0;
+  max-width: var(--measure-wide);
+  font: var(--small);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* The detail head needs no rule under it: the first region brings its own. */
+[data-theme^="paper"] .collection-page .collection-heading--detail {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+[data-theme^="paper"] .collection-page .collection-heading .collection-description {
+  margin: var(--space-xs) 0 0;
+  max-width: var(--measure-wide);
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* The shell draws this action as an underlined word, icon and all. Only the
+   case is this page's: its heading is lowercase, so its action is too. */
+[data-theme^="paper"] .collection-page .workspace-page-header__action {
+  text-transform: lowercase;
+}
+
+/* --------------------------------------------------- back to the list page */
+
+[data-theme^="paper"] .collection-page .collection-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 0;
+  margin: 0;
+  font: var(--small) !important;
+  text-transform: lowercase;
+}
+
+/* A chevron that steps backward is the one icon that may stand for itself, so
+   it keeps its size rather than inheriting the classic sheet's 14px. */
+[data-theme^="paper"] .collection-page .collection-back .workspace-icon {
+  width: var(--icon);
+  height: var(--icon);
+  flex: none;
+}
+
+/* ------------------------------------------------------- the status filter */
+
+/* Paper draws the filter as a row of words; the page renders those in place of
+   the classic `select`, so nothing here styles one. */
+[data-theme^="paper"] .collection-page .collection-filter {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin: 0;
+  font: var(--small);
+  font-family: var(--font);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-page .collection-filter__words {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+/* `.paper-nav__item` carries the green rule that means "here"; only the case
+   and the row's own padding are the page's business. */
+[data-theme^="paper"] .collection-page .collection-filter__word {
+  padding: 0 0 2px;
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-filter__label {
+  text-transform: lowercase;
+}
+
+/* ----------------------------------------------------------- ruled rows */
+
+[data-theme^="paper"] .collection-page .collection-list {
+  margin: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .collection-page .collection-row {
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .collection-page .collection-open {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 0;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .collection-page .collection-open__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Hierarchy comes from weight, `muted` and the space before a thing, so a
+   row's name is body copy and everything under it is one muted line. */
+[data-theme^="paper"] .collection-page .collection-open strong {
+  font: var(--body);
+  line-height: 1.6;
+}
+
+[data-theme^="paper"] .collection-page .collection-open .collection-status,
+[data-theme^="paper"] .collection-page .collection-open .collection-preview,
+[data-theme^="paper"] .collection-page .collection-open .collection-meta {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font: var(--small);
+  font-family: var(--font);
+  letter-spacing: normal;
+  color: var(--muted);
+  -webkit-line-clamp: none;
+}
+
+/* A status is language, not a badge, so it reads as the first thing said
+   about the row and joins what follows with the page's own separator. */
+[data-theme^="paper"] .collection-page .collection-open .collection-status {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"]
+  .collection-page
+  .collection-open
+  .collection-status
+  + .collection-preview::before,
+[data-theme^="paper"]
+  .collection-page
+  .collection-open
+  .collection-status
+  + .collection-meta::before,
+[data-theme^="paper"]
+  .collection-page
+  .collection-open
+  .collection-preview
+  + .collection-meta::before {
+  content: " · ";
+}
+
+/* ----------------------------------------------------- row actions as words */
+
+/* The trash and pencil become the words themselves. The classic sheet draws
+   them as a 26px icon well, so the well is undone before the word is set. */
+[data-theme^="paper"] .collection-page .collection-delete,
+[data-theme^="paper"] .collection-page .collection-row-action {
+  display: inline;
+  width: auto;
+  height: auto;
+  flex: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-delete:hover,
+[data-theme^="paper"] .collection-page .collection-row-action:hover {
+  background: transparent;
+}
+
+/* -------------------------------------------------------- notices and error */
+
+[data-theme^="paper"] .collection-page .collection-notice {
+  align-items: baseline;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-page .collection-empty {
+  margin: 0;
+  padding: var(--space-sm) 0;
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* The list's empty state carries its own action, so it keeps a little room. */
+[data-theme^="paper"] .collection-page > .collection-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md) 0;
+}
+
+[data-theme^="paper"] .collection-page > .collection-empty p {
+  margin: 0;
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------- the two regions */
+
+[data-theme^="paper"] .collection-page .collection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+[data-theme^="paper"] .collection-page .collection-section header {
+  align-items: baseline;
+  gap: var(--space-24);
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* `.paper-heading` draws the green `// `; the classic sheet sets the face and
+   the size on the same element, so those are answered here. */
+[data-theme^="paper"] .collection-page .collection-section h2 {
+  display: block;
+  flex-grow: 1;
+  font: var(--heading);
+  letter-spacing: normal;
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-section__count {
+  margin-left: var(--space-8);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-page .collection-section__add {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-section__add:hover:not(:disabled) {
+  background: transparent;
+}
+
+[data-theme^="paper"] .collection-page .collection-section__add .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .collection-page--project .collection-section header {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+[data-theme^="paper"] .collection-page--project .collection-section h2 {
+  display: block;
+  font: var(--heading);
+  letter-spacing: normal;
+}
+
+[data-theme^="paper"] .collection-page--project .collection-section__count {
+  margin-left: var(--space-8);
+  font-family: var(--font);
+}
+
+[data-theme^="paper"] .collection-page--project .collection-section,
+[data-theme^="paper"] .collection-page--project .collection-section + .collection-section {
+  margin: 0;
+}
+
+[data-theme^="paper"] .collection-page--project .collection-empty {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* ------------------------------------------------------------- task rows */
+
+[data-theme^="paper"] .collection-page .collection-task,
+[data-theme^="paper"] .collection-page--project .collection-task {
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .collection-page .collection-task-check,
+[data-theme^="paper"] .collection-page--project .collection-task-check {
+  display: block;
+  width: auto;
+  height: auto;
+  flex: none;
+  margin-top: 5px;
+}
+
+[data-theme^="paper"] .collection-page .collection-task-text,
+[data-theme^="paper"] .collection-page--project .collection-task-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-8);
+  padding: 0;
+  font: var(--body) !important;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .collection-page .collection-task-text[data-completed="true"] {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-page--project .collection-task-text:hover,
+[data-theme^="paper"] .collection-page--project .collection-task-text[data-completed="true"]:hover {
+  color: inherit;
+}
+
+[data-theme^="paper"] .collection-page .collection-task-text .collection-meta,
+[data-theme^="paper"] .collection-page--project .collection-task-text .collection-meta {
+  display: inline;
+  text-transform: lowercase;
+  margin: 0;
+  font: var(--fine);
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* Still: the row's actions are on the page, not waiting behind a hover, and
+   nothing fades or slides. */
+[data-theme^="paper"] .collection-page--project .collection-delete,
+[data-theme^="paper"] .collection-page--project .collection-row-action {
+  width: auto;
+  height: auto;
+  flex: none;
+  opacity: 1;
+  transition: none;
+}
+
+[data-theme^="paper"] .collection-page--project .collection-task,
+[data-theme^="paper"] .collection-page--project .collection-task-title,
+[data-theme^="paper"] .collection-page--project .collection-task[data-settling],
+[data-theme^="paper"] .collection-page--project .collection-task[data-settling] .collection-meta,
+[data-theme^="paper"]
+  .collection-page--project
+  .collection-task[data-settling]
+  .collection-task-title {
+  opacity: 1;
+  background-image: none;
+  transition: none;
+}
+
+[data-theme^="paper"] .collection-page .collection-completed {
+  margin: 0;
+}
+
+[data-theme^="paper"] .collection-page .collection-completed__toggle {
+  padding: var(--space-sm) 0 0;
+  font: var(--small);
+  font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-completed__list {
+  border-top: 1px solid var(--hairline);
+}
+
+/* --------------------------------------------------- load more, and undo */
+
+[data-theme^="paper"] .collection-page .collection-button,
+[data-theme^="paper"] .collection-page--project .collection-button {
+  display: inline;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-page .collection-button:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .collection-page .collection-button .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .collection-page .collection-notice__undo {
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------- the editor */
+
+/* The dialog's own shell is the tasks thread's to rebuild, so every rule here
+   is scoped to this editor and cannot reach the task dialog. The shell reads
+   its colours from local custom properties, which is the cheapest honest way
+   to put Paper's ink and lines into it. */
+[data-theme^="paper"] .todo-dialog-backdrop:has(.collection-editor) {
+  padding: var(--space-24);
+  background: var(--scrim);
+}
+
+[data-theme^="paper"] .collection-editor {
+  --dialog-line: var(--hairline);
+  --dialog-line-strong: var(--hairline);
+  --dialog-field-line: var(--outline);
+  --dialog-field-line-hover: var(--outline);
+  --dialog-field-background: var(--ground-raised);
+  --dialog-text: var(--text);
+  --dialog-muted: var(--muted);
+  width: min(100%, 520px);
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+  color: var(--text);
+  font: var(--body);
+  animation: none;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__header {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__header h2 {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__form {
+  gap: var(--space-24);
+  padding-block-start: var(--space-24);
+}
+
+[data-theme^="paper"] .collection-editor .collection-field {
+  gap: var(--space-xs);
+  font: var(--small);
+  font-family: var(--font);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-editor .collection-field > span {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-editor .collection-field input,
+[data-theme^="paper"] .collection-editor .collection-field select,
+[data-theme^="paper"] .collection-editor .collection-field textarea {
+  min-height: 0;
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background-color: var(--ground-raised);
+  color: var(--text);
+  font: var(--body);
+  caret-color: var(--text);
+}
+
+[data-theme^="paper"] .collection-editor .collection-field textarea {
+  font-family: var(--font);
+  resize: vertical;
+}
+
+[data-theme^="paper"] .collection-editor .collection-field select {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .collection-editor .collection-field input::placeholder,
+[data-theme^="paper"] .collection-editor .collection-field textarea::placeholder {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .collection-editor .collection-field :disabled {
+  opacity: 1;
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .collection-editor .collection-editor__hint {
+  max-width: var(--measure);
+  font: var(--small);
+  font-family: var(--font);
+  color: var(--muted);
+}
+
+/* An error is one sentence in `danger`, with the value left alone. */
+[data-theme^="paper"] .collection-editor .todo-dialog__submit-error {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__actions {
+  align-items: baseline;
+  gap: var(--space-md);
+  padding-block-start: 0;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  letter-spacing: normal;
+  text-transform: lowercase;
+  transition: none;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__button--quiet {
+  border-color: transparent;
+  background: transparent;
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__button--primary {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+}

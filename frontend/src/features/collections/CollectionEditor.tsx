@@ -4,6 +4,7 @@ import type { Idea, Project, ProjectStatus, ProjectSummary } from "../../types/d
 import type { CollectionKind, CollectionRecord, CollectionService } from "./collectionService";
 import "../todos/TodoFormDialog.css";
 import "./collections.css";
+import "./collectionsPaper.css";
 /** The saved project states, in the order a project usually moves through. */
 export const PROJECT_STATUS_LABELS: Readonly<Record<ProjectStatus, string>> = {
   active: "Active",
@@ -86,7 +87,7 @@ export function CollectionEditor({
       busy={busy}
       closeLocked={busy}
       onClose={onClose}
-      className="todo-dialog collection-editor"
+      className="todo-dialog collection-editor paper-dialog"
       backdropClassName="todo-dialog-backdrop"
     >
       <header className="todo-dialog__header">
@@ -178,7 +179,7 @@ export function CollectionEditor({
         <footer className="todo-dialog__actions">
           <button
             type="button"
-            className="todo-dialog__button todo-dialog__button--quiet"
+            className="todo-dialog__button todo-dialog__button--quiet paper-action paper-action--quiet"
             disabled={busy}
             onClick={onClose}
           >
@@ -187,7 +188,7 @@ export function CollectionEditor({
           <button
             ref={saveButton}
             type="submit"
-            className="todo-dialog__button todo-dialog__button--primary"
+            className="todo-dialog__button todo-dialog__button--primary paper-action paper-action--completing"
             aria-disabled={busy}
           >
             {busy ? "Saving…" : record ? "Save changes" : `Add ${kind}`}
