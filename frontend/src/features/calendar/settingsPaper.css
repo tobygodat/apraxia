@@ -156,9 +156,43 @@
 }
 
 /* The timezone field. `.paper-field` carries the look; this holds it to a width
-   a zone name fits in rather than the whole measure. */
+   a zone name fits in rather than the whole measure.
+ *
+ * A select is the one field the primitive does not finish, because the unscoped
+ * `select` rule in `index.css` still applies under Paper. Two of its
+ * declarations have to be answered here. It sets `appearance: none` and then
+ * draws the chevron itself as a background image, and `.paper-field`'s
+ * `background` shorthand resets that image, so the control would be left with
+ * no native arrow and no drawn one either: a box with nothing to say it opens.
+ * The chevron is redrawn from two gradients rather than a second SVG, so it
+ * takes `currentColor` and follows the text of whichever preset is on instead of
+ * carrying a colour of its own. It also sets `color-scheme: dark` on the element,
+ * which outranks the `light` the paper-light root inherits down, and would open
+ * the native menu dark over light paper. */
 [data-theme^="paper"] .calendar-settings select {
   max-width: calc(var(--measure) * 0.6);
+  padding-right: calc(var(--space-24) + var(--space-xs));
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.5px),
+      currentColor calc(50% - 0.5px),
+      currentColor calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      135deg,
+      transparent calc(50% - 0.5px),
+      currentColor calc(50% - 0.5px),
+      currentColor calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+  background-position:
+    right calc(var(--space-sm) + var(--space-xs)) center,
+    right var(--space-sm) center;
+  background-size: var(--space-xs) var(--space-xs);
+  background-repeat: no-repeat;
+  color-scheme: inherit;
 }
 
 [data-theme^="paper"] .calendar-settings select:disabled {
