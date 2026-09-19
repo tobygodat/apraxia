@@ -19,8 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-24);
-  padding: var(--workspace-page-top, var(--space-top)) var(--inset, var(--space-lg))
-    var(--space-bottom);
+  padding: var(--workspace-page-top, var(--space-top)) var(--inset) var(--space-bottom);
   color: var(--text);
   font: var(--body);
 }
@@ -75,24 +74,10 @@
   color: var(--muted);
 }
 
-/* The one action that completes the screen is a word. The icon goes: a word
-   alone is the rule, and an icon is only ever allowed beside one. */
+/* The shell draws this action as an underlined word, icon and all. Only the
+   case is this page's: its heading is lowercase, so its action is too. */
 [data-theme^="paper"] .collection-page .workspace-page-header__action {
   text-transform: lowercase;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-[data-theme^="paper"] .collection-page .workspace-page-header__action:hover:not(:disabled) {
-  background: transparent;
-}
-
-[data-theme^="paper"] .collection-page .workspace-page-header__action .workspace-icon {
-  display: none;
 }
 
 /* --------------------------------------------------- back to the list page */
@@ -107,15 +92,11 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .collection-page .collection-back:hover {
-  color: var(--text);
-}
-
 /* A chevron that steps backward is the one icon that may stand for itself, so
    it keeps its size rather than inheriting the classic sheet's 14px. */
 [data-theme^="paper"] .collection-page .collection-back .workspace-icon {
-  width: var(--icon, 18px);
-  height: var(--icon, 18px);
+  width: var(--icon);
+  height: var(--icon);
   flex: none;
 }
 
@@ -247,10 +228,6 @@
   background: transparent;
 }
 
-[data-theme^="paper"] .collection-page .collection-delete:hover {
-  color: var(--danger);
-}
-
 /* -------------------------------------------------------- notices and error */
 
 [data-theme^="paper"] .collection-page .collection-notice {
@@ -330,7 +307,6 @@
 
 [data-theme^="paper"] .collection-page .collection-section__add:hover:not(:disabled) {
   background: transparent;
-  color: var(--text);
 }
 
 [data-theme^="paper"] .collection-page .collection-section__add .workspace-icon {
@@ -380,14 +356,6 @@
   height: auto;
   flex: none;
   margin-top: 5px;
-}
-
-/* `.paper-check` sizes and draws the box; the classic sheet sets 16px and its
-   own accent colour on the same input. */
-[data-theme^="paper"] .collection-page .collection-task input {
-  width: var(--icon, 18px);
-  height: var(--icon, 18px);
-  accent-color: var(--accent);
 }
 
 [data-theme^="paper"] .collection-page .collection-task-text,
@@ -454,10 +422,6 @@
   font: var(--small);
   font-variant-numeric: tabular-nums;
   text-transform: lowercase;
-}
-
-[data-theme^="paper"] .collection-page .collection-completed__toggle:hover {
-  color: var(--text);
 }
 
 [data-theme^="paper"] .collection-page .collection-completed__list {
