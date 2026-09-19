@@ -68,8 +68,16 @@
 
 /* The class name and the line of facts under it are one block, so the shell's
    space below a page title belongs to the pair rather than to the name. */
+[data-theme^="paper"] .classes-page h1 {
+  text-transform: lowercase;
+}
+
 [data-theme^="paper"] .classes-page .classes-heading h1 {
   margin: 0;
+}
+
+/* A class code is the user's own, so it keeps its case. */
+[data-theme^="paper"] .classes-page .classes-heading > div > h1 {
   text-transform: none;
 }
 
@@ -84,6 +92,11 @@
 
 [data-theme^="paper"] .classes-page .workspace-page-header__action {
   text-transform: lowercase;
+}
+
+/* A word standing alone needs no icon beside it. */
+[data-theme^="paper"] .classes-page .workspace-page-header__action .workspace-icon {
+  display: none;
 }
 
 [data-theme^="paper"] .classes-page .classes-empty {
@@ -147,7 +160,11 @@
   color: var(--muted);
 }
 
+/* The class header's facts are a sentence, not a row of cells: as a block
+   they wrap mid-line instead of dropping the totals onto a line of their
+   own behind a stranded dot. */
 [data-theme^="paper"] .classes-summary--header {
+  display: block;
   min-height: 0;
   margin-top: var(--space-xs);
   font: var(--small);
@@ -442,6 +459,10 @@
 
 /* The state reads as the second half of the sentence. It also carries file
    names while a note opens, so its own case is left alone. */
+[data-theme^="paper"] .drive-source-state {
+  margin-inline-start: calc(-1 * var(--space-8));
+}
+
 [data-theme^="paper"] .drive-source-state::before {
   content: "· ";
 }
@@ -967,4 +988,57 @@
 [data-theme^="paper"] .classes-row,
 [data-theme^="paper"] .classes-reader-tools[aria-expanded] .workspace-icon {
   transition: none;
+}
+
+/* ------------------------------------------------------------- narrow */
+
+/* A phone reads the sheet whole rather than sideways: the classic minimum
+   width is released and the two fixed columns give their space back, so the
+   name and the type wrap instead of the row running off the screen. */
+@media (max-width: 600px) {
+  [data-theme^="paper"] .class-assignments table {
+    min-width: 0;
+  }
+
+  [data-theme^="paper"] .class-assignments th,
+  [data-theme^="paper"] .class-assignments td {
+    padding-right: var(--space-8);
+  }
+
+  /* Metadata drops to the `fine` step so the names keep the width they
+     need; every column but the name is measured, so the name takes the rest. */
+  [data-theme^="paper"] .class-assignments th:nth-child(3),
+  [data-theme^="paper"] .class-assignments td:nth-child(3),
+  [data-theme^="paper"] .class-assignments th:nth-child(4),
+  [data-theme^="paper"] .class-assignments td:nth-child(4),
+  [data-theme^="paper"] .class-assignments td:last-child {
+    font: var(--fine);
+  }
+
+  [data-theme^="paper"] .class-assignments .assignment-date-trigger,
+  [data-theme^="paper"] .class-assignments .assignment-type-cell,
+  [data-theme^="paper"] .class-assignments .assignment-delete,
+  [data-theme^="paper"] .assignment-type-tag {
+    font: var(--fine);
+  }
+
+  [data-theme^="paper"] .class-assignments td:nth-child(3) {
+    white-space: nowrap;
+  }
+
+  [data-theme^="paper"] .class-assignments th:nth-child(3) {
+    width: 4.2em;
+  }
+
+  [data-theme^="paper"] .class-assignments th:nth-child(4) {
+    width: 6em;
+  }
+
+  [data-theme^="paper"] .class-assignments th:last-child {
+    width: 3.4em;
+  }
+
+  [data-theme^="paper"] .class-assignments td input:not([type="checkbox"]) {
+    font: var(--body);
+  }
 }
