@@ -362,7 +362,10 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .event-editor input,
+/* `:not(.paper-check)` keeps this off the all-day box: the shared primitive
+ * draws that one, and this rule would otherwise outrank it and give it a
+ * field's padding and corner. */
+[data-theme^="paper"] .event-editor input:not(.paper-check),
 [data-theme^="paper"] .event-editor select {
   padding: var(--space-8) var(--space-sm);
   border: 1px solid var(--outline);
@@ -373,7 +376,7 @@
   text-transform: none;
 }
 
-[data-theme^="paper"] .event-editor input::placeholder {
+[data-theme^="paper"] .event-editor input:not(.paper-check)::placeholder {
   color: var(--muted);
   text-transform: lowercase;
 }
@@ -428,12 +431,19 @@
   font: var(--body);
 }
 
-/* `.paper-check` draws the box and its tick; classic sizes the same input at
- * 16px from a selector this one has to match to hand the primitive its 18. */
+/* `.paper-check` draws the box and its tick, but two classic rules reach it
+ * with more weight than the primitive has: `.event-editor input` gives it a
+ * field's padding, border and corner, and `.event-checkbox input` sizes it at
+ * 16px. This restates the primitive's own box from a selector that outranks
+ * both. */
 [data-theme^="paper"] .event-editor .event-checkbox input.paper-check {
   width: var(--icon);
   height: var(--icon);
   flex-basis: var(--icon);
+  padding: 0;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  background-color: var(--ground-raised);
 }
 
 [data-theme^="paper"] .event-time-fields,
