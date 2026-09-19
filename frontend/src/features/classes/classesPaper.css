@@ -11,10 +11,7 @@
  * here are outranking one of theirs rather than dressing a bare element, which
  * is why a value the primitives already carry is sometimes restated.
  *
- * `var(--icon)` appears wherever an icon's classic size has to be
- * replaced. The fallback is for this branch's base, which predates `--icon`;
- * it goes when main is merged, because a bare `var(--icon)` there computes to
- * `auto` and an SVG in a flex row stretches to the line.
+ * `var(--icon)` appears wherever an icon's classic size has to be replaced.
  */
 
 /* ------------------------------------------------------------------ page */
@@ -27,21 +24,23 @@
 }
 
 /* An action on this page is a word. The shell sheet already strips the button
-   down; this undoes what the classic classes sheet adds on top of it. */
-[data-theme^="paper"] .classes-page button {
+   down; this undoes what the classic classes sheet adds on top of it.
+   `.paper-action` carries its own type and hover, and a blanket rule here would
+   outrank the primitive by one element, so it is excluded. */
+[data-theme^="paper"] .classes-page button:not(.paper-action) {
   gap: var(--space-8);
   min-height: 0;
   border-radius: 0;
   font: var(--small);
 }
 
-[data-theme^="paper"] .classes-page button:hover:not(:disabled) {
+[data-theme^="paper"] .classes-page button:not(.paper-action):hover:not(:disabled) {
   border-color: transparent;
   background: transparent;
   color: var(--accent);
 }
 
-[data-theme^="paper"] .classes-page button:disabled {
+[data-theme^="paper"] .classes-page button:not(.paper-action):disabled {
   color: var(--faint);
   text-decoration: none;
   opacity: 1;
