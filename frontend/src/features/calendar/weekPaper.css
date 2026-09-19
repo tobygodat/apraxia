@@ -6,196 +6,14 @@
  * prefix, so the rules below repeat that prefix rather than relying on import
  * order; see docs/CONVENTIONS.md.
  *
+ * The panel's own chrome — its toolbar, footer, messages and the page around
+ * it — belongs to `homePaper.css`. What is here is the week itself.
+ *
  * The shape of it, from DESIGN.md: the time grid stays neutral, and an event is
  * a name with a 1px rule at its left carrying its calendar's colour. Nothing is
  * filled, so a dense day stops being a wall of colour. `accent` appears three
  * times only — today, now, and what you can act on.
  */
-
-/* ---- the panel around the week ---- */
-
-/* The panel inherits classic's light ink from the page around it, which is
- * invisible on paper light, so the ink is set here for everything inside. */
-[data-theme^="paper"] .calendar-panel {
-  border-right: 1px solid var(--hairline);
-  padding-right: var(--space-md);
-  color: var(--text);
-}
-
-[data-theme^="paper"] .calendar-message {
-  color: var(--muted);
-  font: var(--body);
-}
-
-[data-theme^="paper"] .calendar-message h3 {
-  margin: 0 0 var(--space-8);
-  color: var(--text);
-  font: var(--heading);
-}
-
-[data-theme^="paper"] .calendar-empty,
-[data-theme^="paper"] .calendar-warning {
-  padding: var(--space-sm) 0;
-  border-bottom: 1px solid var(--hairline);
-  color: var(--muted);
-  font: var(--small);
-}
-
-[data-theme^="paper"] .calendar-warning p {
-  margin: var(--space-xs) 0;
-}
-
-[data-theme^="paper"] .calendar-panel a,
-[data-theme^="paper"] .calendar-footer {
-  color: var(--muted);
-  font: var(--fine);
-}
-
-[data-theme^="paper"] .calendar-panel a {
-  color: var(--text);
-  font: var(--small);
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
-}
-
-[data-theme^="paper"] .calendar-footer {
-  padding-top: var(--space-sm);
-  margin-top: var(--space-sm);
-  border-top: 1px solid var(--hairline);
-}
-
-[data-theme^="paper"] .calendar-footer .workspace-icon {
-  width: 14px;
-  height: 14px;
-}
-
-/* An action is a word underlined in green, not a button with a box around it. */
-[data-theme^="paper"] .calendar-panel button {
-  gap: var(--space-8);
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text);
-  font: var(--small);
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
-}
-
-[data-theme^="paper"] .calendar-panel button:hover {
-  background: transparent;
-  border-color: transparent;
-  color: var(--accent);
-}
-
-[data-theme^="paper"] .calendar-panel button:disabled {
-  opacity: 1;
-  color: var(--faint);
-  text-decoration: none;
-  cursor: default;
-}
-
-[data-theme^="paper"] .calendar-panel :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
-}
-
-/* Words first. These three controls are an icon alone in classic, so they carry
- * a word that only Paper shows; classic's own sheet stays untouched, and the
- * markup it never reveals costs it nothing. */
-.calendar-icon-word {
-  display: none;
-}
-
-[data-theme^="paper"] .calendar-icon-word {
-  display: inline;
-}
-
-[data-theme^="paper"] .calendar-panel .calendar-icon-button:has(.calendar-icon-word),
-[data-theme^="paper"] .event-preview-actions button {
-  width: auto;
-  color: var(--text);
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
-}
-
-/* The one icon that stands alone: a chevron that steps a week backward or
- * forward. It carries no underline because it is not a word. */
-[data-theme^="paper"] .calendar-panel .calendar-icon-button {
-  padding: 0;
-  color: var(--muted);
-  text-decoration: none;
-}
-
-[data-theme^="paper"] .calendar-icon-button .workspace-icon,
-[data-theme^="paper"] .calendar-add .workspace-icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* ---- the toolbar above the week ---- */
-
-[data-theme^="paper"] .calendar-header {
-  min-height: 0;
-  gap: var(--space-sm) var(--space-md);
-  padding: var(--space-md) 0 var(--space-sm);
-}
-
-[data-theme^="paper"] .calendar-toolbar .calendar-toolbar-title {
-  font: var(--title);
-  letter-spacing: var(--title-tracking);
-  text-transform: lowercase;
-}
-
-[data-theme^="paper"] .calendar-toolbar-year {
-  color: var(--muted);
-  font-weight: 400;
-}
-
-[data-theme^="paper"] .calendar-toolbar-month {
-  gap: var(--space-8);
-}
-
-[data-theme^="paper"] .calendar-toolbar-actions {
-  gap: var(--space-md);
-}
-
-[data-theme^="paper"] .calendar-toolbar button {
-  min-height: 0;
-  padding: 0;
-  border-color: transparent;
-  font: var(--small);
-  text-transform: lowercase;
-}
-
-[data-theme^="paper"] .calendar-toolbar button:hover:not(:disabled) {
-  background: transparent;
-  border-color: transparent;
-}
-
-[data-theme^="paper"] .calendar-toolbar .calendar-icon-button,
-[data-theme^="paper"] .calendar-toolbar-month .calendar-icon-button {
-  width: auto;
-  height: auto;
-  flex-basis: auto;
-  padding: 0;
-  background-color: transparent;
-}
-
-[data-theme^="paper"] .calendar-toolbar .calendar-add {
-  padding-inline: 0;
-  border-color: transparent;
-}
-
-[data-theme^="paper"] .calendar-toolbar .calendar-add:hover:not(:disabled) {
-  border-color: transparent;
-}
-
-[data-theme^="paper"] .calendar-toolbar button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
 
 /* ---- the grid ---- */
 
@@ -311,22 +129,7 @@
   background: transparent;
   color: var(--text);
   font: var(--fine);
-  /* An event's name is the person's own words: no underline, and its own case. */
-  text-transform: none;
-  text-decoration: none;
   transition: none;
-}
-
-[data-theme^="paper"] .calendar-panel button.calendar-event:hover {
-  background: transparent;
-  box-shadow: none;
-  color: var(--text);
-}
-
-/* Hover marks the word, the way every other action in Paper does. */
-[data-theme^="paper"] .calendar-panel button.calendar-event:hover strong {
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
 }
 
 [data-theme^="paper"] .calendar-panel button.calendar-event--all-day {
@@ -478,6 +281,16 @@
   gap: var(--space-md);
 }
 
+/* Words first: these two are an icon alone in classic, so each takes its word
+ * beside the icon, as the toolbar's refresh does in `homePaper.css`. */
+[data-theme^="paper"] .event-preview-actions button::after {
+  content: "edit";
+}
+
+[data-theme^="paper"] .event-preview-actions button + button::after {
+  content: "close";
+}
+
 [data-theme^="paper"] .event-preview button {
   min-height: 0;
   padding: 0;
@@ -500,6 +313,7 @@
   width: auto;
   min-height: 0;
   padding: 0;
+  gap: var(--space-8);
 }
 
 [data-theme^="paper"] .event-preview > a {
@@ -701,44 +515,7 @@
 
 /* Touch keeps its reach without turning a word back into a button. */
 @media (pointer: coarse) {
-  [data-theme^="paper"] .calendar-toolbar button,
   [data-theme^="paper"] .event-preview button {
     min-height: 44px;
-  }
-
-  [data-theme^="paper"] .calendar-toolbar .calendar-icon-button,
-  [data-theme^="paper"] .event-preview-actions button {
-    width: 44px;
-    height: 44px;
-    flex-basis: 44px;
-  }
-}
-
-@media (max-width: 620px) {
-  [data-theme^="paper"] .home-workspace--phone .calendar-panel,
-  [data-theme^="paper"] .home-page--cover .home-workspace--phone .calendar-panel {
-    border-top: 1px solid var(--hairline);
-  }
-
-  [data-theme^="paper"] .home-workspace--phone .calendar-header {
-    padding: var(--space-md) 0 var(--space-sm);
-  }
-
-  /* Words take more room than classic's 11px buttons, so they wrap instead of
-   * running off the end of a phone's toolbar. */
-  [data-theme^="paper"] .calendar-toolbar-actions {
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-  }
-
-  [data-theme^="paper"] .home-workspace--phone .calendar-toolbar .calendar-toolbar-title {
-    font: var(--heading);
-  }
-}
-
-@media (max-width: 1400px) {
-  [data-theme^="paper"] .calendar-panel {
-    padding: 0;
-    border-right: 0;
   }
 }

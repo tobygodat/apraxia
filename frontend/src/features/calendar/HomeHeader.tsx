@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Temporal } from "@js-temporal/polyfill";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import {
   EMPTY_APPEARANCE,
@@ -15,9 +16,20 @@ import { useColdLoad } from "../../apps/coldLoad";
 /** Matches the app shell's sidebar column transition (--cloud-shell-duration). */
 const SETTLE_DURATION_MS = 260;
 
+/** "Friday, September 18" from a plain calendar date, with no timezone maths. */
+function longDate(date: string) {
+  return Temporal.PlainDate.from(date).toLocaleString("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 interface HomeHeaderProps {
   service?: HomeAppearanceService;
   userId: string;
+  /** Today in the profile's timezone. Paper prints it under the page name. */
+  date?: string;
   // The scroll container element itself (not a ref object): passed as state
   // set from a callback ref by the parent, so it's already populated on this
   // component's very first render/layout-effect pass instead of a render
@@ -27,7 +39,7 @@ interface HomeHeaderProps {
 export function HomeHeader(props: HomeHeaderProps) {
   return <HomeHeaderAccount key={props.userId} {...props} />;
 }
-function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
+function HomeHeaderAccount({ service, userId, pageElement, date }: HomeHeaderProps) {
   // Render the cover on first paint when an earlier navigation already warmed
   // this read, instead of flashing a collapsed header while it refetches.
   // The trailing signal is only there to satisfy the type signature; peekRead
@@ -259,6 +271,7 @@ function HomeHeaderAccount({ service, userId, pageElement }: HomeHeaderProps) {
         )}
         <div className="home-header__line">
           {value.title ? <h1>{value.title}</h1> : <h1 className="cloud-shell__sr-only">Home</h1>}
+          {date && <p className="home-header__date">{longDate(date)}</p>}
           <div className="home-header__actions">
             {collapsible && (
               <button className="home-header__customize" onClick={scrollCover}>

@@ -1,0 +1,34 @@
+/* The global add's stale-view notice in Paper. Sibling of
+ * GlobalAddTodoController.css, which stays untouched so classic is unchanged.
+ *
+ * The add form itself is TodoFormDialog, which belongs to the tasks surface;
+ * only this strip is styled here.
+ *
+ * A notice is not a card: the shadow goes, the border becomes a hairline, and
+ * "Dismiss" becomes a word. The word carries `.paper-action--quiet` in the
+ * markup, so what is left here is the classic button box it does not declare
+ * away.
+ */
+
+[data-theme^="paper"] .global-add-notice {
+  width: min(480px, calc(100vw - 2 * var(--inset)));
+  align-items: baseline;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .global-add-notice p {
+  flex: 1;
+  font: var(--small);
+}
+
+[data-theme^="paper"] .global-add-notice button {
+  min-height: 0;
+  border-radius: 0;
+  text-transform: lowercase;
+}
