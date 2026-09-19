@@ -19,7 +19,7 @@
 /* ---------------------------------------------------------------- the page */
 
 [data-theme^="paper"] .home-page {
-  padding: var(--space-lg) var(--inset, var(--space-lg)) var(--space-bottom);
+  padding: var(--space-lg) var(--inset) var(--space-bottom);
   background: var(--ground);
   color: var(--text);
   font: var(--body);
@@ -97,7 +97,7 @@
 }
 
 [data-theme^="paper"] .home-header__customize:hover {
-  color: var(--text);
+  color: var(--accent);
   background: transparent;
 }
 
@@ -151,7 +151,7 @@
 }
 
 [data-theme^="paper"] .home-header--cover .home-header__customize:hover {
-  color: var(--text);
+  color: var(--accent);
   background: transparent;
 }
 
@@ -212,8 +212,7 @@
 
 /* Actions are words underlined in green, not buttons. */
 [data-theme^="paper"] .calendar-toolbar button,
-[data-theme^="paper"] .calendar-message button,
-[data-theme^="paper"] .calendar-panel .workspace-error button {
+[data-theme^="paper"] .calendar-message button {
   min-height: 0;
   padding: 0;
   border: 0;
@@ -227,11 +226,10 @@
 }
 
 [data-theme^="paper"] .calendar-toolbar button:hover:not(:disabled),
-[data-theme^="paper"] .calendar-message button:hover:not(:disabled),
-[data-theme^="paper"] .calendar-panel .workspace-error button:hover:not(:disabled) {
+[data-theme^="paper"] .calendar-message button:hover:not(:disabled) {
   background: transparent;
   border-color: transparent;
-  color: var(--text);
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .calendar-toolbar button:disabled {
@@ -253,13 +251,13 @@
 }
 
 [data-theme^="paper"] .calendar-toolbar .calendar-icon-button:hover:not(:disabled) {
-  color: var(--text);
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .calendar-icon-button .workspace-icon,
 [data-theme^="paper"] .calendar-add .workspace-icon {
-  width: var(--icon, 18px);
-  height: var(--icon, 18px);
+  width: var(--icon);
+  height: var(--icon);
   stroke-width: 1.5;
 }
 
@@ -275,7 +273,7 @@
 }
 
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh:hover:not(:disabled) {
-  color: var(--text);
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .calendar-toolbar .calendar-add {
@@ -323,24 +321,6 @@
 
 [data-theme^="paper"] .calendar-warning p {
   margin: var(--space-xs) 0;
-}
-
-[data-theme^="paper"] .calendar-panel .workspace-error {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-sm) var(--space-md);
-  margin: var(--space-sm) 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font: var(--small);
-  color: var(--danger);
-}
-
-[data-theme^="paper"] .calendar-panel .workspace-error p {
-  margin: 0;
 }
 
 [data-theme^="paper"] .calendar-footer {
@@ -426,7 +406,7 @@
 
 [data-theme^="paper"] .home-workspace .today-list__add:hover {
   background: transparent;
-  color: var(--text);
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .home-workspace .today-list__add svg {
@@ -460,7 +440,7 @@
 
 [data-theme^="paper"] .home-workspace .today-list__day-switch button:hover:not(:disabled) {
   background: transparent;
-  color: var(--text);
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .home-workspace .today-list__day-switch button:disabled {
@@ -540,7 +520,7 @@
 
 [data-theme^="paper"] .home-workspace .today-list-item__actions button:hover:not(:disabled) {
   background: transparent;
-  color: var(--text);
+  color: var(--accent);
 }
 
 /* Words, not glyphs: the row's controls say "edit" and "delete", which the
@@ -580,8 +560,10 @@
 }
 
 [data-theme^="paper"] .home-workspace .today-list__error {
-  padding: var(--space-8) 0;
+  margin: var(--space-md) 0;
+  padding: 0 0 0 var(--space-sm);
   border: 0;
+  border-left: 2px solid var(--danger);
   background: transparent;
   font: var(--small);
   color: var(--danger);
@@ -594,9 +576,9 @@
   border-radius: 0;
   background: transparent;
   font: var(--small);
-  color: var(--text);
+  color: var(--danger);
   text-transform: lowercase;
-  text-decoration: underline 1px var(--accent);
+  text-decoration: underline 1px var(--danger);
   text-underline-offset: 0.2em;
 }
 
