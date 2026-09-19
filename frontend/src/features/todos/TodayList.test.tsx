@@ -1,7 +1,21 @@
 // @vitest-environment happy-dom
 
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render as renderBare,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
+import type { RenderOptions } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+
+// The list links to the tasks board, so every render needs a router around it.
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  renderBare(ui, { wrapper: MemoryRouter, ...options });
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TodayTodo } from "../../types/domain";
 import { TodayList, type TodayListProps } from "./TodayList";
@@ -106,6 +120,12 @@ describe("TodayList", () => {
     expect(within(items[1]!).getByText("Due today")).toBeTruthy();
     expect(within(items[1]!).queryByText(/Wed, Sep 2/)).toBeNull();
     expect(within(items[1]!).getByText("2:30 PM")).toBeTruthy();
+  });
+
+  it("offers the way out of one day at the foot of the list", () => {
+    render(<TodayList {...props()} />);
+    const all = screen.getByRole("link", { name: "All tasks this week" });
+    expect(all.getAttribute("href")).toBe("/todos");
   });
 
   it("exposes completion, editing, deletion, and Add intents", () => {

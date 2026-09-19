@@ -343,7 +343,6 @@ Beyond `personal` and `dense`, add scenarios according to what changed:
 | Changed behavior | Additional checks |
 | --- | --- |
 | Calendar geometry, overlap, density, or truncation | Relevant long/adjacent/overlapping events and visible times in `dense`. |
-| Cover or surrounding layout | `portrait` and no-cover `typical`; expand/collapse where affected. |
 | Responsive/shared layout | Actual desktop and a smaller viewport; the relevant scenario matrix once when the change is complete. |
 | Persistence, initialization, or navigation | Navigate away/back and reload; use the real app for account persistence. |
 | Upload preparation or crop controls | Run an image through the actual upload/crop flow. |
@@ -352,7 +351,7 @@ Do not repeat unaffected scenarios for every copy or isolated styling revision.
 
 Fixture checks are insufficient evidence for data-dependent or
 provider-dependent changes. Before deploying those, also check the normal
-authenticated app with the intended account's data and cover using the local
+authenticated app with the intended account's data using the local
 full stack. `npm run dev` starts local Supabase; when intentionally testing the
 existing hosted account, run `npx vercel dev` with the matching ignored
 browser/server configuration and local `APP_URL` and allowed auth redirects (see

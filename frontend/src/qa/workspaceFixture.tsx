@@ -17,11 +17,7 @@ import {
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
 import { createFixtureCareer } from "./careerFixture";
 import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
-import {
-  createFixtureAppearance,
-  createFixtureCover,
-  delayedFixtureService,
-} from "./workspaceFixtureSupport";
+import { createFixtureAppearance, delayedFixtureService } from "./workspaceFixtureSupport";
 import "./workspaceFixture.css";
 import type { TodoService } from "../features/todos/todoService";
 import type {
@@ -466,9 +462,9 @@ const storage = {
   removeItem: (key: string) => window.sessionStorage.removeItem(key),
 };
 const delay = scenario === "slow" ? 1500 : 180;
-const cover = ["realistic", "personal", "dense", "portrait", "slow"].includes(scenario)
-  ? createFixtureCover(scenario === "portrait")
-  : null;
+// A page name the header can print, so the fixture exercises the title line
+// the way a real account does.
+const pageTitle = scenario === "empty" ? "" : "toby fall '26";
 const calendarService = delayedFixtureService(
   createFixtureCalendar({
     scenario,
@@ -509,7 +505,7 @@ const workspaceData = {
     delay,
   ),
   homeAppearance: delayedFixtureService(
-    createFixtureAppearance(storage, appearanceKey, cover),
+    createFixtureAppearance(storage, appearanceKey, pageTitle),
     delay,
   ),
   profile: async () => profile,
@@ -560,7 +556,6 @@ function FixtureTools() {
             "empty",
             "dense",
             "long",
-            "portrait",
             "slow",
             "error",
             "disconnected",
@@ -574,8 +569,8 @@ function FixtureTools() {
         on reload. No Google or database connection.
       </p>
       <p>
-        Check event colors, overlap, adjacent 15-minute events, clipped titles and times, then
-        expand/collapse the cover. Use Customize page to try your own image.
+        Check event colors, overlap, adjacent 15-minute events, and clipped titles and times. Use
+        Customize page to rename the page.
       </p>
       <button
         onClick={() => {
@@ -584,7 +579,7 @@ function FixtureTools() {
           window.location.reload();
         }}
       >
-        Reset calendar and cover
+        Reset calendar and page name
       </button>
     </details>
   );

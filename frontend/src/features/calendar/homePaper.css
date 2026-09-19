@@ -65,9 +65,9 @@
   margin-bottom: 0;
 }
 
-/* Without a cover the header is the whole top of the page, so it keeps its
- * own space above the work rather than leaning on the workspace's gap. */
-[data-theme^="paper"] .home-header:not(.home-header--cover) .home-header__line {
+/* The header is the whole top of the page, so it keeps its own space above the
+ * work rather than leaning on the workspace's gap. */
+[data-theme^="paper"] .home-header .home-header__line {
   padding-bottom: var(--space-24);
 }
 
@@ -132,62 +132,6 @@
   color: var(--faint);
   opacity: 1;
   cursor: default;
-}
-
-/* A cover is a picture with its title ruled beneath it, not printed over it:
- * the line sits inside the frame as an opaque band so the collapsing-cover
- * geometry keeps measuring one element, and nothing is a gradient. */
-[data-theme^="paper"] .home-header--cover .home-header__frame {
-  border-radius: 0;
-  background: var(--ground);
-}
-
-/* Over a cover the band reads as one caption line, so the picture keeps its
- * height: the name, the date and the page's actions share a baseline. */
-[data-theme^="paper"] .home-header--cover .home-header__line {
-  inset: auto 0 0;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  min-height: 0;
-  padding: var(--space-8) 0 var(--space-md);
-  border-top: 1px solid var(--hairline);
-  background: var(--ground);
-  align-items: baseline;
-}
-
-[data-theme^="paper"] .home-header--cover h1:not(.cloud-shell__sr-only) {
-  grid-area: 1 / 1;
-  font: var(--display);
-  letter-spacing: var(--display-tracking);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-[data-theme^="paper"] .home-header--cover .home-header__date {
-  grid-area: 1 / 2;
-  margin: 0;
-}
-
-[data-theme^="paper"] .home-header--cover .home-header__actions {
-  grid-area: 1 / 3;
-}
-
-[data-theme^="paper"] .home-header--cover .home-header__customize {
-  color: var(--muted);
-  background: transparent;
-}
-
-[data-theme^="paper"] .home-header--cover .home-header__customize:hover {
-  color: var(--accent);
-  background: transparent;
-}
-
-[data-theme^="paper"] .home-header__cover {
-  border-radius: 0;
-}
-
-[data-theme^="paper"] .home-page--cover {
-  scrollbar-color: var(--hairline-strong) var(--ground);
 }
 
 [data-theme^="paper"] .home-header__error {
@@ -264,6 +208,30 @@
   text-decoration: none;
   opacity: 1;
   cursor: default;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-today {
+  color: var(--text);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-today:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+/* The week's own group closes up: the chevrons belong to the word between
+ * them, not to the actions either side of it. */
+[data-theme^="paper"] .calendar-toolbar-actions {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-icon-button + .calendar-today,
+[data-theme^="paper"] .calendar-today + .calendar-icon-button {
+  margin-inline-start: calc(-1 * var(--space-8));
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh {
+  margin-inline-start: var(--space-sm);
 }
 
 /* The chevrons that step a week are the one icon allowed to stand alone. */
@@ -358,19 +326,25 @@
 }
 
 [data-theme^="paper"] .calendar-footer {
-  gap: var(--space-8);
+  justify-content: space-between;
+  gap: var(--space-md);
   padding-top: var(--space-sm);
   margin-top: var(--space-sm);
-  border-top: 1px solid var(--hairline);
+  border-top: 0;
   font: var(--fine);
   color: var(--muted);
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .calendar-footer .workspace-icon {
-  width: 13px;
-  height: 13px;
-  stroke-width: 1.5;
+/* What the week's type means, in the type it is describing. */
+[data-theme^="paper"] .calendar-legend {
+  display: block;
+  margin: 0;
+}
+
+[data-theme^="paper"] .calendar-legend strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* ------------------------------------------------------ the tasks column */
@@ -490,8 +464,10 @@
 }
 
 /* A row is a rule and the space above it; hovering moves nothing. */
+/* No track for the handle: todosPaper takes it out of flow, so the row is the
+ * box, the task, and its one action out at the right margin. */
 [data-theme^="paper"] .home-workspace .today-list-item article {
-  grid-template-columns: 12px 18px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   gap: var(--space-xs) var(--space-sm);
   padding: var(--space-sm) 0;
   transition: none;
@@ -523,10 +499,39 @@
   content: " · ";
 }
 
+/* The handle stays out of sight until the row is under the pointer or it takes
+ * focus. It needs the panel's own scope: the classic sheet sets its opacity at
+ * `.home-workspace` and again inside the phone query, and both outrank the
+ * plain themed rule in todosPaper. */
 [data-theme^="paper"] .home-workspace .today-list-item__drag {
   width: 12px;
   color: var(--faint);
+  opacity: 0;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item article:hover .today-list-item__drag,
+[data-theme^="paper"] .home-workspace .today-list-item__drag:focus-visible {
   opacity: 1;
+}
+
+/* Column 3, not 4: the handle's track is gone, so the classic sheet's
+ * `.home-workspace .today-list-item__actions` would leave "edit" one track
+ * past the end of the row. Both selectors weigh the same, so this one has to
+ * carry the theme's scope to win. */
+[data-theme^="paper"] .home-workspace .today-list-item__actions {
+  grid-area: 1 / 3;
+}
+
+/* The list ends where its rows end, so "all tasks this week" follows the last
+ * one instead of being pushed to the foot of the column. A long list still
+ * takes the height it is given and scrolls inside it. */
+[data-theme^="paper"] .home-workspace .today-list__scroll {
+  flex: 0 1 auto;
+}
+
+/* The panel has no gutter of its own, so the link starts where the rows do. */
+[data-theme^="paper"] .home-workspace .today-list__all {
+  margin-inline: 0;
 }
 
 [data-theme^="paper"] .home-workspace .today-list-item__actions button:where(:not(.paper-action)) {
@@ -707,21 +712,6 @@
   cursor: default;
 }
 
-[data-theme^="paper"] .home-appearance-preview {
-  margin: var(--space-sm) 0;
-  border-radius: 0;
-}
-
-[data-theme^="paper"] .home-appearance-position {
-  gap: var(--space-24);
-}
-
-[data-theme^="paper"] .home-appearance-position input {
-  border: 0;
-  background: transparent;
-  accent-color: var(--accent);
-}
-
 /* ------------------------------------------------------------ narrower */
 
 @media (max-width: 1200px) {
@@ -742,8 +732,8 @@
 }
 
 @media (max-width: 900px) {
-  /* Classic caps the actions so they stack over a cover; Paper's band is one
-   * line, so they stay on it. The page's own padding steps down in paper.css. */
+  /* Classic caps the actions so they can stack; Paper's line holds them on one
+   * row. The page's own padding steps down in paper.css. */
   [data-theme^="paper"] .home-header__actions {
     max-width: none;
   }
@@ -751,7 +741,7 @@
 
 /* Phone: tasks lead, the week follows under a hairline. */
 @media (max-width: 620px) {
-  [data-theme^="paper"] .home-header--cover .home-header__date {
+  [data-theme^="paper"] .home-header .home-header__date {
     display: none;
   }
 
@@ -760,8 +750,7 @@
     border-top: 0;
   }
 
-  [data-theme^="paper"] .home-workspace--phone .calendar-panel,
-  [data-theme^="paper"] .home-page--cover .home-workspace--phone .calendar-panel {
+  [data-theme^="paper"] .home-workspace--phone .calendar-panel {
     margin-top: var(--space-lg);
     padding-top: var(--space-24);
     border-top: 1px solid var(--hairline);

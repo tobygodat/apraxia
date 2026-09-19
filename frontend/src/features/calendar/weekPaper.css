@@ -103,8 +103,13 @@
   row-gap: var(--space-xs);
 }
 
+/* An hour label names the hour that starts at its line, so it sits under the
+ * line rather than straddling it. Centred, the first hour on screen is always
+ * cut in half by the top of the scroll. */
 [data-theme^="paper"] .week-time-labels > span {
   right: var(--space-8);
+  transform: none;
+  padding-top: 2px;
   color: var(--muted);
   font: var(--fine);
   font-variant-numeric: tabular-nums;
@@ -174,8 +179,19 @@
   max-width: 100%;
   background: var(--ground);
   font: var(--fine);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.3;
+  /* A name too long for its event ends in an ellipsis rather than mid-word:
+     the row is one line high and the time below it has to survive. */
+  text-overflow: ellipsis;
+}
+
+/* A shift is the one thing on the week you are not meant to read: same weight
+ * as everything else, one step back in colour, as the footer's line says. */
+[data-theme^="paper"] .calendar-event--work strong,
+[data-theme^="paper"] .calendar-event--work .calendar-event__inline strong,
+[data-theme^="paper"] .calendar-panel button.calendar-event--work {
+  color: var(--muted);
 }
 
 [data-theme^="paper"] .calendar-event--timed span,
@@ -208,6 +224,7 @@
 /* ---- now, and what you are about to add ---- */
 
 [data-theme^="paper"] .week-now {
+  height: 1px;
   background: var(--accent);
 }
 
@@ -215,14 +232,30 @@
   display: none;
 }
 
-[data-theme^="paper"] .week-time-labels .week-current-time {
+/* The time rides the line it marks, at the end of today's column, instead of
+ * replacing an hour in the gutter: the gutter then reads as an unbroken scale
+ * and the line says what it is where it is drawn. */
+[data-theme^="paper"] .week-now__label {
+  display: block;
+  position: absolute;
   right: var(--space-8);
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
+  bottom: 1px;
+  background: var(--ground);
+  padding-left: var(--space-8);
   color: var(--accent);
   font: var(--fine);
   font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+/* The gutter keeps every hour: the time is on the line now. */
+[data-theme^="paper"] .week-time-labels .week-current-time {
+  display: none;
+}
+
+[data-theme^="paper"] .week-time-labels > .week-time-label--near-now {
+  visibility: visible;
 }
 
 [data-theme^="paper"] .calendar-selection {
