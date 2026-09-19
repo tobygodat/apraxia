@@ -147,6 +147,13 @@
   cursor: pointer;
 }
 
+/* Hover turns the word, and any icon riding beside it, accent. Nothing moves,
+   grows or lifts, and a disabled word does not respond. */
+[data-theme^="paper"] .paper-action:hover:not(:disabled) {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
 [data-theme^="paper"] .paper-action--completing {
   font-weight: 600;
 }
@@ -156,7 +163,9 @@
   text-decoration: none;
 }
 
-[data-theme^="paper"] .paper-action--danger {
+/* A destructive word stays `danger` on hover: green would say the opposite. */
+[data-theme^="paper"] .paper-action--danger,
+[data-theme^="paper"] .paper-action--danger:hover:not(:disabled) {
   color: var(--danger);
   text-decoration-color: var(--danger);
 }
@@ -286,6 +295,10 @@
   cursor: pointer;
 }
 
+[data-theme^="paper"] .paper-nav__item:hover {
+  color: var(--accent);
+}
+
 [data-theme^="paper"] .paper-nav__item--current {
   color: var(--text);
   border-bottom-color: var(--accent);
@@ -319,10 +332,17 @@
 }
 
 /* Something went wrong: a line of text against a rule, not a tinted banner.
-   The retry beside it is a `.paper-action--danger`. */
-[data-theme^="paper"] .paper-error {
-  padding-left: var(--space-sm);
+   The retry beside it is a `.paper-action--danger`.
+   `.workspace-error` is the classic banner's class, rendered from eight files
+   across every surface, so it answers to this rule too rather than each page
+   adding the class to markup it does not own. The alias goes when the classic
+   class names do; it carries the resets that undo the classic box. */
+:root[data-theme^="paper"] .paper-error,
+:root[data-theme^="paper"] .workspace-error {
+  padding: 0 0 0 var(--space-sm);
+  border: 0;
   border-left: 2px solid var(--danger);
+  border-radius: 0;
   background: transparent;
   font: var(--small);
   color: var(--danger);
