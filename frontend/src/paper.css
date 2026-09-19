@@ -383,6 +383,9 @@
   background: transparent;
   font: var(--small);
   color: var(--danger);
+  /* "Retry" is an interface word, and the string is shared with classic, so
+     the case is corrected here rather than in the eight files that render it. */
+  text-transform: lowercase;
   text-decoration: underline 1px var(--danger);
   text-underline-offset: 0.2em;
   cursor: pointer;

@@ -326,7 +326,7 @@ export function CollectionPage(props: Props) {
               a box between them; classic keeps the children it always had. */}
           {paper ? <span className="collection-open__body">{body}</span> : body}
           {paper && (
-            <span className="paper-action collection-open__word">
+            <span className="paper-action paper-action--quiet collection-open__word">
               {k === "project" ? "open" : "edit"}
             </span>
           )}
