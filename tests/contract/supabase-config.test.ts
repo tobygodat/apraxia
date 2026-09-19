@@ -62,9 +62,13 @@ describe("migration security contract", () => {
     expect(sql).toMatch(/create schema if not exists private/i);
     expect(sql).toMatch(/create schema if not exists internal/i);
     expect(sql).toMatch(/alter table public\.todos enable row level security/i);
-    // Browser roles never hard-delete a soft-deleted record type. Classes and
-    // notes are not soft-deleted and carry their own owner-scoped DELETE
-    // policies; the legacy class_assignments backup is read-only.
+    // Browser roles never hard-delete a soft-deleted record type. Rows that are
+    // not soft-deleted carry their own owner-scoped DELETE policies instead:
+    // classes and their notes, and everything hanging off a career application,
+    // which is removed outright because undo is for the application itself. The
+    // legacy class_assignments backup is read-only, and career_applications is
+    // deliberately absent: it goes through soft_delete_record like every other
+    // record.
     const browserDeleteGrants = [
       ...sql.matchAll(
         /grant\s+([^;]*?\bdelete\b[^;]*?)\s+on\s+(public\.[a-z_]+)\s+to\s+([^;]+);/gi,
@@ -73,7 +77,19 @@ describe("migration security contract", () => {
       .filter((grant) => /\bauthenticated\b/i.test(grant[3] ?? ""))
       .map((grant) => grant[2]);
 
-    expect(new Set(browserDeleteGrants)).toEqual(new Set(["public.class_notes", "public.classes"]));
+    expect(new Set(browserDeleteGrants)).toEqual(
+      new Set([
+        "public.career_prep",
+        "public.career_questions",
+        "public.career_resources",
+        "public.career_steps",
+        "public.career_stories",
+        "public.career_story_uses",
+        "public.class_notes",
+        "public.classes",
+      ]),
+    );
+    expect(browserDeleteGrants).not.toContain("public.career_applications");
   });
 
   it("keeps the helper role compatible with managed Supabase postgres", async () => {

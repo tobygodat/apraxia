@@ -443,6 +443,11 @@ function WorkspaceLayout({
       setSearchOpen(false);
       return;
     }
+    if (result.recordType === "application") {
+      navigate(`/career/${encodeURIComponent(result.recordId)}`);
+      setSearchOpen(false);
+      return;
+    }
     if (result.recordType === "class" || result.recordType === "class_note") {
       // A class is identified by its course code; a saved note is read on the
       // class page it belongs to, which the result carries as its parent.

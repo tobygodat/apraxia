@@ -147,6 +147,7 @@ it("keeps every search vector on a partial or plain GIN index", async () => {
      order by indexname`,
   );
   expect(rows.map((r) => r.indexname)).toEqual([
+    "career_applications_search_idx",
     "class_notes_search_idx",
     "classes_search_idx",
     "ideas_search_idx",
@@ -159,11 +160,13 @@ it("keeps the delete and restore contract on its own narrower record type", asyn
   const { rows } = await database.query<{ kinds: string }>(
     `select enum_range(null::public.orbitos_record_type)::text as kinds`,
   );
-  expect(rows).toEqual([{ kinds: "{todo,idea,project}" }]);
+  expect(rows).toEqual([{ kinds: "{todo,idea,project,application}" }]);
   const search = await database.query<{ kinds: string }>(
     `select enum_range(null::public.search_record_type)::text as kinds`,
   );
-  expect(search.rows).toEqual([{ kinds: "{todo,assignment,idea,project,class,class_note}" }]);
+  expect(search.rows).toEqual([
+    { kinds: "{todo,assignment,idea,project,class,class_note,application}" },
+  ]);
 });
 
 it("never prints a record's own text twice in one row", async () => {
