@@ -890,12 +890,14 @@ export function TodosBoard({
         <div className="todos-board-columns">{dateColumns.map(renderColumn)}</div>
       </div>
 
+      {/* Overdue appears only when something is overdue, because an empty pile
+          would report a problem that does not exist. Inbox always appears: it is
+          where an undated task lands, and its Add belongs on the page whether or
+          not anything is waiting there. */}
       {overdueColumn && overdueColumn.todos.length > 0
         ? renderPile(overdueColumn, "Overdue", "Nothing overdue.")
         : null}
-      {inboxColumn && inboxColumn.todos.length > 0
-        ? renderPile(inboxColumn, "Inbox", "Nothing waiting.")
-        : null}
+      {inboxColumn ? renderPile(inboxColumn, "Inbox", "Nothing waiting.") : null}
 
       <p className="todos-board-sr-only" aria-live="polite" aria-atomic="true">
         <span key={announcement.sequence}>

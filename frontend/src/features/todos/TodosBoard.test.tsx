@@ -102,6 +102,17 @@ function MutationHarness({
 }
 
 describe("TodosBoard", () => {
+  it("keeps Inbox on an empty board and leaves Overdue off it", () => {
+    render(<TodosBoard {...props({ model: model([]) })} />);
+    // Inbox is where an undated task lands, so its heading and its Add stay on
+    // the page with nothing in it. An empty Overdue would report a problem that
+    // does not exist, so it is absent instead.
+    expect(screen.getByRole("heading", { name: "Inbox" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add task to Inbox" })).toBeTruthy();
+    expect(screen.getByText("Nothing waiting.")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
+  });
+
   it("runs Sunday to Saturday, then the overdue pile, then Inbox", () => {
     render(<TodosBoard {...props()} />);
     const headings = screen
