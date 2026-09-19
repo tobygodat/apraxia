@@ -58,7 +58,7 @@ export function CareerStructureTab({
   return (
     <div className="career-tab">
       <h2 className="paper-heading career-tab__heading">process</h2>
-      <div className="career-rows">
+      <div className="career-app-rows">
         {ordered.map((step) => {
           const timing = stepTiming(step, today);
           const done = !!step.doneAt;
@@ -66,11 +66,11 @@ export function CareerStructureTab({
           return (
             <div
               key={step.id}
-              className={`paper-row career-row${done ? " career-row--done" : ""}${
-                step.id === next?.id ? " paper-row--now career-row--now" : ""
+              className={`paper-row career-app-row${done ? " career-app-row--done" : ""}${
+                step.id === next?.id ? " paper-row--now career-app-row--now" : ""
               }`}
             >
-              <div className="career-row__line">
+              <div className="career-app-row__line">
                 <input
                   className="paper-check"
                   type="checkbox"
@@ -88,25 +88,25 @@ export function CareerStructureTab({
                     )
                   }
                 />
-                <span className="career-row__name">{step.name}</span>
+                <span className="career-app-row__name">{step.name}</span>
                 <button
                   type="button"
-                  className="paper-action paper-action--quiet career-row__note-action"
+                  className="paper-action paper-action--quiet career-app-row__note-action"
                   onClick={() => setNotesFor(open ? null : step.id)}
                 >
                   {open ? "hide note" : "note"}
                 </button>
                 <span
-                  className={`paper-row__meta career-row__when${
+                  className={`paper-row__meta career-app-row__when${
                     timing.late ? " paper-row__meta--late" : ""
                   }`}
                 >
                   {timing.label}
                 </span>
               </div>
-              {step.notes && !open && <p className="career-row__notes">{step.notes}</p>}
+              {step.notes && !open && <p className="career-app-row__notes">{step.notes}</p>}
               {open && (
-                <div className="career-row__editor">
+                <div className="career-app-row__editor">
                   <label className="career-editor__label">
                     <span>date</span>
                     <input
@@ -126,7 +126,7 @@ export function CareerStructureTab({
                     />
                   </label>
                   <textarea
-                    className="paper-field career-row__note-field"
+                    className="paper-field career-app-row__note-field"
                     aria-label={`${step.name} note`}
                     defaultValue={step.notes ?? ""}
                     rows={2}
@@ -139,7 +139,7 @@ export function CareerStructureTab({
                       );
                     }}
                   />
-                  <p className="career-row__editor-actions">
+                  <p className="career-app-row__editor-actions">
                     <button
                       type="button"
                       className="paper-action paper-action--danger"
@@ -162,10 +162,10 @@ export function CareerStructureTab({
             </div>
           );
         })}
-        <div className="paper-row career-row career-row--add">
+        <div className="paper-row career-app-row career-app-row--add">
           {adding ? (
             <form
-              className="career-row__line career-row__add-form"
+              className="career-app-row__line career-app-row__add-form"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!name.trim()) return;
@@ -183,7 +183,7 @@ export function CareerStructureTab({
               }}
             >
               <input
-                className="paper-field career-row__add-name"
+                className="paper-field career-app-row__add-name"
                 value={name}
                 autoFocus
                 required

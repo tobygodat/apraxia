@@ -69,11 +69,11 @@ export function CareerStories({
         <span className="career-tab__aside">written once, reused at every company</span>
       </div>
       {tags.length > 0 && (
-        <div className="career-filter">
-          <span className="career-filter__label">tags</span>
+        <div className="career-app-tags">
+          <span className="career-app-tags__label">tags</span>
           <button
             type="button"
-            className={`paper-nav__item career-filter__tag${
+            className={`paper-nav__item career-app-tags__tag${
               tag === null ? " paper-nav__item--current" : ""
             }`}
             onClick={() => setTag(null)}
@@ -84,7 +84,7 @@ export function CareerStories({
             <button
               key={name}
               type="button"
-              className={`paper-nav__item career-filter__tag${
+              className={`paper-nav__item career-app-tags__tag${
                 tag === name ? " paper-nav__item--current" : ""
               }`}
               onClick={() => setTag(name)}
@@ -94,19 +94,19 @@ export function CareerStories({
           ))}
         </div>
       )}
-      <div className="career-rows">
+      <div className="career-app-rows">
         {shown.map((story) => {
           const usedHere = uses.some(
             (use) => use.storyId === story.id && use.applicationId === applicationId,
           );
           return (
-            <div key={story.id} className="paper-row career-row career-row--stacked">
-              <p className="career-row__body paper-measure">{story.title}</p>
-              <p className="paper-row__meta career-row__tags">
+            <div key={story.id} className="paper-row career-app-row career-app-row--stacked">
+              <p className="career-app-row__body paper-measure">{story.title}</p>
+              <p className="paper-row__meta career-app-row__tags">
                 {[...story.tags, where(story.id)].filter(Boolean).join(" · ")}
                 <button
                   type="button"
-                  className="paper-action paper-action--quiet career-row__toggle"
+                  className="paper-action paper-action--quiet career-app-row__toggle"
                   onClick={() => setOpen(open === story.id ? null : story.id)}
                 >
                   {open === story.id ? "hide" : "show"}
@@ -141,7 +141,7 @@ export function CareerStories({
                 </button>
               </p>
               {open === story.id && (
-                <div className="career-row__answer paper-measure">
+                <div className="career-app-row__answer paper-measure">
                   <MarkdownField
                     value={story.body}
                     label={`the story ${story.title}`}
@@ -151,7 +151,7 @@ export function CareerStories({
                       void save({ id: story.id, title: story.title, body: next }, "Saving…")
                     }
                   />
-                  <p className="career-row__editor-actions">
+                  <p className="career-app-row__editor-actions">
                     <button
                       type="button"
                       className="paper-action paper-action--danger"
@@ -175,10 +175,10 @@ export function CareerStories({
             </div>
           );
         })}
-        <div className="paper-row career-row career-row--add">
+        <div className="paper-row career-app-row career-app-row--add">
           {adding ? (
             <form
-              className="career-row__add-stack"
+              className="career-app-row__add-stack"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!title.trim()) return;
@@ -210,9 +210,9 @@ export function CareerStories({
                 aria-label="what the story is about"
                 onChange={(event) => setTitle(event.target.value)}
               />
-              <div className="career-row__line">
+              <div className="career-app-row__line">
                 <input
-                  className="paper-field career-row__add-name"
+                  className="paper-field career-app-row__add-name"
                   value={tagsText}
                   placeholder="conflict, influence"
                   aria-label="tags, separated by commas"

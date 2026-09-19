@@ -43,6 +43,7 @@ const PRIMARY_DESTINATIONS = [
   { to: "/ideas", label: "Ideas", icon: "ideas", end: false },
   { to: "/projects", label: "Projects", icon: "projects", end: false },
   { to: "/classes", label: "Classes", icon: "classes", end: false },
+  { to: "/career", label: "Career", icon: "career", end: false },
 ] as const;
 
 export interface CloudAppShellProps {

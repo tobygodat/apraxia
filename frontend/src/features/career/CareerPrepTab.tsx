@@ -65,15 +65,15 @@ function PrepList({
   return (
     <>
       <h2 className="paper-heading career-tab__heading">prep</h2>
-      <div className="career-rows">
+      <div className="career-app-rows">
         {orderPrep(items).map((item) => {
           const timing = dateTiming(item.dueOn, today, "");
           return (
             <div
               key={item.id}
-              className={`paper-row career-row${item.doneAt ? " career-row--done" : ""}`}
+              className={`paper-row career-app-row${item.doneAt ? " career-app-row--done" : ""}`}
             >
-              <div className="career-row__line">
+              <div className="career-app-row__line">
                 <input
                   className="paper-check"
                   type="checkbox"
@@ -91,7 +91,7 @@ function PrepList({
                     )
                   }
                 />
-                <span className="career-row__name">{item.body}</span>
+                <span className="career-app-row__name">{item.body}</span>
                 <DueCell
                   label={item.body}
                   value={item.dueOn}
@@ -103,7 +103,7 @@ function PrepList({
                 />
                 <button
                   type="button"
-                  className="paper-action paper-action--quiet career-row__remove"
+                  className="paper-action paper-action--quiet career-app-row__remove"
                   disabled={!!busy}
                   onClick={() =>
                     void run("Removing…", async (signal) => {
@@ -119,10 +119,10 @@ function PrepList({
             </div>
           );
         })}
-        <div className="paper-row career-row career-row--add">
+        <div className="paper-row career-app-row career-app-row--add">
           {adding ? (
             <form
-              className="career-row__line career-row__add-form"
+              className="career-app-row__line career-app-row__add-form"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!body.trim()) return;
@@ -140,7 +140,7 @@ function PrepList({
               }}
             >
               <input
-                className="paper-field career-row__add-name"
+                className="paper-field career-app-row__add-name"
                 value={body}
                 autoFocus
                 required
@@ -224,11 +224,11 @@ function Questions({
     <>
       <h2 className="paper-heading career-tab__heading">questions</h2>
       {(tags.length > 0 || across) && (
-        <div className="career-filter">
-          <span className="career-filter__label">tags</span>
+        <div className="career-app-tags">
+          <span className="career-app-tags__label">tags</span>
           <button
             type="button"
-            className={`paper-nav__item career-filter__tag${
+            className={`paper-nav__item career-app-tags__tag${
               tag === null ? " paper-nav__item--current" : ""
             }`}
             onClick={() => {
@@ -242,7 +242,7 @@ function Questions({
             <button
               key={name}
               type="button"
-              className={`paper-nav__item career-filter__tag${
+              className={`paper-nav__item career-app-tags__tag${
                 tag === name ? " paper-nav__item--current" : ""
               }`}
               onClick={() => {
@@ -253,7 +253,7 @@ function Questions({
               {name}
             </button>
           ))}
-          <span className="career-filter__spacer" />
+          <span className="career-app-tags__spacer" />
           {tag && (
             <button
               type="button"
@@ -282,11 +282,11 @@ function Questions({
             : `nothing else tagged ${tag} yet`}
         </p>
       )}
-      <div className="career-rows">
+      <div className="career-app-rows">
         {shown.map((question) => (
-          <div key={question.id} className="paper-row career-row career-row--stacked">
-            <p className="career-row__body paper-measure">{question.body}</p>
-            <p className="paper-row__meta career-row__tags">
+          <div key={question.id} className="paper-row career-app-row career-app-row--stacked">
+            <p className="career-app-row__body paper-measure">{question.body}</p>
+            <p className="paper-row__meta career-app-row__tags">
               {[
                 ...question.tags,
                 question.answer ? "answered" : "to prepare",
@@ -296,7 +296,7 @@ function Questions({
                 .join(" · ")}
               <button
                 type="button"
-                className="paper-action paper-action--quiet career-row__toggle"
+                className="paper-action paper-action--quiet career-app-row__toggle"
                 onClick={() => setOpen(open === question.id ? null : question.id)}
               >
                 {open === question.id ? "hide answer" : question.answer ? "show answer" : "answer"}
@@ -304,7 +304,7 @@ function Questions({
               {question.applicationId === applicationId && (
                 <button
                   type="button"
-                  className="paper-action paper-action--quiet career-row__remove"
+                  className="paper-action paper-action--quiet career-app-row__remove"
                   disabled={!!busy}
                   onClick={() =>
                     void run("Removing…", async (signal) => {
@@ -323,7 +323,7 @@ function Questions({
               )}
             </p>
             {open === question.id && (
-              <div className="career-row__answer paper-measure">
+              <div className="career-app-row__answer paper-measure">
                 <MarkdownField
                   value={question.answer ?? ""}
                   label={`answer to ${question.body}`}
@@ -341,10 +341,10 @@ function Questions({
             )}
           </div>
         ))}
-        <div className="paper-row career-row career-row--add">
+        <div className="paper-row career-app-row career-app-row--add">
           {adding ? (
             <form
-              className="career-row__add-stack"
+              className="career-app-row__add-stack"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!body.trim()) return;
@@ -372,9 +372,9 @@ function Questions({
                 aria-label="question"
                 onChange={(event) => setBody(event.target.value)}
               />
-              <div className="career-row__line">
+              <div className="career-app-row__line">
                 <input
-                  className="paper-field career-row__add-name"
+                  className="paper-field career-app-row__add-name"
                   value={tagsText}
                   placeholder="technical, systems"
                   aria-label="tags, separated by commas"
@@ -430,10 +430,10 @@ function DueCell({
   const [editing, setEditing] = useState(false);
   if (editing)
     return (
-      <label className="career-row__due">
+      <label className="career-app-row__due">
         <span className="cloud-shell__sr-only">{`${label} due`}</span>
         <input
-          className="paper-field career-row__due-field"
+          className="paper-field career-app-row__due-field"
           type="date"
           autoFocus
           value={value ?? ""}
@@ -448,7 +448,7 @@ function DueCell({
   return (
     <button
       type="button"
-      className={`paper-action paper-action--quiet paper-row__meta career-row__when${
+      className={`paper-action paper-action--quiet paper-row__meta career-app-row__when${
         timing.late && !done ? " paper-row__meta--late" : ""
       }`}
       onClick={() => setEditing(true)}

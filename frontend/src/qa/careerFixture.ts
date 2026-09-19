@@ -1,16 +1,21 @@
 /**
- * An in-memory career service for the fixture workspace. Nothing here touches
- * Supabase or storage: rows live for the life of the tab, so the application
- * pages can be looked at, written in and broken without an account.
+ * A `CareerService` backed by arrays in this tab, for the QA workspace fixture.
  *
- * The fictional applications are invented. Real ones belong to the account, and
- * the `personal` snapshot does not carry them.
+ * Every company, role and note below is invented. The rounds are dated relative
+ * to the fixture's own "today", so the table shows a late step, a step due this
+ * week and applications with nothing scheduled without the dates going stale.
+ *
+ * The first application carries the rest of it — notes on its rounds, prep,
+ * tagged questions, behaviourals and resources — so one application's own three
+ * tabs have something to show. The others stay thin, which is what the table
+ * needs and what a new application looks like.
  */
-import { nextStepOf, orderApplications } from "../features/career/careerOrdering";
+import { addSqlDateDays } from "../features/todos/dateDomain";
+import { nextStepOf } from "../features/career/careerOrdering";
 import type {
   CareerApplication,
-  CareerApplicationDraft,
   CareerApplicationRow,
+  CareerDeletion,
   CareerPrepItem,
   CareerQuestion,
   CareerResource,
@@ -20,395 +25,377 @@ import type {
   CareerStoryUse,
 } from "../features/career/careerService";
 
-const PROCESS_NOTES = `## the rounds, as she described them
+interface Seed {
+  company: string;
+  role: string;
+  /** Days before today, or null for an application not sent yet. */
+  applied: number | null;
+  stage: CareerApplication["stage"];
+  location?: string;
+  /** Rounds as `[name, days from today or null]`. */
+  steps?: readonly (readonly [string, number | null])[];
+}
 
-1. recruiter screen — 30 min, logistics only
+const SEEDS: readonly Seed[] = [
+  {
+    company: "Northwind Systems",
+    role: "software engineer intern",
+    applied: 15,
+    stage: "interview",
+    location: "Seattle, WA",
+    steps: [
+      ["recruiter call", -9],
+      ["technical screen", 3],
+      ["onsite", null],
+    ],
+  },
+  {
+    company: "Halden Pay",
+    role: "product engineer intern",
+    applied: 15,
+    stage: "screen",
+    location: "New York, NY",
+    steps: [["recruiter call", 0]],
+  },
+  {
+    company: "Meridian Labs",
+    role: "product engineer intern",
+    applied: 22,
+    stage: "offer",
+    location: "remote",
+    steps: [["decide by", 6]],
+  },
+  {
+    company: "Corvid Cloud",
+    role: "frontend engineer intern",
+    applied: 24,
+    stage: "interview",
+    location: "Austin, TX",
+    steps: [["take-home", -3]],
+  },
+  {
+    company: "Quillwork",
+    role: "design engineer intern",
+    applied: 28,
+    stage: "applied",
+    location: "San Francisco, CA",
+  },
+  {
+    company: "Baseline Data",
+    role: "systems engineer intern",
+    applied: 31,
+    stage: "applied",
+  },
+  {
+    company: "Trellis Analytics",
+    role: "software engineer intern",
+    applied: 36,
+    stage: "rejected",
+  },
+  {
+    company: "Ironvale",
+    role: "software engineer intern",
+    applied: 39,
+    stage: "withdrawn",
+  },
+  {
+    company: "Pike & Ferrier",
+    role: "software developer intern",
+    applied: null,
+    stage: "interested",
+    steps: [["deadline", 12]],
+  },
+  {
+    company: "Fernbrook Energy",
+    role: "full stack engineer intern",
+    applied: null,
+    stage: "interested",
+    steps: [["opens", 17]],
+  },
+];
+
+/** The dense scenario adds rows that try to break the column widths. */
+const DENSE: readonly Seed[] = [
+  {
+    company: "Consolidated Interplanetary Logistics and Freight Corporation",
+    role: "associate software engineering intern, platform infrastructure and reliability",
+    applied: 4,
+    stage: "screen",
+    steps: [["introductory conversation with the hiring manager and two engineers", 1]],
+  },
+  {
+    company: "Æther",
+    role: "swe",
+    applied: 90,
+    stage: "interview",
+    steps: [["panel", -41]],
+  },
+];
+
+/** One note with every shape the markdown field draws, to look at it whole. */
+const PROCESS_NOTES = `## The rounds, as she described them
+
+1. recruiter call — 30 min, logistics only
 2. technical screen — 60 min in their own editor
-3. onsite loop — 2 coding, 1 system design, 1 values
+3. onsite — 2 coding, 1 system design, 1 values
 
-they interrupt on purpose. **talk through the tradeoff out loud** before writing
+They interrupt on purpose. **Talk through the tradeoff out loud** before writing
 anything, even when the answer is obvious.
 
-- [x] ask about the grad-date cutoff
-- [ ] send her the fall transcript
+- [x] Ask about the graduation-date cutoff
+- [ ] Send the fall transcript
 
-the editor is theirs, not coderpad, and \`ctrl + enter\` runs the tests.
+The editor is theirs, not a shared pad, and \`ctrl + enter\` runs the tests.
 
 \`\`\`python
 key = f"{user}:{invoice}:{attempt}"
 charge = charges.get(key) or charges.create(key, cents)
 \`\`\`
 
-> she volunteered the whole loop unprompted, which nobody else has done.
+> She volunteered the whole loop unprompted, which nobody else has done.
 `;
 
-const STORY_BODY = `**situation** · two of us wanted a rewrite, the deadline was three weeks out.
+const STORY_BODY = `**Situation** · two of us wanted a rewrite, the deadline was three weeks out.
 
-**what i did** · measured the slow query first, showed it was one missing index.
+**What I did** · measured the slow query first, showed it was one missing index.
 
-**result** · shipped the index in a day, kept the rewrite as a written proposal.
+**Result** · shipped the index in a day, kept the rewrite as a written proposal.
 `;
 
-interface Seed {
-  applications: CareerApplication[];
-  steps: CareerStep[];
-  questions: CareerQuestion[];
-  prep: CareerPrepItem[];
-  stories: CareerStory[];
-  uses: CareerStoryUse[];
-  resources: CareerResource[];
-}
+let sequence = 0;
+const id = (prefix: string) => `${prefix}-${(sequence += 1)}`;
 
-/** `today` shifted by whole days, as a plain date, for a dated fixture row. */
-function shift(today: string, days: number): string {
-  const date = new Date(`${today}T12:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function seed(today: string, scenario: string): Seed {
+export function createFixtureCareer({
+  scenario,
+  today,
+}: {
+  scenario: string;
+  today: string;
+}): CareerService {
+  const applications: CareerApplication[] = [];
+  const steps: CareerStep[] = [];
+  const questions: CareerQuestion[] = [];
+  const prep: CareerPrepItem[] = [];
+  const stories: CareerStory[] = [];
+  const storyUses: CareerStoryUse[] = [];
+  const resources: CareerResource[] = [];
+  const files = new Map<string, File>();
   const now = new Date().toISOString();
-  const dense = scenario === "dense" || scenario === "long";
-  const applications: CareerApplication[] = [
-    {
-      id: "app-stripe",
-      company: "Stripe",
-      role: "software engineer intern · summer 2027",
-      appliedOn: shift(today, -15),
-      stage: "interview",
-      postingUrl: "https://stripe.com/jobs/listing",
-      location: "seattle",
-      processNotes: PROCESS_NOTES,
-      updatedAt: now,
-    },
-    {
-      id: "app-ramp",
-      company: "Ramp",
-      role: "backend intern",
-      appliedOn: shift(today, -28),
-      stage: "screen",
-      postingUrl: null,
-      location: "new york",
-      processNotes: "one call so far. **no take-home**, which she said up front.",
-      updatedAt: now,
-    },
-    {
-      id: "app-linear",
-      company: "Linear",
-      role: "product engineer intern",
-      appliedOn: null,
-      stage: "interested",
-      postingUrl: "https://linear.app/careers",
-      location: "remote",
-      processNotes: "",
-      updatedAt: now,
-    },
-  ];
-  const steps: CareerStep[] = [
-    {
-      id: "step-1",
-      applicationId: "app-stripe",
-      name: "application sent",
-      scheduledOn: shift(today, -15),
-      position: 0,
-      doneAt: now,
-      notes: null,
-    },
-    {
-      id: "step-2",
-      applicationId: "app-stripe",
-      name: "recruiter screen",
-      scheduledOn: shift(today, -8),
-      position: 1,
-      doneAt: now,
-      notes: "30 min · logistics, grad date, why fintech. she volunteered the whole loop.",
-    },
-    {
-      id: "step-3",
-      applicationId: "app-stripe",
-      name: "technical screen",
-      scheduledOn: shift(today, 3),
-      position: 2,
-      doneAt: null,
-      notes: "60 min · two medium questions in a shared editor. no whiteboard algorithms.",
-    },
-    {
-      id: "step-4",
-      applicationId: "app-stripe",
-      name: "onsite loop",
-      scheduledOn: null,
-      position: 3,
-      doneAt: null,
-      notes: "2 coding · 1 system design · 1 values. same week as the MATH3012 midterm.",
-    },
-    {
-      id: "step-5",
-      applicationId: "app-stripe",
-      name: "team match",
-      scheduledOn: null,
-      position: 4,
-      doneAt: null,
-      notes: null,
-    },
-    {
-      id: "step-6",
-      applicationId: "app-ramp",
-      name: "recruiter call",
-      scheduledOn: shift(today, -2),
-      position: 0,
-      doneAt: null,
-      notes: null,
-    },
-  ];
-  const questions: CareerQuestion[] = [
-    {
-      id: "q-1",
-      applicationId: "app-stripe",
-      body: "how would you make a payment endpoint safe to retry?",
-      answer:
-        "- one key per user, invoice and attempt, written before the charge\n- a replay returns the first result, never a second charge\n- 24 hour window, then the key is free again",
-      tags: ["technical", "systems"],
-      askedOn: null,
-      createdAt: now,
-    },
-    {
-      id: "q-2",
-      applicationId: "app-stripe",
-      body: "walk me through what happens when a webhook arrives twice.",
-      answer: "the second one finds the row already written and returns the same response.",
-      tags: ["systems"],
-      askedOn: shift(today, -8),
-      createdAt: now,
-    },
-    {
-      id: "q-3",
-      applicationId: "app-stripe",
-      body: "what do you want to learn here that you can't learn at school?",
-      answer: "how a change reaches real money, and who says no to it.",
-      tags: ["culture"],
-      askedOn: shift(today, -8),
-      createdAt: now,
-    },
-    {
-      id: "q-4",
-      applicationId: "app-ramp",
-      body: "when did a design of yours turn out wrong?",
-      answer: null,
-      tags: ["culture", "failure"],
-      askedOn: null,
-      createdAt: now,
-    },
-  ];
-  const prep: CareerPrepItem[] = [
-    {
-      id: "p-1",
-      applicationId: "app-stripe",
-      body: "re-read the payments primer",
-      dueOn: shift(today, 1),
-      doneAt: now,
-      todoId: null,
-      position: 0,
-    },
-    {
-      id: "p-2",
-      applicationId: "app-stripe",
-      body: "idempotency keys, retries, webhook ordering",
-      dueOn: shift(today, -3),
-      doneAt: null,
-      todoId: null,
-      position: 1,
-    },
-    {
-      id: "p-3",
-      applicationId: "app-stripe",
-      body: "two questions to ask them about the payments org",
-      dueOn: shift(today, 3),
-      doneAt: null,
-      todoId: null,
-      position: 2,
-    },
-    {
-      id: "p-4",
-      applicationId: "app-stripe",
-      body: "set up the shared editor and run one test before the call",
-      dueOn: shift(today, 3),
-      doneAt: null,
-      todoId: null,
-      position: 3,
-    },
-  ];
-  const stories: CareerStory[] = [
-    {
-      id: "s-1",
-      title: "the search rewrite i argued against",
-      body: STORY_BODY,
-      tags: ["conflict", "influence"],
-      updatedAt: now,
-    },
-    {
-      id: "s-2",
-      title: "the migration i shipped alone in a week",
-      body: "**situation** · nobody owned it.\n\n**what i did** · wrote it forward-only.\n\n**result** · no rollback needed.",
-      tags: ["ownership", "scope"],
-      updatedAt: now,
-    },
-    {
-      id: "s-3",
-      title: "the class project that missed its deadline",
-      body: "**situation** · four of us, no one merging.\n\n**what i did** · cut the scope in half.\n\n**result** · shipped two days late, with tests.",
-      tags: ["failure", "recovery"],
-      updatedAt: now,
-    },
-  ];
-  const resources: CareerResource[] = [
-    {
-      id: "r-1",
-      applicationId: "app-stripe",
-      kind: "file",
-      title: "resume — sep 2026.pdf",
-      url: null,
-      contentType: "application/pdf",
-      byteSize: 219_136,
-      contentSha256: null,
-      objectPath: "fixture/resume.pdf",
-      uploadedAt: now,
-      createdAt: now,
-    },
-    {
-      id: "r-2",
-      applicationId: "app-stripe",
-      kind: "file",
-      title: "cover letter — Stripe.docx",
-      url: null,
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      byteSize: 38_912,
-      contentSha256: null,
-      objectPath: "fixture/cover.docx",
-      uploadedAt: now,
-      createdAt: now,
-    },
-    {
-      id: "r-3",
-      applicationId: "app-stripe",
-      kind: "link",
-      title: "idempotent requests, in their docs",
-      url: "https://docs.stripe.com/api/idempotent_requests",
-      contentType: null,
-      byteSize: null,
-      contentSha256: null,
-      objectPath: null,
-      uploadedAt: null,
-      createdAt: now,
-    },
-    {
-      id: "r-4",
-      applicationId: "app-stripe",
-      kind: "link",
-      title: "how they run the systems round",
-      url: "https://blog.pragmaticengineer.com/systems-round",
-      contentType: null,
-      byteSize: null,
-      contentSha256: null,
-      objectPath: null,
-      uploadedAt: null,
-      createdAt: now,
-    },
-  ];
-  if (dense) {
-    // Enough rows, and enough words in them, to find where the layout gives up.
-    for (let index = 0; index < 18; index += 1) {
-      steps.push({
-        id: `step-dense-${index}`,
-        applicationId: "app-stripe",
-        name: `follow-up conversation ${index + 1} with the payments platform team about scheduling`,
-        scheduledOn: index % 3 === 0 ? shift(today, index - 6) : null,
-        position: 5 + index,
-        doneAt: index % 4 === 0 ? now : null,
-        notes:
-          index % 2 === 0
-            ? "a note long enough to wrap onto a second and very probably a third line, which is the point of it"
-            : null,
+
+  if (scenario !== "empty") {
+    const seeds = scenario === "dense" || scenario === "long" ? [...SEEDS, ...DENSE] : SEEDS;
+    for (const seed of seeds) {
+      const applicationId = id("application");
+      applications.push({
+        id: applicationId,
+        company: seed.company,
+        role: seed.role,
+        appliedOn: seed.applied === null ? null : addSqlDateDays(today, -seed.applied),
+        stage: seed.stage,
+        postingUrl: null,
+        location: seed.location ?? null,
+        processNotes: null,
+        updatedAt: now,
       });
-      prep.push({
-        id: `p-dense-${index}`,
-        applicationId: "app-stripe",
-        body: `prepare answer ${index + 1}: a line long enough to push the date and the remove word onto their own row`,
-        dueOn: shift(today, index - 4),
-        doneAt: index % 5 === 0 ? now : null,
-        todoId: null,
-        position: 10 + index,
-      });
-      questions.push({
-        id: `q-dense-${index}`,
-        applicationId: "app-stripe",
-        body: `question ${index + 1}: how would you handle a partial failure halfway through a batch of charges, and what would you tell the customer?`,
-        answer: index % 2 === 0 ? "write the ledger first, then charge." : null,
-        tags: index % 2 === 0 ? ["technical", "systems", "scale"] : ["culture"],
-        askedOn: null,
-        createdAt: now,
+      (seed.steps ?? []).forEach(([name, offset], position) => {
+        steps.push({
+          id: id("step"),
+          applicationId,
+          name,
+          scheduledOn: offset === null ? null : addSqlDateDays(today, offset),
+          position,
+          // A round in the past that is not the one the table should show is
+          // already done; a late one is not.
+          doneAt: offset !== null && offset < -5 ? now : null,
+          notes: null,
+        });
       });
     }
+    stories.push(
+      {
+        id: id("story"),
+        title: "The migration nobody wanted to own",
+        body: "**Situation** · nobody owned it.\n\n**What I did** · wrote it forward-only.\n\n**Result** · no rollback needed.",
+        tags: ["ownership", "ambiguity"],
+        updatedAt: now,
+      },
+      {
+        id: id("story"),
+        title: "The search rewrite I argued against",
+        body: STORY_BODY,
+        tags: ["conflict", "influence"],
+        updatedAt: now,
+      },
+      {
+        id: id("story"),
+        title: "The class project that missed its deadline",
+        body: "**Situation** · four of us, nobody merging.\n\n**What I did** · cut the scope in half.\n\n**Result** · shipped two days late, with tests.",
+        tags: ["failure", "recovery"],
+        updatedAt: now,
+      },
+    );
+    seedOneApplication(applications[0].id);
   }
-  return {
-    applications,
-    steps,
-    questions,
-    prep,
-    stories,
-    uses: [
-      { storyId: "s-1", applicationId: "app-ramp", usedOn: null },
-      { storyId: "s-2", applicationId: "app-linear", usedOn: null },
-    ],
-    resources,
-  };
-}
 
-/** A `career_resources` reservation, as the real service would hand one back. */
-function newId(prefix: string): string {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
+  /**
+   * Everything the three tabs of one application read. Only the first gets it:
+   * a page with one of everything is what there is to look at, and the rest of
+   * the table stays as thin as a new application really is.
+   */
+  function seedOneApplication(applicationId: string) {
+    const round = steps.find((step) => step.applicationId === applicationId && !step.doneAt);
+    const done = steps.find((step) => step.applicationId === applicationId && step.doneAt);
+    applications[0].processNotes = PROCESS_NOTES;
+    applications[0].postingUrl = "https://example.invalid/jobs/12481";
+    if (done) done.notes = "30 min · logistics, grad date, why the payments team.";
+    if (round) round.notes = "60 min · two medium questions in their own editor. No whiteboard.";
+    questions.push(
+      {
+        id: id("question"),
+        applicationId,
+        body: "How would you make a payment endpoint safe to retry?",
+        answer:
+          "- one key per user, invoice and attempt, written before the charge\n- a replay returns the first result, never a second charge\n- 24 hour window, then the key is free again",
+        tags: ["technical", "systems"],
+        askedOn: null,
+        createdAt: now,
+      },
+      {
+        id: id("question"),
+        applicationId,
+        body: "Walk me through what happens when a webhook arrives twice.",
+        answer: "The second one finds the row already written and returns the same response.",
+        tags: ["systems"],
+        askedOn: addSqlDateDays(today, -9),
+        createdAt: now,
+      },
+      {
+        id: id("question"),
+        applicationId,
+        body: "What do you want to learn here that you can't learn at school?",
+        answer: null,
+        tags: ["culture"],
+        askedOn: null,
+        createdAt: now,
+      },
+    );
+    prep.push(
+      {
+        id: id("prep"),
+        applicationId,
+        body: "Re-read the payments primer",
+        dueOn: addSqlDateDays(today, 1),
+        doneAt: now,
+        todoId: null,
+        position: 0,
+      },
+      {
+        id: id("prep"),
+        applicationId,
+        body: "Idempotency keys, retries, webhook ordering",
+        dueOn: addSqlDateDays(today, -3),
+        doneAt: null,
+        todoId: null,
+        position: 1,
+      },
+      {
+        id: id("prep"),
+        applicationId,
+        body: "Two questions to ask them about the payments team",
+        dueOn: addSqlDateDays(today, 3),
+        doneAt: null,
+        todoId: null,
+        position: 2,
+      },
+      {
+        id: id("prep"),
+        applicationId,
+        body: "Set up the shared editor and run one test before the call",
+        dueOn: null,
+        doneAt: null,
+        todoId: null,
+        position: 3,
+      },
+    );
+    storyUses.push({ storyId: stories[0].id, applicationId, usedOn: null });
+    resources.push(
+      {
+        id: id("resource"),
+        applicationId,
+        kind: "file",
+        title: "resume — september.pdf",
+        url: null,
+        contentType: "application/pdf",
+        byteSize: 219_136,
+        contentSha256: null,
+        objectPath: "fixture/resume.pdf",
+        uploadedAt: now,
+        createdAt: now,
+      },
+      {
+        id: id("resource"),
+        applicationId,
+        kind: "file",
+        title: "cover letter.docx",
+        url: null,
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        byteSize: 38_912,
+        contentSha256: null,
+        objectPath: "fixture/cover.docx",
+        uploadedAt: now,
+        createdAt: now,
+      },
+      {
+        id: id("resource"),
+        applicationId,
+        kind: "link",
+        title: "Idempotent requests, in their docs",
+        url: "https://docs.example.invalid/api/idempotent-requests",
+        contentType: null,
+        byteSize: null,
+        contentSha256: null,
+        objectPath: null,
+        uploadedAt: null,
+        createdAt: now,
+      },
+      {
+        id: id("resource"),
+        applicationId,
+        kind: "link",
+        title: "How they run the systems round",
+        url: "https://writing.example.invalid/systems-round",
+        contentType: null,
+        byteSize: null,
+        contentSha256: null,
+        objectPath: null,
+        uploadedAt: null,
+        createdAt: now,
+      },
+    );
+  }
 
-export function createCareerFixtureService(today: string, scenario: string): CareerService {
-  const rows = seed(today, scenario);
-  // A file uploaded in the fixture stays in the tab, so `open` can hand back
-  // exactly what was chosen instead of reaching for storage that is not there.
-  const uploads = new Map<string, File>();
-  const empty = scenario === "empty";
-  if (empty) {
-    rows.steps = [];
-    rows.questions = [];
-    rows.prep = [];
-    rows.stories = [];
-    rows.uses = [];
-    rows.resources = [];
-    rows.applications = rows.applications.slice(0, 1).map((row) => ({
-      ...row,
-      processNotes: "",
-      stage: "interested",
-      appliedOn: null,
+  const rowsFor = (): CareerApplicationRow[] =>
+    applications.map((application) => ({
+      ...application,
+      nextStep: nextStepOf(steps.filter((step) => step.applicationId === application.id)),
     }));
-  }
-  const found = <Row extends { id: string }>(list: Row[], id: string, what: string): Row => {
-    const row = list.find((item) => item.id === id);
-    if (!row) throw new Error(`Fixture ${what} ${id} is not here.`);
-    return row;
+
+  const find = (applicationId: string): CareerApplication => {
+    const application = applications.find((row) => row.id === applicationId);
+    if (!application) throw new Error("That application is no longer here.");
+    return application;
   };
 
   return {
-    async listApplications(): Promise<CareerApplicationRow[]> {
-      return orderApplications(
-        rows.applications.map((application) => ({
-          ...application,
-          nextStep: nextStepOf(rows.steps.filter((step) => step.applicationId === application.id)),
-        })),
-      );
+    async listApplications() {
+      return rowsFor();
     },
     async getApplication(_userId, applicationId) {
-      return { ...found(rows.applications, applicationId, "application") };
+      return { ...find(applicationId) };
     },
-    async createApplication(_userId, draft: CareerApplicationDraft) {
-      const application: CareerApplication = {
-        id: newId("app"),
+    async createApplication(_userId, draft) {
+      const created: CareerApplication = {
+        id: id("application"),
         company: draft.company,
         role: draft.role,
         appliedOn: draft.appliedOn ?? null,
@@ -418,161 +405,153 @@ export function createCareerFixtureService(today: string, scenario: string): Car
         processNotes: draft.processNotes ?? null,
         updatedAt: new Date().toISOString(),
       };
-      rows.applications.push(application);
-      return application;
+      applications.push(created);
+      return { ...created };
     },
     async updateApplication(_userId, applicationId, changes) {
-      const application = found(rows.applications, applicationId, "application");
+      const application = find(applicationId);
       Object.assign(application, changes, { updatedAt: new Date().toISOString() });
       return { ...application };
     },
     async deleteApplication(applicationId) {
-      rows.applications = rows.applications.filter((row) => row.id !== applicationId);
+      const index = applications.findIndex((row) => row.id === applicationId);
+      if (index >= 0) applications.splice(index, 1);
       return { id: applicationId, deletedAt: new Date().toISOString() };
     },
-    async restoreApplication() {
+    async restoreApplication(_deletion: CareerDeletion) {
       return true;
     },
 
     async listSteps(_userId, applicationId) {
-      return rows.steps
+      return steps
         .filter((step) => step.applicationId === applicationId)
         .map((step) => ({ ...step }));
     },
     async saveStep(_userId, applicationId, step) {
-      if (step.id) {
-        const existing = found(rows.steps, step.id, "step");
+      const existing = step.id && steps.find((row) => row.id === step.id);
+      if (existing) {
         Object.assign(existing, step);
         return { ...existing };
       }
       const created: CareerStep = {
-        id: newId("step"),
+        id: id("step"),
         applicationId,
         name: step.name,
         scheduledOn: step.scheduledOn ?? null,
-        position: step.position ?? rows.steps.length,
+        position: step.position ?? steps.filter((r) => r.applicationId === applicationId).length,
         doneAt: step.doneAt ?? null,
         notes: step.notes ?? null,
       };
-      rows.steps.push(created);
-      return created;
+      steps.push(created);
+      return { ...created };
     },
     async removeStep(_userId, stepId) {
-      rows.steps = rows.steps.filter((step) => step.id !== stepId);
+      const index = steps.findIndex((row) => row.id === stepId);
+      if (index >= 0) steps.splice(index, 1);
     },
 
     async listQuestions(_userId, applicationId) {
-      return rows.questions
-        .filter((question) => question.applicationId === applicationId)
-        .map((question) => ({ ...question }));
+      return questions
+        .filter((row) => row.applicationId === applicationId)
+        .map((row) => ({ ...row }));
     },
     async listQuestionsByTag(_userId, tag) {
-      return rows.questions
-        .filter((question) => question.tags.includes(tag))
-        .map((question) => ({ ...question }));
+      return questions.filter((row) => row.tags.includes(tag)).map((row) => ({ ...row }));
     },
     async saveQuestion(_userId, applicationId, question) {
-      const tags = (question.tags ?? []).map((tag) => tag.trim().toLowerCase()).filter(Boolean);
-      if (question.id) {
-        const existing = found(rows.questions, question.id, "question");
-        Object.assign(existing, question, question.tags ? { tags } : {});
+      const existing = question.id && questions.find((row) => row.id === question.id);
+      if (existing) {
+        Object.assign(existing, question);
         return { ...existing };
       }
       const created: CareerQuestion = {
-        id: newId("q"),
+        id: id("question"),
         applicationId,
         body: question.body,
         answer: question.answer ?? null,
-        tags: [...new Set(tags)],
+        tags: (question.tags ?? []).map((tag) => tag.trim().toLowerCase()).filter(Boolean),
         askedOn: question.askedOn ?? null,
         createdAt: new Date().toISOString(),
       };
-      rows.questions.push(created);
-      return created;
+      questions.push(created);
+      return { ...created };
     },
     async removeQuestion(_userId, questionId) {
-      rows.questions = rows.questions.filter((question) => question.id !== questionId);
+      const index = questions.findIndex((row) => row.id === questionId);
+      if (index >= 0) questions.splice(index, 1);
     },
 
     async listPrep(_userId, applicationId) {
-      return rows.prep
-        .filter((item) => item.applicationId === applicationId)
-        .map((item) => ({ ...item }));
+      return prep.filter((row) => row.applicationId === applicationId).map((row) => ({ ...row }));
     },
     async savePrep(_userId, applicationId, item) {
-      if (item.id) {
-        const existing = found(rows.prep, item.id, "prep item");
+      const existing = item.id && prep.find((row) => row.id === item.id);
+      if (existing) {
         Object.assign(existing, item);
         return { ...existing };
       }
       const created: CareerPrepItem = {
-        id: newId("p"),
+        id: id("prep"),
         applicationId,
         body: item.body,
         dueOn: item.dueOn ?? null,
         doneAt: item.doneAt ?? null,
         todoId: item.todoId ?? null,
-        position: item.position ?? rows.prep.length,
+        position: item.position ?? prep.filter((r) => r.applicationId === applicationId).length,
       };
-      rows.prep.push(created);
-      return created;
+      prep.push(created);
+      return { ...created };
     },
     async removePrep(_userId, itemId) {
-      rows.prep = rows.prep.filter((item) => item.id !== itemId);
+      const index = prep.findIndex((row) => row.id === itemId);
+      if (index >= 0) prep.splice(index, 1);
     },
 
     async listStories() {
-      return rows.stories.map((story) => ({ ...story }));
+      return stories.map((row) => ({ ...row }));
     },
     async saveStory(_userId, story) {
-      const tags = (story.tags ?? []).map((tag) => tag.trim().toLowerCase()).filter(Boolean);
-      if (story.id) {
-        const existing = found(rows.stories, story.id, "story");
-        Object.assign(existing, story, story.tags ? { tags } : {}, {
-          updatedAt: new Date().toISOString(),
-        });
+      const existing = story.id && stories.find((row) => row.id === story.id);
+      if (existing) {
+        Object.assign(existing, story, { updatedAt: new Date().toISOString() });
         return { ...existing };
       }
       const created: CareerStory = {
-        id: newId("s"),
+        id: id("story"),
         title: story.title,
         body: story.body,
-        tags: [...new Set(tags)],
+        tags: (story.tags ?? []).map((tag) => tag.trim().toLowerCase()).filter(Boolean),
         updatedAt: new Date().toISOString(),
       };
-      rows.stories.push(created);
-      return created;
+      stories.push(created);
+      return { ...created };
     },
     async removeStory(_userId, storyId) {
-      rows.stories = rows.stories.filter((story) => story.id !== storyId);
-      rows.uses = rows.uses.filter((use) => use.storyId !== storyId);
+      const index = stories.findIndex((row) => row.id === storyId);
+      if (index >= 0) stories.splice(index, 1);
     },
     async listStoryUses() {
-      return rows.uses.map((use) => ({ ...use }));
+      return storyUses.map((row) => ({ ...row }));
     },
     async recordStoryUse(_userId, use) {
-      rows.uses = [
-        ...rows.uses.filter(
-          (row) => row.storyId !== use.storyId || row.applicationId !== use.applicationId,
-        ),
-        use,
-      ];
-      return use;
+      storyUses.push({ ...use });
+      return { ...use };
     },
     async removeStoryUse(_userId, storyId, applicationId) {
-      rows.uses = rows.uses.filter(
-        (use) => use.storyId !== storyId || use.applicationId !== applicationId,
+      const index = storyUses.findIndex(
+        (row) => row.storyId === storyId && row.applicationId === applicationId,
       );
+      if (index >= 0) storyUses.splice(index, 1);
     },
 
     async listResources(_userId, applicationId) {
-      return rows.resources
-        .filter((resource) => resource.applicationId === applicationId)
-        .map((resource) => ({ ...resource }));
+      return resources
+        .filter((row) => row.applicationId === applicationId)
+        .map((row) => ({ ...row }));
     },
     async addLink(_userId, applicationId, link) {
       const created: CareerResource = {
-        id: newId("r"),
+        id: id("resource"),
         applicationId,
         kind: "link",
         title: link.title,
@@ -581,14 +560,14 @@ export function createCareerFixtureService(today: string, scenario: string): Car
         byteSize: null,
         contentSha256: null,
         objectPath: null,
-        uploadedAt: null,
+        uploadedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
-      rows.resources.push(created);
-      return created;
+      resources.push(created);
+      return { ...created };
     },
     async reserveFile(_userId, applicationId, draft) {
-      const reserved: CareerResource = {
+      const created: CareerResource = {
         id: draft.id,
         applicationId,
         kind: "file",
@@ -598,30 +577,38 @@ export function createCareerFixtureService(today: string, scenario: string): Car
         byteSize: draft.size,
         contentSha256: draft.sha256,
         objectPath: `fixture/${draft.id}`,
+        // Null until the bytes land: a reservation is a row before it is a file.
         uploadedAt: null,
         createdAt: new Date().toISOString(),
       };
-      rows.resources.push(reserved);
-      return reserved;
+      resources.push(created);
+      return { ...created };
     },
     async uploadFile(resource, file) {
-      uploads.set(resource.id, file);
-      const existing = found(rows.resources, resource.id, "resource");
-      existing.uploadedAt = new Date().toISOString();
-      return { ...existing };
+      files.set(resource.id, file);
+      const stored = resources.find((row) => row.id === resource.id);
+      if (stored) stored.uploadedAt = new Date().toISOString();
+      return { ...(stored ?? resource), uploadedAt: new Date().toISOString() };
     },
     async downloadFile(resource) {
-      const file = uploads.get(resource.id);
+      const file = files.get(resource.id);
       if (file) return file;
-      // A seeded row has no bytes behind it; a readable stand-in says so rather
-      // than failing, so the open path is still exercisable.
-      return new File([`${resource.title}\n\nThis fixture file has no contents.`], resource.title, {
-        type: resource.contentType ?? "text/plain",
-      });
+      // A seeded row has no bytes behind it, so opening one hands back a
+      // readable stand-in rather than failing: the path is still exercisable.
+      if (resource.uploadedAt)
+        return new File(
+          [`${resource.title}\n\nThis fixture file has no contents.`],
+          resource.title,
+          {
+            type: resource.contentType ?? "text/plain",
+          },
+        );
+      throw new Error("That file is still uploading.");
     },
     async removeResource(_userId, resource) {
-      uploads.delete(resource.id);
-      rows.resources = rows.resources.filter((row) => row.id !== resource.id);
+      files.delete(resource.id);
+      const index = resources.findIndex((row) => row.id === resource.id);
+      if (index >= 0) resources.splice(index, 1);
     },
   };
 }

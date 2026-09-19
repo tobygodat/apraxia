@@ -9,15 +9,15 @@
  * of them.
  */
 
-.career-page {
+.career-app {
   max-width: 960px;
 }
 
-.career-page__back {
+.career-app__back {
   margin: 0 0 16px;
 }
 
-.career-page__back button {
+.career-app__back button {
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -25,39 +25,39 @@
 
 /* ------------------------------------------------------------- the header */
 
-.career-page__header {
+.career-app__header {
   display: flex;
   align-items: flex-start;
   gap: 24px;
 }
 
-.career-page__identity {
+.career-app__identity {
   flex-grow: 1;
   min-width: 0;
 }
 
-.career-page__company {
+.career-app__company {
   margin: 0;
   text-wrap: balance;
 }
 
-.career-page__role,
-.career-page__summary {
+.career-app__role,
+.career-app__summary {
   margin: 4px 0 0;
 }
 
-.career-page__header-actions {
+.career-app__header-actions {
   display: flex;
   flex-shrink: 0;
   align-items: baseline;
   gap: 16px;
 }
 
-.career-page__waiting {
+.career-app__waiting {
   margin: 24px 0 0;
 }
 
-.career-page__tabs {
+.career-app__tabs {
   display: flex;
   align-items: baseline;
   gap: 16px;
@@ -88,7 +88,7 @@
 }
 
 .career-editor__actions,
-.career-row__editor-actions {
+.career-app-row__editor-actions {
   display: flex;
   align-items: baseline;
   gap: 16px;
@@ -109,10 +109,10 @@
    sections rather than as one unbroken column. */
 .career-tab__heading--spaced,
 .career-tab__section-head,
-.career-rows + .career-tab__heading,
-.career-rows + .career-tab__section-head,
-.career-rows + .workspace-error + .career-tab__heading,
-.career-rows + .workspace-error + .career-tab__section-head {
+.career-app-rows + .career-tab__heading,
+.career-app-rows + .career-tab__section-head,
+.career-app-rows + .workspace-error + .career-tab__heading,
+.career-app-rows + .workspace-error + .career-tab__section-head {
   margin-top: 40px;
 }
 
@@ -137,11 +137,11 @@
 
 /* ------------------------------------------------------------------ rows */
 
-.career-rows {
+.career-app-rows {
   margin-top: 12px;
 }
 
-.career-row__line {
+.career-app-row__line {
   display: flex;
   align-items: baseline;
   gap: 16px;
@@ -151,42 +151,42 @@
    Classic's unscoped `input` rule in `index.css` sets `flex: 1`, which would
    stretch an 18px box across the row and squeeze the words it belongs to, so
    every control in a row says how much of it to take. */
-.career-row__line > input[type="checkbox"],
+.career-app-row__line > input[type="checkbox"],
 .career-md__box {
   flex: none;
   align-self: flex-start;
   margin-top: 4px;
 }
 
-.career-row__due-field,
-.career-row__line > input[type="date"] {
+.career-app-row__due-field,
+.career-app-row__line > input[type="date"] {
   flex: none;
 }
 
-.career-row__name,
-.career-row__add-name {
+.career-app-row__name,
+.career-app-row__add-name {
   flex-grow: 1;
   min-width: 0;
 }
 
-.career-row__when,
-.career-row__meta-wide {
+.career-app-row__when,
+.career-app-row__meta-wide {
   flex-shrink: 0;
   text-align: right;
 }
 
-.career-row__note-action,
-.career-row__remove,
-.career-row__toggle {
+.career-app-row__note-action,
+.career-app-row__remove,
+.career-app-row__toggle {
   flex-shrink: 0;
 }
 
-.career-row__notes,
-.career-row__body {
+.career-app-row__notes,
+.career-app-row__body {
   margin: 4px 0 0;
 }
 
-.career-row__tags {
+.career-app-row__tags {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -194,43 +194,43 @@
   margin: 4px 0 0;
 }
 
-.career-row__editor,
-.career-row__answer {
+.career-app-row__editor,
+.career-app-row__answer {
   margin-top: 12px;
 }
 
-.career-row__editor {
+.career-app-row__editor {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 600px;
 }
 
-.career-row__note-field,
+.career-app-row__note-field,
 .career-field__source {
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
 }
 
-.career-row__add-form {
+.career-app-row__add-form {
   flex-wrap: wrap;
 }
 
-.career-row__add-stack {
+.career-app-row__add-stack {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 600px;
 }
 
-.career-row__due-field {
+.career-app-row__due-field {
   min-width: 0;
 }
 
 /* --------------------------------------------------------------- filters */
 
-.career-filter {
+.career-app-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -238,7 +238,7 @@
   margin-top: 12px;
 }
 
-.career-filter__spacer {
+.career-app-tags__spacer {
   flex-grow: 1;
 }
 
@@ -301,12 +301,12 @@
 }
 
 @media (max-width: 560px) {
-  .career-page__header,
-  .career-row__line {
+  .career-app__header,
+  .career-app-row__line {
     flex-wrap: wrap;
   }
 
-  .career-row__when {
+  .career-app-row__when {
     width: auto;
     text-align: left;
   }

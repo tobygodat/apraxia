@@ -59,7 +59,7 @@ function fixture(userId = "user-a") {
     todoService: { createTodo } as unknown as TodoService,
     collectionService: { listProjects, search, getTodo, getIdea } as unknown as CollectionService,
     calendarService: {} as CalendarService,
-    careerService: {} as CareerService,
+    careerService: { listApplications: vi.fn().mockResolvedValue([]) } as unknown as CareerService,
     workspaceData: {
       projects,
       setTimezone,

@@ -96,7 +96,7 @@ export function CareerResourcesTab({
         }}
       />
       <h2 className="paper-heading career-tab__heading">files</h2>
-      <div className="career-rows">
+      <div className="career-app-rows">
         {files.map((resource) => (
           <ResourceRow
             key={resource.id}
@@ -112,8 +112,8 @@ export function CareerResourcesTab({
             }
           />
         ))}
-        <div className="paper-row career-row career-row--add">
-          <div className="career-row__line">
+        <div className="paper-row career-app-row career-app-row--add">
+          <div className="career-app-row__line">
             <button
               type="button"
               className="paper-action"
@@ -133,7 +133,7 @@ export function CareerResourcesTab({
       </div>
 
       <h2 className="paper-heading career-tab__heading career-tab__heading--spaced">links</h2>
-      <div className="career-rows">
+      <div className="career-app-rows">
         {links.map((resource) => (
           <ResourceRow
             key={resource.id}
@@ -149,10 +149,10 @@ export function CareerResourcesTab({
             }
           />
         ))}
-        <div className="paper-row career-row career-row--add">
+        <div className="paper-row career-app-row career-app-row--add">
           {addingLink ? (
             <form
-              className="career-row__add-stack"
+              className="career-app-row__add-stack"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!title.trim() || !url.trim()) return;
@@ -176,9 +176,9 @@ export function CareerResourcesTab({
                 aria-label="what the link is"
                 onChange={(event) => setTitle(event.target.value)}
               />
-              <div className="career-row__line">
+              <div className="career-app-row__line">
                 <input
-                  className="paper-field career-row__add-name"
+                  className="paper-field career-app-row__add-name"
                   type="url"
                   inputMode="url"
                   value={url}
@@ -234,16 +234,16 @@ function ResourceRow({
   const ready = isResourceReady(resource);
   const viewable = resource.kind === "link" || VIEWABLE.includes(resource.contentType ?? "");
   return (
-    <div className="paper-row career-row">
-      <div className="career-row__line">
-        <span className="career-row__name">{resource.title}</span>
-        <span className="paper-row__meta career-row__meta-wide">{resourceMeta(resource)}</span>
+    <div className="paper-row career-app-row">
+      <div className="career-app-row__line">
+        <span className="career-app-row__name">{resource.title}</span>
+        <span className="paper-row__meta career-app-row__meta-wide">{resourceMeta(resource)}</span>
         <button type="button" className="paper-action" disabled={busy || !ready} onClick={onOpen}>
           {viewable ? "open" : "download"}
         </button>
         <button
           type="button"
-          className="paper-action paper-action--quiet career-row__remove"
+          className="paper-action paper-action--quiet career-app-row__remove"
           disabled={busy}
           onClick={onRemove}
         >

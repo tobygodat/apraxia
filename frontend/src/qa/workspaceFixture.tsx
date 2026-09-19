@@ -5,7 +5,6 @@ import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
 import { createTodoAssignmentService } from "../features/classes/assignmentService";
 import { summarizeClasses } from "../features/classes/classOverview";
 import { isNoteSaved } from "../features/classes/noteService";
-import { createCareerFixtureService } from "./careerFixture";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -16,6 +15,7 @@ import {
   WORKSPACE_THEME_PRESETS,
 } from "../apps/workspacePreferences";
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
+import { createFixtureCareer } from "./careerFixture";
 import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
 import {
   createFixtureAppearance,
@@ -520,7 +520,7 @@ const workspaceData = {
     return profile;
   },
 };
-const careerService = delayedFixtureService(createCareerFixtureService(today, scenario), delay);
+const careerService = delayedFixtureService(createFixtureCareer({ scenario, today }), delay);
 const runtimeTodos = delayedFixtureService(todoService, delay);
 const runtimeCollections = delayedFixtureService(collectionService, delay);
 const runtimeData = delayedFixtureService(workspaceData, delay);

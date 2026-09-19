@@ -38,9 +38,9 @@ import type {
   CollectionRecord,
   CollectionService,
 } from "../features/collections/collectionService";
-import type { DriveService } from "../features/classes/driveService";
 import type { CareerService } from "../features/career/careerService";
 import type { CareerTab } from "../features/career/CareerApplicationPage";
+import type { DriveService } from "../features/classes/driveService";
 import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
@@ -109,6 +109,11 @@ const collectionChunk = preloadable<
   import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage })),
 );
 const careerChunk = preloadable<
+  Parameters<(typeof import("../features/career/CareerPage"))["CareerPage"]>[0]
+>(() => import("../features/career/CareerPage").then((m) => ({ default: m.CareerPage })));
+// One application is its own chunk: it carries the markdown editor, which the
+// table has no use for.
+const careerApplicationChunk = preloadable<
   Parameters<
     (typeof import("../features/career/CareerApplicationPage"))["CareerApplicationPage"]
   >[0]
@@ -123,7 +128,8 @@ const SettingsPage = settingsChunk.Component;
 const TodosWorkspaceContent = todosChunk.Component;
 const ClassesPage = classesChunk.Component;
 const CollectionPage = collectionChunk.Component;
-const CareerApplicationPage = careerChunk.Component;
+const CareerPage = careerChunk.Component;
+const CareerApplicationPage = careerApplicationChunk.Component;
 
 /** Warms the route chunks so navigation doesn't wait on network once data is cached. */
 export function preloadWorkspaceChunks(): Promise<void> {
@@ -134,6 +140,7 @@ export function preloadWorkspaceChunks(): Promise<void> {
     classesChunk.preload(),
     collectionChunk.preload(),
     careerChunk.preload(),
+    careerApplicationChunk.preload(),
   ]).then(() => undefined);
 }
 
@@ -146,13 +153,17 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
         ? todosChunk
         : pathname.startsWith("/projects") || pathname.startsWith("/ideas")
           ? collectionChunk
-          : pathname.startsWith("/career")
-            ? careerChunk
-            : pathname.startsWith("/classes")
-              ? classesChunk
-              : pathname.startsWith("/settings")
-                ? settingsChunk
-                : undefined;
+          : pathname.startsWith("/classes")
+            ? classesChunk
+            : // An id after `/career` is one application, which is a chunk of
+              // its own; `/career` itself is the table.
+              pathname.startsWith("/career/")
+              ? careerApplicationChunk
+              : pathname.startsWith("/career")
+                ? careerChunk
+                : pathname.startsWith("/settings")
+                  ? settingsChunk
+                  : undefined;
   return chunk?.preload();
 }
 
@@ -265,11 +276,18 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="projects" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="projects/:id" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="ideas" element={<CollectionRoute {...props} kind="idea" />} />
-            <Route path="career/:id" element={<CareerRoute {...props} tab="structure" />} />
-            <Route path="career/:id/prep" element={<CareerRoute {...props} tab="prep" />} />
+            <Route path="career" element={<CareerRoute {...props} />} />
+            <Route
+              path="career/:id"
+              element={<CareerApplicationRoute {...props} tab="structure" />}
+            />
+            <Route
+              path="career/:id/prep"
+              element={<CareerApplicationRoute {...props} tab="prep" />}
+            />
             <Route
               path="career/:id/resources"
-              element={<CareerRoute {...props} tab="resources" />}
+              element={<CareerApplicationRoute {...props} tab="resources" />}
             />
             <Route path="classes" element={<ClassesRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
@@ -382,6 +400,25 @@ function SettingsRoute(props: MainWorkspaceProps) {
   );
 }
 
+/**
+ * The career table. It needs today in the profile's timezone to say how late a
+ * round is, so it waits for the profile rather than guessing at the device's.
+ */
+function CareerRoute(props: MainWorkspaceProps) {
+  const { profile } = useWorkspace();
+  const navigate = useNavigate();
+  if (!profile) return <ProfilePlaceholder title="Career" />;
+  return (
+    <CareerPage
+      key={props.identity.userId}
+      service={props.careerService}
+      userId={props.identity.userId}
+      today={localToday(profile.timezone)}
+      onOpenApplication={(id) => navigate(`/career/${encodeURIComponent(id)}`)}
+    />
+  );
+}
+
 function ClassesRoute(props: MainWorkspaceProps) {
   const { profile, invalidate } = useWorkspace();
   const { id } = useParams();
@@ -401,7 +438,8 @@ function ClassesRoute(props: MainWorkspaceProps) {
   );
 }
 
-function CareerRoute({ tab, ...props }: MainWorkspaceProps & { tab: CareerTab }) {
+/** One application, on whichever of its three tabs the path names. */
+function CareerApplicationRoute({ tab, ...props }: MainWorkspaceProps & { tab: CareerTab }) {
   const { profile } = useWorkspace();
   const { id } = useParams();
   const navigate = useNavigate();

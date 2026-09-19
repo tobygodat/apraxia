@@ -19,16 +19,16 @@
    plain control, but an action word sets its own type in `paper.css`, so it is
    excluded — `font` is a shorthand and would reset a completing action's weight.
    `:where()` adds no specificity, unlike a bare `:not()`. */
-[data-theme^="paper"] .career-page button:where(:not(.paper-action)),
-[data-theme^="paper"] .career-page select {
+[data-theme^="paper"] .career-app button:where(:not(.paper-action)),
+[data-theme^="paper"] .career-app select {
   font: inherit;
 }
 
 /* A control you cannot use is `faint`. Nothing dims and nothing waits. */
-[data-theme^="paper"] .career-page button:disabled,
-[data-theme^="paper"] .career-page select:disabled,
-[data-theme^="paper"] .career-page input:disabled,
-[data-theme^="paper"] .career-page textarea:disabled {
+[data-theme^="paper"] .career-app button:disabled,
+[data-theme^="paper"] .career-app select:disabled,
+[data-theme^="paper"] .career-app input:disabled,
+[data-theme^="paper"] .career-app textarea:disabled {
   opacity: 1;
   color: var(--faint);
   cursor: default;
@@ -38,13 +38,13 @@
    and an element, so it outranks `.paper-action`'s own modifiers and would hand
    every quiet and destructive word the default green underline. Both are
    restated inside the page, one class heavier, rather than with `!important`. */
-[data-theme^="paper"] .career-page .paper-action--quiet {
+[data-theme^="paper"] .career-app .paper-action--quiet {
   color: var(--muted);
   font: var(--small);
   text-decoration: none;
 }
 
-[data-theme^="paper"] .career-page .paper-action--quiet:hover:not(:disabled) {
+[data-theme^="paper"] .career-app .paper-action--quiet:hover:not(:disabled) {
   color: var(--accent);
 }
 
@@ -52,26 +52,26 @@
    twenty rows with a red word on every one of them reads as a warning about
    itself, and none of these removals is the destructive one: the application is,
    and its own `remove` is red and asks twice. */
-[data-theme^="paper"] .career-page .career-row__remove:hover:not(:disabled),
-[data-theme^="paper"] .career-page .career-row__remove:focus-visible {
+[data-theme^="paper"] .career-app .career-app-row__remove:hover:not(:disabled),
+[data-theme^="paper"] .career-app .career-app-row__remove:focus-visible {
   color: var(--danger);
 }
 
-[data-theme^="paper"] .career-page .paper-action--danger,
-[data-theme^="paper"] .career-page .paper-action--danger:hover:not(:disabled) {
+[data-theme^="paper"] .career-app .paper-action--danger,
+[data-theme^="paper"] .career-app .paper-action--danger:hover:not(:disabled) {
   color: var(--danger);
   font: var(--small);
   text-decoration: underline 1px var(--danger);
   text-underline-offset: 0.2em;
 }
 
-[data-theme^="paper"] .career-page .paper-action:disabled {
+[data-theme^="paper"] .career-app .paper-action:disabled {
   color: var(--faint);
   text-decoration: none;
 }
 
 /* A field is the boxed primitive; it needs the width its column gives it. */
-[data-theme^="paper"] .career-page .paper-field {
+[data-theme^="paper"] .career-app .paper-field {
   width: 100%;
   box-sizing: border-box;
 }
@@ -79,7 +79,7 @@
 /* The classic `select` rule draws its arrow as a background image, which
    `.paper-field`'s `background` shorthand wipes, leaving a box with nothing to
    say it opens. The chevron is two gradients so it takes `currentColor`. */
-[data-theme^="paper"] .career-page select.paper-field {
+[data-theme^="paper"] .career-app select.paper-field {
   padding-right: calc(var(--space-24) + var(--space-xs));
   background-image:
     linear-gradient(
@@ -105,37 +105,37 @@
 
 /* ------------------------------------------------------------- the header */
 
-[data-theme^="paper"] .career-page__back button {
+[data-theme^="paper"] .career-app__back button {
   gap: var(--space-sm);
 }
 
 /* The company is the page's one `display`, and it keeps its own case: it is a
    name, not an interface word. */
-[data-theme^="paper"] .career-page .career-page__company {
+[data-theme^="paper"] .career-app .career-app__company {
   margin: 0;
   font: var(--display);
   letter-spacing: var(--display-tracking);
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-page__role {
+[data-theme^="paper"] .career-app .career-app__role {
   font: var(--body);
   color: var(--text);
 }
 
 /* Applied, stage, and what is next: the facts, in figures that line up. */
-[data-theme^="paper"] .career-page .career-page__summary {
+[data-theme^="paper"] .career-app .career-app__summary {
   font: var(--small);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
-[data-theme^="paper"] .career-page .career-page__waiting {
+[data-theme^="paper"] .career-app .career-app__waiting {
   font: var(--small);
   color: var(--muted);
 }
 
-[data-theme^="paper"] .career-page__tabs {
+[data-theme^="paper"] .career-app__tabs {
   gap: var(--space-md);
   border-bottom: 1px solid var(--hairline);
   padding-bottom: var(--space-sm);
@@ -145,68 +145,68 @@
    rather than the primitive's `body`, because the page's name is right above.
    The page frame's `button` rule clears every border, which would take the
    primitive's rule with it, so both states are restated here. */
-[data-theme^="paper"] .career-page .career-page__tab,
-[data-theme^="paper"] .career-page .career-filter__tag {
+[data-theme^="paper"] .career-app .career-app__tab,
+[data-theme^="paper"] .career-app .career-app-tags__tag {
   border-bottom: 2px solid transparent;
   font: var(--small);
   text-decoration: none;
 }
 
-[data-theme^="paper"] .career-page .paper-nav__item--current {
+[data-theme^="paper"] .career-app .paper-nav__item--current {
   border-bottom-color: var(--accent);
 }
 
-[data-theme^="paper"] .career-page .career-page__tab:hover {
+[data-theme^="paper"] .career-app .career-app__tab:hover {
   color: var(--accent);
 }
 
-[data-theme^="paper"] .career-page .career-page__tab.paper-nav__item--current {
+[data-theme^="paper"] .career-app .career-app__tab.paper-nav__item--current {
   color: var(--text);
 }
 
 /* ------------------------------------------------------------ the sections */
 
-[data-theme^="paper"] .career-page .career-tab__aside {
+[data-theme^="paper"] .career-app .career-tab__aside {
   font: var(--fine);
   color: var(--muted);
 }
 
-[data-theme^="paper"] .career-page .career-editor__label > span {
+[data-theme^="paper"] .career-app .career-editor__label > span {
   font: var(--fine);
   color: var(--muted);
 }
 
 /* The first row's rule closes the list at the top as well as the bottom. */
-[data-theme^="paper"] .career-rows {
+[data-theme^="paper"] .career-app-rows {
   border-top: 1px solid var(--hairline);
 }
 
 /* ------------------------------------------------------------------ a row */
 
-[data-theme^="paper"] .career-page .career-row__name {
+[data-theme^="paper"] .career-app .career-app-row__name {
   font: var(--body);
   color: var(--text);
 }
 
 /* Done is muted and struck through — but only the round's name, never the row,
    so the date beside it stays readable and the actions keep their own colour. */
-[data-theme^="paper"] .career-page .career-row--done .career-row__name {
+[data-theme^="paper"] .career-app .career-app-row--done .career-app-row__name {
   color: var(--muted);
   text-decoration: line-through;
 }
 
 /* The round that is next is the one thing on the page in 600. */
-[data-theme^="paper"] .career-page .career-row--now .career-row__name {
+[data-theme^="paper"] .career-app .career-app-row--now .career-app-row__name {
   font-weight: 600;
 }
 
-[data-theme^="paper"] .career-page .career-row__notes,
-[data-theme^="paper"] .career-page .career-row__body {
+[data-theme^="paper"] .career-app .career-app-row__notes,
+[data-theme^="paper"] .career-app .career-app-row__body {
   font: var(--body);
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-row__notes {
+[data-theme^="paper"] .career-app .career-app-row__notes {
   font: var(--fine);
   color: var(--muted);
   text-wrap: pretty;
@@ -214,20 +214,20 @@
 
 /* Dates line up in a column of their own, so a row is read across rather than
    hunted for. Wide enough for the longest of them, `sep 22 · in 3 days`. */
-[data-theme^="paper"] .career-page .career-row__when {
+[data-theme^="paper"] .career-app .career-app-row__when {
   width: 17ch;
   font: var(--fine);
 }
 
 /* A file says more than a date does — its kind, its size and when it arrived —
    so it takes the width it needs rather than a column's. */
-[data-theme^="paper"] .career-page .career-row__meta-wide {
+[data-theme^="paper"] .career-app .career-app-row__meta-wide {
   font: var(--fine);
 }
 
 /* A date field inside a row is the row's own metadata: it reads as the date it
    holds until you reach it, so it carries no box of its own. */
-[data-theme^="paper"] .career-page .career-row__due-field {
+[data-theme^="paper"] .career-app .career-app-row__due-field {
   width: auto;
   padding: 0;
   border: 0;
@@ -237,39 +237,39 @@
   font-variant-numeric: tabular-nums;
 }
 
-[data-theme^="paper"] .career-page .career-row__due-field:focus,
-[data-theme^="paper"] .career-page .career-row__due-field:hover {
+[data-theme^="paper"] .career-app .career-app-row__due-field:focus,
+[data-theme^="paper"] .career-app .career-app-row__due-field:hover {
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-row--add {
+[data-theme^="paper"] .career-app .career-app-row--add {
   border-bottom: 0;
 }
 
 /* --------------------------------------------------------------- filters */
 
-[data-theme^="paper"] .career-page .career-filter__label {
+[data-theme^="paper"] .career-app .career-app-tags__label {
   font: var(--small);
   color: var(--muted);
 }
 
 /* A tag is navigation: the one you are looking through carries the green rule. */
-[data-theme^="paper"] .career-page .career-filter__tag {
+[data-theme^="paper"] .career-app .career-app-tags__tag {
   padding: 0 0 var(--space-xs);
 }
 
-[data-theme^="paper"] .career-page .career-filter__tag.paper-nav__item--current {
+[data-theme^="paper"] .career-app .career-app-tags__tag.paper-nav__item--current {
   color: var(--text);
 }
 
 /* -------------------------------------------------------- markdown fields */
 
-[data-theme^="paper"] .career-page .career-field__hint {
+[data-theme^="paper"] .career-app .career-field__hint {
   font: var(--fine);
   color: var(--muted);
 }
 
-[data-theme^="paper"] .career-page .career-field__source {
+[data-theme^="paper"] .career-app .career-field__source {
   min-height: calc(var(--space-lg) * 2);
   /* Writing shows the source, so the source is set in the face it is written
      for: markers line up in a column instead of drifting under proportional
@@ -283,51 +283,51 @@
 
 /* A note's own headings sit under the page's `h1` and its section `h2`, so they
    are told apart by weight and the space above them, not by size. */
-[data-theme^="paper"] .career-page .career-md__h {
+[data-theme^="paper"] .career-app .career-md__h {
   font: var(--heading);
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-md__h--1 {
+[data-theme^="paper"] .career-app .career-md__h--1 {
   margin-top: var(--space-md);
 }
 
-[data-theme^="paper"] .career-page .career-md__h--3,
-[data-theme^="paper"] .career-page .career-md__h--4,
-[data-theme^="paper"] .career-page .career-md__h--5,
-[data-theme^="paper"] .career-page .career-md__h--6 {
+[data-theme^="paper"] .career-app .career-md__h--3,
+[data-theme^="paper"] .career-app .career-md__h--4,
+[data-theme^="paper"] .career-app .career-md__h--5,
+[data-theme^="paper"] .career-app .career-md__h--6 {
   font: var(--small);
   font-weight: 600;
 }
 
-[data-theme^="paper"] .career-page .career-md__p {
+[data-theme^="paper"] .career-app .career-md__p {
   font: var(--body);
   color: var(--text);
   text-wrap: pretty;
 }
 
-[data-theme^="paper"] .career-page .career-md__list {
+[data-theme^="paper"] .career-app .career-md__list {
   font: var(--body);
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-md__list--ordered {
+[data-theme^="paper"] .career-app .career-md__list--ordered {
   font-variant-numeric: tabular-nums;
 }
 
-[data-theme^="paper"] .career-page .career-md__list--ordered::marker,
-[data-theme^="paper"] .career-page .career-md__item::marker {
+[data-theme^="paper"] .career-app .career-md__list--ordered::marker,
+[data-theme^="paper"] .career-app .career-md__item::marker {
   color: var(--muted);
 }
 
 /* A ticked task reads as done the way a done row does. */
-[data-theme^="paper"] .career-page .career-md__item--done .career-md__item-body {
+[data-theme^="paper"] .career-app .career-md__item--done .career-md__item-body {
   color: var(--muted);
   text-decoration: line-through;
 }
 
 /* A quote is a rule at its edge, not a tinted block. */
-[data-theme^="paper"] .career-page .career-md__quote {
+[data-theme^="paper"] .career-app .career-md__quote {
   margin-inline: 0;
   padding-left: var(--space-sm);
   border-left: 1px solid var(--hairline-strong);
@@ -337,45 +337,45 @@
 /* Code is the one place mono appears outside the sign-in screens, and the one
    documented step outside Literata: a fragment of code has to be read
    character by character, which a proportional face makes harder. */
-[data-theme^="paper"] .career-page .career-md__pre {
+[data-theme^="paper"] .career-app .career-md__pre {
   padding: var(--space-sm);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--ground-raised);
 }
 
-[data-theme^="paper"] .career-page .career-md__code,
-[data-theme^="paper"] .career-page .career-md__inline-code {
+[data-theme^="paper"] .career-app .career-md__code,
+[data-theme^="paper"] .career-app .career-md__inline-code {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text);
 }
 
-[data-theme^="paper"] .career-page .career-md__inline-code {
+[data-theme^="paper"] .career-app .career-md__inline-code {
   padding: 1px var(--space-xs);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
   background: var(--ground-raised);
 }
 
-[data-theme^="paper"] .career-page .career-md__rule {
+[data-theme^="paper"] .career-app .career-md__rule {
   border-top-color: var(--hairline);
   opacity: 1;
 }
 
 /* A link inside a note is underlined in green like every other word you can
    act on, and the box beside a task is the note's text, not a control. */
-[data-theme^="paper"] .career-page .career-md a {
+[data-theme^="paper"] .career-app .career-md a {
   color: var(--text);
   text-decoration: underline 1px var(--accent);
   text-underline-offset: 0.2em;
 }
 
-[data-theme^="paper"] .career-page .career-md a:hover {
+[data-theme^="paper"] .career-app .career-md a:hover {
   color: var(--accent);
 }
 
-[data-theme^="paper"] .career-page .career-md__box {
+[data-theme^="paper"] .career-app .career-md__box {
   cursor: inherit;
 }

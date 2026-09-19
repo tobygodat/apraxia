@@ -71,8 +71,8 @@ export function CareerApplicationPage({
 
   const nextStep = nextStepOf(steps);
   return (
-    <section className="career-page workspace-page">
-      <p className="career-page__back">
+    <section className="career-app workspace-page">
+      <p className="career-app__back">
         <button type="button" className="paper-action paper-action--quiet" onClick={onBack}>
           <WorkspaceIcon name="left" />
           all applications
@@ -84,20 +84,20 @@ export function CareerApplicationPage({
         </p>
       )}
       {!application ? (
-        <p className="career-page__waiting" role="status">
+        <p className="career-app__waiting" role="status">
           {missing ? "This application isn’t here any more." : busy || "Loading…"}
         </p>
       ) : (
         <>
-          <header className="career-page__header">
-            <div className="career-page__identity">
-              <h1 className="career-page__company">{application.company}</h1>
-              <p className="career-page__role">{application.role}</p>
-              <p className="career-page__summary">
+          <header className="career-app__header">
+            <div className="career-app__identity">
+              <h1 className="career-app__company">{application.company}</h1>
+              <p className="career-app__role">{application.role}</p>
+              <p className="career-app__summary">
                 {applicationSummary(application, nextStep, today)}
               </p>
             </div>
-            <div className="career-page__header-actions">
+            <div className="career-app__header-actions">
               {application.postingUrl && (
                 <a
                   className="paper-action paper-action--quiet"
@@ -129,12 +129,12 @@ export function CareerApplicationPage({
               onDeleted={onDeleted}
             />
           )}
-          <nav className="career-page__tabs" aria-label="application">
+          <nav className="career-app__tabs" aria-label="application">
             {TABS.map((name) => (
               <button
                 key={name}
                 type="button"
-                className={`paper-nav__item career-page__tab${
+                className={`paper-nav__item career-app__tab${
                   name === tab ? " paper-nav__item--current" : ""
                 }`}
                 aria-current={name === tab ? "page" : undefined}
