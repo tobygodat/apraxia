@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ClassSummary, Profile, ProjectSummary, Todo } from "../../types/domain";
 import { TodayList } from "./TodayList";
@@ -10,8 +10,16 @@ import { useLocalToday } from "./useLocalToday";
 import { addSqlDateDays } from "./dateDomain";
 import "./TodayPanel.css";
 
+/** What the panel knows about today, for a caller that prints it elsewhere. */
+export interface TodaySummary {
+  readonly dueToday: number;
+  readonly overdue: number;
+}
+
 export interface TodayPanelProps {
   readonly heading?: string;
+  /** Called whenever the counts change, so the page header can print them. */
+  readonly onSummary?: (summary: TodaySummary) => void;
   readonly allowTomorrow?: boolean;
   readonly service: TodoService;
   /** A verified authenticated-session lifetime, not a row ownership argument. */
@@ -34,6 +42,7 @@ function TodayPanelSession({
   classes = [],
   heading,
   allowTomorrow = false,
+  onSummary,
 }: TodayPanelProps) {
   const today = useLocalToday(profile.timezone);
   const [day, setDay] = useState<TodayListDay>("Today");
@@ -54,6 +63,14 @@ function TodayPanelSession({
   } | null>(null);
   const edit = editIntent?.scope === controller ? editIntent : null;
   const view = selectTodayList(state, selectedDay, today, projects, classes);
+
+  // The Today slice holds what is due today plus what fell past it, so both
+  // counts come from the rows already loaded rather than a second read.
+  const overdueCount = state.today.todos.filter((todo) => todo.isOverdue).length;
+  const dueTodayCount = state.today.todos.length - overdueCount;
+  useEffect(() => {
+    onSummary?.({ dueToday: dueTodayCount, overdue: overdueCount });
+  }, [dueTodayCount, overdueCount, onSummary]);
 
   return (
     <div className="today-panel" ref={focusRef} tabIndex={-1} aria-label={`${selectedDay} tasks`}>

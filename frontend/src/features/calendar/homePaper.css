@@ -88,6 +88,24 @@
   text-transform: lowercase;
 }
 
+/* The date, then what is owed today, joined by the middle dot the whole app
+ * uses to join facts on one line. */
+[data-theme^="paper"] .home-header__date > span + span::before {
+  margin: 0 var(--space-xs);
+  content: "·";
+}
+
+[data-theme^="paper"] .home-header__late {
+  color: var(--warning);
+}
+
+/* In the panel a row carries "edit" alone, as the reference draws it: the list
+ * is a glance at the day, and deleting belongs where the task is being worked
+ * on. The phone's Today view, which the reference does not cover, keeps both. */
+[data-theme^="paper"] .home-workspace .today-list-item__manage button:last-child {
+  display: none;
+}
+
 [data-theme^="paper"] .home-header__actions {
   grid-area: 2 / 2;
   gap: var(--space-24);
@@ -270,7 +288,9 @@
   stroke-width: 1.5;
 }
 
-/* Refresh carries its word beside its icon; only the chevrons go bare. */
+/* Refresh and add event are words alone. The reference draws no glyph beside
+ * either; the two chevrons are the one icon on this toolbar that stands by
+ * itself, because stepping a week has no word short enough to carry it. */
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh {
   gap: var(--space-8);
   color: var(--muted);
@@ -279,6 +299,11 @@
 
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh::after {
   content: "refresh";
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh .workspace-icon,
+[data-theme^="paper"] .calendar-toolbar .calendar-add .workspace-icon {
+  display: none;
 }
 
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh:hover:not(:disabled) {

@@ -37,7 +37,8 @@ it("loads Sunday through Saturday in the profile timezone and keeps navigation a
         container.querySelectorAll(".week-head .week-days > div"),
         (day) => day.textContent,
       ),
-    ).toEqual(["Sun13", "Mon14", "Tue15", "Wed16", "Thu17", "Fri18", "Sat19"]);
+      // Today is the one day named in words as well as marked.
+    ).toEqual(["Sun13today", "Mon14", "Tue15", "Wed16", "Thu17", "Fri18", "Sat19"]);
     expect(
       container
         .querySelector(".week-head .week-days > div:first-child")

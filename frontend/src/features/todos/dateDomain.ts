@@ -189,16 +189,16 @@ export function startOfWeekSunday(value: string): SqlDate {
   return addSqlDateDays(value, -utcDateFromSqlDate(value).getUTCDay());
 }
 
-function assertMonday(value: string): SqlDate {
+function assertSunday(value: string): SqlDate {
   const date = asSqlDate(value);
-  if (startOfWeekMonday(date) !== date) {
-    throw new RangeError("Visible week date must be a Monday.");
+  if (startOfWeekSunday(date) !== date) {
+    throw new RangeError("Visible week date must be a Sunday.");
   }
   return date;
 }
 
-export function shiftWeekMonday(visibleWeekMonday: string, offsetWeeks: number): SqlDate {
-  const monday = assertMonday(visibleWeekMonday);
+export function shiftWeekStart(visibleWeekStart: string, offsetWeeks: number): SqlDate {
+  const sunday = assertSunday(visibleWeekStart);
   if (!Number.isSafeInteger(offsetWeeks)) {
     throw new RangeError("Week offset must be a safe integer.");
   }
@@ -208,7 +208,7 @@ export function shiftWeekMonday(visibleWeekMonday: string, offsetWeeks: number):
     throw new RangeError("Week offset is outside the supported range.");
   }
 
-  return addSqlDateDays(monday, offsetDays);
+  return addSqlDateDays(sunday, offsetDays);
 }
 
 function inclusiveDateRange(start: string, end: string): SqlDate[] {
@@ -224,16 +224,17 @@ function inclusiveDateRange(start: string, end: string): SqlDate[] {
 }
 
 /**
- * Dates shown by the full Todos board: all seven Monday-through-Sunday dates
- * of the selected week. The current week used to start at today, which left
- * this week's completed tasks with no column to appear in until the user
- * stepped back to the previous week, where they are not.
+ * Dates shown by the full Todos board: all seven Sunday-through-Saturday dates
+ * of the selected week, the same week the calendar draws on the home page. The
+ * current week used to start at today, which left this week's completed tasks
+ * with no column to appear in until the user stepped back to the previous week,
+ * where they are not.
  */
-export function visibleTodoWeekDates(visibleWeekMonday: string, today: string): SqlDate[] {
-  const monday = assertMonday(visibleWeekMonday);
+export function visibleTodoWeekDates(visibleWeekStart: string, today: string): SqlDate[] {
+  const sunday = assertSunday(visibleWeekStart);
   asSqlDate(today);
-  const sunday = addSqlDateDays(monday, 6);
-  return inclusiveDateRange(monday, sunday);
+  const saturday = addSqlDateDays(sunday, 6);
+  return inclusiveDateRange(sunday, saturday);
 }
 
 export function classifyTodoDueDate(

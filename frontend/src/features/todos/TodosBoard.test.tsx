@@ -33,7 +33,7 @@ const INBOX: Todo = {
 afterEach(() => cleanup());
 
 function model(todos: readonly Todo[] = [TODO, OVERDUE, INBOX]) {
-  return buildTodoBoardModel(todos, "2026-08-31", "2026-09-02");
+  return buildTodoBoardModel(todos, "2026-08-30", "2026-09-02");
 }
 
 function props(overrides: Partial<TodosBoardProps> = {}): TodosBoardProps {
@@ -102,42 +102,55 @@ function MutationHarness({
 }
 
 describe("TodosBoard", () => {
-  it("renders Today first with past-due tasks, then the current-week remainder and Inbox", () => {
+  it("keeps Inbox on an empty board and leaves Overdue off it", () => {
+    render(<TodosBoard {...props({ model: model([]) })} />);
+    // Inbox is where an undated task lands, so its heading and its Add stay on
+    // the page with nothing in it. An empty Overdue would report a problem that
+    // does not exist, so it is absent instead.
+    expect(screen.getByRole("heading", { name: "Inbox" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add task to Inbox" })).toBeTruthy();
+    expect(screen.getByText("Nothing waiting.")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
+  });
+
+  it("runs Sunday to Saturday, then the overdue pile, then Inbox", () => {
     render(<TodosBoard {...props()} />);
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
-    // Today opens the week and this week's earlier days wrap to the end, so the
-    // day being worked on never sits below or behind the rest of the week.
-    expect(headings[0]).toContain("· Today");
-    expect(headings.slice(0, -1)).toEqual([
-      "Wednesday, Sep 2 · Today",
-      "Thursday, Sep 3 · Tomorrow",
-      "Friday, Sep 4",
-      "Saturday, Sep 5",
-      "Sunday, Sep 6",
-      "Monday, Aug 31",
-      "Tuesday, Sep 1",
+    // The week reads in calendar order; today is marked where it falls. The
+    // grid's own heading opens the list, and the two piles close it.
+    // Each day heading prints "Sun 30" and carries the whole date for a screen
+    // reader, since two letters and a number do not read as a day out loud.
+    expect(headings).toEqual([
+      "This week",
+      "Sun 30Sunday, August 30",
+      "Mon 31Monday, August 31",
+      "Tue 1Tuesday, September 1",
+      "Wed 2Wednesday, September 2 · Today",
+      "Thu 3Thursday, September 3 · Tomorrow",
+      "Fri 4Friday, September 4",
+      "Sat 5Saturday, September 5",
+      "Overdue",
+      "Inbox",
     ]);
-    expect(headings[headings.length - 1]).toEqual("Inbox");
-    expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
-    // The current week shows all seven days, so this week's earlier days keep
-    // a column for their completed tasks.
-    expect(headings).toHaveLength(1 + 7);
     const today = screen.getByRole("region", { name: /· Today$/ });
     // The marker is CSS-only, so the class is what a test can hold onto.
     expect(today.classList.contains("todos-board-column--today")).toBe(true);
-    const pastDate = within(today).getByText(/Due Aug 30/);
-    expect(pastDate.getAttribute("datetime")).toBe("2026-08-30");
-    expect(pastDate.classList.contains("todos-board-card__due--past")).toBe(true);
-    // The red styling is not available to a screen reader, so the status is
-    // also carried as text.
-    expect(pastDate.textContent).toContain("Past due.");
     expect(within(today).getByText(TODO.text)).toBeTruthy();
-    expect(within(today).getAllByText("2:30 PM")).toHaveLength(2);
-    expect(within(today).getAllByText("Launch")[0]!.className).toBe("todo-source-chip");
+    expect(within(today).getByText("2:30 PM")).toBeTruthy();
+    expect(within(today).getByText("Launch").className).toBe("todo-source-chip");
+    // The overdue row is in the pile and nowhere else, with the day it was due
+    // and how late it is.
+    const overdue = screen.getByRole("region", { name: "Overdue" });
+    expect(within(overdue).getByText("Was due Sun, Aug 30").getAttribute("datetime")).toBe(
+      "2026-08-30",
+    );
+    expect(within(overdue).getByText("3 days late")).toBeTruthy();
+    expect(within(today).queryByText(OVERDUE.text)).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Mark as complete Call the clinic" })).toBeTruthy();
-    expect(screen.queryByText(/nothing due/i)).toBeNull();
+    // Five of the seven days hold nothing, and each says so.
+    expect(screen.getAllByText("Nothing due.")).toHaveLength(6);
   });
 
   it("routes week navigation, retry, and date-prefilled Add actions", () => {
@@ -154,7 +167,7 @@ describe("TodosBoard", () => {
     expect(callbacks.onAddTodo).toHaveBeenNthCalledWith(1, null);
     expect(callbacks.onAddTodo).toHaveBeenNthCalledWith(2, "2026-09-02");
     expect(screen.getByRole("alert").textContent).toContain("Tasks could not be loaded");
-    expect(screen.getByRole("button", { name: "Today" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "This week" }).hasAttribute("disabled")).toBe(true);
   });
 
   it("exposes complete, edit, and delete intents and locks a pending row", () => {
@@ -162,12 +175,17 @@ describe("TodosBoard", () => {
     render(<TodosBoard {...callbacks} />);
     fireEvent.click(screen.getByRole("checkbox", { name: "Mark as complete Prepare review" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit Prepare review" }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete Prepare review" }));
+    // A row in the week grid carries "edit" alone; deleting is offered in the
+    // two piles, where a task has already fallen out of the week.
+    expect(screen.queryByRole("button", { name: "Delete Prepare review" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Call the clinic" }));
     expect(callbacks.onToggleComplete).toHaveBeenCalledWith(
       expect.objectContaining({ id: TODO.id }),
     );
     expect(callbacks.onEditTodo).toHaveBeenCalledWith(expect.objectContaining({ id: TODO.id }));
-    expect(callbacks.onDeleteTodo).toHaveBeenCalledWith(expect.objectContaining({ id: TODO.id }));
+    expect(callbacks.onDeleteTodo).toHaveBeenCalledWith(
+      expect.objectContaining({ id: OVERDUE.id }),
+    );
     const inbox = screen.getByRole("checkbox", {
       name: "Mark as complete Inbox note",
     }) as HTMLInputElement;
@@ -330,7 +348,7 @@ it("filters all sources across Inbox and date columns and labels source chips", 
     <TodosBoard
       {...props({
         projects: [{ id: "p", title: "Studio" }],
-        model: buildTodoBoardModel(rows, "2026-08-31", "2026-09-02"),
+        model: buildTodoBoardModel(rows, "2026-08-30", "2026-09-02"),
       })}
     />,
   );
@@ -339,41 +357,46 @@ it("filters all sources across Inbox and date columns and labels source chips", 
   const cases = [
     ["Classes", ["Worksheet", "Reading"]],
     ["Projects", ["Project task"]],
-    ["Unassigned", [TODO.text]],
+    ["Personal", [TODO.text]],
     ["All", rows.map((row) => row.text)],
   ] as const;
+  const sources = within(screen.getByRole("navigation", { name: "Task source" }));
   for (const [source, visible] of cases) {
-    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: source } });
+    fireEvent.click(sources.getByRole("button", { name: source }));
+    expect(sources.getByRole("button", { name: source }).getAttribute("aria-pressed")).toBe("true");
     for (const row of rows) {
       expect(Boolean(screen.queryByText(row.text, { exact: true }))).toBe(
         (visible as readonly string[]).includes(row.text),
       );
     }
   }
-  expect(screen.getByText("Due Sep 1").className).toContain("--past");
+  // The worksheet is a day past due, so it reads in the pile with its own date.
+  expect(screen.getByText("Was due Tue, Sep 1")).toBeTruthy();
 });
 
-describe("TodosBoard one-tap tomorrow", () => {
+describe("TodosBoard one-tap move to today", () => {
   const LATER: Todo = { ...TODO, id: "todo-later", text: "Later this week", dueDate: "2026-09-05" };
 
-  it("offers tomorrow on overdue and today rows only, and moves them a day past today", () => {
+  it("offers the move in the two piles only, and dates the task today", () => {
     const callbacks = props({
       model: model([TODO, OVERDUE, LATER, INBOX]),
       onRescheduleTodo: vi.fn(),
     });
     render(<TodosBoard {...callbacks} />);
 
-    for (const text of [TODO.text, OVERDUE.text]) {
-      expect(screen.getByLabelText(`Move ${text} to tomorrow`)).toBeTruthy();
+    // Overdue and Inbox rows have fallen out of the week, so they carry it; a
+    // row still sitting in a day column does not.
+    for (const text of [OVERDUE.text, INBOX.text]) {
+      expect(screen.getByLabelText(`Move ${text} to today`)).toBeTruthy();
     }
-    for (const text of [LATER.text, INBOX.text]) {
-      expect(screen.queryByLabelText(`Move ${text} to tomorrow`)).toBeNull();
+    for (const text of [TODO.text, LATER.text]) {
+      expect(screen.queryByLabelText(`Move ${text} to today`)).toBeNull();
     }
 
-    fireEvent.click(screen.getByLabelText(`Move ${OVERDUE.text} to tomorrow`));
+    fireEvent.click(screen.getByLabelText(`Move ${OVERDUE.text} to today`));
     expect(callbacks.onRescheduleTodo).toHaveBeenCalledWith(
       expect.objectContaining({ id: OVERDUE.id }),
-      "2026-09-03",
+      "2026-09-02",
     );
   });
 
@@ -381,22 +404,22 @@ describe("TodosBoard one-tap tomorrow", () => {
     render(
       <TodosBoard
         {...props({
-          model: model([{ ...OVERDUE, completed: true }, TODO]),
-          pendingTodoIds: new Set([TODO.id]),
+          model: model([{ ...OVERDUE, completed: true }, INBOX]),
+          pendingTodoIds: new Set([INBOX.id]),
           onRescheduleTodo: vi.fn(),
         })}
       />,
     );
 
-    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to tomorrow`)).toBeNull();
-    expect(screen.getByLabelText<HTMLButtonElement>(`Move ${TODO.text} to tomorrow`).disabled).toBe(
+    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to today`)).toBeNull();
+    expect(screen.getByLabelText<HTMLButtonElement>(`Move ${INBOX.text} to today`).disabled).toBe(
       true,
     );
   });
 
   it("leaves the action out entirely when the board cannot reschedule", () => {
     render(<TodosBoard {...props()} />);
-    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to tomorrow`)).toBeNull();
+    expect(screen.queryByLabelText(`Move ${OVERDUE.text} to today`)).toBeNull();
   });
 
   /** Mirrors the controller: pending plus an optimistic move, then a settlement. */
@@ -420,7 +443,7 @@ describe("TodosBoard one-tap tomorrow", () => {
         </button>
         <TodosBoard
           {...props({
-            model: buildTodoBoardModel(todos, "2026-08-31", "2026-09-02"),
+            model: buildTodoBoardModel(todos, "2026-08-30", "2026-09-02"),
             pendingTodoIds: pending,
           })}
           onRescheduleTodo={(todo, dueDate) => {
@@ -437,7 +460,7 @@ describe("TodosBoard one-tap tomorrow", () => {
   }
 
   function deferOverdue() {
-    const action = screen.getByLabelText<HTMLButtonElement>(`Move ${OVERDUE.text} to tomorrow`);
+    const action = screen.getByLabelText<HTMLButtonElement>(`Move ${OVERDUE.text} to today`);
     action.focus();
     fireEvent.click(action);
   }
@@ -470,7 +493,11 @@ describe("TodosBoard overdue count", () => {
     render(<TodosBoard {...props()} />);
 
     expect(screen.getByText("1 overdue")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Task source"), { target: { value: "Classes" } });
+    fireEvent.click(
+      within(screen.getByRole("navigation", { name: "Task source" })).getByRole("button", {
+        name: "Classes",
+      }),
+    );
     expect(screen.queryByText(/overdue$/)).toBeNull();
   });
 
@@ -542,34 +569,31 @@ describe("TodosBoard drag to reschedule", () => {
     expect(callbacks.onRescheduleTodo).not.toHaveBeenCalled();
   });
 
-  it("does not reschedule an overdue row dropped back onto Today, but does when dropped elsewhere", () => {
+  it("does not reschedule an overdue row dropped back onto its own pile, but does onto a day", () => {
     const callbacks = props({ onRescheduleTodo: vi.fn() });
     render(<TodosBoard {...callbacks} />);
     const row = screen.getByText(OVERDUE.text).closest("article")!;
-    const todayColumn = row.closest("section")!;
+    const pile = screen.getByRole("region", { name: "Overdue" });
     let dataTransfer = dataTransferStub();
     fireEvent.dragStart(row, { dataTransfer });
-    fireEvent.dragOver(todayColumn, { dataTransfer });
-    fireEvent.drop(todayColumn, { dataTransfer });
+    fireEvent.dragOver(pile, { dataTransfer });
+    fireEvent.drop(pile, { dataTransfer });
     expect(callbacks.onRescheduleTodo).not.toHaveBeenCalled();
 
     dataTransfer = dataTransferStub();
     fireEvent.dragStart(row, { dataTransfer });
-    const otherHeading = screen
-      .getAllByRole("heading", { level: 2 })
-      .find((heading) => !heading.closest("section")!.contains(row))!;
-    const otherColumn = otherHeading.closest("section")!;
-    fireEvent.dragOver(otherColumn, { dataTransfer });
-    fireEvent.drop(otherColumn, { dataTransfer });
+    const friday = screen.getByRole("region", { name: "Friday, September 4" });
+    fireEvent.dragOver(friday, { dataTransfer });
+    fireEvent.drop(friday, { dataTransfer });
     expect(callbacks.onRescheduleTodo).toHaveBeenCalledOnce();
     const [droppedTodo, dueDate] = (callbacks.onRescheduleTodo as ReturnType<typeof vi.fn>).mock
       .calls[0]!;
     expect(droppedTodo.id).toBe(OVERDUE.id);
-    expect(dueDate).not.toBe(OVERDUE.dueDate);
+    expect(dueDate).toBe("2026-09-04");
   });
 });
 
-it("returns the board to its leading column when a new day takes the lead", () => {
+it("returns the board to its first column when the visible week changes", () => {
   const boardProps = props();
   const { rerender } = render(<TodosBoard {...boardProps} />);
   const region = screen.getByRole("region", { name: "Tasks by date" });
@@ -577,35 +601,19 @@ it("returns the board to its leading column when a new day takes the lead", () =
   region.scrollLeft = 900;
   expect(region.scrollLeft).toBe(900);
 
-  // Local midnight inside the same week: the visible Monday does not move, but
-  // Thursday rotates into the lead ahead of Wednesday, so the board has to
-  // return to it rather than staying scrolled where the user left it.
+  // A narrow window scrolls the week sideways. Stepping to another week has to
+  // return to its first day rather than leaving the user where they were.
   rerender(
     <TodosBoard
       {...boardProps}
-      model={buildTodoBoardModel([TODO, OVERDUE, INBOX], "2026-08-31", "2026-09-03")}
+      model={buildTodoBoardModel([TODO, OVERDUE, INBOX], "2026-09-06", "2026-09-02")}
     />,
   );
 
-  expect(screen.getAllByRole("heading", { level: 2 })[0]?.textContent).toBe(
-    "Thursday, Sep 3 · Today",
+  expect(screen.getAllByRole("heading", { level: 2 })[1]?.textContent).toContain(
+    "Sunday, September 6",
   );
   expect(region.scrollLeft).toBe(0);
-});
-
-it("renders Today first, marked, and carrying a count badge", () => {
-  render(<TodosBoard {...props()} />);
-  const headings = screen
-    .getAllByRole("heading", { level: 2 })
-    .map((heading) => heading.textContent);
-  // The board scrolls sideways, so Today has to open the row of
-  // columns rather than sit behind that scroll.
-  expect(headings[0]).toEqual("Wednesday, Sep 2 · Today");
-  expect(headings[headings.length - 1]).toEqual("Inbox");
-  const today = screen.getByRole("region", { name: /· Today$/ });
-  expect(today.classList.contains("todos-board-column--today")).toBe(true);
-  const badge = within(today).getByText(/^\d+$/, { selector: "span[aria-hidden]" });
-  expect(badge).toBeTruthy();
 });
 
 describe("TodosBoard repeat marker", () => {

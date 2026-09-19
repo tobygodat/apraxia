@@ -49,14 +49,15 @@
   font-size: 12px;
 }
 
-/* Trails the week range on the same line, in the clay a row uses for its own
-   past-due date, separated by the middle dot a row's metadata uses. */
+/* The counts trail the week range on the same line, separated by the middle dot
+   a row's metadata uses. Overdue takes the clay a row uses for its own past-due
+   date. */
 .todos-board-overdue {
   color: var(--todos-board-overdue);
   font-variant-numeric: tabular-nums;
 }
 
-.todos-board-overdue::before {
+.todos-board-week > span + span::before {
   margin: 0 6px;
   color: var(--todos-board-faint);
   content: "·";
@@ -575,4 +576,62 @@
 .todos-board-page .todos-board-filter select:focus-visible {
   outline: 2px solid #f0efed;
   outline-offset: 3px;
+}
+
+/* Markup the redesign added: the source words that replaced a select, the two
+   piles under the week, and a day column's empty line. Classic carries plain
+   rules for them so it stays coherent while it lives; Paper shapes them in
+   `todosPaper.css`. */
+.todos-board-filter__word {
+  min-height: 0;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #ada9a3;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.todos-board-filter__word[aria-pressed="true"] {
+  border-bottom-color: rgba(255, 255, 255, 0.72);
+  color: #f2efe9;
+}
+
+.todos-board-column__when {
+  color: var(--todos-board-faint);
+  font-size: 12px;
+}
+
+.todos-board-column__empty {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--todos-board-faint);
+  font-size: 12px;
+}
+
+.todos-board-pile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 var(--workspace-page-inset, 32px) 24px;
+}
+
+.todos-board-pile h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.todos-board-pile__tasks {
+  display: flex;
+  flex-direction: column;
+}
+
+.todos-board-week-heading {
+  margin: 0 var(--workspace-page-inset, 32px) 12px;
+  font-size: 14px;
+  font-weight: 600;
 }

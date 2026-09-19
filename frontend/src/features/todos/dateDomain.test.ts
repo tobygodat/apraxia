@@ -10,7 +10,7 @@ import {
   localToday,
   parseSqlDate,
   sqlDateDifferenceInDays,
-  shiftWeekMonday,
+  shiftWeekStart,
   startOfWeekMonday,
   startOfWeekSunday,
   visibleTodoWeekDates,
@@ -141,66 +141,67 @@ describe("localDateInZone", () => {
   });
 });
 
-describe("Monday-through-Sunday weeks", () => {
+describe("Sunday-through-Saturday weeks", () => {
   it("finds week bounds from a midweek date", () => {
+    expect(startOfWeekSunday("2026-09-02")).toBe("2026-08-30");
+    expect(startOfWeekSunday("2026-09-05")).toBe("2026-08-30");
     expect(startOfWeekMonday("2026-09-02")).toBe("2026-08-31");
-    expect(startOfWeekMonday("2026-09-06")).toBe("2026-08-31");
   });
 
   it("handles weeks spanning a year boundary", () => {
-    expect(startOfWeekMonday("2026-12-31")).toBe("2026-12-28");
-    expect(shiftWeekMonday("2026-12-28", 1)).toBe("2027-01-04");
-    expect(shiftWeekMonday("2026-12-28", -1)).toBe("2026-12-21");
+    expect(startOfWeekSunday("2027-01-02")).toBe("2026-12-27");
+    expect(shiftWeekStart("2026-12-27", 1)).toBe("2027-01-03");
+    expect(shiftWeekStart("2026-12-27", -1)).toBe("2026-12-20");
   });
 
-  it("requires week navigation to start from a Monday", () => {
-    expect(() => shiftWeekMonday("2026-09-02", 1)).toThrow(RangeError);
-    expect(() => shiftWeekMonday("2026-08-31", 0.5)).toThrow(RangeError);
+  it("requires week navigation to start from a Sunday", () => {
+    expect(() => shiftWeekStart("2026-09-02", 1)).toThrow(RangeError);
+    expect(() => shiftWeekStart("2026-08-30", 0.5)).toThrow(RangeError);
   });
 });
 
 describe("full Todos board date visibility", () => {
   it("shows the whole current week, including days already past", () => {
-    expect(visibleTodoWeekDates("2026-08-31", "2026-09-02")).toEqual([
+    expect(visibleTodoWeekDates("2026-08-30", "2026-09-02")).toEqual([
+      "2026-08-30",
       "2026-08-31",
       "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
-      "2026-09-06",
     ]);
   });
 
-  it("still shows Monday through Saturday when today is Sunday", () => {
-    expect(visibleTodoWeekDates("2026-08-31", "2026-09-06")).toEqual([
+  it("still shows the whole week when today is its Saturday", () => {
+    expect(visibleTodoWeekDates("2026-08-30", "2026-09-05")).toEqual([
+      "2026-08-30",
       "2026-08-31",
       "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
-      "2026-09-06",
     ]);
   });
 
   it.each([
-    ["2026-08-24", "a previous"],
-    ["2026-09-07", "a next"],
-  ])("shows all Monday-through-Sunday dates for %s week", (monday) => {
-    expect(visibleTodoWeekDates(monday, "2026-09-02")).toEqual([
-      monday,
-      addSqlDateDays(monday, 1),
-      addSqlDateDays(monday, 2),
-      addSqlDateDays(monday, 3),
-      addSqlDateDays(monday, 4),
-      addSqlDateDays(monday, 5),
-      addSqlDateDays(monday, 6),
+    ["2026-08-23", "a previous"],
+    ["2026-09-06", "a next"],
+  ])("shows all Sunday-through-Saturday dates for %s week", (sunday) => {
+    expect(visibleTodoWeekDates(sunday, "2026-09-02")).toEqual([
+      sunday,
+      addSqlDateDays(sunday, 1),
+      addSqlDateDays(sunday, 2),
+      addSqlDateDays(sunday, 3),
+      addSqlDateDays(sunday, 4),
+      addSqlDateDays(sunday, 5),
+      addSqlDateDays(sunday, 6),
     ]);
   });
 
-  it("rejects a visible-week value that is not Monday", () => {
-    expect(() => visibleTodoWeekDates("2026-09-01", "2026-09-02")).toThrow(RangeError);
+  it("rejects a visible-week value that is not Sunday", () => {
+    expect(() => visibleTodoWeekDates("2026-08-31", "2026-09-02")).toThrow(RangeError);
   });
 });
 

@@ -2,13 +2,13 @@ import type { Todo } from "../../types/domain";
 import {
   asSqlDate,
   compareSqlDates,
-  startOfWeekMonday,
+  startOfWeekSunday,
   type SqlDate,
   visibleTodoWeekDates,
 } from "./dateDomain";
 import { compareTodayTodos, type TodayOrderableTodo } from "./todayOrder";
 
-type TodoBoardColumnKind = "inbox" | "date";
+type TodoBoardColumnKind = "inbox" | "date" | "overdue";
 
 export interface TodoBoardColumn {
   readonly key: string;
@@ -20,7 +20,7 @@ export interface TodoBoardColumn {
 
 export interface TodoBoardModel {
   readonly today: SqlDate;
-  readonly visibleWeekMonday: SqlDate;
+  readonly visibleWeekStart: SqlDate;
   readonly isCurrentWeek: boolean;
   readonly columns: readonly TodoBoardColumn[];
   /**
@@ -56,41 +56,38 @@ function compareDatedColumnTodos(left: Todo, right: Todo): number {
 }
 
 /**
- * Open the current week on Today so the day being worked on is the board's
- * first column instead of sitting behind a scroll. The rest of the week follows
- * in order and then wraps to this week's earlier days, which stay reachable at
- * the end. A navigated week holds no Today and keeps its Monday-first order.
- */
-function orderDatesFromToday(dates: readonly SqlDate[], today: SqlDate): readonly SqlDate[] {
-  const todayIndex = dates.indexOf(today);
-  if (todayIndex <= 0) return dates;
-  return [...dates.slice(todayIndex), ...dates.slice(0, todayIndex)];
-}
-
-/**
  * Build the complete Todos workspace without interpreting date-only values as
  * JavaScript instants. Open past-due tasks join Today without changing their
  * dates. Completed historical tasks remain in their original date columns.
  */
 export function buildTodoBoardModel(
   todos: readonly Todo[],
-  visibleWeekMonday: string,
+  visibleWeekStart: string,
   today: string,
 ): TodoBoardModel {
   assertUniqueTodoIds(todos);
 
   const validToday = asSqlDate(today);
-  const dates = orderDatesFromToday(
-    visibleTodoWeekDates(visibleWeekMonday, validToday),
-    validToday,
-  );
-  const validMonday = asSqlDate(visibleWeekMonday);
-  const isCurrentWeek = validMonday === startOfWeekMonday(validToday);
+  // The week reads Sunday to Saturday, the way a calendar does. Today is marked
+  // in place with a rule under its heading rather than moved to the front.
+  const dates = visibleTodoWeekDates(visibleWeekStart, validToday);
+  const validWeekStart = asSqlDate(visibleWeekStart);
+  const isCurrentWeek = validWeekStart === startOfWeekSunday(validToday);
 
   const inbox = todos.filter((todo) => todo.dueDate === null);
+  // Open past-due tasks, oldest first, whichever week is on screen: the pile is
+  // counted from every task rather than from the columns.
+  const overdue = todos
+    .filter(
+      (todo) =>
+        !todo.completed && todo.dueDate !== null && compareSqlDates(todo.dueDate, validToday) < 0,
+    )
+    .sort(compareDatedColumnTodos);
 
-  // Dated columns lead so Today can be first; the undated Inbox trails them in
-  // both themes rather than taking the opening column from the current day.
+  // Overdue and Inbox are columns like any other so that filtering, dragging
+  // and focus recovery treat their rows the same way. The board renders the
+  // seven dated ones as the week grid and these two as the full-width lists
+  // beneath it.
   const columns: TodoBoardColumn[] = [
     ...dates.map<TodoBoardColumn>((date) => ({
       key: date,
@@ -100,17 +97,22 @@ export function buildTodoBoardModel(
       todos: todos
         .filter((todo) => {
           if (todo.dueDate === null) return false;
-          if (isCurrentWeek && date === validToday && !todo.completed) {
-            return compareSqlDates(todo.dueDate, validToday) <= 0;
-          }
-          // Incomplete historical tasks appear only under Today. Completed ones
-          // remain visible when the user deliberately navigates that week.
+          // A day column holds the tasks actually due that day. Open past-due
+          // ones are gathered under Overdue instead of being folded into Today,
+          // where their own dates stopped meaning anything.
           return (
             todo.dueDate === date && (todo.completed || compareSqlDates(date, validToday) >= 0)
           );
         })
         .sort(compareDatedColumnTodos),
     })),
+    {
+      key: "overdue",
+      kind: "overdue",
+      date: null,
+      canAdd: false,
+      todos: overdue,
+    },
     {
       key: "inbox",
       kind: "inbox",
@@ -122,12 +124,9 @@ export function buildTodoBoardModel(
 
   return {
     today: validToday,
-    visibleWeekMonday: validMonday,
+    visibleWeekStart: validWeekStart,
     isCurrentWeek,
     columns,
-    overdue: todos.filter(
-      (todo) =>
-        !todo.completed && todo.dueDate !== null && compareSqlDates(todo.dueDate, validToday) < 0,
-    ),
+    overdue,
   };
 }
