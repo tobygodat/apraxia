@@ -210,14 +210,69 @@
   color: var(--muted);
 }
 
-[data-theme^="paper"] .paper-check {
+/* A checkbox and a radio are drawn, not filled: the box keeps the page's own
+   ground and only the mark is green, because a filled green square would read
+   as a state and green only ever means "here". Put the class on the input. */
+[data-theme^="paper"] .paper-check,
+[data-theme^="paper"] .paper-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
   width: 18px;
   height: 18px;
   flex: none;
+  margin: 0;
   border: 1px solid var(--outline);
-  border-radius: var(--radius-sm);
   background: var(--ground-raised);
-  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .paper-check {
+  border-radius: var(--radius-sm);
+}
+
+[data-theme^="paper"] .paper-radio {
+  border-radius: 50%;
+}
+
+/* The tick: two sides of a square, turned. */
+[data-theme^="paper"] .paper-check::before {
+  content: "";
+  width: 10px;
+  height: 5px;
+  border-left: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-1px) rotate(-45deg);
+  visibility: hidden;
+}
+
+[data-theme^="paper"] .paper-radio::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  visibility: hidden;
+}
+
+[data-theme^="paper"] .paper-check:checked::before,
+[data-theme^="paper"] .paper-radio:checked::before {
+  visibility: visible;
+}
+
+[data-theme^="paper"] .paper-check:disabled,
+[data-theme^="paper"] .paper-radio:disabled {
+  border-color: var(--hairline-strong);
+  cursor: default;
+}
+
+[data-theme^="paper"] .paper-check:disabled::before {
+  border-color: var(--faint);
+}
+
+[data-theme^="paper"] .paper-radio:disabled::before {
+  background: var(--faint);
 }
 
 /* Navigation: a word in `muted`, and where you are is a green rule under it. */
@@ -261,6 +316,16 @@
 
 [data-theme^="paper"] .paper-event__meta {
   color: var(--muted);
+}
+
+/* Something went wrong: a line of text against a rule, not a tinted banner.
+   The retry beside it is a `.paper-action--danger`. */
+[data-theme^="paper"] .paper-error {
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--danger);
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
 }
 
 /* Reading widths: one column of prose, and the wide one for a dense screen. */
