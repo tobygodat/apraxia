@@ -1,0 +1,970 @@
+/* Classes in the Paper theme: the class list, one class with its assignments
+ * and notes, the Drive source line, the saved-note list, the PDF reader, and
+ * the two pickers a row opens.
+ *
+ * Sibling of the six classic sheets under `features/classes/`, imported
+ * straight after them. Every rule is scoped `[data-theme^="paper"]`, which
+ * matches both Paper presets and never classic, so classic stays as it is.
+ * Tokens come from `paper.css`; nothing here is a literal.
+ *
+ * The classic sheets are unscoped, so they still apply underneath: most rules
+ * here are outranking one of theirs rather than dressing a bare element, which
+ * is why a value the primitives already carry is sometimes restated.
+ *
+ * `var(--icon, 1em)` appears wherever an icon's classic size has to be
+ * replaced. The fallback is for this branch's base, which predates `--icon`;
+ * it goes when main is merged, because a bare `var(--icon)` there computes to
+ * `auto` and an SVG in a flex row stretches to the line.
+ */
+
+/* ------------------------------------------------------------------ page */
+
+/* The two colours the classic sheet names locally become the tokens that mean
+   the same thing, so every rule reading them follows without a change. */
+[data-theme^="paper"] .classes-page {
+  --classes-overdue: var(--warning);
+  --classes-faint: var(--muted);
+}
+
+/* An action on this page is a word. The shell sheet already strips the button
+   down; this undoes what the classic classes sheet adds on top of it. */
+[data-theme^="paper"] .classes-page button {
+  gap: var(--space-8);
+  min-height: 0;
+  border-radius: 0;
+  font: var(--small);
+}
+
+[data-theme^="paper"] .classes-page button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .classes-page button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+  cursor: default;
+}
+
+/* Stepping back is the one place a chevron stands on its own. */
+[data-theme^="paper"] .classes-page .classes-back {
+  gap: var(--space-8);
+  min-height: 0;
+  margin-bottom: var(--space-md);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .classes-page .classes-back:hover {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .classes-page .classes-back .workspace-icon {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+}
+
+/* The class name and the line of facts under it are one block, so the shell's
+   space below a page title belongs to the pair rather than to the name. */
+[data-theme^="paper"] .classes-page .classes-heading h1 {
+  margin: 0;
+  text-transform: none;
+}
+
+/* Only one word on a screen carries the green rule. On the class page that is
+   "add assignment", so the header's own action steps back to a quiet word.
+   The class page is the header whose title sits in a wrapper; the list page's
+   title is the header's own child, and its action stays the completing one. */
+[data-theme^="paper"] .classes-page .classes-heading > div + .workspace-page-header__action {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .classes-page .workspace-page-header__action {
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-page .classes-empty {
+  padding-block: var(--space-24);
+  border-top: 1px solid var(--hairline);
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ class list */
+
+[data-theme^="paper"] .classes-list {
+  border-top: 1px solid var(--hairline);
+}
+
+/* Rules, not boxes, and nothing moves under the pointer: the name answers. */
+[data-theme^="paper"] .classes-row {
+  gap: var(--space-md);
+  align-items: baseline;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  transition: none;
+}
+
+[data-theme^="paper"] .classes-row:hover {
+  background: transparent;
+}
+
+[data-theme^="paper"] .classes-row:hover h2 {
+  color: var(--accent);
+}
+
+/* Every row is a class, so the leading icon says nothing the name does not. */
+[data-theme^="paper"] .classes-row > .workspace-icon:first-child {
+  display: none;
+}
+
+[data-theme^="paper"] .classes-row > .workspace-icon:last-child {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+  align-self: center;
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .classes-page .classes-row h2 {
+  margin: 0;
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .classes-row p {
+  margin: 0;
+  font: var(--fine);
+  color: var(--muted);
+}
+
+/* One line of facts: what is due next, then the totals against the far edge. */
+[data-theme^="paper"] .classes-summary {
+  gap: var(--space-xs) var(--space-md);
+  font: var(--fine);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .classes-summary--header {
+  min-height: 0;
+  margin-top: var(--space-xs);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .classes-summary--header .classes-summary__counts::before {
+  margin-inline: var(--space-8);
+}
+
+/* --------------------------------------------------------- the two regions */
+
+/* A section heading is body size; its weight and its green `// ` make it one. */
+[data-theme^="paper"] .classes-page .classes-section-heading,
+[data-theme^="paper"] .classes-page .class-assignments h2 {
+  margin: 0 0 var(--space-sm);
+  font: var(--heading);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-page .classes-section-heading::before,
+[data-theme^="paper"] .classes-page .class-assignments h2::before {
+  content: "// ";
+  color: var(--accent);
+  font-weight: 400;
+}
+
+/* ------------------------------------------------------------ assignments */
+
+[data-theme^="paper"] .class-assignments {
+  --assignment-grid: var(--hairline);
+  margin: 0 0 var(--space-lg);
+}
+
+[data-theme^="paper"] .class-assignments > header {
+  gap: var(--space-md);
+  align-items: baseline;
+  margin-bottom: var(--space-sm);
+}
+
+/* The word that completes the screen: 600, with the green rule under it. */
+[data-theme^="paper"] .classes-page .class-assignments > header > button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--small);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-page .class-assignments > header > button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .classes-page .class-assignments > header > button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+}
+
+/* A word needs no icon beside it when it is the only thing there. */
+[data-theme^="paper"] .class-assignments > header > button > .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .assignment-table-wrap {
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+/* The table stays a list of ruled lines. */
+[data-theme^="paper"] .class-assignments th {
+  padding: 0 var(--space-md) var(--space-8) 0;
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .class-assignments td {
+  height: auto;
+  padding: var(--space-8) var(--space-md) var(--space-8) 0;
+  font: var(--body);
+}
+
+[data-theme^="paper"] .class-assignments th:first-child,
+[data-theme^="paper"] .class-assignments td:first-child {
+  width: var(--space-lg);
+  padding-inline: 0;
+  text-align: left;
+}
+
+[data-theme^="paper"] .class-assignments th:nth-child(3) {
+  width: 7em;
+}
+
+[data-theme^="paper"] .class-assignments th:last-child {
+  width: 5em;
+}
+
+[data-theme^="paper"] .class-assignments td:last-child {
+  padding-right: 0;
+  text-align: right;
+}
+
+/* The date and type columns are supporting detail; the name carries the row. */
+[data-theme^="paper"] .class-assignments td:nth-child(3),
+[data-theme^="paper"] .class-assignments td:nth-child(4) {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .class-assignments td.assignment-overdue {
+  color: var(--warning);
+}
+
+/* A cell is the row's own content, so it is not underlined like an action. */
+[data-theme^="paper"] .classes-page .class-assignments .assignment-cell {
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font: var(--body);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .classes-page .class-assignments .assignment-cell:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .class-assignments .assignment-title {
+  color: var(--text);
+}
+
+[data-theme^="paper"] .class-assignments .assignment-date-trigger {
+  font: var(--small);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .class-assignments .assignment-type-cell {
+  font: var(--small);
+}
+
+[data-theme^="paper"] .class-assignments .assignment-done .assignment-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* A type is the word itself, not a chip. */
+[data-theme^="paper"] .assignment-type-tag {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font: var(--small);
+  color: inherit;
+  text-transform: lowercase;
+}
+
+/* A destructive action is the word, in `danger`, and it stays `danger`. */
+[data-theme^="paper"] .classes-page .class-assignments .assignment-delete {
+  display: inline;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--danger);
+  font: var(--small);
+  text-decoration: underline 1px var(--danger);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .class-assignments .assignment-delete .workspace-icon {
+  display: none;
+}
+
+/* The button's own name is on `aria-label`, so the word here is decoration a
+   reader never meets twice. */
+[data-theme^="paper"] .class-assignments .assignment-delete::after {
+  content: "delete";
+}
+
+[data-theme^="paper"] .classes-page .class-assignments .assignment-delete:hover:not(:disabled) {
+  background: transparent;
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .classes-page .class-assignments .assignment-delete:disabled {
+  color: var(--faint);
+  text-decoration: none;
+}
+
+/* The row being edited is where you are, so it takes the green rule. */
+[data-theme^="paper"] .class-assignments .assignment-editing {
+  background: transparent;
+}
+
+[data-theme^="paper"] .class-assignments .assignment-editing > td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+[data-theme^="paper"] .class-assignments tr:focus-within {
+  background: transparent;
+}
+
+[data-theme^="paper"] .assignment-draft-marker {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--radius-sm);
+}
+
+[data-theme^="paper"] .class-assignments td input:not([type="checkbox"]) {
+  min-height: 0;
+  padding: var(--space-xs) var(--space-8);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: var(--body);
+  caret-color: var(--accent);
+}
+
+[data-theme^="paper"] .class-assignments td input:focus {
+  background: var(--ground-raised);
+  border-color: var(--outline);
+}
+
+/* The green ring is the only focus mark; classic's grey one goes, but only
+   where the ring itself is not being drawn. */
+[data-theme^="paper"] .class-assignments td input:focus:not(:focus-visible) {
+  outline: 0;
+}
+
+[data-theme^="paper"] .class-assignments input[aria-invalid="true"] {
+  border-color: var(--danger);
+  outline-color: var(--danger);
+}
+
+[data-theme^="paper"] .assignment-field-error {
+  margin: var(--space-xs) 0 var(--space-8);
+  font: var(--small);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .class-assignments .assignment-empty {
+  padding: var(--space-md) 0;
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .class-assignments .assignment-edit-hint {
+  margin-top: var(--space-8);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .assignment-undo {
+  margin-top: var(--space-md);
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ drive source */
+
+/* Where the notes come from is a sentence, not a toolbar. */
+[data-theme^="paper"] .drive-source {
+  gap: var(--space-md);
+  align-items: baseline;
+  padding: var(--space-8) 0 var(--space-sm);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .classes-course-content:has(.class-assignments) .drive-source {
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .drive-source > .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .drive-source > strong {
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+/* The state reads as the second half of the sentence. It also carries file
+   names while a note opens, so its own case is left alone. */
+[data-theme^="paper"] .drive-source-state::before {
+  content: "· ";
+}
+
+[data-theme^="paper"] .classes-page .drive-source .drive-open-button {
+  min-height: 0;
+  font: var(--small);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .drive-source .drive-open-button .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .classes-page .drive-source .drive-local-button,
+[data-theme^="paper"] .classes-course-content:has(.class-assignments) .drive-local-button {
+  min-height: 0;
+  color: var(--muted);
+  font: var(--small);
+  text-decoration: none;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+[data-theme^="paper"] .drive-menu summary {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .drive-menu summary:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .drive-menu summary .workspace-icon {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+}
+
+[data-theme^="paper"] .drive-menu > div {
+  top: calc(100% + var(--space-8));
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .classes-page .drive-menu > div button {
+  min-height: 0;
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .drive-source button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  cursor: default;
+}
+
+/* Something went wrong: a line of text against a rule, not a tinted box. */
+[data-theme^="paper"] .drive-inline-error {
+  gap: var(--space-md);
+  align-items: baseline;
+  margin-bottom: var(--space-md);
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--danger);
+  font: var(--small);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .classes-page .drive-inline-error button {
+  color: var(--danger);
+  font: var(--small);
+  text-decoration: underline 1px var(--danger);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-page .drive-inline-error button:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* ----------------------------------------------------------- saved notes */
+
+[data-theme^="paper"] .classes-note-hint {
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .classes-saved-notes {
+  margin: var(--space-sm) 0 var(--space-24);
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .classes-saved-notes li {
+  gap: var(--space-md);
+  align-items: baseline;
+  padding-block: var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .classes-page .classes-saved-notes li > div > button,
+[data-theme^="paper"] .classes-saved-notes li > div > span {
+  font: var(--body);
+  color: var(--text);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .classes-page .classes-saved-notes li > div > button:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+/* The note open in the reader is where you are, so it takes the green rule. */
+[data-theme^="paper"] .classes-page .classes-saved-notes button[aria-pressed="true"] {
+  background: transparent;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .classes-saved-notes small {
+  margin-block-start: var(--space-xs);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-note-actions {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .classes-page .classes-note-actions button {
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------- the pdf reader */
+
+[data-theme^="paper"] .classes-notes-layout {
+  border-block: 0;
+}
+
+[data-theme^="paper"] .classes-reader {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground);
+  overflow: hidden;
+}
+
+[data-theme^="paper"] .classes-reader > header {
+  min-height: 0;
+  gap: var(--space-md);
+  padding: var(--space-8) var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .classes-notes-layout--reading .classes-reader > header {
+  min-height: 0;
+  gap: var(--space-md);
+  padding: var(--space-8) var(--space-sm);
+}
+
+[data-theme^="paper"] .classes-reader > header > div {
+  gap: var(--space-md);
+}
+
+/* Each control keeps its word. Their names are on `aria-label`, so the words
+   here read only to the eye. */
+[data-theme^="paper"] .classes-page .classes-reader > header button {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-color: transparent;
+  color: var(--muted);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .classes-reader > header .classes-reader-tools::before {
+  content: "tools ";
+}
+
+[data-theme^="paper"] .classes-reader > header .classes-reader-fullscreen::after {
+  content: "full screen";
+}
+
+[data-theme^="paper"] .classes-reader > header .classes-reader-fullscreen .workspace-icon {
+  display: none;
+}
+
+[data-theme^="paper"] .classes-reader-tools .workspace-icon {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+  vertical-align: -0.2em;
+}
+
+[data-theme^="paper"] .classes-reader [role="alert"] {
+  padding: var(--space-8) var(--space-sm);
+  font: var(--small);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .classes-reader:fullscreen {
+  background: var(--ground);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .pdf-scroll {
+  background: var(--ground);
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+/* The page itself is the document, so it keeps its own paper and ink. Only
+   the shadow around it goes. */
+[data-theme^="paper"] .pdf-page {
+  border: 1px solid var(--hairline-strong);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .pdf-toolbar {
+  gap: var(--space-sm);
+  padding: var(--space-8) var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--ground-raised);
+  box-shadow: none;
+  font: var(--fine);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .pdf-toolbar form {
+  gap: var(--space-8);
+}
+
+[data-theme^="paper"] .pdf-toolbar input {
+  min-height: 0;
+  padding: var(--space-xs) var(--space-8);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--fine);
+}
+
+[data-theme^="paper"] .classes-page .pdf-toolbar button {
+  min-height: 0;
+  padding: 0;
+  font: var(--fine);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-page .pdf-toolbar button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+}
+
+[data-theme^="paper"] .pdf-message {
+  padding: var(--space-24);
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------- the pickers */
+
+/* The two things that float on this page: `ground-raised` with a hairline and
+   6px corners, and no shadow under either. */
+[data-theme^="paper"] .assignment-calendar,
+[data-theme^="paper"] .assignment-type-menu {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  box-shadow: none;
+  font: var(--body);
+}
+
+/* The native date and time controls inside follow the preset, not the sheet. */
+:root[data-theme="paper-light"] .assignment-calendar,
+:root[data-theme="paper-light"] .assignment-type-menu,
+:root[data-theme="paper-light"] .class-assignments td:nth-child(3) {
+  color-scheme: light;
+}
+
+[data-theme^="paper"] .assignment-calendar {
+  padding: var(--space-sm);
+}
+
+[data-theme^="paper"] .assignment-calendar button {
+  min-height: 0;
+  border-radius: var(--radius-sm);
+  font: var(--small);
+  color: inherit;
+}
+
+[data-theme^="paper"] .assignment-calendar button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .assignment-calendar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+[data-theme^="paper"] .assignment-calendar button:disabled {
+  opacity: 1;
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .assignment-calendar-heading {
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
+}
+
+[data-theme^="paper"] .assignment-calendar-heading strong {
+  padding-left: 0;
+  font: var(--heading);
+}
+
+[data-theme^="paper"] .assignment-calendar-heading button {
+  width: auto;
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .assignment-calendar-heading .assignment-calendar-today {
+  padding-inline: 0;
+  font: var(--small);
+  color: var(--muted);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .assignment-calendar .workspace-icon {
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
+}
+
+[data-theme^="paper"] .assignment-calendar-weekdays {
+  margin-bottom: var(--space-xs);
+  font: var(--fine);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .assignment-calendar-weekdays span {
+  padding-block: var(--space-xs);
+}
+
+[data-theme^="paper"] .assignment-calendar-days button[data-outside-month] {
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .assignment-calendar-days button[aria-current="date"] {
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+/* The day you are on: the green rule, never a filled square. */
+[data-theme^="paper"] .assignment-calendar-days button[aria-pressed="true"],
+[data-theme^="paper"] .assignment-calendar-days button[aria-pressed="true"]:hover {
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+[data-theme^="paper"] .assignment-calendar-days button[aria-pressed="true"]:focus-visible {
+  outline-color: var(--accent);
+  outline-offset: -2px;
+}
+
+[data-theme^="paper"] .assignment-calendar-time {
+  gap: var(--space-8);
+  padding: var(--space-8) 0;
+}
+
+[data-theme^="paper"] .assignment-calendar-time label {
+  gap: var(--space-xs);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .assignment-calendar-time input {
+  padding: var(--space-xs) var(--space-8);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+}
+
+[data-theme^="paper"] .assignment-calendar-time input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[data-theme^="paper"] .assignment-calendar-time input:disabled {
+  opacity: 1;
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .assignment-calendar-footer {
+  margin-top: var(--space-8);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .assignment-calendar-footer button {
+  padding-inline: 0;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .assignment-type-menu {
+  padding: var(--space-8) 0;
+}
+
+[data-theme^="paper"] .assignment-type-menu [role="option"] {
+  min-height: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 0;
+  font: var(--body);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .assignment-type-menu [role="option"] + [role="option"] {
+  margin-top: 0;
+}
+
+[data-theme^="paper"] .assignment-type-menu [role="option"]:hover {
+  background: var(--selection);
+}
+
+/* The type already chosen is where you are. */
+[data-theme^="paper"] .assignment-type-menu [role="option"][aria-selected="true"] {
+  background: transparent;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+[data-theme^="paper"] .assignment-type-menu [role="option"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: transparent;
+}
+
+[data-theme^="paper"] .assignment-type-menu .assignment-type-none {
+  margin-top: var(--space-8);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--hairline);
+  border-radius: 0;
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------- adding a class */
+
+[data-theme^="paper"] .classes-form {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .classes-form label {
+  gap: var(--space-xs);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .classes-form label span,
+[data-theme^="paper"] .classes-form p {
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* A class code keeps its own case, whatever the label above it does. */
+[data-theme^="paper"] .classes-form input {
+  min-height: 0;
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+  text-transform: none;
+}
+
+[data-theme^="paper"] .classes-form input::placeholder {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .classes-form p[role="alert"] {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .classes-form > button {
+  font: var(--small);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+/* ------------------------------------------------------------------ still */
+
+/* Nothing on this page animates; state changes are instant. */
+[data-theme^="paper"] .classes-row,
+[data-theme^="paper"] .classes-reader-tools[aria-expanded] .workspace-icon {
+  transition: none;
+}

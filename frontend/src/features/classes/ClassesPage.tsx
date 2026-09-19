@@ -4,6 +4,9 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import type { DriveService } from "./driveService";
 import "./classes.css";
+// One Paper sheet covers the whole Classes feature: this page, the class
+// detail, assignments, the Drive source, the saved notes and the PDF reader.
+import "./classesPaper.css";
 
 import { ClassDetail } from "./ClassDetail";
 import { ClassSummary } from "./ClassSummary";
