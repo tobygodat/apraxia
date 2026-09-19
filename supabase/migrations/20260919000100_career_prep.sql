@@ -720,6 +720,14 @@ grant execute on function private.reap_abandoned_career_resources() to service_r
 -- Soft delete and undo. Both RPCs gain one branch; nothing else about them
 -- changes, and their signatures are unchanged, so existing callers and the
 -- generated types for them stay as they are.
+--
+-- They are owned by orbitos_rpc, and the role that applies migrations is not a
+-- superuser on hosted Supabase, so replacing them needs membership in the
+-- owning role first. 20260915072221_remove_media.sql does the same, and the
+-- membership is given back at the end of this migration so the role posture
+-- 000_security_contract.test.sql asserts is exactly what it was.
+grant orbitos_rpc to postgres;
+
 create or replace function internal.soft_delete_record(
   p_record_type public.orbitos_record_type,
   p_record_id uuid
@@ -1026,6 +1034,8 @@ begin
   offset p_offset;
 end
 $$;
+
+revoke orbitos_rpc from postgres;
 
 notify pgrst, 'reload schema';
 
