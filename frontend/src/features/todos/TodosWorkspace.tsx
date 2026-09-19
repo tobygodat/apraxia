@@ -8,7 +8,7 @@ import {
 } from "../../components/global-add/GlobalAddTodoController";
 import { GlobalAddTodoShell } from "../../components/global-add/GlobalAddTodoShell";
 import type { Profile, Todo } from "../../types/domain";
-import { shiftWeekMonday, startOfWeekMonday, type SqlDate } from "./dateDomain";
+import { shiftWeekStart, startOfWeekSunday, type SqlDate } from "./dateDomain";
 import { buildTodoBoardModel } from "./todoBoardModel";
 import { type TodoControllerBinding, useTodoController } from "./todoController";
 import { TodoFormDialog } from "./TodoFormDialog";
@@ -138,14 +138,14 @@ function ReadyTodosBoard({
   const { openTodoComposer } = useGlobalAddTodo();
   const today = useLocalToday(profile.timezone);
   // null follows the current week across local midnight; explicit navigation
-  // remains on its selected Monday until the user chooses Today.
-  const [selectedMonday, setSelectedMonday] = useState<SqlDate | null>(null);
-  const visibleMonday = selectedMonday ?? startOfWeekMonday(today);
+  // remains on its selected week until the user chooses This week.
+  const [selectedWeekStart, setSelectedWeekStart] = useState<SqlDate | null>(null);
+  const visibleWeekStart = selectedWeekStart ?? startOfWeekSunday(today);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const boardFocusRef = useRef<HTMLDivElement>(null);
   const model = useMemo(
-    () => buildTodoBoardModel(state.todos, visibleMonday, today),
-    [state.todos, today, visibleMonday],
+    () => buildTodoBoardModel(state.todos, visibleWeekStart, today),
+    [state.todos, today, visibleWeekStart],
   );
 
   return (
@@ -160,9 +160,9 @@ function ReadyTodosBoard({
         mutationError={state.mutationError}
         undoNotice={state.undoNotice}
         announcement={state.announcement}
-        onPreviousWeek={() => setSelectedMonday(shiftWeekMonday(visibleMonday, -1))}
-        onNextWeek={() => setSelectedMonday(shiftWeekMonday(visibleMonday, 1))}
-        onToday={() => setSelectedMonday(null)}
+        onPreviousWeek={() => setSelectedWeekStart(shiftWeekStart(visibleWeekStart, -1))}
+        onNextWeek={() => setSelectedWeekStart(shiftWeekStart(visibleWeekStart, 1))}
+        onToday={() => setSelectedWeekStart(null)}
         onRetry={() => {
           void controller.loadWorkspace();
         }}

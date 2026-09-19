@@ -141,9 +141,11 @@ describe("TodosWorkspace", () => {
     expect(screen.queryByRole("heading", { name: "Inbox" })).toBeNull();
 
     await act(async () => loading.resolve(SNAPSHOT));
-    expect(screen.getByRole("heading", { name: /Thursday, Sep 3.*Today/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Thursday, September 3.*Today/ })).toBeTruthy();
+    // The task is due the day before the loaded profile's today, so it reads in
+    // the overdue pile rather than in a day column.
     expect(
-      within(screen.getByRole("region", { name: /· Today$/ })).getByText(TODO.text),
+      within(screen.getByRole("region", { name: "Overdue" })).getByText(TODO.text),
     ).toBeTruthy();
     expect((screen.getByRole("button", { name: /\+ add/i }) as HTMLButtonElement).disabled).toBe(
       false,
@@ -198,12 +200,12 @@ describe("TodosWorkspace", () => {
     expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe("");
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
-    fireEvent.click(screen.getByRole("button", { name: /Add task to Monday, Sep 7/ }));
-    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe("2026-09-07");
+    fireEvent.click(screen.getByRole("button", { name: /Add task to Sunday, September 6/ }));
+    expect((screen.getByLabelText("Due date") as HTMLInputElement).value).toBe("2026-09-06");
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("button", { name: "Today" }));
-    expect(screen.getByRole("heading", { name: /Thursday, Sep 3.*Today/ })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: /Monday, Sep 7/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "This week" }));
+    expect(screen.getByRole("heading", { name: /Thursday, September 3.*Today/ })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Sunday, September 6/ })).toBeNull();
   });
 
   it("completes an overdue todo without rolling its stored due date forward", async () => {
@@ -226,12 +228,12 @@ describe("TodosWorkspace", () => {
       true,
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    const dueRegion = screen.getByRole("region", { name: /Wednesday, Sep 2/ });
+    const dueRegion = screen.getByRole("region", { name: /Wednesday, September 2/ });
     expect(within(dueRegion).getByRole("article", { name: TODO.text })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
     fireEvent.click(screen.getByRole("button", { name: "Next week" }));
     expect(
-      within(screen.getByRole("region", { name: /Wednesday, Sep 2/ })).getByRole("article", {
+      within(screen.getByRole("region", { name: /Wednesday, September 2/ })).getByRole("article", {
         name: TODO.text,
       }),
     ).toBeTruthy();

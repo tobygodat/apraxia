@@ -76,6 +76,13 @@
   font-weight: 600;
 }
 
+/* The one day named in words, as the reference draws it: "sat 19 today". */
+[data-theme^="paper"] .week-head .week-days__when {
+  font: var(--fine);
+  color: var(--muted);
+  font-weight: 400;
+}
+
 /* Today carries its whole label, name and date alike, at 600 in `--text`. */
 [data-theme^="paper"] .week-head .is-today span {
   color: var(--text);
@@ -101,6 +108,7 @@
   color: var(--muted);
   font: var(--fine);
   font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
 }
 
 /* The ruled ground: an hour is a hairline, and an empty day is still ruled. */
@@ -121,15 +129,20 @@
 
 /* ---- events ---- */
 
-/* An event is a name, not a block: its calendar's colour is the 1px rule at its
- * left and nowhere else, and the hour rules keep running through the time it
- * occupies. Only the words themselves carry the page's ground, which is what
- * lets a name stay readable where two events stack. */
+/* An event is a name, not a block: a 1px neutral rule at its left and nowhere
+ * else, with the hour rules running on through the time it occupies. Only the
+ * words themselves carry the page's ground, which is what lets a name stay
+ * readable where two events stack.
+ *
+ * The rule is `--outline`, not the calendar's own colour, because the redesign
+ * reference draws every event the same: the week is read as a shape, and seven
+ * colours fighting across it is the thing the theme set out to remove. The
+ * colour still identifies a calendar in the event preview and in settings. */
 [data-theme^="paper"] .calendar-panel button.calendar-event,
 [data-theme^="paper"] .calendar-panel .calendar-event--more {
   padding: 1px 0 0 var(--space-8);
   border: 0;
-  border-left: 1px solid var(--calendar-event-color, var(--outline));
+  border-left: 1px solid var(--outline);
   border-radius: 0;
   background: transparent;
   color: var(--text);

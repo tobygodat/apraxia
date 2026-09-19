@@ -90,17 +90,21 @@ function CompletionHarness() {
 }
 
 describe("TodayList", () => {
-  it("renders original past-due dates in red without an Overdue prefix or count", () => {
+  it("names a past-due row overdue and says which day it was due", () => {
     render(<TodayList {...props()} />);
     expect(screen.getByRole("heading", { name: "Today" })).toBeTruthy();
-    expect(screen.queryByText(/overdue/i)).toBeNull();
     const items = screen.getAllByRole("listitem");
-    const pastDate = within(items[0]!).getByText("Tue, Aug 25");
+    // Only the word carries the warning colour; the day it was due is an
+    // ordinary fact on the same line.
+    expect(within(items[0]!).getByText("Overdue").className).toBe("today-list-item__late");
+    const pastDate = within(items[0]!).getByText("was due Tue, Aug 25");
     expect(pastDate.getAttribute("datetime")).toBe("2026-08-25");
     expect(items[0]!.className).toContain("today-list-item--overdue");
     expect(items[1]!.className).not.toContain("today-list-item--overdue");
     expect(within(items[0]!).getByText("Health").className).toBe("todo-source-chip");
-    expect(within(items[1]!).getByText("Due today · Wed, Sep 2")).toBeTruthy();
+    // A row due on the day being shown names that day and nothing more.
+    expect(within(items[1]!).getByText("Due today")).toBeTruthy();
+    expect(within(items[1]!).queryByText(/Wed, Sep 2/)).toBeNull();
     expect(within(items[1]!).getByText("2:30 PM")).toBeTruthy();
   });
 
@@ -161,7 +165,7 @@ describe("TodayList", () => {
     );
     expect(screen.queryByRole("button", { name: /Reorder/ })).toBeNull();
     expect(screen.getByText("1 due tomorrow")).toBeTruthy();
-    expect(screen.getByText("Due tomorrow · Wed, Sep 2")).toBeTruthy();
+    expect(screen.getByText("Due tomorrow")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Today" }));
     expect(onDayChange).toHaveBeenCalledWith("Today");
     expect(screen.getByRole("button", { name: "Tomorrow" }).getAttribute("aria-pressed")).toBe(

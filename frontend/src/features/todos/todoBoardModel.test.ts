@@ -26,39 +26,41 @@ function columnTodoIds(model: TodoBoardModel, key: string): string[] {
 }
 
 describe("buildTodoBoardModel", () => {
-  it("opens the current week on Today, wraps to its earlier days, and ends with Inbox", () => {
+  it("runs Sunday to Saturday, then the overdue pile, then Inbox", () => {
     const model = buildTodoBoardModel(
       [
         todo({ id: "inbox", text: "Inbox" }),
-        todo({ id: "oldest", text: "Oldest", dueDate: "2026-08-30" }),
+        todo({ id: "oldest", text: "Oldest", dueDate: "2026-08-25" }),
         todo({ id: "older", text: "Older", dueDate: "2026-09-01" }),
         todo({ id: "today", text: "Today", dueDate: "2026-09-02" }),
-        todo({ id: "sunday", text: "Sunday", dueDate: "2026-09-06" }),
+        todo({ id: "saturday", text: "Saturday", dueDate: "2026-09-05" }),
       ],
-      "2026-08-31",
+      "2026-08-30",
       "2026-09-02",
     );
 
     expect(model.isCurrentWeek).toBe(true);
-    // Today leads, the rest of the week follows, then Monday and Tuesday wrap
-    // to the end. Inbox is undated, so it trails every day column.
+    // The week reads in calendar order. Today is marked in place rather than
+    // moved to the front, and the two piles trail every day column.
     expect(model.columns.map((column) => column.key)).toEqual([
+      "2026-08-30",
+      "2026-08-31",
+      "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
-      "2026-09-06",
-      "2026-08-31",
-      "2026-09-01",
+      "overdue",
       "inbox",
     ]);
-    expect(model.columns.at(-1)?.todos.map(({ id }) => id)).toEqual(["inbox"]);
-    expect(columnTodoIds(model, "2026-09-02")).toEqual(["oldest", "older", "today"]);
-    expect(columnTodoIds(model, "2026-09-06")).toEqual(["sunday"]);
-    // The week's earlier days keep their own columns; open past-due rows still
-    // appear only under Today.
-    expect(columnTodoIds(model, "2026-08-31")).toEqual([]);
+    expect(columnTodoIds(model, "inbox")).toEqual(["inbox"]);
+    // Today holds what is due today and nothing else, and an open past-due row
+    // appears once: under Overdue, oldest first, not also in its own column.
+    expect(columnTodoIds(model, "2026-09-02")).toEqual(["today"]);
     expect(columnTodoIds(model, "2026-09-01")).toEqual([]);
+    expect(columnTodoIds(model, "2026-09-05")).toEqual(["saturday"]);
+    expect(columnTodoIds(model, "overdue")).toEqual(["oldest", "older"]);
+    expect(model.overdue.map(({ id }) => id)).toEqual(["oldest", "older"]);
   });
 
   it("orders a column by due time, then creation, not by row ID", () => {
@@ -83,7 +85,7 @@ describe("buildTodoBoardModel", () => {
           createdAt: "2026-09-01T08:00:00.000000Z",
         }),
       ],
-      "2026-08-31",
+      "2026-08-30",
       "2026-09-02",
     );
 
@@ -113,7 +115,7 @@ describe("buildTodoBoardModel", () => {
           todayRank: 1024,
         }),
       ],
-      "2026-08-31",
+      "2026-08-30",
       "2026-09-02",
     );
 
@@ -123,46 +125,40 @@ describe("buildTodoBoardModel", () => {
     ]);
   });
 
-  it("starts the current week on Today whichever weekday it falls on", () => {
-    const sunday = buildTodoBoardModel([], "2026-08-31", "2026-09-06");
-    expect(sunday.columns.slice(0, -1).map((column) => column.key)).toEqual([
-      "2026-09-06",
+  it("keeps the same calendar order whichever weekday today falls on", () => {
+    const week = [
+      "2026-08-30",
       "2026-08-31",
       "2026-09-01",
       "2026-09-02",
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
-    ]);
-
-    // Monday is already first, so its week needs no rotation.
-    const monday = buildTodoBoardModel([], "2026-08-31", "2026-08-31");
-    expect(monday.columns[0]?.key).toBe("2026-08-31");
-    expect(monday.columns.at(-2)?.key).toBe("2026-09-06");
+    ];
+    for (const today of ["2026-08-30", "2026-09-02", "2026-09-05"]) {
+      const model = buildTodoBoardModel([], "2026-08-30", today);
+      expect(model.columns.slice(0, 7).map((column) => column.key)).toEqual(week);
+      expect(model.isCurrentWeek).toBe(true);
+    }
   });
 
-  it("shows all Monday-through-Sunday dates for a navigated week", () => {
-    const model = buildTodoBoardModel([], "2026-09-07", "2026-09-02");
+  it("shows all seven dates of a navigated week", () => {
+    const model = buildTodoBoardModel([], "2026-09-06", "2026-09-02");
 
-    // A navigated week holds no Today, so it stays in plain Monday-first order.
     expect(model.isCurrentWeek).toBe(false);
-    expect(model.columns.slice(0, -1).map((column) => column.key)).toEqual([
+    expect(model.columns.slice(0, 7).map((column) => column.key)).toEqual([
+      "2026-09-06",
       "2026-09-07",
       "2026-09-08",
       "2026-09-09",
       "2026-09-10",
       "2026-09-11",
       "2026-09-12",
-      "2026-09-13",
     ]);
   });
 
-  it("shows open past-due tasks only under Today, never in historical date columns", () => {
-    const open = todo({
-      id: "open",
-      text: "Open",
-      dueDate: "2026-08-25",
-    });
+  it("leaves an open past-due task out of its own historical column", () => {
+    const open = todo({ id: "open", text: "Open", dueDate: "2026-08-25" });
     const completed = todo({
       id: "completed",
       text: "Completed",
@@ -171,42 +167,46 @@ describe("buildTodoBoardModel", () => {
       dueDate: "2026-08-25",
     });
 
-    const model = buildTodoBoardModel([open, completed], "2026-08-24", "2026-09-02");
+    // The week that actually contains 25 August: the completed row keeps its
+    // column, the open one does not, because it is in the overdue pile.
+    const historical = buildTodoBoardModel([open, completed], "2026-08-23", "2026-09-02");
+    expect(columnTodoIds(historical, "2026-08-25")).toEqual(["completed"]);
+    expect(columnTodoIds(historical, "overdue")).toEqual(["open"]);
 
-    expect(model.columns.flatMap((column) => column.todos).map(({ id }) => id)).not.toContain(
-      "open",
-    );
-    const current = buildTodoBoardModel([open, completed], "2026-08-31", "2026-09-02");
-    expect(columnTodoIds(current, "2026-09-02")).toEqual(["open"]);
-    const historicalColumn = model.columns.find((column) => column.key === "2026-08-25");
-    expect(historicalColumn?.todos.map(({ id }) => id)).toEqual(["completed"]);
+    // And it is not folded into Today either, whichever week is on screen.
+    const current = buildTodoBoardModel([open, completed], "2026-08-30", "2026-09-02");
+    expect(columnTodoIds(current, "2026-09-02")).toEqual([]);
+    expect(columnTodoIds(current, "overdue")).toEqual(["open"]);
   });
 
-  it("keeps completed dates separate across a Sunday-to-Monday rollover", () => {
+  it("keeps completed dates separate across a week rollover", () => {
     const source = [
       todo({
         id: "open",
         text: "Open",
-        dueDate: "2026-09-06",
+        dueDate: "2026-09-05",
         createdAt: "2026-09-01T08:00:00.000000Z",
       }),
       todo({
         id: "done",
         text: "Done",
-        dueDate: "2026-09-06",
+        dueDate: "2026-09-05",
         completed: true,
-        completedAt: "2026-09-06T12:00:00Z",
+        completedAt: "2026-09-05T12:00:00Z",
         createdAt: "2026-09-01T09:00:00.000000Z",
       }),
       todo({ id: "future", text: "Future", dueDate: "2026-09-08" }),
     ];
-    const sunday = buildTodoBoardModel(source, "2026-08-31", "2026-09-06");
-    expect(columnTodoIds(sunday, "2026-09-06")).toEqual(["open", "done"]);
-    const monday = buildTodoBoardModel(source, "2026-09-07", "2026-09-07");
-    expect(columnTodoIds(monday, "2026-09-07")).toEqual(["open"]);
-    expect(columnTodoIds(monday, "2026-09-08")).toEqual(["future"]);
-    const history = buildTodoBoardModel(source, "2026-08-31", "2026-09-07");
-    expect(columnTodoIds(history, "2026-09-06")).toEqual(["done"]);
+    const saturday = buildTodoBoardModel(source, "2026-08-30", "2026-09-05");
+    expect(columnTodoIds(saturday, "2026-09-05")).toEqual(["open", "done"]);
+
+    // A week later the open row has fallen past today, so only the completed
+    // one is left in the historical column and the open one is overdue.
+    const nextWeek = buildTodoBoardModel(source, "2026-09-06", "2026-09-06");
+    expect(columnTodoIds(nextWeek, "2026-09-08")).toEqual(["future"]);
+    expect(columnTodoIds(nextWeek, "overdue")).toEqual(["open"]);
+    const history = buildTodoBoardModel(source, "2026-08-30", "2026-09-06");
+    expect(columnTodoIds(history, "2026-09-05")).toEqual(["done"]);
   });
 
   it("preserves date-only values and does not mutate the source list", () => {
@@ -215,12 +215,14 @@ describe("buildTodoBoardModel", () => {
       Object.freeze(todo({ id: "a", text: "A", dueDate: "2026-08-31" })),
     ]);
 
-    const model = buildTodoBoardModel(source, "2026-08-31", "2026-09-02");
+    const model = buildTodoBoardModel(source, "2026-08-30", "2026-09-02");
 
+    // Both are open and past due, so both sit in the pile rather than in the
+    // day columns they name.
+    expect(columnTodoIds(model, "2026-08-31")).toEqual([]);
+    expect(columnTodoIds(model, "2026-09-01")).toEqual([]);
     expect(
-      model.columns
-        .find((column) => column.key === "2026-09-02")
-        ?.todos.map(({ dueDate }) => dueDate),
+      model.columns.find((column) => column.key === "overdue")?.todos.map(({ dueDate }) => dueDate),
     ).toEqual(["2026-08-31", "2026-09-01"]);
     expect(source.map(({ id }) => id)).toEqual(["b", "a"]);
   });
@@ -228,25 +230,25 @@ describe("buildTodoBoardModel", () => {
   it("counts open past-due tasks as overdue whichever week is selected", () => {
     const todos = [
       todo({ id: "inbox", text: "Inbox" }),
-      todo({ id: "oldest", text: "Oldest", dueDate: "2026-08-30" }),
+      todo({ id: "oldest", text: "Oldest", dueDate: "2026-08-25" }),
       todo({ id: "yesterday", text: "Yesterday", dueDate: "2026-09-01" }),
-      todo({ id: "done", text: "Done", dueDate: "2026-08-30", completed: true }),
+      todo({ id: "done", text: "Done", dueDate: "2026-08-25", completed: true }),
       todo({ id: "today", text: "Today", dueDate: "2026-09-02" }),
-      todo({ id: "later", text: "Later", dueDate: "2026-09-06" }),
+      todo({ id: "later", text: "Later", dueDate: "2026-09-05" }),
     ];
 
-    for (const monday of ["2026-08-31", "2026-09-07"]) {
-      const model = buildTodoBoardModel(todos, monday, "2026-09-02");
+    for (const weekStart of ["2026-08-30", "2026-09-06"]) {
+      const model = buildTodoBoardModel(todos, weekStart, "2026-09-02");
       expect(model.overdue.map(({ id }) => id)).toEqual(["oldest", "yesterday"]);
     }
   });
 
   it("rejects invalid selected weeks and duplicate rows", () => {
-    expect(() => buildTodoBoardModel([], "2026-09-01", "2026-09-02")).toThrow("Monday");
+    expect(() => buildTodoBoardModel([], "2026-08-31", "2026-09-02")).toThrow("Sunday");
 
     const duplicate = todo({ id: "same", text: "Duplicate" });
     expect(() =>
-      buildTodoBoardModel([duplicate, { ...duplicate }], "2026-08-31", "2026-09-02"),
+      buildTodoBoardModel([duplicate, { ...duplicate }], "2026-08-30", "2026-09-02"),
     ).toThrow("unique IDs");
   });
 });

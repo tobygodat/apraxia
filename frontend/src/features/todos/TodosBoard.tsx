@@ -11,7 +11,7 @@ import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
-import { addSqlDateDays } from "./dateDomain";
+import { addSqlDateDays, sqlDateDifferenceInDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
 import type { TodoAnnouncement, TodoMutationResult, TodoUndoNotice } from "./todoController";
@@ -66,37 +66,59 @@ interface FocusOwnership {
   focusOwner: HTMLElement | null;
 }
 
-const HEADING_FORMAT: Intl.DateTimeFormatOptions = {
+const RANGE_FORMAT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+/** "Sun, Sep 6", the way the overdue pile names the day a task was due. */
+const DAY_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: "short",
   month: "short",
   day: "numeric",
-  weekday: "long",
 };
-const RANGE_FORMAT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-
-function formatDateHeading(value: string, today: string): string {
-  const formatted = formatTaskDate(value, HEADING_FORMAT);
-  if (value === today) return `${formatted} · Today`;
-  if (value === addSqlDateDays(today, 1)) return `${formatted} · Tomorrow`;
-  return formatted;
+/**
+ * A day column's heading: "Sun 13". Built from two formatters rather than one
+ * `{ weekday, day }` pass, which puts the number first ("13 Sun") in en and in
+ * most other locales, because no locale orders a bare weekday and day that way.
+ */
+function dayHeading(value: string): string {
+  return `${formatTaskDate(value, { weekday: "short" })} ${formatTaskDate(value, { day: "numeric" })}`;
 }
+/** The whole weekday and date, for the labels only screen readers hear. */
+const FULL_DAY_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+};
 
 function columnLabel(column: TodoBoardColumn, today: string): string {
   if (column.kind === "inbox") return "Inbox";
-  return formatDateHeading(column.date!, today);
+  if (column.kind === "overdue") return "Overdue";
+  const formatted = formatTaskDate(column.date!, FULL_DAY_FORMAT);
+  if (column.date === today) return `${formatted} · Today`;
+  if (column.date === addSqlDateDays(today, 1)) return `${formatted} · Tomorrow`;
+  return formatted;
 }
 
-const SOURCE_FILTERS = ["All", "Projects", "Classes", "Unassigned"] as const;
+const SOURCE_FILTERS = ["All", "Classes", "Projects", "Personal"] as const;
 type SourceFilter = (typeof SOURCE_FILTERS)[number];
 
 function matchesSource(todo: Todo, filter: SourceFilter): boolean {
   if (filter === "Projects") return Boolean(todo.projectId);
   if (filter === "Classes") return Boolean(todo.classId);
-  if (filter === "Unassigned") return !todo.projectId && !todo.classId;
+  if (filter === "Personal") return !todo.projectId && !todo.classId;
   return true;
 }
 
-function weekRangeLabel(monday: string): string {
-  return `${formatTaskDate(monday, RANGE_FORMAT)} – ${formatTaskDate(addSqlDateDays(monday, 6), RANGE_FORMAT)}`;
+/**
+ * "Sep 13 – 19" across one month, "Sep 27 – Oct 3" across two. The reference
+ * prints the second month only when the week actually crosses into it.
+ */
+function weekRangeLabel(weekStart: string): string {
+  const weekEnd = addSqlDateDays(weekStart, 6);
+  const start = formatTaskDate(weekStart, RANGE_FORMAT);
+  const sameMonth = weekStart.slice(0, 7) === weekEnd.slice(0, 7);
+  const end = sameMonth
+    ? formatTaskDate(weekEnd, { day: "numeric" })
+    : formatTaskDate(weekEnd, RANGE_FORMAT);
+  return `${start} – ${end}`;
 }
 
 function TodoCard({
@@ -108,9 +130,10 @@ function TodoCard({
   primaryControlId,
   projectTitle,
   showDueDate,
+  daysLate,
   dragging,
   onToggleComplete,
-  onDeferToTomorrow,
+  onMoveToToday,
   onEditTodo,
   onDeleteTodo,
   onDragStart,
@@ -124,12 +147,15 @@ function TodoCard({
   readonly primaryControlId: string;
   readonly projectTitle: string | null;
   readonly showDueDate: boolean;
+  /** Whole days between the task's date and today; 0 outside the overdue pile. */
+  readonly daysLate: number;
   readonly dragging: boolean;
   readonly onToggleComplete: (todo: Todo) => void;
-  /** null on rows where "tomorrow" would not move the task forward. */
-  readonly onDeferToTomorrow: ((todo: Todo) => void) | null;
+  /** null in the week grid, where a row carries only "edit". */
+  readonly onMoveToToday: ((todo: Todo) => void) | null;
   readonly onEditTodo: (todo: Todo) => void;
-  readonly onDeleteTodo: (todo: Todo) => void;
+  /** null in the week grid, where deleting goes through the edit dialog. */
+  readonly onDeleteTodo: ((todo: Todo) => void) | null;
   readonly onDragStart: (event: DragEvent<HTMLElement>) => void;
   readonly onDragEnd: () => void;
 }) {
@@ -164,10 +190,8 @@ function TodoCard({
         {showDueDate || todo.dueTime || todo.recurrence || projectTitle || todo.classId ? (
           <div className="todos-board-card__metadata">
             {showDueDate && todo.dueDate ? (
-              // Past-due tasks sit under Today; the original date stays visible in red.
-              <time className="todos-board-card__due--past" dateTime={todo.dueDate}>
-                <span className="todos-board-sr-only">Past due. </span>
-                Due {formatTaskDate(todo.dueDate, RANGE_FORMAT)}
+              <time dateTime={todo.dueDate}>
+                Was due {formatTaskDate(todo.dueDate, DAY_DATE_FORMAT)}
               </time>
             ) : null}
             {todo.dueTime ? (
@@ -175,21 +199,26 @@ function TodoCard({
             ) : null}
             <TodoRepeatMark recurrence={todo.recurrence} />
             <TodoSourceChip todo={todo} projectTitle={projectTitle} />
+            {daysLate > 0 ? (
+              <span className="todos-board-card__late">
+                {daysLate} {daysLate === 1 ? "day" : "days"} late
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>
 
       <div className="todos-board-card__actions">
-        {onDeferToTomorrow ? (
+        {onMoveToToday ? (
           <button
             type="button"
             disabled={pending}
-            onClick={() => onDeferToTomorrow(todo)}
-            aria-label={`Move ${todo.text} to tomorrow`}
-            title="Move to tomorrow"
+            onClick={() => onMoveToToday(todo)}
+            aria-label={`Move ${todo.text} to today`}
+            title="Move to today"
           >
             <WorkspaceIcon name="tomorrow" />
-            <span className="todos-board-sr-only todos-board-action-word">tomorrow</span>
+            <span className="todos-board-sr-only todos-board-action-word">move to today</span>
           </button>
         ) : null}
         <button
@@ -202,20 +231,23 @@ function TodoCard({
           <WorkspaceIcon name="edit" />
           <span className="todos-board-sr-only todos-board-action-word">edit</span>
         </button>
-        <button
-          type="button"
-          disabled={pending}
-          aria-disabled={deleteLocked || undefined}
-          aria-describedby={deleteLocked ? undoSummaryId : undefined}
-          onClick={() => {
-            if (!deleteLocked) onDeleteTodo(todo);
-          }}
-          aria-label={`Delete ${todo.text}`}
-          title="Delete task"
-        >
-          <WorkspaceIcon name="trash" />
-          <span className="todos-board-sr-only todos-board-action-word">delete</span>
-        </button>
+        {onDeleteTodo ? (
+          <button
+            className="todos-board-card__delete"
+            type="button"
+            disabled={pending}
+            aria-disabled={deleteLocked || undefined}
+            aria-describedby={deleteLocked ? undoSummaryId : undefined}
+            onClick={() => {
+              if (!deleteLocked) onDeleteTodo(todo);
+            }}
+            aria-label={`Delete ${todo.text}`}
+            title="Delete task"
+          >
+            <WorkspaceIcon name="trash" />
+            <span className="todos-board-sr-only todos-board-action-word">delete</span>
+          </button>
+        ) : null}
       </div>
     </article>
   );
@@ -304,13 +336,14 @@ export function TodosBoard({
   // controller, so the board has to say so instead of doing nothing.
   const deleteLocked = undoNotice !== null;
   const tomorrow = addSqlDateDays(model.today, 1);
-  // "Tomorrow" is offered only where it moves the task forward: the overdue
-  // pile and today itself. Later days and the undated Inbox keep the dialog.
-  const canDeferToTomorrow = (todo: Todo) =>
+  // "Move to today" belongs to the two lists below the week, where a task has
+  // fallen out of it: the overdue pile and the undated Inbox. A row in the week
+  // grid carries "edit" alone, as the redesign reference draws it.
+  const canMoveToToday = (column: TodoBoardColumn, todo: Todo) =>
     onRescheduleTodo !== undefined &&
+    column.kind !== "date" &&
     !todo.completed &&
-    todo.dueDate !== null &&
-    todo.dueDate < tomorrow;
+    todo.dueDate !== model.today;
   const projectTitles = new Map(projects.map((project) => [project.id, project.title] as const));
 
   const todoControlId = useCallback(
@@ -535,7 +568,7 @@ export function TodosBoard({
     deferFocusRef.current = null;
   }, [model, pendingTodoIds]);
 
-  function deferToTomorrow(column: TodoBoardColumn, todoIndex: number, todo: Todo) {
+  function moveToToday(column: TodoBoardColumn, todoIndex: number, todo: Todo) {
     deferFocusRef.current = {
       todoId: todo.id,
       columnKey: column.key,
@@ -547,7 +580,7 @@ export function TodosBoard({
         document.getElementById(todoControlId(todo.id))?.closest("article") ?? null,
       ),
     };
-    onRescheduleTodo?.(todo, tomorrow);
+    onRescheduleTodo?.(todo, model.today);
   }
 
   const navigationPending = loadStatus === "loading";
@@ -609,7 +642,12 @@ export function TodosBoard({
         undoSummaryId={undoSummaryId}
         primaryControlId={todoControlId(todo.id)}
         projectTitle={todo.projectId ? (projectTitles.get(todo.projectId) ?? null) : null}
-        showDueDate={!todo.completed && todo.dueDate !== null && todo.dueDate < model.today}
+        showDueDate={column.kind !== "date" && !todo.completed && todo.dueDate !== null}
+        daysLate={
+          column.kind === "overdue" && todo.dueDate
+            ? sqlDateDifferenceInDays(todo.dueDate, model.today)
+            : 0
+        }
         titleId={`${todoControlId(todo.id)}-title`}
         dragging={draggingTodoId === todo.id}
         onToggleComplete={(selectedTodo) => {
@@ -618,17 +656,21 @@ export function TodosBoard({
             prepareFocusRecovery(column, todoIndex, selectedTodo, "complete");
           }
         }}
-        onDeferToTomorrow={
-          canDeferToTomorrow(todo)
-            ? (selectedTodo) => deferToTomorrow(column, todoIndex, selectedTodo)
+        onMoveToToday={
+          canMoveToToday(column, todo)
+            ? (selectedTodo: Todo) => moveToToday(column, todoIndex, selectedTodo)
             : null
         }
         onEditTodo={onEditTodo}
-        onDeleteTodo={(selectedTodo) => {
-          if (onDeleteTodo(selectedTodo)) {
-            prepareFocusRecovery(column, todoIndex, selectedTodo, "delete");
-          }
-        }}
+        onDeleteTodo={
+          column.kind === "date"
+            ? null
+            : (selectedTodo: Todo) => {
+                if (onDeleteTodo(selectedTodo)) {
+                  prepareFocusRecovery(column, todoIndex, selectedTodo, "delete");
+                }
+              }
+        }
         onDragStart={(event) => {
           if (pendingTodoIds.has(todo.id)) {
             event.preventDefault();
@@ -678,21 +720,75 @@ export function TodosBoard({
       >
         <header className="todos-board-column__header">
           <h2 id={headingId} tabIndex={-1}>
-            {label}
+            <span aria-hidden="true">{dayHeading(column.date!)}</span>
+            <span className="todos-board-sr-only">{label}</span>
           </h2>
-          <span aria-hidden="true">{column.todos.length}</span>
+          {column.date === tomorrow ? (
+            <span className="todos-board-column__when" aria-hidden="true">
+              tomorrow
+            </span>
+          ) : null}
           <span className="todos-board-sr-only">
             {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
           </span>
         </header>
 
         <div className="todos-board-column__tasks">
-          {renderCards(column)}
+          {column.todos.length === 0 ? (
+            <p className="todos-board-column__empty">Nothing due.</p>
+          ) : (
+            renderCards(column)
+          )}
           {renderAddSlot(column, label)}
         </div>
       </section>
     );
   };
+
+  /**
+   * Overdue and Inbox read as lists under the week rather than as an eighth and
+   * ninth column: each is one measure wide, with its own `//` heading, and its
+   * rows carry "move to today" beside "edit" and "delete".
+   */
+  const renderPile = (column: TodoBoardColumn, heading: string, empty: string) => {
+    const headingId = columnHeadingId(column.key);
+    return (
+      <section
+        className={`todos-board-pile todos-board-pile--${column.kind}${
+          dropColumnKey === column.key ? " todos-board-pile--drop" : ""
+        }`}
+        aria-labelledby={headingId}
+        onDragOver={(event) => handleColumnDragOver(event, column)}
+        onDragLeave={(event) => handleColumnDragLeave(event, column)}
+        onDrop={(event) => handleColumnDrop(event, column)}
+      >
+        <h2 className="paper-heading" id={headingId} tabIndex={-1}>
+          {heading}
+        </h2>
+        <div className="todos-board-pile__tasks">
+          {column.todos.length === 0 ? (
+            <p className="todos-board-column__empty">{empty}</p>
+          ) : (
+            renderCards(column)
+          )}
+          {renderAddSlot(column, heading)}
+        </div>
+      </section>
+    );
+  };
+
+  const dateColumns = model.columns.filter((column) => column.kind === "date");
+  // Counted from the week on screen, so stepping to another week describes that
+  // week rather than repeating this one's figures.
+  const dueTodayCount = dateColumns
+    .find((column) => column.date === model.today)
+    ?.todos.filter((todo) => !todo.completed).length;
+  const doneCount = dateColumns.reduce(
+    (total, column) => total + column.todos.filter((todo) => todo.completed).length,
+    0,
+  );
+  const overdueColumn = model.columns.find((column) => column.kind === "overdue");
+  const inboxColumn = model.columns.find((column) => column.kind === "inbox");
 
   return (
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
@@ -700,28 +796,38 @@ export function TodosBoard({
         <div>
           <h1 id="todos-board-heading">Tasks</h1>
           <p className="todos-board-week">
-            <span aria-live="polite">{weekRangeLabel(model.visibleWeekMonday)}</span>
+            <span aria-live="polite">{weekRangeLabel(model.visibleWeekStart)}</span>
             {/* Outside the live region: the controller already announces each
-                reschedule, and the count would repeat it on every write. */}
+                reschedule, and the counts would repeat it on every write. */}
+            {dueTodayCount ? <span>{dueTodayCount} due today</span> : null}
             {model.overdue.length > 0 ? (
               <span className="todos-board-overdue">{model.overdue.length} overdue</span>
             ) : null}
+            {doneCount > 0 ? <span>{doneCount} done</span> : null}
           </p>
         </div>
 
         <div className="todos-board-controls">
-          <label className="todos-board-filter">
-            Source
-            <select
-              aria-label="Task source"
-              value={sourceFilter}
-              onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}
-            >
-              {SOURCE_FILTERS.map((source) => (
-                <option key={source}>{source}</option>
-              ))}
-            </select>
-          </label>
+          {/* Every source reads at once, the way the reference draws it, rather
+              than a dropdown showing only the one in force. */}
+          <nav className="todos-board-filter" aria-label="Task source">
+            <span className="todos-board-filter__label" aria-hidden="true">
+              source
+            </span>
+            {SOURCE_FILTERS.map((source) => (
+              <button
+                key={source}
+                type="button"
+                className={`todos-board-filter__word paper-nav__item${
+                  source === sourceFilter ? " paper-nav__item--current" : ""
+                }`}
+                aria-pressed={source === sourceFilter}
+                onClick={() => setSourceFilter(source)}
+              >
+                {source}
+              </button>
+            ))}
+          </nav>
           <nav className="todos-board-nav" aria-label="Task week navigation">
             <button
               type="button"
@@ -736,7 +842,7 @@ export function TodosBoard({
               onClick={onToday}
               disabled={model.isCurrentWeek || navigationPending}
             >
-              Today
+              This week
             </button>
             <button
               type="button"
@@ -771,6 +877,8 @@ export function TodosBoard({
         </p>
       ) : null}
 
+      <h2 className="paper-heading todos-board-week-heading">This week</h2>
+
       <div
         className="todos-board-scroll"
         ref={boardRegionRef}
@@ -779,8 +887,15 @@ export function TodosBoard({
         aria-label="Tasks by date"
         tabIndex={0}
       >
-        <div className="todos-board-columns">{model.columns.map(renderColumn)}</div>
+        <div className="todos-board-columns">{dateColumns.map(renderColumn)}</div>
       </div>
+
+      {overdueColumn && overdueColumn.todos.length > 0
+        ? renderPile(overdueColumn, "Overdue", "Nothing overdue.")
+        : null}
+      {inboxColumn && inboxColumn.todos.length > 0
+        ? renderPile(inboxColumn, "Inbox", "Nothing waiting.")
+        : null}
 
       <p className="todos-board-sr-only" aria-live="polite" aria-atomic="true">
         <span key={announcement.sequence}>

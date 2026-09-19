@@ -30,6 +30,8 @@ interface HomeHeaderProps {
   userId: string;
   /** Today in the profile's timezone. Paper prints it under the page name. */
   date?: string;
+  /** Today's counts, printed after the date. Absent until the panel reports. */
+  summary?: { readonly dueToday: number; readonly overdue: number } | null;
   // The scroll container element itself (not a ref object): passed as state
   // set from a callback ref by the parent, so it's already populated on this
   // component's very first render/layout-effect pass instead of a render
@@ -39,7 +41,7 @@ interface HomeHeaderProps {
 export function HomeHeader(props: HomeHeaderProps) {
   return <HomeHeaderAccount key={props.userId} {...props} />;
 }
-function HomeHeaderAccount({ service, userId, pageElement, date }: HomeHeaderProps) {
+function HomeHeaderAccount({ service, userId, pageElement, date, summary }: HomeHeaderProps) {
   // Render the cover on first paint when an earlier navigation already warmed
   // this read, instead of flashing a collapsed header while it refetches.
   // The trailing signal is only there to satisfy the type signature; peekRead
@@ -271,7 +273,15 @@ function HomeHeaderAccount({ service, userId, pageElement, date }: HomeHeaderPro
         )}
         <div className="home-header__line">
           {value.title ? <h1>{value.title}</h1> : <h1 className="cloud-shell__sr-only">Home</h1>}
-          {date && <p className="home-header__date">{longDate(date)}</p>}
+          {date && (
+            <p className="home-header__date">
+              <span>{longDate(date)}</span>
+              {summary && summary.dueToday > 0 ? <span>{summary.dueToday} due today</span> : null}
+              {summary && summary.overdue > 0 ? (
+                <span className="home-header__late">{summary.overdue} overdue</span>
+              ) : null}
+            </p>
+          )}
           <div className="home-header__actions">
             {collapsible && (
               <button className="home-header__customize" onClick={scrollCover}>

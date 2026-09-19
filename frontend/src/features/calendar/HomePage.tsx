@@ -16,7 +16,7 @@ import type {
   WeekViewModel,
 } from "../../types/domain";
 import { usePhoneLayout } from "../../lib/usePhoneLayout";
-import { TodayPanel } from "../todos/TodayPanel";
+import { TodayPanel, type TodaySummary } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday, startOfWeekSunday } from "../todos/dateDomain";
 import { useLocalToday } from "../todos/useLocalToday";
@@ -79,6 +79,10 @@ export function HomePage({
   // plain ref set during the parent's commit isn't visible to a child's
   // layout effect until a later pass.
   const [page, setPage] = useState<HTMLDivElement | null>(null);
+  // The counts belong to the header's date line, but the rows that produce them
+  // are loaded by the Today panel, so the panel hands them up rather than the
+  // page opening a second read of the same slice.
+  const [summary, setSummary] = useState<TodaySummary | null>(null);
   const phoneLayout = usePhoneLayout();
   const localDate = useLocalToday(profile.timezone);
   const calendar = (
@@ -94,6 +98,7 @@ export function HomePage({
       projects={projects}
       classes={classes}
       workspaceSessionKey={workspaceSessionKey}
+      onSummary={setSummary}
     />
   );
   // Side by side the calendar is the left column and reads first. Stacked on a
@@ -106,6 +111,7 @@ export function HomePage({
         userId={profile.userId}
         pageElement={page}
         date={localDate}
+        summary={summary}
       />
       <div className={`home-workspace${phoneLayout ? " home-workspace--phone" : ""}`}>
         {phoneLayout ? [today, calendar] : [calendar, today]}
@@ -490,6 +496,11 @@ export function WeekGrid({
             >
               <span>{Temporal.PlainDate.from(day).toLocaleString("en", { weekday: "short" })}</span>
               <strong>{Temporal.PlainDate.from(day).day}</strong>
+              {day === today && (
+                <span className="week-days__when" aria-hidden="true">
+                  today
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -544,7 +555,7 @@ export function WeekGrid({
                   : hour < 12
                     ? `${hour} AM`
                     : hour === 12
-                      ? "12 PM"
+                      ? "Noon"
                       : `${hour - 12} PM`}
               </span>
             ))}

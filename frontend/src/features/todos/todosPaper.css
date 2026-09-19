@@ -65,7 +65,7 @@
   color: var(--warning);
 }
 
-[data-theme^="paper"] .todos-board-overdue::before {
+[data-theme^="paper"] .todos-board-page .todos-board-week > span + span::before {
   margin: 0 var(--space-xs);
   color: var(--muted);
 }
@@ -74,30 +74,31 @@
   gap: var(--space-24);
 }
 
+/* Every source reads at once, each a word, the one in force carrying the green
+ * rule. `.paper-nav__item` draws that; only the size and the case are the
+ * board's, since the primitive is set at the reading size for navigation. */
 [data-theme^="paper"] .todos-board-filter {
-  gap: var(--space-8);
+  display: flex;
+  gap: var(--space-md);
+  align-items: baseline;
   font: var(--small);
   color: var(--muted);
   text-transform: lowercase;
 }
 
-/* A word with the green rule under it, not a boxed control. */
-[data-theme^="paper"] .todos-board-page .todos-board-filter select {
-  padding: 0 0 var(--space-xs);
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text);
+[data-theme^="paper"] .todos-board-page .todos-board-filter__word {
+  padding: 0 0 2px;
   font: var(--small);
+  /* The browser's own sheet sets `none` on a button, so the wrapper's lowercase
+     never reaches the word inside it. */
   text-transform: lowercase;
-  text-decoration: underline 2px var(--accent);
-  text-underline-offset: 0.3em;
-  appearance: none;
 }
 
-[data-theme^="paper"] .todos-board-page .todos-board-filter select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+/* The colour is restated rather than left to `.paper-nav__item--current`: the
+ * page frame's own button reset excludes the primitive, but this sheet's size
+ * rule above would otherwise leave the current word's ink to source order. */
+[data-theme^="paper"] .todos-board-page .todos-board-filter__word.paper-nav__item--current {
+  color: var(--text);
 }
 
 [data-theme^="paper"] .todos-board-nav {
@@ -116,7 +117,7 @@
   text-transform: lowercase;
 }
 
-/* "Today" is a word; the two chevrons are the one icon that may stand alone. */
+/* "This week" is a word; the chevrons are the one icon that may stand alone. */
 [data-theme^="paper"] .todos-board-nav button:not([aria-label]) {
   color: var(--text);
   text-decoration: underline 1px var(--accent);
@@ -153,13 +154,17 @@
 
 /* ── the week ──────────────────────────────────────────────────────────── */
 
+/* The week grows to its tallest column and the page scrolls, rather than the
+ * grid keeping its own scrollbar: the overdue and inbox lists sit under it now,
+ * and a region with a reserved height left a band of dead space above them. */
 [data-theme^="paper"] .todos-board-page .todos-board-scroll {
-  padding-bottom: var(--space-24);
+  max-height: none;
+  overflow: visible;
+  padding-bottom: var(--space-lg);
 }
 
-/* The eight columns share the width instead of scrolling sideways: seven days
-   led by today, then the inbox. A window too narrow for the floor width still
-   scrolls, as classic does. */
+/* The seven days share the width instead of scrolling sideways, sunday first.
+   A window too narrow for the floor width still scrolls, as classic does. */
 [data-theme^="paper"] .todos-board-page .todos-board-columns {
   width: auto;
   min-width: 100%;
@@ -184,35 +189,31 @@
   padding-left: var(--space-8);
 }
 
-/* A day is a rule with its name above it, at the reading size. The redesign
- * reference sets a day column's head at body size, not at the floor of the
- * scale, so the count beside it carries the smaller step on its own. */
+/* A day is a rule with `sun 13` centred over it, at the reading size. The count
+ * is gone: the reference names the day and nothing else, and the rows under it
+ * already say how many there are. */
 [data-theme^="paper"] .todos-board-page .todos-board-column__header {
   min-height: 0;
+  display: flex;
+  justify-content: center;
   align-items: baseline;
-  gap: var(--space-8);
+  gap: var(--space-xs);
   padding: 0 0 var(--space-sm);
   border-bottom: 1px solid var(--hairline);
   background: var(--ground);
 }
 
 [data-theme^="paper"] .todos-board-page .todos-board-column__header h2 {
-  min-height: 2lh;
+  min-height: 0;
   font: var(--body);
   color: var(--muted);
   text-transform: lowercase;
-  text-wrap: balance;
 }
 
-[data-theme^="paper"] .todos-board-page .todos-board-column__header > span {
-  min-width: 0;
-  min-height: 0;
-  display: inline;
-  border: 0;
-  border-radius: 0;
-  color: var(--faint);
+/* "tomorrow", the one day besides today the reference names in words. */
+[data-theme^="paper"] .todos-board-page .todos-board-column__when {
   font: var(--fine);
-  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 /* Today is the one green thing on the board: it marks where you are. */
@@ -233,7 +234,7 @@
 /* ── a task ────────────────────────────────────────────────────────────── */
 
 [data-theme^="paper"] .todos-board-page .todos-board-card {
-  grid-template-columns: var(--icon) minmax(0, 1fr);
+  grid-template-columns: var(--icon) minmax(0, 1fr) auto;
   gap: var(--space-8) var(--space-sm);
   padding: var(--space-sm) 0;
   border-bottom: 1px solid var(--hairline);
@@ -337,13 +338,17 @@
   text-transform: lowercase;
 }
 
-/* Words, not a row of glyphs: the actions sit under the task they act on. */
+/* Words, not a row of glyphs, and they sit to the right of the task rather than
+ * under it: a day column carries only "edit", so a second line for it would
+ * double every row's height for one word. */
 [data-theme^="paper"] .todos-board-page .todos-board-card__actions {
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: start;
-  gap: var(--space-sm);
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+  justify-self: end;
+  gap: var(--space-md);
   margin-top: 0;
+  padding-top: 1px;
   opacity: 1;
   transition: none;
 }
@@ -357,11 +362,17 @@
   padding: 0;
   border-radius: 0;
   color: var(--muted);
-  font: var(--fine);
+  font: var(--small);
   text-decoration: none;
+  white-space: nowrap;
 }
 
-[data-theme^="paper"] .todos-board-card__actions button:last-child:hover:not(:disabled) {
+/* Deleting is the one destructive word on the board, so it carries `--danger`
+   outright rather than only on hover. */
+[data-theme^="paper"] .todos-board-card__delete,
+[data-theme^="paper"]
+  .todos-board-card__actions
+  button.todos-board-card__delete:hover:not(:disabled) {
   color: var(--danger);
 }
 
@@ -403,6 +414,65 @@
 
 [data-theme^="paper"] .todos-board-page .todos-board-add svg {
   display: none;
+}
+
+/* A day with nothing in it says so, rather than dropping straight to "add
+   task" and reading as a column that failed to load. */
+[data-theme^="paper"] .todos-board-page .todos-board-column__empty {
+  margin: 0;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* ── overdue and inbox ─────────────────────────────────────────────────── */
+
+/* The two piles read as lists under the week, not as further columns: one
+   measure wide, each with its own `//` heading and a rule over the first row.
+   A task in either has fallen out of the week, so its row carries "move to
+   today" and "delete" beside "edit". */
+[data-theme^="paper"] .todos-board-page .todos-board-week-heading,
+[data-theme^="paper"] .todos-board-page .todos-board-pile h2 {
+  margin: 0 var(--workspace-page-inset, var(--inset)) var(--space-md);
+  text-transform: lowercase;
+}
+
+/* The pile's own heading sits inside it, so the flex gap already spaces it. */
+[data-theme^="paper"] .todos-board-page .todos-board-pile h2 {
+  margin: 0;
+}
+
+/* A pile's row has fallen out of the week, so its metadata reads at the small
+ * step rather than the week grid's denser floor. */
+[data-theme^="paper"] .todos-board-page .todos-board-pile .todos-board-card__metadata {
+  font: var(--small);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-pile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: min(100%, var(--measure));
+  margin: 0 var(--workspace-page-inset, var(--inset)) var(--space-lg);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-pile__tasks {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .todos-board-page .todos-board-pile--drop .todos-board-pile__tasks {
+  box-shadow: inset 2px 0 0 var(--accent);
+  padding-left: var(--space-8);
+}
+
+/* How late a task is, the one place on this page the warning colour is used
+   for a span of time rather than a date. */
+[data-theme^="paper"] .todos-board-page .todos-board-card__late {
+  color: var(--warning);
 }
 
 /* ── undo ──────────────────────────────────────────────────────────────── */
@@ -638,8 +708,11 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .today-list-item--overdue .today-list-item__meta time:first-child {
+/* Only the word is amber. The day the task was actually due is a fact like any
+ * other on the line, so it reads in the metadata's own ink. */
+[data-theme^="paper"] .today-list-item__late {
   color: var(--warning);
+  text-transform: lowercase;
 }
 
 [data-theme^="paper"] .today-list-item__actions {

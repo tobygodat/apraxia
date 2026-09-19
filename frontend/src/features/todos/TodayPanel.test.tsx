@@ -185,7 +185,7 @@ describe("TodayPanel", () => {
     await screen.findByRole("checkbox", { name: "Mark Prepare tomorrow complete" });
     expect(screen.getAllByRole("checkbox")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Reorder Prepare tomorrow" })).toBeNull();
-    expect(screen.getByText("Due tomorrow · Fri, Sep 4")).toBeTruthy();
+    expect(screen.getByText("Due tomorrow")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
     expect(field("Due date").value).toBe("2026-09-04");
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
