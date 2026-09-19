@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CollectionService } from "../features/collections/collectionService";
 import type { CalendarService } from "../features/calendar/calendarService";
+import type { CareerService } from "../features/career/careerService";
 import type { TodoService } from "../features/todos/todoService";
 import type { Idea, SearchResult, Todo } from "../types/domain";
 import { localToday } from "../features/todos/dateDomain";
@@ -58,6 +59,7 @@ function fixture(userId = "user-a") {
     todoService: { createTodo } as unknown as TodoService,
     collectionService: { listProjects, search, getTodo, getIdea } as unknown as CollectionService,
     calendarService: {} as CalendarService,
+    careerService: { listApplications: vi.fn().mockResolvedValue([]) } as unknown as CareerService,
     workspaceData: {
       projects,
       setTimezone,

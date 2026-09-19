@@ -1,0 +1,324 @@
+/* Paper for the career table at `/career`.
+ *
+ * Sibling of `career.css`, imported straight after it. Every rule is scoped
+ * `[data-theme^="paper"]`, which matches both Paper presets and never classic,
+ * so the classic fallback stays exactly as that sheet draws it.
+ *
+ * Tokens and primitives come from `paper.css`; DESIGN.md is the authority for
+ * every value and nothing below is a literal. Interface words are lowercased
+ * here rather than in the markup, because classic renders the same strings.
+ */
+
+/* ---------------------------------------------------------------- the page */
+
+[data-theme^="paper"] .career-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding: var(--workspace-page-top, var(--space-top)) var(--inset) var(--space-bottom);
+  color: var(--text);
+  font: var(--body);
+}
+
+/* Classic neutralises the browser's button font. Paper needs the same for the
+   page's plain controls, but an action sets its own type in `paper.css`, so it
+   is excluded with `:where()`: `:not()` would add its argument's specificity
+   and outrank the class overrides further down this sheet, and `font` being a
+   shorthand would reset a completing action's weight back to 400. */
+[data-theme^="paper"] .career-page button:where(:not(.paper-action)),
+[data-theme^="paper"] .career-page select,
+[data-theme^="paper"] .career-page input {
+  font: inherit;
+}
+
+/* Still: a control you cannot use is `faint`, and nothing else changes. */
+[data-theme^="paper"] .career-page button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------- the heading */
+
+[data-theme^="paper"] .career-page .career-heading h1 {
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+/* The line of counts: facts stated with their numbers, so tabular figures. */
+[data-theme^="paper"] .career-page .career-summary {
+  margin: var(--space-xs) 0 0;
+  font: var(--small);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
+}
+
+/* ------------------------------------------ the stage filter and the order */
+
+[data-theme^="paper"] .career-page .career-controls {
+  align-items: baseline;
+  gap: var(--space-md);
+  margin-top: 0;
+}
+
+[data-theme^="paper"] .career-page .career-controls__label {
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .career-page .career-filter {
+  gap: var(--space-md);
+}
+
+/* A filter word is navigation: `muted`, and where you are is a green rule.
+   `.paper-nav__item` draws that; only the size and the case are this page's,
+   because the row reads as a line of small words rather than a menu. */
+[data-theme^="paper"] .career-page .career-filter__word {
+  padding: 0 0 var(--space-xs);
+  min-height: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .career-page .career-filter__word:hover {
+  color: var(--accent);
+}
+
+/* The colour is restated rather than left to `.paper-nav__item--current`: the
+   classic sheet's `[aria-pressed="true"]` weighs the same and is read later, so
+   under Paper light the chosen word was drawn in classic's near-white ink and
+   vanished into the page. */
+[data-theme^="paper"] .career-page .career-filter__word.paper-nav__item--current {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* What the table is ordered by, stated rather than offered. The reset beside it
+   is a quiet action: `muted`, no underline. */
+[data-theme^="paper"] .career-page .career-order {
+  margin: 0 0 0 auto;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* A form control does not inherit `text-transform`: the browser's own sheet
+   sets `none` on `button`, `select` and `input`, so the lowercase on the line
+   this word sits in never reaches it. Every action word on this page says it
+   for itself rather than relying on its parent. */
+[data-theme^="paper"] .career-page .career-order__reset {
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------------- the rows */
+
+/* Rules, not boxes. The head rule closes the top of the table; every row below
+   carries its own. `table-layout: fixed` keeps one long company name from
+   taking the room the other four columns need. */
+[data-theme^="paper"] .career-page .career-table {
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .career-page .career-column {
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* A column header is the floor step, `fine`, and it is also the sort control.
+   Sorting by a column is a kind of "here", so the sorted one carries the green
+   rule the filter row and the sidebar use, and its word turns `text`. */
+[data-theme^="paper"] .career-page .career-sort {
+  padding: var(--space-8) var(--space-24) var(--space-8) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .career-page .career-sort:hover {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .career-page .career-sort--current {
+  color: var(--text);
+}
+
+[data-theme^="paper"] .career-page .career-sort--current span {
+  padding-bottom: 2px;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* The chevron is the one icon allowed to stand alone, and only because it
+   points the way the order runs. It rides at the header's own size. */
+[data-theme^="paper"] .career-page .career-sort .workspace-icon {
+  width: var(--space-sm);
+  height: var(--space-sm);
+}
+
+[data-theme^="paper"] .career-page .career-cell {
+  padding: var(--space-sm) var(--space-24) var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  font: var(--body);
+  color: var(--text);
+}
+
+/* A company is the row, so it is body size and `text`; the role beside it is
+   the same fact at one remove, so it is `small` and `muted`. Neither is
+   lowercased: both are the user's own words. */
+[data-theme^="paper"] .career-page .career-cell--role {
+  font: var(--small);
+  color: var(--muted);
+}
+
+/* Dates and the round beside them are row metadata: the floor step, tabular
+   figures so a column of dates lines up. */
+[data-theme^="paper"] .career-page .career-cell--applied,
+[data-theme^="paper"] .career-page .career-cell--next {
+  font: var(--fine);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .career-page .career-cell--applied {
+  text-transform: lowercase;
+}
+
+/* The round's name is the user's words and the date beside it is the
+   interface's, so only the second half is lowercased. */
+[data-theme^="paper"] .career-page .career-next__when {
+  text-transform: lowercase;
+}
+
+/* `warning` means late, and it is the only colour a cell takes on its own. */
+[data-theme^="paper"] .career-page .career-next__when--late {
+  color: var(--warning);
+}
+
+/* A finished process is still a row, so it stays; it reads `muted` throughout
+   rather than being struck through, because nothing about it is undone. */
+[data-theme^="paper"] .career-page .career-row--closed .career-cell,
+[data-theme^="paper"] .career-page .career-row--closed .career-open,
+[data-theme^="paper"] .career-page .career-row--closed .career-stage {
+  color: var(--muted);
+}
+
+/* Opening an application is a word, not a button; the row is plainly a table,
+   so it needs no underline to say it is a link. Hover turns it accent, which is
+   what the mock draws. */
+[data-theme^="paper"] .career-page .career-open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--body);
+  color: inherit;
+}
+
+[data-theme^="paper"] .career-page .career-open:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* The stage, changed in place. Drawn as the word itself: the classic `select`
+   rule sets `appearance`, a chevron background image, padding, border, radius
+   and a min height, and the `background` shorthand below wipes the image along
+   with the colour, so each of those is restated.
+   A select is as wide as its longest option, so a rule under it runs past the
+   word it belongs to. At rest it is the faint `hairline`, which says the word
+   is a control without drawing a column of dashes down the table; the row's
+   hover raises it, and the control's own hover turns it accent. Green is not
+   the resting state here: it would claim "here" on every row at once. */
+[data-theme^="paper"] .career-page .career-stage {
+  width: auto;
+  max-width: 100%;
+  min-height: 0;
+  padding: 0 0 var(--space-xs);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .career-page .career-row:hover .career-stage:not(:disabled) {
+  border-bottom-color: var(--hairline-strong);
+}
+
+[data-theme^="paper"] .career-page .career-stage:hover:not(:disabled) {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+[data-theme^="paper"] .career-page .career-stage:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
+/* -------------------------------------------------------- adding, and none */
+
+[data-theme^="paper"] .career-page .career-empty {
+  margin: 0;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* The add row closes the table: the same hairline, so it reads as the next row
+   rather than as something under it. */
+[data-theme^="paper"] .career-page .career-add {
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* `font` is a shorthand and resets the weight, so a completing action restates
+   its own 600 beside it. This word is body size because it is the row. */
+[data-theme^="paper"] .career-page .career-add__open {
+  font: var(--body);
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+/* The two fields are `paper-field`; only their share of the row is this page's.
+   The classic `input` rule sets `flex`, so it is restated: the fields take the
+   width the first two columns have rather than the whole rule. */
+[data-theme^="paper"] .career-page .career-add__field {
+  flex: 0 1 280px;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  font: var(--body);
+  color: var(--text);
+}
+
+/* The placeholder is interface copy, and the field it sits in is a form control
+   that does not inherit case, so it says lowercase itself. The rule is on the
+   placeholder alone: on the input it would lowercase a company's own name. */
+[data-theme^="paper"] .career-page .career-add__field::placeholder {
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .career-page .career-add--open button {
+  text-transform: lowercase;
+}
+
+/* The scroller keeps its own rhythm; the page's `gap` already spaces it, and
+   the table's rules run to the edge of the words rather than the viewport. */
+[data-theme^="paper"] .career-page .career-scroll {
+  margin-top: 0;
+}

@@ -1,0 +1,240 @@
+/* Classic for the career table.
+ *
+ * Paper is where this page was designed; this sheet is the fallback that keeps
+ * `/career` readable under the classic preset, in the same palette and control
+ * shapes the other classic pages use. `careerPaper.css` is its sibling and is
+ * imported straight after it.
+ */
+
+.career-page {
+  max-width: var(--workspace-page-max, 1120px);
+  margin: 0;
+  padding: var(--workspace-page-top, 36px) var(--workspace-page-inset, 32px) 64px;
+  color: #f0efed;
+}
+.career-heading h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.career-summary {
+  margin: 8px 0 0;
+  color: #ada9a3;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+.career-page button,
+.career-page select,
+.career-page input {
+  font: inherit;
+}
+.career-page button {
+  cursor: pointer;
+}
+.career-page button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.career-page button:focus-visible,
+.career-page select:focus-visible,
+.career-page input:focus-visible {
+  outline: 2px solid #eee;
+  outline-offset: 3px;
+}
+
+/* The filter row, and the line stating what the table is ordered by. */
+.career-controls {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.career-controls__label {
+  color: #ada9a3;
+  font-size: 12px;
+}
+.career-filter {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.career-filter__word {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid #575757;
+  border-radius: var(--radius-control, 5px);
+  background: transparent;
+  color: #ada9a3;
+  font-size: 12px;
+}
+.career-filter__word[aria-pressed="true"] {
+  border-color: #868686;
+  color: #f0efed;
+}
+.career-order {
+  margin: 0 0 0 auto;
+  color: #ada9a3;
+  font-size: 12px;
+}
+.career-order__reset {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* The table itself. `table-layout: fixed` keeps a long company name from
+   stealing the room the other four columns need. */
+.career-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.career-column {
+  padding: 0;
+  text-align: left;
+  font-weight: 400;
+  border-bottom: 1px solid #383838;
+}
+.career-column--company {
+  width: 22%;
+}
+.career-column--role {
+  width: 28%;
+}
+.career-column--applied {
+  width: 10%;
+}
+.career-column--stage {
+  width: 13%;
+}
+.career-column--right {
+  text-align: right;
+}
+.career-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 16px 8px 0;
+  border: 0;
+  background: transparent;
+  color: #ada9a3;
+  font-size: 12px;
+  text-align: inherit;
+}
+.career-column--right .career-sort {
+  justify-content: flex-end;
+  padding-right: 0;
+}
+.career-sort--current {
+  color: #f0efed;
+}
+.career-cell {
+  padding: 10px 16px 10px 0;
+  border-bottom: 1px solid #383838;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.career-cell--applied,
+.career-cell--next {
+  color: #ada9a3;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.career-cell--next {
+  padding-right: 0;
+  text-align: right;
+}
+.career-cell--role {
+  color: #ada9a3;
+}
+.career-row--closed .career-cell {
+  color: #8d8a86;
+}
+.career-open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  text-align: left;
+}
+.career-open:hover {
+  text-decoration: underline;
+}
+/* `background-color`, not the `background` shorthand: the global `select` rule
+   draws its chevron as a background image, and the shorthand would wipe it. */
+.career-stage {
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 28px 4px 8px;
+  border: 1px solid #575757;
+  border-radius: var(--radius-control, 5px);
+  background-color: transparent;
+  color: #f0efed;
+  font-size: 12px;
+}
+.career-next__when--late {
+  color: #e0b565;
+}
+
+.career-empty {
+  margin: 16px 0 0;
+  color: #ada9a3;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Adding a row: a word under the table, which becomes two fields in place. */
+.career-add {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #383838;
+  flex-wrap: wrap;
+}
+.career-add__open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f0efed;
+  font-size: 14px;
+  text-decoration: underline;
+}
+.career-add__field {
+  flex: 1 1 180px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #575757;
+  border-radius: var(--radius-control, 5px);
+  background: transparent;
+  color: #f0efed;
+  font-size: 14px;
+}
+.career-add--open button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f0efed;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* Five columns need room. Rather than hide one on a narrow screen — every one
+   of them is a fact about the application — the table keeps its width and
+   scrolls sideways inside the page, which is how a spreadsheet behaves. */
+.career-scroll {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+.career-table {
+  min-width: 720px;
+}
