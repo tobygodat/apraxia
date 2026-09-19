@@ -13,9 +13,13 @@ import {
  * sidebar is collapsed to its icon rail. They live in localStorage so they
  * follow the browser, not the account; a per-account service can replace the
  * store later without touching the consumers.
+ *
+ * The theme preset applies to the whole workspace, not to one page. `classic`
+ * is the workspace as it ships today; `paper` and `paper-light` are the two
+ * themes of the Toby Godat foundations, whose tokens live in `paper.css`.
  */
 
-export const WORKSPACE_THEME_PRESETS = ["classic", "ledger"] as const;
+export const WORKSPACE_THEME_PRESETS = ["classic", "paper", "paper-light"] as const;
 export type WorkspaceThemePreset = (typeof WORKSPACE_THEME_PRESETS)[number];
 
 export interface WorkspacePreferences {
@@ -28,27 +32,14 @@ export const DEFAULT_WORKSPACE_PREFERENCES: WorkspacePreferences = {
   sidebarCollapsed: false,
 };
 
-export const WORKSPACE_THEME_LABELS: Record<
-  WorkspaceThemePreset,
-  { readonly name: string; readonly description: string }
-> = {
-  classic: {
-    name: "Classic",
-    description: "The original board: bordered day columns you scroll across.",
-  },
-  ledger: {
-    name: "Ledger",
-    description: "A ruled planner spread: big dates, hairline rows, the week in one view.",
-  },
-};
-
 export interface WorkspacePreferencesStore {
   read(): WorkspacePreferences;
   write(next: WorkspacePreferences): void;
   subscribe(listener: () => void): () => void;
 }
 
-const STORAGE_KEY = "apraxia:workspace-preferences:v1";
+export const WORKSPACE_PREFERENCES_STORAGE_KEY = "apraxia:workspace-preferences:v1";
+const STORAGE_KEY = WORKSPACE_PREFERENCES_STORAGE_KEY;
 
 function isThemePreset(value: unknown): value is WorkspaceThemePreset {
   return (
@@ -156,12 +147,14 @@ export function WorkspacePreferencesProvider({
     [store],
   );
 
-  // The theme preset rides on the document root so any surface can style
-  // against `[data-workspace-theme="ledger"]` without prop drilling.
+  // The preset rides on the document root so any surface can style against
+  // `[data-theme]` without prop drilling. `paper.css` answers to the two Paper
+  // values; classic is the absence of a Paper value, which is why it needs no
+  // rules of its own.
   useEffect(() => {
     const root = document.documentElement;
-    root.setAttribute("data-workspace-theme", preferences.theme);
-    return () => root.removeAttribute("data-workspace-theme");
+    root.setAttribute("data-theme", preferences.theme);
+    return () => root.removeAttribute("data-theme");
   }, [preferences.theme]);
 
   const value = useMemo(

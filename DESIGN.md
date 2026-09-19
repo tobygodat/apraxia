@@ -261,13 +261,18 @@ deliberate.
 - The workspace still ships the **classic** theme: charcoal surfaces, Georgia
   page headings, Segoe UI controls, bordered day columns. It is the default
   preset and stays pixel-identical while Paper is built beside it.
-- The **Ledger** board theme is being retired. Its vocabulary is not lost: the
-  ruled row, the 2px rule that marks now, the struck-through finished item and
-  the "12 days late" count in `warning` were drawn from it into the foundations
-  in September 2026, and Paper inherits all four.
-- **Paper** and **Paper light** arrive as presets in Settings, chosen per
-  device in the same `apraxia:workspace-preferences` store the board theme uses
-  today, widened from the board to the whole app.
+- The **Ledger** board theme is gone: the Tasks board now has one look in
+  classic, and the per-page theme switch in Settings went with it. Ledger's
+  vocabulary is not lost — the ruled row, the 2px rule that marks now, the
+  struck-through finished item and the "12 days late" count in `warning` were
+  drawn from it into the foundations in September 2026, and Paper inherits all
+  four.
+- **Paper** and **Paper light** are presets in the same
+  `apraxia:workspace-preferences` store the board theme used, widened from the
+  board to the whole app. Their foundations — both token sets, the document
+  base and the shared primitives — live in `frontend/src/paper.css`. The
+  Settings picker that offers them returns once every surface is rebuilt; until
+  then `/qa/workspace.html?theme=paper` is how you look at one.
 - The classic palette, type and radii stay in the frontmatter above, prefixed
   `classic-`, for as long as the classic stylesheets ship. They are frozen: do
   not extend them, do not reach for them in new work, and do not mix the two
@@ -379,8 +384,11 @@ exception to the one-hue rule, and the only one.
 
 ### Themes
 
-Set the theme with `data-theme="dark|light"` on the root element, and honour
-the system preference until the person chooses. Every colour decision is made
+Set the theme with `data-theme` on the root element. apraxia carries the
+preset name there rather than the system's bare `dark|light`, because classic
+is a third value: `classic`, `paper` (dark) and `paper-light`. A Paper rule
+scopes itself with `[data-theme^="paper"]`, which matches both and never
+matches classic. Every colour decision is made
 in both themes; a value that only works in one is not finished.
 
 Light `accent` (`#2e7d4f`) measures about 4.48:1 on light `ground` when it
@@ -389,8 +397,8 @@ the one documented exception and is not licence to add others.
 
 ## Typography
 
-**Literata throughout**, loaded from Google Fonts with its optical-size axis,
-falling back through Iowan Old Style, Palatino and Georgia. One family: no sans
+**Literata throughout**, self-hosted in `frontend/public/fonts/` beside the
+sign-in faces and falling back through Iowan Old Style, Palatino and Georgia. One family: no sans
 for the interface, no mono for data, no second face for dense screens.
 
 Seven styles, weights 400 and 600 only:

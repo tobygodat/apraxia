@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 /**
  * The width at or below which the workspace lays itself out for a phone. It is
- * the breakpoint the shell and the Tasks ledger already use, so one query
+ * the breakpoint the shell and the Tasks board already use, so one query
  * describes "this is a phone" for layout that has to be decided in JavaScript
  * rather than in CSS — where the reading order, not just the painting order,
  * has to change.

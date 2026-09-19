@@ -9,6 +9,11 @@ import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { WorkspaceRuntime } from "../apps/WorkspaceRuntime";
+import {
+  DEFAULT_WORKSPACE_PREFERENCES,
+  WORKSPACE_PREFERENCES_STORAGE_KEY,
+  WORKSPACE_THEME_PRESETS,
+} from "../apps/workspacePreferences";
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
 import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
 import {
@@ -41,6 +46,15 @@ import "../index.css";
 if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.");
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "realistic";
+// `?theme=paper` (or `paper-light`) seeds the device preference the workspace
+// reads, so a Paper surface can be inspected without opening Settings.
+const theme = params.get("theme");
+if (theme && (WORKSPACE_THEME_PRESETS as readonly string[]).includes(theme)) {
+  window.localStorage.setItem(
+    WORKSPACE_PREFERENCES_STORAGE_KEY,
+    JSON.stringify({ ...DEFAULT_WORKSPACE_PREFERENCES, theme }),
+  );
+}
 const empty = scenario === "empty";
 const long = scenario === "long" || scenario === "dense";
 let driveConnected = params.get("drive") !== "disconnected";

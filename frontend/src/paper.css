@@ -1,0 +1,273 @@
+/* The Paper theme's foundations: the Toby Godat tokens in both themes, the
+ * document base they sit on, and the primitives every Paper surface shares.
+ *
+ * Everything here is scoped to `[data-theme^="paper"]`, which matches the
+ * `paper` and `paper-light` presets. Classic carries no `data-theme` value of
+ * its own that this file answers to, so it stays exactly as it is.
+ *
+ * A surface rebuilt in Paper keeps its classic stylesheet untouched and adds
+ * its Paper rules under the same `[data-theme^="paper"]` prefix, so the two
+ * vocabularies never mix on one screen. Reuse the tokens below; do not add
+ * literals. DESIGN.md is the authority for every value here.
+ */
+
+:root[data-theme="paper"] {
+  color-scheme: dark;
+
+  --ground: #1b1a19;
+  --ground-raised: #252422;
+  --text: #e8e5df;
+  --muted: #a39e96;
+  --faint: #6f6b65;
+  --hairline: #3b3936;
+  --hairline-strong: #5a5752;
+  --outline: #7d7972;
+  --selection: #4a463f;
+  --accent: #8fd18a;
+  --danger: #e8907c;
+  --warning: #e0b565;
+  --scrim: rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="paper-light"] {
+  color-scheme: light;
+
+  --ground: #f4f1eb;
+  --ground-raised: #fbf9f5;
+  --text: #1b1a19;
+  --muted: #6b665e;
+  --faint: #9a948a;
+  --hairline: #d9d3c9;
+  --hairline-strong: #b8b1a5;
+  --outline: #857f75;
+  --selection: #e3dccf;
+  --accent: #2e7d4f;
+  --danger: #a63d2a;
+  --warning: #8a5a00;
+  --scrim: rgba(27, 26, 25, 0.32);
+}
+
+/* Type, space and measure do not change between the two themes. */
+:root[data-theme^="paper"] {
+  --font:
+    Literata, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia,
+    "Times New Roman", serif;
+
+  /* Seven styles, weights 400 and 600 only. Read them with `font: var(--body)`. */
+  --display: 600 24px / 1.3 var(--font);
+  --display-tracking: -0.01em;
+  --title: 600 20px / 1.3 var(--font);
+  --title-tracking: -0.005em;
+  --heading: 600 17px / 1.3 var(--font);
+  --body: 400 17px / 1.6 var(--font);
+  --small: 400 15px / 1.6 var(--font);
+  --fine: 400 13px / 1.5 var(--font);
+  --caption: italic 400 15px / 1.6 var(--font);
+
+  --space-xs: 4px;
+  --space-8: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-24: 24px;
+  --space-lg: 40px;
+  --space-bottom: 56px;
+  --space-top: 64px;
+
+  --radius-sm: 2px;
+  --radius: 6px;
+
+  --gutter: 20px;
+  --sidebar: 208px;
+  --measure: 600px;
+  --measure-wide: 960px;
+}
+
+/* The page itself. */
+:root[data-theme^="paper"] body {
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+
+:root[data-theme^="paper"] ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+
+/* One focus ring everywhere: the green rule, held off the thing it marks. */
+:root[data-theme^="paper"] :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Words first. An icon rides beside its word at text size, never instead of it. */
+[data-theme^="paper"] .paper-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  color: inherit;
+}
+
+/* A section heading is body size. Its weight and its green `// ` make it one. */
+[data-theme^="paper"] .paper-heading {
+  margin: 0;
+  font: var(--heading);
+  color: var(--text);
+  text-wrap: balance;
+}
+
+[data-theme^="paper"] .paper-heading::before {
+  content: "// ";
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .paper-caption {
+  font: var(--caption);
+  color: var(--muted);
+}
+
+/* An action is a word with a green rule under it, not a button. */
+[data-theme^="paper"] .paper-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-align: left;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .paper-action--completing {
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .paper-action--quiet {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .paper-action--danger {
+  color: var(--danger);
+  text-decoration-color: var(--danger);
+}
+
+[data-theme^="paper"] .paper-action:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Rules, not boxes: a row is separated by space first and a hairline second. */
+[data-theme^="paper"] .paper-row {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .paper-row--done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* The 2px green rule means "now"; `warning` means late. */
+[data-theme^="paper"] .paper-row--now {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-sm);
+}
+
+[data-theme^="paper"] .paper-row__meta {
+  font: var(--fine);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .paper-row__meta--late {
+  color: var(--warning);
+}
+
+[data-theme^="paper"] .paper-field {
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .paper-field::placeholder {
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .paper-check {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  background: var(--ground-raised);
+  accent-color: var(--accent);
+}
+
+/* Navigation: a word in `muted`, and where you are is a green rule under it. */
+[data-theme^="paper"] .paper-nav__item {
+  padding: var(--space-8) 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font: var(--body);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .paper-nav__item--current {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+[data-theme^="paper"] .paper-dialog {
+  max-width: 520px;
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .paper-dialog::backdrop {
+  background: var(--scrim);
+}
+
+/* A calendar event is a 1px rule in its calendar's colour, never a filled block. */
+[data-theme^="paper"] .paper-event {
+  padding: 0 0 0 var(--space-8);
+  border-left: 1px solid var(--event-rule, var(--outline));
+  background: transparent;
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .paper-event__meta {
+  color: var(--muted);
+}
+
+/* Reading widths: one column of prose, and the wide one for a dense screen. */
+[data-theme^="paper"] .paper-measure {
+  max-width: var(--measure);
+}
+
+[data-theme^="paper"] .paper-measure--wide {
+  max-width: var(--measure-wide);
+}

@@ -1,11 +1,13 @@
+@import "./paper.css";
+
 :root {
-  --bg: #0f1115;
-  --panel: #171a21;
-  --border: #262b36;
-  --text: #e6e9ef;
-  --muted: #8b93a3;
-  --accent: #6ea8fe;
-  --danger: #ff6b6b;
+  --legacy-bg: #0f1115;
+  --legacy-panel: #171a21;
+  --legacy-border: #262b36;
+  --legacy-text: #e6e9ef;
+  --legacy-muted: #8b93a3;
+  --legacy-accent: #6ea8fe;
+  --legacy-danger: #ff6b6b;
   /* Cloud workspace tokens: page controls share one corner radius and one content width. */
   --radius-control: 5px;
   --workspace-page-max: 1120px;
@@ -24,8 +26,8 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--legacy-bg);
+  color: var(--legacy-text);
 }
 
 .collection-empty span {
@@ -62,8 +64,8 @@ h1 {
 }
 
 .card {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: var(--legacy-panel);
+  border: 1px solid var(--legacy-border);
   border-radius: 12px;
   padding: 24px;
 }
@@ -72,15 +74,15 @@ input {
   flex: 1;
   padding: 9px 12px;
   background: #11141a;
-  border: 1px solid var(--border);
+  border: 1px solid var(--legacy-border);
   border-radius: 8px;
-  color: var(--text);
+  color: var(--legacy-text);
   font-size: 14px;
 }
 
 button {
   padding: 9px 14px;
-  background: var(--accent);
+  background: var(--legacy-accent);
   color: #0b0e13;
   border: none;
   border-radius: 8px;
@@ -123,13 +125,13 @@ select:disabled {
 
 button.link {
   background: none;
-  color: var(--muted);
+  color: var(--legacy-muted);
   font-weight: 400;
   padding: 4px 6px;
 }
 
 button.link:hover {
-  color: var(--danger);
+  color: var(--legacy-danger);
 }
 
 .list {
@@ -147,8 +149,8 @@ button.link:hover {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: var(--legacy-panel);
+  border: 1px solid var(--legacy-border);
   border-radius: 8px;
 }
 
@@ -163,7 +165,7 @@ button.link:hover {
 }
 
 .row label.done {
-  color: var(--muted);
+  color: var(--legacy-muted);
   text-decoration: line-through;
 }
 
@@ -172,7 +174,7 @@ button.link:hover {
 }
 
 .error {
-  color: var(--danger);
+  color: var(--legacy-danger);
   font-size: 14px;
 }
 

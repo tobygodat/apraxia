@@ -8,7 +8,7 @@
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--legacy-muted);
 }
 
 .app {
@@ -22,8 +22,8 @@
   flex-direction: column;
   gap: 4px;
   padding: 20px 14px;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
+  background: var(--legacy-panel);
+  border-right: 1px solid var(--legacy-border);
 }
 
 .brand {
@@ -37,18 +37,18 @@
   display: block;
   padding: 8px 12px;
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--legacy-muted);
   text-decoration: none;
 }
 
 .navlink:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  color: var(--legacy-text);
 }
 
 .navlink.active {
   background: rgba(110, 168, 254, 0.15);
-  color: var(--accent);
+  color: var(--legacy-accent);
 }
 
 .logout {
