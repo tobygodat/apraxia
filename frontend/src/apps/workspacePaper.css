@@ -14,9 +14,12 @@
 
 /* ------------------------------------------------------------- the page */
 
+/* A screen's own edges: `space-top` above, `space-bottom` below, the main
+   area's `space-lg` at the sides. The 560px query in `paper.css` shrinks all
+   three, so no width needs a rule of its own here. */
 [data-theme^="paper"] .workspace-page {
   max-width: var(--measure-wide);
-  padding: var(--workspace-page-top) var(--workspace-page-inset);
+  padding: var(--space-top) var(--workspace-page-inset) var(--space-bottom);
 }
 
 [data-theme^="paper"] .cloud-shell .collection-page {

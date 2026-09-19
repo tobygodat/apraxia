@@ -65,9 +65,11 @@
   transition: none;
 }
 
+/* The mark scales with the wordmark it sits in rather than taking a size of
+   its own; it is a logo, not one of the line icons `--icon` sizes. */
 [data-theme^="paper"] .cloud-shell__mark {
-  width: var(--space-24);
-  height: var(--space-24);
+  width: 1.2em;
+  height: 1.2em;
 }
 
 /* ---------------------------------------------------------- search and nav */
@@ -184,9 +186,12 @@
   display: none;
 }
 
+/* The fallback is for this branch's base, which predates `--icon`; it drops
+   out the moment the foundations land. A size it must have either way: an SVG
+   left at `auto` stretches to the flex line when the 980px rule un-hides it. */
 [data-theme^="paper"] .cloud-shell__account-trigger .workspace-icon {
-  width: 1em;
-  height: 1em;
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
   margin-left: var(--space-xs);
 }
 
@@ -288,8 +293,8 @@
 }
 
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action .workspace-icon {
-  width: var(--space-md);
-  height: var(--space-md);
+  width: var(--icon, 1em);
+  height: var(--icon, 1em);
 }
 
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action:hover:not(:disabled) {
@@ -440,8 +445,11 @@
    The nav is a row of words; the icons step aside rather than stand alone. */
 @media (max-width: 760px) {
   [data-theme^="paper"] .cloud-shell {
+    /* A screen keeps at least `gutter` at its sides, and on a phone that
+       floor is what the strip needs: `space-lg` here costs a fifth of the
+       width and pushes the strip's own words onto a third row. The top and
+       bottom keep their tokens, which the 560px query shrinks. */
     --workspace-page-inset: var(--gutter);
-    --workspace-page-top: var(--space-24);
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
   }
@@ -457,7 +465,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-sm);
-    padding: var(--space-md) var(--gutter);
+    padding: var(--space-md) var(--workspace-page-inset);
     border-right: 0;
     border-bottom: 1px solid var(--hairline);
   }
