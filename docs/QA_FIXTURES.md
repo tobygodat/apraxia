@@ -13,7 +13,7 @@ Start them with `npm run dev:web` and open
 
 | Page | Source | Parameters |
 | --- | --- | --- |
-| `/qa/workspace.html` | `frontend/src/qa/workspaceFixture.tsx` | `?route=`, `?scenario=`, `?drive=` |
+| `/qa/workspace.html` | `frontend/src/qa/workspaceFixture.tsx` | `?route=`, `?scenario=`, `?drive=`, `?theme=` |
 | `/qa/todos-workspace.html` | `frontend/src/qa/todosWorkspaceFixture.tsx` | `?scenario=` |
 | `/qa/today-panel.html` | same file, different stage | `?scenario=` |
 | `/qa/google-sign-in.html` | `frontend/src/qa/googleSignInFixture.tsx` | none |
@@ -47,6 +47,11 @@ fixture defaults to `realistic`; the QA menu switches between them by reloading.
 | `disconnected` | Calendar reports no connection. |
 
 The standalone Todo fixtures accept `default`, `empty`, `dense`, and `error`.
+
+**`?theme=`** (workspace only) seeds the device theme preset before the
+workspace mounts: `classic` (the default), `paper`, or `paper-light`. It writes
+the same `apraxia:workspace-preferences` entry Settings writes, so the choice
+survives a reload until another `?theme=` replaces it.
 
 **`?drive=`** (workspace only) sets the Drive fixture state:
 `?drive=disconnected` reports no Drive connection, `?drive=error` makes file

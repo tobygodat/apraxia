@@ -40,7 +40,6 @@ function props(overrides: Partial<TodosBoardProps> = {}): TodosBoardProps {
   return {
     model: model(),
     projects: [{ id: "project-a", title: "Launch" }],
-    theme: "ledger",
     onPreviousWeek: vi.fn(),
     onNextWeek: vi.fn(),
     onToday: vi.fn(),
@@ -111,16 +110,14 @@ describe("TodosBoard", () => {
     // Today opens the week and this week's earlier days wrap to the end, so the
     // day being worked on never sits below or behind the rest of the week.
     expect(headings[0]).toContain("· Today");
-    // Each day heading runs date, then weekday, then the screen-reader-only
-    // qualifier, with no whitespace between those spans.
     expect(headings.slice(0, -1)).toEqual([
-      "2 SepWed · Today",
-      "3 SepThu · Tomorrow",
-      "4 SepFri",
-      "5 SepSat",
-      "6 SepSun",
-      "31 AugMon",
-      "1 SepTue",
+      "Wednesday, Sep 2 · Today",
+      "Thursday, Sep 3 · Tomorrow",
+      "Friday, Sep 4",
+      "Saturday, Sep 5",
+      "Sunday, Sep 6",
+      "Monday, Aug 31",
+      "Tuesday, Sep 1",
     ]);
     expect(headings[headings.length - 1]).toEqual("Inbox");
     expect(screen.queryByRole("heading", { name: "Overdue" })).toBeNull();
@@ -572,8 +569,8 @@ describe("TodosBoard drag to reschedule", () => {
   });
 });
 
-it("returns the classic board to its leading column when a new day takes the lead", () => {
-  const boardProps = props({ theme: "classic" });
+it("returns the board to its leading column when a new day takes the lead", () => {
+  const boardProps = props();
   const { rerender } = render(<TodosBoard {...boardProps} />);
   const region = screen.getByRole("region", { name: "Tasks by date" });
 
@@ -596,12 +593,12 @@ it("returns the classic board to its leading column when a new day takes the lea
   expect(region.scrollLeft).toBe(0);
 });
 
-it("renders the classic theme with Today first, marked, and carrying a count badge", () => {
-  render(<TodosBoard {...props({ theme: "classic" })} />);
+it("renders Today first, marked, and carrying a count badge", () => {
+  render(<TodosBoard {...props()} />);
   const headings = screen
     .getAllByRole("heading", { level: 2 })
     .map((heading) => heading.textContent);
-  // The classic board scrolls sideways, so Today has to open the row of
+  // The board scrolls sideways, so Today has to open the row of
   // columns rather than sit behind that scroll.
   expect(headings[0]).toEqual("Wednesday, Sep 2 · Today");
   expect(headings[headings.length - 1]).toEqual("Inbox");

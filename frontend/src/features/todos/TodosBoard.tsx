@@ -5,17 +5,12 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type DragEvent,
 } from "react";
 import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
-import {
-  useWorkspacePreferences,
-  type WorkspaceThemePreset,
-} from "../../apps/workspacePreferences";
 import { addSqlDateDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
@@ -29,8 +24,6 @@ import {
   type TodoMutationErrorKind,
 } from "./todoUiState";
 import "./TodosBoard.css";
-import "./TodosBoardClassic.css";
-import "./TodosBoardLedger.css";
 
 export interface TodosBoardProps {
   readonly model: TodoBoardModel;
@@ -58,8 +51,6 @@ export interface TodosBoardProps {
   readonly onDeleteTodo: (todo: Todo) => boolean;
   /** Reschedules a todo to a new due date; null moves it to the Inbox. */
   readonly onRescheduleTodo?: (todo: Todo, dueDate: string | null) => void;
-  /** Overrides the workspace theme preference; used by tests. */
-  readonly theme?: WorkspaceThemePreset;
 }
 
 /** Private marker identifying a board-row drag; mirrors TodayList's own marker. */
@@ -91,36 +82,6 @@ function formatDateHeading(value: string, today: string): string {
 function columnLabel(column: TodoBoardColumn, today: string): string {
   if (column.kind === "inbox") return "Inbox";
   return formatDateHeading(column.date!, today);
-}
-
-function columnQualifier(value: string, today: string): string {
-  if (value === today) return " · Today";
-  if (value === addSqlDateDays(today, 1)) return " · Tomorrow";
-  return "";
-}
-
-function columnDateParts(value: string): { day: string; month: string } {
-  return {
-    day: formatTaskDate(value, { day: "numeric" }),
-    month: formatTaskDate(value, { month: "short" }),
-  };
-}
-
-function columnWeekday(value: string): string {
-  return formatTaskDate(value, { weekday: "short" });
-}
-
-/**
- * Groups date columns into layout tracks. A 7-column week pairs its last two
- * columns into one stacked track: on the current week those are the two days
- * furthest behind Today, which hold completed work only, so the half-height
- * track falls on the week's lightest days.
- */
-function buildTracks(dateColumns: readonly TodoBoardColumn[]): (readonly TodoBoardColumn[])[] {
-  if (dateColumns.length === 7) {
-    return [...dateColumns.slice(0, 5).map((column) => [column] as const), dateColumns.slice(5, 7)];
-  }
-  return dateColumns.map((column) => [column] as const);
 }
 
 const SOURCE_FILTERS = ["All", "Projects", "Classes", "Unassigned"] as const;
@@ -276,10 +237,7 @@ export function TodosBoard({
   onEditTodo,
   onDeleteTodo,
   onRescheduleTodo,
-  theme: themeOverride,
 }: TodosBoardProps) {
-  const { preferences } = useWorkspacePreferences();
-  const theme = themeOverride ?? preferences.theme;
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
   const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
   const [dropColumnKey, setDropColumnKey] = useState<string | null>(null);
@@ -698,81 +656,7 @@ export function TodosBoard({
       </button>
     ) : null;
 
-  const renderDateColumn = (column: TodoBoardColumn, stacked: boolean) => {
-    const label = columnLabel(column, model.today);
-    const headingId = columnHeadingId(column.key);
-    const { day, month } = columnDateParts(column.date!);
-    const weekday = columnWeekday(column.date!);
-    const qualifier = columnQualifier(column.date!, model.today);
-    const isToday = column.date === model.today;
-    const minSlots = stacked ? 4 : 9;
-    const fillers = Math.max(0, minSlots - column.todos.length - 1);
-
-    return (
-      <section
-        className={`todos-board-column todos-board-column--${column.kind}${
-          stacked ? " todos-board-column--stacked" : ""
-        }${isToday ? " todos-board-column--today" : ""}${
-          dropColumnKey === column.key ? " todos-board-column--drop" : ""
-        }`}
-        key={column.key}
-        aria-labelledby={headingId}
-        onDragOver={(event) => handleColumnDragOver(event, column)}
-        onDragLeave={(event) => handleColumnDragLeave(event, column)}
-        onDrop={(event) => handleColumnDrop(event, column)}
-      >
-        <header className="todos-board-column__header">
-          <h2 id={headingId} tabIndex={-1}>
-            <span className="todos-board-column__date">
-              {day} {month}
-            </span>
-            <span className="todos-board-column__weekday">{weekday}</span>
-            <span className="todos-board-sr-only">{qualifier}</span>
-          </h2>
-          <span className="todos-board-sr-only">
-            {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
-          </span>
-        </header>
-
-        <div className="todos-board-column__tasks">
-          {renderCards(column)}
-          {renderAddSlot(column, label)}
-          {Array.from({ length: fillers }).map((_, index) => (
-            <div className="todos-board-slot" aria-hidden="true" key={index} />
-          ))}
-        </div>
-      </section>
-    );
-  };
-
-  const renderLedgerInbox = (column: TodoBoardColumn) => {
-    const label = columnLabel(column, model.today);
-    const headingId = columnHeadingId(column.key);
-
-    return (
-      <section
-        className={`todos-board-inbox${dropColumnKey === column.key ? " todos-board-inbox--drop" : ""}`}
-        key={column.key}
-        aria-labelledby={headingId}
-        onDragOver={(event) => handleColumnDragOver(event, column)}
-        onDragLeave={(event) => handleColumnDragLeave(event, column)}
-        onDrop={(event) => handleColumnDrop(event, column)}
-      >
-        <h2 id={headingId} tabIndex={-1}>
-          {label}
-        </h2>
-        <span className="todos-board-sr-only">
-          {column.todos.length} {column.todos.length === 1 ? "task" : "tasks"}
-        </span>
-        <div className="todos-board-inbox__tasks">
-          {renderCards(column)}
-          {renderAddSlot(column, label)}
-        </div>
-      </section>
-    );
-  };
-
-  const renderClassicColumn = (column: TodoBoardColumn) => {
+  const renderColumn = (column: TodoBoardColumn) => {
     const label = columnLabel(column, model.today);
     const headingId = columnHeadingId(column.key);
 
@@ -805,19 +689,12 @@ export function TodosBoard({
     );
   };
 
-  const dateColumns = model.columns.filter((column) => column.kind === "date");
-  const inboxColumn = model.columns.find((column) => column.kind === "inbox") ?? null;
-  const tracks = buildTracks(dateColumns);
-
   return (
-    <section
-      className={`todos-board-page todos-board-page--${theme}`}
-      aria-labelledby="todos-board-heading"
-    >
+    <section className="todos-board-page" aria-labelledby="todos-board-heading">
       <header className="todos-board-toolbar">
         <div>
           <h1 id="todos-board-heading">Tasks</h1>
-          <p className={theme === "classic" ? "todos-board-week" : "todos-board-range"}>
+          <p className="todos-board-week">
             <span aria-live="polite">{weekRangeLabel(model.visibleWeekMonday)}</span>
             {/* Outside the live region: the controller already announces each
                 reschedule, and the count would repeat it on every write. */}
@@ -889,41 +766,16 @@ export function TodosBoard({
         </p>
       ) : null}
 
-      {theme === "classic" ? (
-        <div
-          className="todos-board-scroll"
-          ref={boardRegionRef}
-          id={boardRegionId}
-          role="region"
-          aria-label="Tasks by date"
-          tabIndex={0}
-        >
-          <div className="todos-board-columns">{model.columns.map(renderClassicColumn)}</div>
-        </div>
-      ) : (
-        <div
-          className="todos-board-scroll"
-          ref={boardRegionRef}
-          id={boardRegionId}
-          role="region"
-          aria-label="Tasks by date"
-          tabIndex={0}
-        >
-          <div
-            className="todos-board-week"
-            key={model.visibleWeekMonday}
-            style={{ "--todos-board-tracks": tracks.length } as CSSProperties}
-          >
-            {tracks.map((track) => (
-              <div className="todos-board-track" key={track.map((column) => column.key).join("-")}>
-                {track.map((column) => renderDateColumn(column, track.length > 1))}
-              </div>
-            ))}
-          </div>
-
-          {inboxColumn ? renderLedgerInbox(inboxColumn) : null}
-        </div>
-      )}
+      <div
+        className="todos-board-scroll"
+        ref={boardRegionRef}
+        id={boardRegionId}
+        role="region"
+        aria-label="Tasks by date"
+        tabIndex={0}
+      >
+        <div className="todos-board-columns">{model.columns.map(renderColumn)}</div>
+      </div>
 
       <p className="todos-board-sr-only" aria-live="polite" aria-atomic="true">
         <span key={announcement.sequence}>
