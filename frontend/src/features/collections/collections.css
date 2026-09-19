@@ -185,7 +185,14 @@
   border: 0;
   background: none;
   color: #ada9a3;
-  font-size: 12px !important;
+}
+/* The size sits on its own rule, prefixed with the page class, so it meets the
+   `font: inherit` reset above on equal specificity and wins on source order. As
+   part of the lone-class rule it lost and needed `!important` instead. Only the
+   size moves: the rest of the shorthand, line height included, still comes from
+   the reset, which is what this page has always drawn. */
+.collection-page .collection-back {
+  font-size: 12px;
 }
 .collection-back .workspace-icon {
   width: 14px;
@@ -289,8 +296,11 @@
   background: none;
   color: #f0efed;
   overflow-wrap: anywhere;
-  font-size: 13px !important;
   line-height: 1.5;
+}
+/* Split out for the same reason as `.collection-back` above. */
+.collection-page .collection-task-text {
+  font-size: 13px;
 }
 .collection-task-text[data-completed="true"] {
   color: #ada9a3;
