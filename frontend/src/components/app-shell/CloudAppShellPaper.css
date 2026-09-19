@@ -295,6 +295,13 @@
   text-underline-offset: 0.2em;
 }
 
+/* The rule above sets `font`, a shorthand, so it resets the weight the
+   completing action carries. Restate it rather than raise the modifier's
+   specificity in `paper.css`, where it would then outrank a page's own size. */
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-action--completing {
+  font-weight: 600;
+}
+
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action .workspace-icon {
   width: var(--icon);
   height: var(--icon);
