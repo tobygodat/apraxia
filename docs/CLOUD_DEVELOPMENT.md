@@ -95,19 +95,22 @@ or broad refactors. A specific failure can also be rerun with
 
 ### One local check, then CI
 
-For code changes, run `verify:quick` once before pushing, or let the optional
-pre-push hook run it, not both. A successful `verify` includes those checks and
-also builds and scans the bundle; when full app checks are needed and the hook is
-enabled, run `npm run build` and `npm run check:bundle` and let the push supply
-`verify:quick`. Documentation-only work needs a consistency check and
-`git diff --check`.
+[AGENTS.md](../AGENTS.md#verification) sets the rule: one `verify:quick` before
+pushing code, by hand or through the hook, never both. What follows is what that
+leaves to CI.
 
-**App checks** and **Database checks** must pass for the commit being released,
-and CI's full `verify` is sufficient app verification for it, so do not repeat the
-identical suite locally just for a release. Changes to source, dependencies,
-environment, or build configuration invalidate earlier results. A passing local
-check replaces neither the required CI statuses nor the authenticated checks that
-data and provider changes need.
+`verify` is `verify:quick` plus the build and the bundle scan. When a change
+needs full app checks and the pre-push hook is enabled, run `npm run build` and
+`npm run check:bundle` yourself and let the push supply `verify:quick`, instead
+of running the shared part twice. Documentation-only work needs a consistency
+check and `git diff --check`.
+
+A local pass is early feedback, not the gate. Any edit to source, dependencies,
+environment, or build configuration invalidates it, and it says nothing about the
+authenticated checks a data or provider change needs. **App checks** and
+**Database checks** on the released commit are what count, and CI's full `verify`
+is sufficient app verification for it, so do not repeat that identical suite
+locally just for a release.
 
 Enable the optional pre-push gate once per clone, provided you do not
 already have a custom hooks path:
@@ -119,13 +122,13 @@ git config --local core.hooksPath .githooks
 For a linked worktree with `extensions.worktreeConfig` already enabled, use
 `git config --worktree core.hooksPath .githooks` to enable it only there.
 
-The hook runs `verify:quick` and rejects the push on failure. Both `verify:quick`
-and `verify` limit Vitest to four workers to reduce contention and timing failures
-on machines with many logical CPUs. A focused `test:watch` remains the edit loop.
-It does not install
-dependencies or start Docker. Preserve/integrate existing custom hooks instead
-of replacing them. Local hooks provide early feedback; CI remains the release
-gate. They can be bypassed and do not prove the final deployed app works.
+The hook runs `verify:quick` and rejects the push on failure. It installs no
+dependencies and starts no Docker. Both `verify:quick` and `verify` limit Vitest
+to four workers, because more workers contend on machines with many logical CPUs
+and produce timing failures. A focused `test:watch` remains the edit loop.
+
+Integrate an existing custom hook rather than replacing it. The hook can be
+bypassed and it never exercises the deployed app, so CI remains the release gate.
 
 For changes affecting database/auth/data contracts (including refactors of them),
 or to reproduce a database CI failure, use disposable local Supabase and run:
@@ -142,11 +145,12 @@ commit it when the schema changed. Keep Supabase running between attempts;
 `npm run db:stop` stops it when finished. All worktrees share this project's
 local container/ports: run database checks from only one checkout at a time.
 
-After a failure, rerun the failing subcommand while fixing it, then complete any
-remaining required checks. Once they pass, broaden or repeat only for changed
-inputs, failures, or unresolved concerns. Do not repeat `npm ci`, start/stop
-Docker, or push just to discover whether a local fix worked. If a check cannot
-run locally, report the missing prerequisite or CI-only difference explicitly.
+After a failure, rerun the failing subcommand while you fix it, then finish the
+remaining required checks. Reinstalling with `npm ci`, restarting Docker, and
+pushing to find out whether a fix worked all cost more than reading the error.
+If a check cannot run here at all — a container without Docker runs none of
+`verify:db`, `db:test`, or `db:types` — name the missing prerequisite or the
+CI-only difference instead of substituting a check that proves something else.
 
 ## Windows Git path support
 

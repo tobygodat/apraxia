@@ -14,7 +14,8 @@ where new code goes. Two rules matter everywhere:
   together. `frontend/src/components/` is only for UI used by more than one
   feature.
 - `frontend/src/pages/`, `components/{Layout,Login,ResourcePage}.tsx`,
-  `api/client.ts`, and `src/orbitos/` are preserved legacy. Do not extend them.
+  `api/client.ts`, and `src/orbitos/` are preserved legacy: kept so the old
+  runtime stays recoverable, not maintained. Read them, do not extend them.
 
 ## Naming
 
@@ -34,12 +35,15 @@ Database identifiers are `snake_case`; browser contracts in
 two meet, so mapping code belongs there and nowhere else.
 
 The product says "Tasks" in the interface and `todos` in routes, code, and
-tables. Do not rename either half in passing.
+tables. The split is deliberate and neither half gets renamed in passing:
+`todos` reaches into routes, RPC names, policies, and applied migrations, and
+hosted migrations are forward-only.
 
 ## CSS
 
 - Plain CSS, one stylesheet per feature or component, imported by the component
-  that needs it. No CSS modules, no preprocessor, no utility framework.
+  that needs it. No CSS modules, no preprocessor, no utility framework, so a
+  stylesheet needs no build step to read or to understand.
 - Global tokens and the legacy shell live in `frontend/src/index.css`. Local
   design tokens are scoped custom properties declared on the component's root
   class (for example `--cloud-shell-bg` in
@@ -48,15 +52,17 @@ tables. Do not rename either half in passing.
   `block`, `block__element`, `block--modifier`, as in `calendar-event`,
   `calendar-event__location`, `calendar-event--all-day`. Keep the prefix unique
   per feature so stylesheets never collide.
-- Keep selectors flat. Do not add element or descendant selectors that reach
-  into another feature's markup.
+- Keep selectors flat. A selector that reaches into another feature's markup
+  breaks the moment that feature restructures its elements, and the failure
+  surfaces in a file nobody edited.
 - When two sheets style the same element, the winning rule must win on
   specificity, not on import order. Stylesheet order follows the module graph
   and changes whenever an import moves (a header margin once depended on
   `HomeHeader` being imported before the shell).
-- Visual decisions, palette, and typography are documented in
-  [DESIGN.md](../DESIGN.md). Reuse the existing tokens rather than adding
-  new literals.
+- Visual decisions, palette, typography, and the theme sheets — `paper.css`
+  and the per-page sheets scoped with `[data-theme^="paper"]` — are documented
+  in [DESIGN.md](../DESIGN.md). Reuse the existing tokens rather than adding new
+  literals; a literal is invisible to the next theme.
 
 ## Error copy
 
