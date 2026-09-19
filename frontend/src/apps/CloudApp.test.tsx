@@ -89,20 +89,28 @@ describe("CloudApp Google sign-in", () => {
         <ConfiguredCloudApp client={fake.client} googleSignInPort={{ start }} />
       </BrowserRouter>,
     );
-    const button = await screen.findByRole("button", { name: "Continue with Google" });
+    await screen.findByRole("button", { name: "Continue with Google" });
     act(() => {
+      const button = screen.getByRole("button", { name: "Continue with Google" });
       for (let index = 0; index < 10; index += 1) fireEvent.click(button);
     });
     expect(start).toHaveBeenCalledTimes(1);
-    expect(button.hasAttribute("disabled")).toBe(true);
-    expect(button.getAttribute("aria-busy")).toBe("true");
-    expect(button.getAttribute("aria-describedby")).toBe("sign-in-progress");
+    // Read the control back from the screen rather than holding the node found
+    // before the click. The label changes with the status, so a held reference
+    // survives a rerender but not a remount, and this line has failed under a
+    // loaded parallel run with the call count on the line above still at one.
+    const pending = screen.getByRole("button", { name: "Opening Google…" });
+    expect(pending.hasAttribute("disabled")).toBe(true);
+    expect(pending.getAttribute("aria-busy")).toBe("true");
+    expect(pending.getAttribute("aria-describedby")).toBe("sign-in-progress");
     expect(screen.getByRole("status").textContent).toBe("Opening Google to sign in securely.");
     await act(async () => {
       result.resolve();
       await result.promise;
     });
-    expect(button.hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Opening Google…" }).hasAttribute("disabled")).toBe(
+      true,
+    );
   });
 
   it("shows a sanitized recoverable failure and allows another attempt", async () => {

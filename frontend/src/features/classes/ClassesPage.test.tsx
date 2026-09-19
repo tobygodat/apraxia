@@ -369,7 +369,10 @@ it("leaves an unfinished upload out of the class header's note count", async () 
     </MemoryRouter>,
   );
   expect(await screen.findByText("Upload incomplete")).toBeTruthy();
-  expect(screen.getByText("5 open · 1 note")).toBeTruthy();
+  // The header count and the note list resolve from different promises, so the
+  // list arriving does not mean the count has. Awaiting the list and then
+  // reading the count has failed under a loaded parallel run.
+  expect(await screen.findByText("5 open · 1 note")).toBeTruthy();
 });
 it("re-dates the class list when local midnight passes with the page still open", async () => {
   const data = createClassPersistenceFixture();
