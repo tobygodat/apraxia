@@ -251,7 +251,11 @@
   width: 18px;
   height: 18px;
   flex: none;
+  /* The unscoped classic `input` rule in `index.css` sets `flex`, `margin` and
+     `padding`. With `border-box` its 9px/12px padding sets a floor under the
+     box, so an 18px square renders 26x20 until the padding is cleared too. */
   margin: 0;
+  padding: 0;
   border: 1px solid var(--outline);
   background: var(--ground-raised);
   cursor: pointer;
