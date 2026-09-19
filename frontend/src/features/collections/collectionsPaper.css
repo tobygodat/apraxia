@@ -131,6 +131,7 @@
 /* `.paper-nav__item` carries the green rule that means "here"; only the case
    and the row's own padding are the page's business. */
 [data-theme^="paper"] .collection-page .collection-filter__word {
+  border-radius: 0;
   padding: 0 0 2px;
   font: var(--small);
   text-transform: lowercase;
@@ -159,6 +160,10 @@
   align-items: flex-start;
   gap: var(--space-sm);
   padding: 0;
+  /* Classic rounds both of these to 8px. Nothing is drawn on them at rest, so
+     it only shows when a focus ring follows the radius and draws a rounded
+     rectangle where every other focused thing in Paper draws a square one. */
+  border-radius: 0;
   color: var(--text);
 }
 

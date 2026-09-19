@@ -130,7 +130,6 @@
 }
 
 [data-theme^="paper"] .todos-board-nav button:hover:not(:disabled),
-[data-theme^="paper"] .todos-board-error button:hover,
 [data-theme^="paper"] .todos-board-card__actions button:hover:not(:disabled) {
   border-color: transparent;
   color: var(--text);

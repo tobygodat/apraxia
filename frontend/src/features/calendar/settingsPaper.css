@@ -93,8 +93,12 @@
   margin-top: calc((1.6em - var(--icon)) / 2);
 }
 
+/* A preset's name is an interface word, as `SettingsPage.tsx` says where the
+   names are written. The calendar names below are the account's own and keep
+   their case. */
 [data-theme^="paper"] .calendar-settings .settings-choice__name {
   font: var(--body);
+  text-transform: lowercase;
 }
 
 [data-theme^="paper"] .calendar-settings .settings-choice__note {
