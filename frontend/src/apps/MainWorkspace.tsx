@@ -37,6 +37,7 @@ import type {
   CollectionRecord,
   CollectionService,
 } from "../features/collections/collectionService";
+import type { CareerService } from "../features/career/careerService";
 import type { DriveService } from "../features/classes/driveService";
 import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
@@ -105,12 +106,16 @@ const collectionChunk = preloadable<
 >(() =>
   import("../features/collections/CollectionPage").then((m) => ({ default: m.CollectionPage })),
 );
+const careerChunk = preloadable<
+  Parameters<(typeof import("../features/career/CareerPage"))["CareerPage"]>[0]
+>(() => import("../features/career/CareerPage").then((m) => ({ default: m.CareerPage })));
 
 const HomePage = homeChunk.Component;
 const SettingsPage = settingsChunk.Component;
 const TodosWorkspaceContent = todosChunk.Component;
 const ClassesPage = classesChunk.Component;
 const CollectionPage = collectionChunk.Component;
+const CareerPage = careerChunk.Component;
 
 /** Warms the route chunks so navigation doesn't wait on network once data is cached. */
 export function preloadWorkspaceChunks(): Promise<void> {
@@ -120,6 +125,7 @@ export function preloadWorkspaceChunks(): Promise<void> {
     todosChunk.preload(),
     classesChunk.preload(),
     collectionChunk.preload(),
+    careerChunk.preload(),
   ]).then(() => undefined);
 }
 
@@ -134,9 +140,11 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
           ? collectionChunk
           : pathname.startsWith("/classes")
             ? classesChunk
-            : pathname.startsWith("/settings")
-              ? settingsChunk
-              : undefined;
+            : pathname.startsWith("/career")
+              ? careerChunk
+              : pathname.startsWith("/settings")
+                ? settingsChunk
+                : undefined;
   return chunk?.preload();
 }
 
@@ -158,6 +166,7 @@ export interface MainWorkspaceProps {
   todoService: TodoService;
   collectionService: CollectionService;
   calendarService: CalendarService;
+  careerService: CareerService;
   driveService?: DriveService;
   workspaceData: WorkspaceData;
   /** Shared session read cache; the store creates a private one when omitted. */
@@ -248,6 +257,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="projects" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="projects/:id" element={<CollectionRoute {...props} kind="project" />} />
             <Route path="ideas" element={<CollectionRoute {...props} kind="idea" />} />
+            <Route path="career" element={<CareerRoute {...props} />} />
             <Route path="classes" element={<ClassesRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
             <Route path="settings" element={<SettingsRoute {...props} />} />
@@ -355,6 +365,25 @@ function SettingsRoute(props: MainWorkspaceProps) {
       profile={profile}
       onSignOut={props.onSignOut}
       onSaveTimezone={saveTimezone}
+    />
+  );
+}
+
+/**
+ * The career table. It needs today in the profile's timezone to say how late a
+ * round is, so it waits for the profile rather than guessing at the device's.
+ */
+function CareerRoute(props: MainWorkspaceProps) {
+  const { profile } = useWorkspace();
+  const navigate = useNavigate();
+  if (!profile) return <ProfilePlaceholder title="Career" />;
+  return (
+    <CareerPage
+      key={props.identity.userId}
+      service={props.careerService}
+      userId={props.identity.userId}
+      today={localToday(profile.timezone)}
+      onOpenApplication={(id) => navigate(`/career/${encodeURIComponent(id)}`)}
     />
   );
 }
