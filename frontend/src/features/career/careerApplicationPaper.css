@@ -34,38 +34,6 @@
   cursor: default;
 }
 
-/* The page frame's `.workspace-page button` rule carries an attribute, a class
-   and an element, so it outranks `.paper-action`'s own modifiers and would hand
-   every quiet and destructive word the default green underline. Both are
-   restated inside the page, one class heavier, rather than with `!important`. */
-[data-theme^="paper"] .career-app .paper-action--quiet {
-  color: var(--muted);
-  font: var(--small);
-  text-decoration: none;
-}
-
-[data-theme^="paper"] .career-app .paper-action--quiet:hover:not(:disabled) {
-  color: var(--accent);
-}
-
-/* A prep row's due date is both a quiet word and a row's meta, because reaching
-   for it opens a date field. The restatement above would hand it `small` type
-   and the muted colour whatever the date said, losing the warning on a date
-   that has gone past, so the meta's own type and its late colour are restated
-   heavier again. Hover still answers, and carries more weight than either. */
-[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta {
-  font: var(--fine);
-  font-variant-numeric: tabular-nums;
-}
-
-[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta--late {
-  color: var(--warning);
-}
-
-[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta:hover:not(:disabled) {
-  color: var(--accent);
-}
-
 /* `remove` on a row is quiet at rest and `danger` under the pointer. A page of
    twenty rows with a red word on every one of them reads as a warning about
    itself, and none of these removals is the destructive one: the application is,
@@ -73,19 +41,6 @@
 [data-theme^="paper"] .career-app .career-app-row__remove:hover:not(:disabled),
 [data-theme^="paper"] .career-app .career-app-row__remove:focus-visible {
   color: var(--danger);
-}
-
-[data-theme^="paper"] .career-app .paper-action--danger,
-[data-theme^="paper"] .career-app .paper-action--danger:hover:not(:disabled) {
-  color: var(--danger);
-  font: var(--small);
-  text-decoration: underline 1px var(--danger);
-  text-underline-offset: 0.2em;
-}
-
-[data-theme^="paper"] .career-app .paper-action:disabled {
-  color: var(--faint);
-  text-decoration: none;
 }
 
 /* A field is the boxed primitive; it needs the width its column gives it. */
@@ -231,16 +186,15 @@
 }
 
 /* Dates line up in a column of their own, so a row is read across rather than
-   hunted for. Wide enough for the longest of them, `sep 22 · in 3 days`. */
+   hunted for. Wide enough for the longest of them, `sep 22 · in 3 days`.
+ *
+ * The type is the `.paper-row__meta` primitive's, which every one of these also
+ * carries. Restating it here as `font: var(--fine)` would be worse than
+ * redundant: `font` is a shorthand, so it resets the `font-variant-numeric`
+ * the primitive sets on the next line, and the dates lose their tabular
+ * figures and stop lining up — which is the one thing this column is for. */
 [data-theme^="paper"] .career-app .career-app-row__when {
   width: 17ch;
-  font: var(--fine);
-}
-
-/* A file says more than a date does — its kind, its size and when it arrived —
-   so it takes the width it needs rather than a column's. */
-[data-theme^="paper"] .career-app .career-app-row__meta-wide {
-  font: var(--fine);
 }
 
 /* A date field inside a row is the row's own metadata: it reads as the date it
