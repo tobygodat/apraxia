@@ -154,10 +154,18 @@
   color: var(--muted);
 }
 
-/* An action is a word with a green rule under it, not a button. */
+/* An action is a word with a green rule under it, not a button.
+ *
+ * The box is cleared here rather than by whichever sheet the word happens to
+ * sit in. `index.css` gives every button a radius and `workspace.css` gives one
+ * inside a page a 40px floor; neither is named by `padding` or `border`, so a
+ * word that cleared only those still reserved a button's height and drew its
+ * focus ring on a rounded rectangle. */
 [data-theme^="paper"] .paper-action {
+  min-height: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
   font: var(--small);
   color: var(--text);
