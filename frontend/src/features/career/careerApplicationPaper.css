@@ -48,6 +48,24 @@
   color: var(--accent);
 }
 
+/* A prep row's due date is both a quiet word and a row's meta, because reaching
+   for it opens a date field. The restatement above would hand it `small` type
+   and the muted colour whatever the date said, losing the warning on a date
+   that has gone past, so the meta's own type and its late colour are restated
+   heavier again. Hover still answers, and carries more weight than either. */
+[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta {
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta--late {
+  color: var(--warning);
+}
+
+[data-theme^="paper"] .career-app .paper-action--quiet.paper-row__meta:hover:not(:disabled) {
+  color: var(--accent);
+}
+
 /* `remove` on a row is quiet at rest and `danger` under the pointer. A page of
    twenty rows with a red word on every one of them reads as a warning about
    itself, and none of these removals is the destructive one: the application is,

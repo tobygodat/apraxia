@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import { hasServiceErrorCode } from "../../lib/serviceError";
 import { useLocalToday } from "../todos/useLocalToday";
 import { CareerPrepTab } from "./CareerPrepTab";
 import { CareerResourcesTab } from "./CareerResourcesTab";
@@ -56,15 +57,22 @@ export function CareerApplicationPage({
     setApplication(null);
     setMissing(false);
     void run("Loading…", async (signal) => {
-      const [row, rounds] = await Promise.all([
-        service.getApplication(userId, applicationId, signal),
-        service.listSteps(userId, applicationId, signal),
-      ]);
-      if (!signal.aborted) {
-        setApplication(row);
-        setSteps(rounds);
+      try {
+        const [row, rounds] = await Promise.all([
+          service.getApplication(userId, applicationId, signal),
+          service.listSteps(userId, applicationId, signal),
+        ]);
+        if (!signal.aborted) {
+          setApplication(row);
+          setSteps(rounds);
+        }
+      } catch (cause) {
+        // An application that has been deleted is not a failure to report: the
+        // page says it is gone and leaves the error line for the rest.
+        if (!hasServiceErrorCode(cause, "not_found")) throw cause;
+        if (!signal.aborted) setMissing(true);
       }
-    }).catch(() => setMissing(true));
+    });
     // `run` is stable; the application being read is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service, userId, applicationId]);

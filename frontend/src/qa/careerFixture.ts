@@ -12,6 +12,7 @@
  */
 import { addSqlDateDays } from "../features/todos/dateDomain";
 import { nextStepOf } from "../features/career/careerOrdering";
+import { ServiceError } from "../lib/serviceError";
 import type {
   CareerApplication,
   CareerApplicationRow,
@@ -382,7 +383,9 @@ export function createFixtureCareer({
 
   const find = (applicationId: string): CareerApplication => {
     const application = applications.find((row) => row.id === applicationId);
-    if (!application) throw new Error("That application is no longer here.");
+    // The hosted service reports a row that is not there with this code, and
+    // the page reads the code rather than the copy, so the fixture uses it too.
+    if (!application) throw new ServiceError("not_found", "Couldn’t load this application.");
     return application;
   };
 
