@@ -41,6 +41,7 @@ import { calendarEventStyle } from "./calendarColors";
 import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
 import "./homePaper.css";
+import "./weekPaper.css";
 
 const VISIBLE_HOURS = 15;
 /** Below this the hour rows stop being readable, so the grid scrolls instead. */
