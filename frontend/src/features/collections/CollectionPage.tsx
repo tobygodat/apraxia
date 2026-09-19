@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DeleteUndoToken, Idea, Project, Todo } from "../../types/domain";
 import { useColdLoad } from "../../apps/coldLoad";
 import { useWorkspace } from "../../apps/workspaceStore";
+import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { peekRead } from "../../apps/navigationCache";
 import { TodoComposerDialog, TodoEditDialog } from "../todos/TodoFormDialog";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -17,6 +18,7 @@ import {
   type ProjectStatusFilter,
 } from "./collectionService";
 import "./collections.css";
+import "./collectionsPaper.css";
 interface Props {
   kind: CollectionKind;
   service: CollectionService;
@@ -45,6 +47,10 @@ const reducedMotion = () =>
 export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
+  const { preferences } = useWorkspacePreferences();
+  // Paper draws several of this page's controls as words rather than icons,
+  // and states its filter as a row of words, so the markup forks on the preset.
+  const paper = preferences.theme.startsWith("paper");
   const isDetail = kind === "project" && Boolean(recordId);
   const [seed] = useState(() => {
     const peekedProjectRaw = isDetail ? peekRead(service, "getProject", recordId!) : undefined;
@@ -241,7 +247,7 @@ export function CollectionPage(props: Props) {
     }
   }
   async function settleAndComplete(task: Todo) {
-    if (task.completed || reducedMotion()) {
+    if (task.completed || paper || reducedMotion()) {
       await complete(task);
       return;
     }
@@ -290,8 +296,16 @@ export function CollectionPage(props: Props) {
     // Active is the ordinary state, so only the other three are worth a badge.
     const status =
       k === "project" && (r as Project).status !== "active" ? (r as Project).status : null;
+    const body = (
+      <>
+        <strong>{titleOf(k, r)}</strong>
+        {status && <span className="collection-status">{PROJECT_STATUS_LABELS[status]}</span>}
+        {preview && <span className="collection-preview">{preview}</span>}
+        {metadata && <span className="collection-meta">{metadata}</span>}
+      </>
+    );
     return (
-      <li key={r.id} className="collection-row">
+      <li key={r.id} className="collection-row paper-row">
         <button
           className="collection-open"
           onClick={() =>
@@ -308,19 +322,23 @@ export function CollectionPage(props: Props) {
               }
             : {})}
         >
-          <strong>{titleOf(k, r)}</strong>
-          {status && <span className="collection-status">{PROJECT_STATUS_LABELS[status]}</span>}
-          {preview && <span className="collection-preview">{preview}</span>}
-          {metadata && <span className="collection-meta">{metadata}</span>}
+          {/* Paper sets the row's action word beside its name, so the two need
+              a box between them; classic keeps the children it always had. */}
+          {paper ? <span className="collection-open__body">{body}</span> : body}
+          {paper && (
+            <span className="paper-action collection-open__word">
+              {k === "project" ? "open" : "edit"}
+            </span>
+          )}
         </button>
         <button
-          className="collection-delete"
+          className="collection-delete paper-action paper-action--danger"
           disabled={busy}
           title="Delete"
           aria-label={`Delete ${titleOf(k, r)}`}
           onClick={() => void remove(k, r.id)}
         >
-          <WorkspaceIcon name="trash" />
+          {paper ? "delete" : <WorkspaceIcon name="trash" />}
         </button>
       </li>
     );
@@ -328,13 +346,14 @@ export function CollectionPage(props: Props) {
   function renderTask(task: Todo) {
     return (
       <div
-        className="collection-task"
+        className="collection-task paper-row"
         key={task.id}
         data-settling={settling === task.id || undefined}
       >
         <label className="collection-task-check">
           <input
             type="checkbox"
+            className="paper-check"
             checked={task.completed || settling === task.id}
             disabled={busy}
             aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.text}`}
@@ -360,21 +379,21 @@ export function CollectionPage(props: Props) {
           )}
         </button>
         <button
-          className="collection-row-action"
+          className="collection-row-action paper-action"
           title="Edit task"
           aria-label={`Edit ${task.text}`}
           onClick={() => setEditingTask(task)}
         >
-          <WorkspaceIcon name="edit" />
+          {paper ? "edit" : <WorkspaceIcon name="edit" />}
         </button>
         <button
-          className="collection-delete"
+          className="collection-delete paper-action paper-action--danger"
           disabled={busy}
           title="Delete task"
           aria-label={`Delete ${task.text}`}
           onClick={() => void remove("todo", task.id)}
         >
-          <WorkspaceIcon name="trash" />
+          {paper ? "delete" : <WorkspaceIcon name="trash" />}
         </button>
       </div>
     );
@@ -393,7 +412,7 @@ export function CollectionPage(props: Props) {
       className={`collection-page${detail && kind === "project" ? " collection-page--project" : ""}`}
     >
       {detail && (
-        <button className="collection-back" onClick={onBack}>
+        <button className="collection-back paper-action paper-action--quiet" onClick={onBack}>
           <WorkspaceIcon name="left" />
           Back to Projects
         </button>
@@ -416,7 +435,7 @@ export function CollectionPage(props: Props) {
         </div>
         {detail ? (
           <button
-            className="workspace-page-header__action"
+            className="workspace-page-header__action paper-action paper-action--completing"
             disabled={!project}
             onClick={() => project && setEditor({ kind: "project", record: project })}
           >
@@ -424,7 +443,10 @@ export function CollectionPage(props: Props) {
             Edit project
           </button>
         ) : (
-          <button className="workspace-page-header__action" onClick={() => setEditor({ kind })}>
+          <button
+            className="workspace-page-header__action paper-action paper-action--completing"
+            onClick={() => setEditor({ kind })}
+          >
             <WorkspaceIcon name="plus" />
             Add {kind}
           </button>
@@ -435,7 +457,7 @@ export function CollectionPage(props: Props) {
           {notice}
           {undo && (
             <button
-              className="collection-notice__undo"
+              className="collection-notice__undo paper-action"
               disabled={busy}
               onClick={() => void restore()}
             >
@@ -459,13 +481,16 @@ export function CollectionPage(props: Props) {
         <>
           <section className="collection-section">
             <header>
-              <h2>
+              <h2 className="paper-heading">
                 Tasks{" "}
                 {!coldDetail && (
                   <span className="collection-section__count">{openTasks.length}</span>
                 )}
               </h2>
-              <button className="collection-section__add" onClick={() => setComposer(true)}>
+              <button
+                className="collection-section__add paper-action paper-action--completing"
+                onClick={() => setComposer(true)}
+              >
                 <WorkspaceIcon name="plus" />
                 Add task
               </button>
@@ -480,7 +505,7 @@ export function CollectionPage(props: Props) {
               <div className="collection-completed">
                 <button
                   type="button"
-                  className="collection-completed__toggle"
+                  className="collection-completed__toggle paper-action"
                   aria-expanded={showCompleted}
                   aria-controls="collection-completed-tasks"
                   onClick={() => setShowCompleted((v) => !v)}
@@ -498,7 +523,7 @@ export function CollectionPage(props: Props) {
             )}
             {moreTasks && (
               <button
-                className="collection-button"
+                className="collection-button paper-action"
                 disabled={loading}
                 onClick={() => setTaskLimit((v) => v + 50)}
               >
@@ -508,12 +533,12 @@ export function CollectionPage(props: Props) {
           </section>
           <section className="collection-section">
             <header>
-              <h2>
+              <h2 className="paper-heading">
                 Ideas{" "}
                 {!coldDetail && <span className="collection-section__count">{ideas.length}</span>}
               </h2>
               <button
-                className="collection-section__add"
+                className="collection-section__add paper-action paper-action--completing"
                 onClick={() => recordId && setEditor({ kind: "idea", projectId: recordId })}
               >
                 <WorkspaceIcon name="plus" />
@@ -530,7 +555,7 @@ export function CollectionPage(props: Props) {
             )}
             {moreIdeas && (
               <button
-                className="collection-button"
+                className="collection-button paper-action"
                 disabled={loading}
                 onClick={() => setIdeaLimit((v) => v + 50)}
               >
@@ -541,25 +566,57 @@ export function CollectionPage(props: Props) {
         </>
       ) : (
         <>
-          {kind === "project" && (
-            <div className="collection-filter">
-              <label htmlFor="collection-status-filter">Status</label>
-              <select
-                id="collection-status-filter"
-                value={statusFilter}
-                onChange={(e) => {
-                  setLimit(50);
-                  setStatusFilter(e.target.value as ProjectStatusFilter | "");
-                }}
-              >
-                {PROJECT_FILTERS.map(([value, label]) => (
-                  <option key={value || "current"} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {kind === "project" &&
+            (paper ? (
+              <div className="collection-filter">
+                <span className="collection-filter__label" id="collection-status-filter-label">
+                  Status
+                </span>
+                <div
+                  className="collection-filter__words"
+                  role="group"
+                  aria-labelledby="collection-status-filter-label"
+                >
+                  {PROJECT_FILTERS.map(([value, label]) => {
+                    const current = statusFilter === value;
+                    return (
+                      <button
+                        key={value || "current"}
+                        type="button"
+                        className={`collection-filter__word paper-nav__item${
+                          current ? " paper-nav__item--current" : ""
+                        }`}
+                        aria-pressed={current}
+                        onClick={() => {
+                          setLimit(50);
+                          setStatusFilter(value as ProjectStatusFilter | "");
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="collection-filter">
+                <label htmlFor="collection-status-filter">Status</label>
+                <select
+                  id="collection-status-filter"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setLimit(50);
+                    setStatusFilter(e.target.value as ProjectStatusFilter | "");
+                  }}
+                >
+                  {PROJECT_FILTERS.map(([value, label]) => (
+                    <option key={value || "current"} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
           <ul className="collection-list">{rows.map((r) => renderRow(kind, r))}</ul>
           {!loading && !error && !rows.length && (
             <div className="collection-empty">
@@ -568,14 +625,17 @@ export function CollectionPage(props: Props) {
                   ? "No projects in this view."
                   : "No ideas yet. Keep your first thought here."}
               </p>
-              <button className="collection-button" onClick={() => setEditor({ kind })}>
+              <button
+                className="collection-button paper-action"
+                onClick={() => setEditor({ kind })}
+              >
                 Add {kind}
               </button>
             </div>
           )}
           {more && (
             <button
-              className="collection-button"
+              className="collection-button paper-action"
               disabled={loading}
               onClick={() => setLimit((v) => v + 50)}
             >

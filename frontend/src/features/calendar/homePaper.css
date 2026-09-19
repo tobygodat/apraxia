@@ -1,0 +1,775 @@
+/* Home in the Paper theme: the page header, the week's chrome, and the tasks
+ * column beside it. The classic sheet (`calendar.css`, `TodayPanel.css`) is
+ * never edited, so every rule here is scoped `[data-theme^="paper"]` and
+ * classic stays pixel-identical. Tokens and primitives come from `paper.css`;
+ * DESIGN.md is the authority for every value.
+ *
+ * The week grid itself (`.week-*`, `.calendar-event`, the event preview and
+ * editor) belongs to the calendar thread and is deliberately untouched here.
+ */
+
+/* The date line is Paper-only markup. Classic never showed it and must not
+ * start now, so it is hidden by default and revealed by the Paper rule below.
+ * This is the one unscoped rule in the file, and it styles nothing classic has.
+ */
+.home-header__date {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- the page */
+
+[data-theme^="paper"] .home-page {
+  padding: var(--space-lg) var(--inset) var(--space-bottom);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+}
+
+/* Space separates the header from the work; classic ruled it and Paper does not. */
+[data-theme^="paper"] .home-workspace {
+  gap: var(--space-lg);
+  border-top: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+/* One hairline between the two columns, carried by the tasks column so the
+ * week can run to the edge of its own gutter. */
+[data-theme^="paper"] .calendar-panel {
+  border-right: 0;
+  padding-right: 0;
+}
+
+[data-theme^="paper"] .home-workspace .today-panel {
+  padding-left: var(--space-lg);
+  border-left: 1px solid var(--hairline);
+}
+
+/* ------------------------------------------------------------- the header */
+
+[data-theme^="paper"] .home-header__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 var(--space-24);
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+/* Without a cover the header is the whole top of the page, so it keeps its
+ * own space above the work rather than leaning on the workspace's gap. */
+[data-theme^="paper"] .home-header:not(.home-header--cover) .home-header__line {
+  padding-bottom: var(--space-24);
+}
+
+[data-theme^="paper"] .home-header h1:not(.cloud-shell__sr-only) {
+  grid-area: 1 / 1;
+  margin: 0;
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  overflow-wrap: anywhere;
+}
+
+[data-theme^="paper"] .home-header__date {
+  grid-area: 2 / 1;
+  display: block;
+  margin: var(--space-xs) 0 0;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-header__actions {
+  grid-area: 2 / 2;
+  gap: var(--space-24);
+  margin-left: 0;
+}
+
+[data-theme^="paper"] .home-header__customize {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .home-header__customize:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+[data-theme^="paper"] .home-header__customize:disabled {
+  color: var(--faint);
+  opacity: 1;
+  cursor: default;
+}
+
+/* A cover is a picture with its title ruled beneath it, not printed over it:
+ * the line sits inside the frame as an opaque band so the collapsing-cover
+ * geometry keeps measuring one element, and nothing is a gradient. */
+[data-theme^="paper"] .home-header--cover .home-header__frame {
+  border-radius: 0;
+  background: var(--ground);
+}
+
+/* Over a cover the band reads as one caption line, so the picture keeps its
+ * height: the name, the date and the page's actions share a baseline. */
+[data-theme^="paper"] .home-header--cover .home-header__line {
+  inset: auto 0 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: var(--space-8) 0 var(--space-md);
+  border-top: 1px solid var(--hairline);
+  background: var(--ground);
+  align-items: baseline;
+}
+
+[data-theme^="paper"] .home-header--cover h1:not(.cloud-shell__sr-only) {
+  grid-area: 1 / 1;
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme^="paper"] .home-header--cover .home-header__date {
+  grid-area: 1 / 2;
+  margin: 0;
+}
+
+[data-theme^="paper"] .home-header--cover .home-header__actions {
+  grid-area: 1 / 3;
+}
+
+[data-theme^="paper"] .home-header--cover .home-header__customize {
+  color: var(--muted);
+  background: transparent;
+}
+
+[data-theme^="paper"] .home-header--cover .home-header__customize:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+[data-theme^="paper"] .home-header__cover {
+  border-radius: 0;
+}
+
+[data-theme^="paper"] .home-page--cover {
+  scrollbar-color: var(--hairline-strong) var(--ground);
+}
+
+[data-theme^="paper"] .home-header__error {
+  margin: 0 0 var(--space-8);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .home-header__error button {
+  font: var(--small);
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+/* ------------------------------------------------- the week's own chrome */
+
+[data-theme^="paper"] .calendar-toolbar {
+  gap: var(--space-sm) var(--space-24);
+  padding: 0 0 var(--space-md);
+  align-items: baseline;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-toolbar-title {
+  margin: 0;
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-toolbar-title::before {
+  content: "// ";
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-toolbar-year {
+  color: inherit;
+  font-weight: inherit;
+}
+
+[data-theme^="paper"] .calendar-toolbar-month {
+  gap: var(--space-sm);
+}
+
+[data-theme^="paper"] .calendar-toolbar-actions {
+  gap: var(--space-24);
+}
+
+/* Actions are words underlined in green, not buttons. */
+[data-theme^="paper"] .calendar-toolbar button,
+[data-theme^="paper"] .calendar-message button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .calendar-toolbar button:hover:not(:disabled),
+[data-theme^="paper"] .calendar-message button:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-toolbar button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+  cursor: default;
+}
+
+/* The chevrons that step a week are the one icon allowed to stand alone. */
+[data-theme^="paper"] .calendar-toolbar .calendar-icon-button {
+  width: auto;
+  height: auto;
+  flex-basis: auto;
+  padding: 0;
+  color: var(--muted);
+  text-decoration: none;
+  background-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-icon-button:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-icon-button .workspace-icon,
+[data-theme^="paper"] .calendar-add .workspace-icon {
+  width: var(--icon);
+  height: var(--icon);
+  stroke-width: 1.5;
+}
+
+/* Refresh carries its word beside its icon; only the chevrons go bare. */
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh {
+  gap: var(--space-8);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh::after {
+  content: "refresh";
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-add {
+  gap: var(--space-8);
+  padding-inline: 0;
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-add:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-message {
+  padding: var(--space-24) 0;
+  font: var(--body);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .calendar-message h3 {
+  margin: 0 0 var(--space-8);
+  font: var(--heading);
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .calendar-message h3::before {
+  content: "// ";
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-panel a,
+[data-theme^="paper"] .calendar-empty a {
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .calendar-empty,
+[data-theme^="paper"] .calendar-warning {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .calendar-warning p {
+  margin: var(--space-xs) 0;
+}
+
+[data-theme^="paper"] .calendar-footer {
+  gap: var(--space-8);
+  padding-top: var(--space-sm);
+  margin-top: var(--space-sm);
+  border-top: 1px solid var(--hairline);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .calendar-footer .workspace-icon {
+  width: 13px;
+  height: 13px;
+  stroke-width: 1.5;
+}
+
+/* ------------------------------------------------------ the tasks column */
+
+/* The Today list's own sheet reads these; redefining them here re-themes the
+ * base rules without editing the file that owns them. */
+[data-theme^="paper"] .home-workspace .today-list {
+  --today-list-line: var(--hairline);
+  --today-list-line-strong: var(--hairline-strong);
+  --today-list-text: var(--text);
+  --today-list-muted: var(--muted);
+  --today-list-faint: var(--faint);
+  --today-list-overdue: var(--warning);
+  background: transparent;
+  font: var(--body);
+}
+
+[data-theme^="paper"] .home-workspace .today-list ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__header {
+  gap: var(--space-24);
+  padding: 0;
+  border-bottom: 0;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__header h2 {
+  margin: 0;
+  font: var(--heading);
+  letter-spacing: normal;
+  color: var(--text);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__header h2::before {
+  content: "// ";
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__header p {
+  margin-top: var(--space-xs);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__header:has(.today-list__day-switch) {
+  gap: var(--space-sm) var(--space-24);
+  padding-bottom: 0;
+}
+
+/* Words, not buttons: the plus sign goes and "add task" carries itself. */
+[data-theme^="paper"] .home-workspace .today-list__add {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__add:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__add svg {
+  display: none;
+}
+
+/* today / tomorrow: the one you are on is marked by a green rule. */
+[data-theme^="paper"] .home-workspace .today-list__day-switch {
+  gap: var(--space-24);
+  border-bottom: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__day-switch button {
+  min-height: 0;
+  padding: var(--space-xs) 0 var(--space-8);
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  font: var(--body);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__day-switch button[aria-pressed="true"] {
+  background: transparent;
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__day-switch button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__day-switch button:disabled {
+  color: var(--faint);
+  opacity: 1;
+  cursor: default;
+}
+
+/* A row is a rule and the space above it; hovering moves nothing. */
+[data-theme^="paper"] .home-workspace .today-list-item article {
+  grid-template-columns: 12px 18px minmax(0, 1fr) auto;
+  gap: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm) 0;
+  transition: none;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item article:hover,
+[data-theme^="paper"] .home-workspace .today-list-item article:focus-within {
+  background: transparent;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__content > p {
+  margin: 0;
+  font: var(--body);
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__meta {
+  display: block;
+  margin-top: 0;
+  font: var(--fine);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* One line of metadata, its parts joined by a middle dot rather than gaps. */
+[data-theme^="paper"] .home-workspace .today-list-item__meta > * + *::before {
+  content: " · ";
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__drag {
+  width: 12px;
+  color: var(--faint);
+  opacity: 1;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__check {
+  width: 18px;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__check > span[aria-hidden="true"] {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+  background: var(--ground-raised);
+}
+
+[data-theme^="paper"]
+  .home-workspace
+  .today-list-item__check
+  input:checked
+  + span[aria-hidden="true"] {
+  border-color: var(--accent);
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__actions button {
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__actions button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* Words, not glyphs: the row's controls say "edit" and "delete", which the
+ * classic sheet hides behind an icon and a screen-reader label. */
+[data-theme^="paper"] .home-workspace .today-list-item__actions svg {
+  display: none;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-action-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item__manage {
+  gap: var(--space-sm);
+}
+
+/* A source is a phrase in the row's metadata, not a chip around it. */
+[data-theme^="paper"] .home-workspace .todo-source-chip {
+  display: inline;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-workspace .todo-repeat-mark .todo-repeat-mark__icon {
+  width: 13px;
+  height: 13px;
+  opacity: 1;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__error {
+  margin: var(--space-md) 0;
+  padding: 0 0 0 var(--space-sm);
+  border: 0;
+  border-left: 2px solid var(--danger);
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__error button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--danger);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--danger);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__empty,
+[data-theme^="paper"] .home-workspace .today-list__pending-empty {
+  min-height: 0;
+  place-content: start;
+  justify-items: start;
+  gap: var(--space-sm);
+  padding: var(--space-24) 0;
+  font: var(--small);
+  color: var(--muted);
+  text-align: left;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__empty button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__undo {
+  gap: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--hairline);
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .home-workspace .today-list__undo button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .home-workspace .today-list__undo p[role="alert"] {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .home-workspace .today-list-item--drop-before::before,
+[data-theme^="paper"] .home-workspace .today-list-item--drop-after::after {
+  background: var(--accent);
+}
+
+/* Still: the classic sheet fades a row while a write is in flight. */
+[data-theme^="paper"] .home-workspace .today-list-item article[aria-busy="true"],
+[data-theme^="paper"] .home-workspace .today-list [aria-disabled="true"] {
+  opacity: 1;
+  color: var(--muted);
+}
+
+/* --------------------------------------------- the customize page dialog */
+
+[data-theme^="paper"] .home-appearance-form {
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .home-appearance-form label {
+  gap: var(--space-8);
+  margin-bottom: var(--space-md);
+  font: var(--small);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .home-appearance-form input {
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  font: var(--body);
+  color: var(--text);
+  text-transform: none;
+}
+
+[data-theme^="paper"] .home-appearance-form p {
+  font: var(--small);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .home-appearance-form [role="alert"] {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .home-appearance-form footer {
+  gap: var(--space-24);
+  margin-top: var(--space-24);
+}
+
+[data-theme^="paper"] .home-appearance-form button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--small);
+  color: var(--text);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+[data-theme^="paper"] .home-appearance-form button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+  cursor: default;
+}
+
+[data-theme^="paper"] .home-appearance-preview {
+  margin: var(--space-sm) 0;
+  border-radius: 0;
+}
+
+[data-theme^="paper"] .home-appearance-position {
+  gap: var(--space-24);
+}
+
+[data-theme^="paper"] .home-appearance-position input {
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+}
+
+/* ------------------------------------------------------------ narrower */
+
+@media (max-width: 1200px) {
+  [data-theme^="paper"] .calendar-toolbar .calendar-toolbar-title {
+    font: var(--title);
+    letter-spacing: var(--title-tracking);
+  }
+}
+
+/* Stacked: the hairline moves from the column's side to above the tasks. */
+@media (max-width: 1400px) {
+  [data-theme^="paper"] .home-workspace .today-panel {
+    padding-left: 0;
+    padding-top: var(--space-24);
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+  }
+}
+
+@media (max-width: 900px) {
+  /* Classic caps the actions so they stack over a cover; Paper's band is one
+   * line, so they stay on it. The page's own padding steps down in paper.css. */
+  [data-theme^="paper"] .home-header__actions {
+    max-width: none;
+  }
+}
+
+/* Phone: tasks lead, the week follows under a hairline. */
+@media (max-width: 620px) {
+  [data-theme^="paper"] .home-header--cover .home-header__date {
+    display: none;
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .today-panel {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .calendar-panel,
+  [data-theme^="paper"] .home-page--cover .home-workspace--phone .calendar-panel {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-24);
+    border-top: 1px solid var(--hairline);
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .calendar-header {
+    padding: 0 0 var(--space-md);
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .calendar-toolbar .calendar-toolbar-title {
+    font: var(--title);
+    letter-spacing: var(--title-tracking);
+  }
+}

@@ -26,6 +26,7 @@ import {
 } from "./todoInput";
 import type { UpdateTodoDetailsInput } from "./todoService";
 import "./TodoFormDialog.css";
+import "./todosPaper.css";
 
 type TodoFormMode = "create" | "edit" | "reschedule";
 
@@ -323,7 +324,7 @@ function TodoForm({
       busy={isSubmitting}
       closeLocked={isSubmitting}
       onClose={closeDialog}
-      className={`todo-dialog${mode === "create" ? "" : " todo-edit-dialog"}`}
+      className={`todo-dialog paper-dialog${mode === "create" ? "" : " todo-edit-dialog"}`}
       backdropClassName="todo-dialog-backdrop"
       initialFocusRef={refs[mode === "reschedule" ? "dueDate" : "text"]}
       fallbackFocusRef={fallbackFocusRef}

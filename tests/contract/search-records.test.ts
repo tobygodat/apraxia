@@ -10,6 +10,14 @@ import { storageHarnessSql } from "../helpers/storageHarness";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
+// Long enough that its title is cut, so the snippet has something left to say.
+const longTask =
+  "Pack the kayak trailer before dawn: straps, pump, spare paddle, dry bags, " +
+  "cooler, tide chart, first aid kit, handheld radio, printed charts, and the " +
+  "permit for the harbour launch ramp.";
+const untitledIdea =
+  "A telescope mount that folds into a rucksack, so a clear night away from " +
+  "the city needs one bag rather than three.";
 let database: PGlite;
 
 type Result = {
@@ -57,9 +65,30 @@ beforeAll(async () => {
       ('a4000000-0000-4000-8000-000000000003','${owner}','Problem set on eigenvectors','MATH3012','Homework');
     insert into public.todos(id,user_id,text) values
       ('a4000000-0000-4000-8000-000000000004','${owner}','Return the library books'),
-      ('a4000000-0000-4000-8000-000000000005','${owner}','Renew the library books');
+      ('a4000000-0000-4000-8000-000000000005','${owner}','Renew the library books'),
+      ('a4000000-0000-4000-8000-000000000007','${owner}','${longTask}');
+    insert into public.ideas(id,user_id,title,body) values
+      ('a4000000-0000-4000-8000-000000000008','${owner}',null,'${untitledIdea}');
+    insert into public.projects(id,user_id,title,description) values
+      ('a4000000-0000-4000-8000-000000000009','${owner}','Reglaze the greenhouse',
+       'Reglaze the greenhouse');
     insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
       ('a4000000-0000-4000-8000-000000000006','${owner}','MATH3012','Week 3 lecture slides','drive','drive-file-1');
+    -- One record of every kind, so a branch that goes missing is caught.
+    insert into public.classes(user_id,id,name) values
+      ('${owner}','BIO2200','Orchard ecology');
+    insert into public.todos(id,user_id,text,class_id,assignment_type) values
+      ('a4000000-0000-4000-8000-00000000000a','${owner}','Orchard field notes','BIO2200','Homework');
+    insert into public.todos(id,user_id,text) values
+      ('a4000000-0000-4000-8000-00000000000b','${owner}','Walk the orchard');
+    insert into public.ideas(id,user_id,title,body) values
+      ('a4000000-0000-4000-8000-00000000000c','${owner}','Orchard planting','Rows of apple trees');
+    insert into public.projects(id,user_id,title,description) values
+      ('a4000000-0000-4000-8000-00000000000d','${owner}','Orchard fence','Replace the posts');
+    insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
+      ('a4000000-0000-4000-8000-00000000000e','${owner}','BIO2200','Orchard survey','drive','drive-file-2');
+    insert into public.career_applications(id,user_id,company,role) values
+      ('a4000000-0000-4000-8000-00000000000f','${owner}','Orchard Labs','Field engineer');
     update public.todos set deleted_at = statement_timestamp()
       where id = 'a4000000-0000-4000-8000-000000000005';
   `);
@@ -133,6 +162,7 @@ it("keeps every search vector on a partial or plain GIN index", async () => {
      order by indexname`,
   );
   expect(rows.map((r) => r.indexname)).toEqual([
+    "career_applications_search_idx",
     "class_notes_search_idx",
     "classes_search_idx",
     "ideas_search_idx",
@@ -145,9 +175,55 @@ it("keeps the delete and restore contract on its own narrower record type", asyn
   const { rows } = await database.query<{ kinds: string }>(
     `select enum_range(null::public.orbitos_record_type)::text as kinds`,
   );
-  expect(rows).toEqual([{ kinds: "{todo,idea,project}" }]);
+  expect(rows).toEqual([{ kinds: "{todo,idea,project,application}" }]);
   const search = await database.query<{ kinds: string }>(
     `select enum_range(null::public.search_record_type)::text as kinds`,
   );
-  expect(search.rows).toEqual([{ kinds: "{todo,assignment,idea,project,class,class_note}" }]);
+  expect(search.rows).toEqual([
+    { kinds: "{todo,assignment,idea,project,class,class_note,application}" },
+  ]);
+});
+
+it("never prints a record's own text twice in one row", async () => {
+  // A task is only its text, so it belongs in the title and nowhere else.
+  expect((await search("book")).map((r) => [r.title, r.snippet])).toEqual([
+    ["Return the library books", ""],
+  ]);
+  // An idea with no title of its own, and a project described by its title.
+  expect((await search("telescope")).map((r) => [r.title, r.snippet])).toEqual([
+    [untitledIdea, ""],
+  ]);
+  expect((await search("greenhouse")).map((r) => [r.title, r.snippet])).toEqual([
+    ["Reglaze the greenhouse", ""],
+  ]);
+});
+
+it("continues a cut title in the snippet instead of restarting it", async () => {
+  const rows = await search("kayak");
+  expect(rows.map((r) => [r.title, r.snippet])).toEqual([
+    [
+      "Pack the kayak trailer before dawn: straps, pump, spare paddle, dry bags, " +
+        "cooler, tide chart, first aid kit, handheld radio, printed charts, and the " +
+        "permit for",
+      "the harbour launch ramp.",
+    ],
+  ]);
+  // Title and snippet together are the task, each word once and in order.
+  expect(rows.map((r) => `${r.title} ${r.snippet}`)).toEqual([longTask]);
+});
+
+it("keeps a branch for every kind the result type names", async () => {
+  // A later migration that replaces search_records can drop a branch and leave
+  // its kind in the enum, which is how applications went missing once.
+  const { rows } = await database.query<{ kinds: string[] }>(
+    "select enum_range(null::public.search_record_type)::text[] as kinds",
+  );
+  const found = [...new Set((await search("orchard")).map((r) => r.record_type))];
+  expect(found.sort()).toEqual([...rows[0]!.kinds].sort());
+});
+
+it("titles an application by its company and puts the role under it", async () => {
+  expect((await search("Orchard Labs")).map((r) => [r.record_type, r.title, r.snippet])).toEqual([
+    ["application", "Orchard Labs", "Field engineer"],
+  ]);
 });

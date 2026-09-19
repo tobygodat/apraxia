@@ -10,6 +10,7 @@ import type { MoveDirection } from "./todayOrder";
 import { TodoSourceChip } from "./TodoSourceChip";
 import type { TodayListDay, TodayListViewState } from "./todoViews";
 import "./TodayList.css";
+import "./todosPaper.css";
 
 export interface TodayListProps {
   readonly heading?: string;
@@ -264,7 +265,7 @@ export function TodayList({
       ) : null}
 
       {state.loadStatus === "error" && state.loadError ? (
-        <div className="today-list__error" role="alert">
+        <div className="today-list__error paper-error" role="alert">
           <p>{state.loadError}</p>
           <button type="button" onClick={onRetry}>
             Try again
@@ -273,7 +274,7 @@ export function TodayList({
       ) : null}
 
       {state.mutationError ? (
-        <p className="today-list__error today-list__error--mutation" role="alert">
+        <p className="today-list__error today-list__error--mutation paper-error" role="alert">
           {state.mutationError}
         </p>
       ) : null}
@@ -360,6 +361,7 @@ export function TodayList({
 
                     <label className="today-list-item__check">
                       <input
+                        className="paper-check"
                         id={completeControlId(todo.id)}
                         type="checkbox"
                         checked={false}

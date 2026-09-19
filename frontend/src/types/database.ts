@@ -28,6 +28,324 @@ export type Database = {
   };
   public: {
     Tables: {
+      career_applications: {
+        Row: {
+          applied_on: string | null;
+          company: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          location: string | null;
+          posting_url: string | null;
+          process_notes: string | null;
+          role: string;
+          search_vector: unknown;
+          stage: Database["public"]["Enums"]["career_stage"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          applied_on?: string | null;
+          company: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          location?: string | null;
+          posting_url?: string | null;
+          process_notes?: string | null;
+          role: string;
+          search_vector?: unknown;
+          stage?: Database["public"]["Enums"]["career_stage"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          applied_on?: string | null;
+          company?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          location?: string | null;
+          posting_url?: string | null;
+          process_notes?: string | null;
+          role?: string;
+          search_vector?: unknown;
+          stage?: Database["public"]["Enums"]["career_stage"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      career_prep: {
+        Row: {
+          application_id: string;
+          body: string;
+          created_at: string;
+          done_at: string | null;
+          due_on: string | null;
+          id: string;
+          position: number;
+          todo_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          application_id: string;
+          body: string;
+          created_at?: string;
+          done_at?: string | null;
+          due_on?: string | null;
+          id?: string;
+          position?: number;
+          todo_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          application_id?: string;
+          body?: string;
+          created_at?: string;
+          done_at?: string | null;
+          due_on?: string | null;
+          id?: string;
+          position?: number;
+          todo_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "career_prep_owner";
+            columns: ["user_id", "application_id"];
+            isOneToOne: false;
+            referencedRelation: "career_applications";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "career_prep_todo_same_owner";
+            columns: ["user_id", "todo_id"];
+            isOneToOne: false;
+            referencedRelation: "todos";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
+      career_questions: {
+        Row: {
+          answer: string | null;
+          application_id: string;
+          asked_on: string | null;
+          body: string;
+          created_at: string;
+          id: string;
+          tags: string[];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          answer?: string | null;
+          application_id: string;
+          asked_on?: string | null;
+          body: string;
+          created_at?: string;
+          id?: string;
+          tags?: string[];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          answer?: string | null;
+          application_id?: string;
+          asked_on?: string | null;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          tags?: string[];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "career_questions_owner";
+            columns: ["user_id", "application_id"];
+            isOneToOne: false;
+            referencedRelation: "career_applications";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
+      career_resources: {
+        Row: {
+          application_id: string;
+          byte_size: number | null;
+          content_sha256: string | null;
+          content_type: string | null;
+          created_at: string;
+          id: string;
+          kind: Database["public"]["Enums"]["career_resource_kind"];
+          object_path: string | null;
+          title: string;
+          updated_at: string;
+          uploaded_at: string | null;
+          url: string | null;
+          user_id: string;
+        };
+        Insert: {
+          application_id: string;
+          byte_size?: number | null;
+          content_sha256?: string | null;
+          content_type?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["career_resource_kind"];
+          object_path?: string | null;
+          title: string;
+          updated_at?: string;
+          uploaded_at?: string | null;
+          url?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          application_id?: string;
+          byte_size?: number | null;
+          content_sha256?: string | null;
+          content_type?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["career_resource_kind"];
+          object_path?: string | null;
+          title?: string;
+          updated_at?: string;
+          uploaded_at?: string | null;
+          url?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "career_resources_owner";
+            columns: ["user_id", "application_id"];
+            isOneToOne: false;
+            referencedRelation: "career_applications";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
+      career_steps: {
+        Row: {
+          application_id: string;
+          created_at: string;
+          done_at: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          position: number;
+          scheduled_on: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          application_id: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          position?: number;
+          scheduled_on?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          application_id?: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          position?: number;
+          scheduled_on?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "career_steps_owner";
+            columns: ["user_id", "application_id"];
+            isOneToOne: false;
+            referencedRelation: "career_applications";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
+      career_stories: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          tags: string[];
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          tags?: string[];
+          title: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          tags?: string[];
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      career_story_uses: {
+        Row: {
+          application_id: string;
+          created_at: string;
+          story_id: string;
+          used_on: string | null;
+          user_id: string;
+        };
+        Insert: {
+          application_id: string;
+          created_at?: string;
+          story_id: string;
+          used_on?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          application_id?: string;
+          created_at?: string;
+          story_id?: string;
+          used_on?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "career_story_uses_application";
+            columns: ["user_id", "application_id"];
+            isOneToOne: false;
+            referencedRelation: "career_applications";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "career_story_uses_story";
+            columns: ["user_id", "story_id"];
+            isOneToOne: false;
+            referencedRelation: "career_stories";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
       class_assignments: {
         Row: {
           assignment_type: string;
@@ -603,6 +921,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      finish_career_resource: { Args: { p_resource_id: string }; Returns: undefined };
       finish_class_pdf: { Args: { p_note_id: string }; Returns: undefined };
       get_today_todos_page: {
         Args: {
@@ -710,11 +1029,15 @@ export type Database = {
       };
     };
     Enums: {
+      career_resource_kind: "file" | "link";
+      career_stage:
+        "interested" | "applied" | "screen" | "interview" | "offer" | "rejected" | "withdrawn";
       google_calendar_connection_state: "connected" | "reconnect_required" | "disconnected";
-      orbitos_record_type: "todo" | "idea" | "project";
+      orbitos_record_type: "todo" | "idea" | "project" | "application";
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
-      search_record_type: "todo" | "assignment" | "idea" | "project" | "class" | "class_note";
+      search_record_type:
+        "todo" | "assignment" | "idea" | "project" | "class" | "class_note" | "application";
       todo_recurrence_freq: "daily" | "weekly" | "monthly";
     };
     CompositeTypes: {
@@ -840,11 +1163,29 @@ export const Constants = {
   },
   public: {
     Enums: {
+      career_resource_kind: ["file", "link"],
+      career_stage: [
+        "interested",
+        "applied",
+        "screen",
+        "interview",
+        "offer",
+        "rejected",
+        "withdrawn",
+      ],
       google_calendar_connection_state: ["connected", "reconnect_required", "disconnected"],
-      orbitos_record_type: ["todo", "idea", "project"],
+      orbitos_record_type: ["todo", "idea", "project", "application"],
       project_status: ["active", "someday", "completed", "archived"],
       record_source: ["manual", "migration"],
-      search_record_type: ["todo", "assignment", "idea", "project", "class", "class_note"],
+      search_record_type: [
+        "todo",
+        "assignment",
+        "idea",
+        "project",
+        "class",
+        "class_note",
+        "application",
+      ],
     },
   },
 } as const;
