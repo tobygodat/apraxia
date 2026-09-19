@@ -462,6 +462,7 @@ function AssignmentSession({
                 <tr key={item.id} className={item.done ? "assignment-done" : ""}>
                   <td>
                     <input
+                      className="paper-check"
                       type="checkbox"
                       checked={item.done}
                       aria-disabled={!!editing || pending}

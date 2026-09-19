@@ -412,8 +412,10 @@ const collectionService: CollectionService = {
         recordType: "idea" as const,
         recordId: i.id,
         parentId: null,
-        title: i.title ?? i.body.split("\n")[0],
-        snippet: i.body,
+        title: i.title ?? i.body.slice(0, 160),
+        // Like search_records: an idea with no title of its own is named by the
+        // opening of its body, and the snippet carries only what is left of it.
+        snippet: i.title ? i.body : i.body.slice(160).trim(),
         updatedAt: now,
         relevance: 1,
         totalCount: 0,

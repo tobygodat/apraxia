@@ -382,3 +382,15 @@ it("rejects remote URLs, SVG, excessive names, and unsupported uploads", async (
     prepareCover(new File(["svg"], "cover.svg", { type: "image/svg+xml" })),
   ).rejects.toThrow(/JPG/);
 });
+it("prints the given local date beside the page name, and nothing without one", async () => {
+  const service: HomeAppearanceService = {
+    load: vi.fn(async () => ({ title: "Studio", coverImage: null })),
+    save: vi.fn(),
+  };
+  const { rerender } = render(<HomeHeader userId="owner" service={service} date="2026-09-18" />);
+  await screen.findByRole("heading", { name: "Studio" });
+  // The plain calendar date is read as written: no timezone conversion.
+  expect(screen.getByText("Friday, September 18")).toBeTruthy();
+  rerender(<HomeHeader userId="owner" service={service} />);
+  await waitFor(() => expect(screen.queryByText("Friday, September 18")).toBeNull());
+});

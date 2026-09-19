@@ -19,6 +19,7 @@ import { usePhoneLayout } from "../../lib/usePhoneLayout";
 import { TodayPanel } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
 import { addSqlDateDays, localToday, startOfWeekSunday } from "../todos/dateDomain";
+import { useLocalToday } from "../todos/useLocalToday";
 import type { CalendarService } from "./calendarService";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
@@ -39,6 +40,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { calendarEventStyle } from "./calendarColors";
 import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
+import "./homePaper.css";
 
 const VISIBLE_HOURS = 15;
 /** Below this the hour rows stop being readable, so the grid scrolls instead. */
@@ -77,6 +79,7 @@ export function HomePage({
   // layout effect until a later pass.
   const [page, setPage] = useState<HTMLDivElement | null>(null);
   const phoneLayout = usePhoneLayout();
+  const localDate = useLocalToday(profile.timezone);
   const calendar = (
     <CalendarPanel key="calendar" service={calendarService} timezone={profile.timezone} />
   );
@@ -97,7 +100,12 @@ export function HomePage({
   // in the markup rather than in CSS: the reading and tab order swap with it.
   return (
     <div className="home-page" ref={setPage}>
-      <HomeHeader service={appearanceService} userId={profile.userId} pageElement={page} />
+      <HomeHeader
+        service={appearanceService}
+        userId={profile.userId}
+        pageElement={page}
+        date={localDate}
+      />
       <div className={`home-workspace${phoneLayout ? " home-workspace--phone" : ""}`}>
         {phoneLayout ? [today, calendar] : [calendar, today]}
       </div>
@@ -227,7 +235,7 @@ export function CalendarPanel({
             Today
           </button>
           <button
-            className="calendar-icon-button"
+            className="calendar-icon-button calendar-refresh"
             aria-label="Refresh"
             title="Refresh calendar"
             onClick={() => {
