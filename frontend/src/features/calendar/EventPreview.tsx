@@ -163,6 +163,7 @@ export function EventPreview({
           {canEdit && onEdit && (
             <button aria-label="Edit event" title="Edit event" onClick={() => onEdit(event)}>
               <WorkspaceIcon name="edit" />
+              <span className="calendar-icon-word">Edit</span>
             </button>
           )}
           <button aria-label="Close" title="Close" onClick={onClose}>
@@ -177,6 +178,7 @@ export function EventPreview({
             >
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
+            <span className="calendar-icon-word">Close</span>
           </button>
         </div>
       </div>

@@ -1,0 +1,724 @@
+/* The week grid, the event preview and the event editor in the Paper theme.
+ *
+ * Sibling of `calendar.css`, which keeps the classic look untouched. Every rule
+ * here is scoped `[data-theme^="paper"]`, which matches both Paper presets and
+ * never matches classic. Several classic selectors carry a `.calendar-panel`
+ * prefix, so the rules below repeat that prefix rather than relying on import
+ * order; see docs/CONVENTIONS.md.
+ *
+ * The shape of it, from DESIGN.md: the time grid stays neutral, and an event is
+ * a name with a 1px rule at its left carrying its calendar's colour. Nothing is
+ * filled, so a dense day stops being a wall of colour. `accent` appears three
+ * times only — today, now, and what you can act on.
+ */
+
+/* ---- the panel around the week ---- */
+
+[data-theme^="paper"] .calendar-panel {
+  border-right: 1px solid var(--hairline);
+  padding-right: var(--space-md);
+}
+
+[data-theme^="paper"] .calendar-message {
+  color: var(--muted);
+  font: var(--body);
+}
+
+[data-theme^="paper"] .calendar-message h3 {
+  margin: 0 0 var(--space-8);
+  color: var(--text);
+  font: var(--heading);
+}
+
+[data-theme^="paper"] .calendar-empty,
+[data-theme^="paper"] .calendar-warning {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .calendar-warning p {
+  margin: var(--space-xs) 0;
+}
+
+[data-theme^="paper"] .calendar-panel a,
+[data-theme^="paper"] .calendar-footer {
+  color: var(--muted);
+  font: var(--fine);
+}
+
+[data-theme^="paper"] .calendar-panel a {
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .calendar-footer {
+  padding-top: var(--space-sm);
+  margin-top: var(--space-sm);
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .calendar-footer .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* An action is a word underlined in green, not a button with a box around it. */
+[data-theme^="paper"] .calendar-panel button {
+  gap: var(--space-8);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .calendar-panel button:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .calendar-panel button:disabled {
+  opacity: 1;
+  color: var(--faint);
+  text-decoration: none;
+  cursor: default;
+}
+
+[data-theme^="paper"] .calendar-panel :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Words first. These three controls are an icon alone in classic, so they carry
+ * a word that only Paper shows; classic's own sheet stays untouched, and the
+ * markup it never reveals costs it nothing. */
+.calendar-icon-word {
+  display: none;
+}
+
+[data-theme^="paper"] .calendar-icon-word {
+  display: inline;
+}
+
+[data-theme^="paper"] .calendar-panel .calendar-icon-button:has(.calendar-icon-word),
+[data-theme^="paper"] .event-preview-actions button {
+  width: auto;
+  color: var(--text);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+/* The one icon that stands alone: a chevron that steps a week backward or
+ * forward. It carries no underline because it is not a word. */
+[data-theme^="paper"] .calendar-panel .calendar-icon-button {
+  padding: 0;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .calendar-icon-button .workspace-icon,
+[data-theme^="paper"] .calendar-add .workspace-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---- the toolbar above the week ---- */
+
+[data-theme^="paper"] .calendar-header {
+  min-height: 0;
+  gap: var(--space-sm) var(--space-md);
+  padding: var(--space-md) 0 var(--space-sm);
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-toolbar-title {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .calendar-toolbar-year {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+[data-theme^="paper"] .calendar-toolbar-month {
+  gap: var(--space-8);
+}
+
+[data-theme^="paper"] .calendar-toolbar-actions {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .calendar-toolbar button {
+  min-height: 0;
+  padding: 0;
+  border-color: transparent;
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .calendar-toolbar button:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-icon-button,
+[data-theme^="paper"] .calendar-toolbar-month .calendar-icon-button {
+  width: auto;
+  height: auto;
+  flex-basis: auto;
+  padding: 0;
+  background-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-add {
+  padding-inline: 0;
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-add:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---- the grid ---- */
+
+/* The time gutter carries `fine` instead of classic's 10px, so it needs the
+ * width: "12:05PM" on the now line is the widest thing it ever holds. */
+[data-theme^="paper"] .week-head,
+[data-theme^="paper"] .week-all-day,
+[data-theme^="paper"] .week-hours {
+  grid-template-columns: 72px 1fr;
+}
+
+[data-theme^="paper"] .week-grid,
+[data-theme^="paper"] .week-scroll {
+  scrollbar-color: var(--hairline-strong) var(--ground);
+}
+
+[data-theme^="paper"] .week-head,
+[data-theme^="paper"] .week-all-day {
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* A day is its name over its date, aligned with the text of its events. */
+[data-theme^="paper"] .week-head .week-days > div {
+  padding: var(--space-8) var(--space-8) var(--space-sm);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-align: left;
+}
+
+[data-theme^="paper"] .week-head span {
+  color: var(--muted);
+  font: var(--fine);
+  text-transform: lowercase;
+  letter-spacing: normal;
+}
+
+[data-theme^="paper"] .week-head strong {
+  display: block;
+  width: auto;
+  height: auto;
+  margin-top: 0;
+  color: var(--muted);
+  font: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Today is the 2px green rule under its column's head and its date at 600.
+ * No tag, no badge, no circle, and no background behind the column. */
+[data-theme^="paper"] .week-head .week-days > div.is-today {
+  border-bottom-color: var(--accent);
+}
+
+[data-theme^="paper"] .week-head .is-today strong {
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .week-head .is-today span {
+  color: var(--text);
+}
+
+[data-theme^="paper"] .week-all-day > span {
+  padding: var(--space-8) var(--space-8) 0 0;
+  color: var(--muted);
+  font: var(--fine);
+  text-align: right;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .week-all-day-lanes {
+  padding: var(--space-8) 0;
+  grid-auto-rows: 20px;
+  row-gap: var(--space-xs);
+}
+
+[data-theme^="paper"] .week-time-labels > span {
+  right: var(--space-8);
+  color: var(--muted);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ruled ground: an hour is a hairline, and an empty day is still ruled. */
+[data-theme^="paper"] .week-day-column {
+  border-left: 1px solid var(--hairline);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--hairline) 0,
+    var(--hairline) 1px,
+    transparent 1px,
+    transparent var(--calendar-hour-height)
+  );
+}
+
+[data-theme^="paper"] .week-day-column--today {
+  background-color: transparent;
+}
+
+/* ---- events ---- */
+
+/* An event is a name, not a block: its calendar's colour is the 1px rule at its
+ * left and nowhere else. The ground behind it is the page's own, so events that
+ * stack still occlude one another without being filled. */
+[data-theme^="paper"] .calendar-panel button.calendar-event,
+[data-theme^="paper"] .calendar-panel .calendar-event--more {
+  padding: 1px 0 0 var(--space-8);
+  border: 0;
+  border-left: 1px solid var(--calendar-event-color, var(--outline));
+  border-radius: 0;
+  background: var(--ground);
+  color: var(--text);
+  font: var(--fine);
+  /* An event's name is the person's own words: no underline, and its own case. */
+  text-transform: none;
+  text-decoration: none;
+  transition: none;
+}
+
+[data-theme^="paper"] .calendar-panel button.calendar-event:hover {
+  background: var(--ground);
+  box-shadow: none;
+  color: var(--text);
+}
+
+/* Hover marks the word, the way every other action in Paper does. */
+[data-theme^="paper"] .calendar-panel button.calendar-event:hover strong {
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .calendar-panel button.calendar-event--all-day {
+  margin: 0;
+  padding: 0 0 0 var(--space-8);
+  font: var(--fine);
+  line-height: 20px;
+}
+
+[data-theme^="paper"] .calendar-event--timed {
+  outline: 0;
+}
+
+/* `fine` is the floor, so the grid buys its density back from the leading
+ * rather than from the size: three lines of 13px need the room a short event
+ * does not have, and what does not fit is clipped at the event's edge. */
+[data-theme^="paper"] .calendar-event--timed strong,
+[data-theme^="paper"] .calendar-event--timed .calendar-event__inline {
+  font: var(--fine);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+[data-theme^="paper"] .calendar-event--timed span,
+[data-theme^="paper"] .calendar-event--timed .calendar-event__inline-rest {
+  color: var(--muted);
+  font: var(--fine);
+  line-height: 1.3;
+}
+
+[data-theme^="paper"] .calendar-event__time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* What does not fit is said in words, in the same voice as a row's metadata. */
+[data-theme^="paper"] .calendar-panel .calendar-event--more {
+  border-left-color: var(--hairline-strong);
+  color: var(--muted);
+  cursor: default;
+}
+
+/* ---- now, and what you are about to add ---- */
+
+[data-theme^="paper"] .week-now {
+  background: var(--accent);
+}
+
+[data-theme^="paper"] .week-now::before {
+  display: none;
+}
+
+[data-theme^="paper"] .week-time-labels .week-current-time {
+  right: var(--space-8);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font: var(--fine);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="paper"] .calendar-selection {
+  inset-inline: 1px;
+  padding: 1px var(--space-8);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: var(--fine);
+  text-transform: lowercase;
+}
+
+/* ---- the event preview ---- */
+
+[data-theme^="paper"] .event-preview {
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+  color: var(--text);
+  font: var(--small);
+  scrollbar-color: var(--hairline-strong) var(--ground-raised);
+  animation: none;
+}
+
+[data-theme^="paper"] .event-preview :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+[data-theme^="paper"] .event-preview-heading {
+  gap: var(--space-sm);
+}
+
+[data-theme^="paper"] .event-preview-heading h2 {
+  margin: 0;
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+}
+
+/* The swatch becomes the same 1px rule the event carries in the grid. */
+[data-theme^="paper"] .event-preview-swatch {
+  width: 1px;
+  height: 1.4em;
+  flex-basis: 1px;
+  margin-top: 0;
+  border-radius: 0;
+  background: var(--calendar-event-color);
+}
+
+/* The event's own line is the one in `text`; everything under it is context. */
+[data-theme^="paper"] .event-preview p {
+  margin: var(--space-8) 0 0 var(--space-sm);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .event-preview > p:first-of-type {
+  color: var(--text);
+}
+
+[data-theme^="paper"] .event-preview-calendar {
+  gap: var(--space-8);
+}
+
+[data-theme^="paper"] .event-preview .workspace-icon {
+  width: 18px;
+  height: 18px;
+}
+
+[data-theme^="paper"] .event-preview-actions {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .event-preview button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .event-preview button:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .event-preview-actions button {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+}
+
+[data-theme^="paper"] .event-preview > a {
+  margin: var(--space-md) 0 0 var(--space-sm);
+  color: var(--text);
+  font: var(--small);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+/* ---- the event editor ---- */
+
+[data-theme^="paper"] .event-editor {
+  color-scheme: inherit;
+  width: min(520px, calc(100vw - var(--space-24) * 2));
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+  color: var(--text);
+  font: var(--body);
+  scrollbar-color: var(--hairline-strong) var(--ground-raised);
+}
+
+[data-theme^="paper"] .event-editor::backdrop {
+  background: var(--scrim);
+}
+
+[data-theme^="paper"] .event-editor header {
+  margin-bottom: var(--space-24);
+}
+
+[data-theme^="paper"] .event-editor h2 {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .event-editor label {
+  gap: var(--space-xs);
+  margin-bottom: var(--space-24);
+  color: var(--muted);
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .event-editor input,
+[data-theme^="paper"] .event-editor select {
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background-color: var(--ground-raised);
+  color: var(--text);
+  font: var(--body);
+  text-transform: none;
+}
+
+[data-theme^="paper"] .event-editor input::placeholder {
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* Every control in the editor is a word, including the ones in its footer. */
+[data-theme^="paper"] .event-editor button {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-transform: lowercase;
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .event-editor button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .event-editor :disabled {
+  opacity: 1;
+  color: var(--faint);
+  cursor: default;
+}
+
+[data-theme^="paper"] .event-editor fieldset:disabled input,
+[data-theme^="paper"] .event-editor fieldset:disabled select {
+  border-color: var(--hairline-strong);
+  color: var(--faint);
+}
+
+[data-theme^="paper"] .event-editor button:disabled {
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .event-editor :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+[data-theme^="paper"] .event-editor ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .event-editor .event-checkbox {
+  gap: var(--space-8);
+  color: var(--text);
+  font: var(--body);
+}
+
+/* `.paper-check` draws the box and its tick; classic sizes the same input at
+ * 16px from a selector this one has to match to hand the primitive its 18. */
+[data-theme^="paper"] .event-editor .event-checkbox input.paper-check {
+  width: var(--icon);
+  height: var(--icon);
+  flex-basis: var(--icon);
+}
+
+[data-theme^="paper"] .event-time-fields,
+[data-theme^="paper"] .event-repeat-fields {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .event-editor .event-note {
+  margin: calc(var(--space-md) * -1) 0 var(--space-24);
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .event-editor [role="alert"],
+[data-theme^="paper"] .event-delete-confirm {
+  margin: 0 0 var(--space-24);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .event-editor [role="alert"] {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .event-editor a {
+  color: var(--text);
+}
+
+[data-theme^="paper"] .event-editor footer {
+  gap: var(--space-md);
+  margin-top: var(--space-24);
+}
+
+/* Saving is the completing action; cancel stays quiet beside it. */
+[data-theme^="paper"] .event-editor .event-save {
+  color: var(--text);
+  background: transparent;
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .event-editor .event-save:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .event-editor .event-delete {
+  color: var(--danger);
+  text-decoration-color: var(--danger);
+}
+
+[data-theme^="paper"] .event-editor .event-delete:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+[data-theme^="paper"] .event-discard-confirm {
+  padding: var(--space-md);
+  margin-bottom: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+}
+
+[data-theme^="paper"] .event-discard-confirm p {
+  margin: 0 0 var(--space-sm);
+}
+
+[data-theme^="paper"] .event-discard-confirm > div {
+  gap: var(--space-md);
+}
+
+[data-theme^="paper"] .event-delete-confirm button + button {
+  margin-left: var(--space-md);
+}
+
+/* Still: the preview does not slide in, in either motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="paper"] .event-preview {
+    animation: none;
+  }
+}
+
+/* Touch keeps its reach without turning a word back into a button. */
+@media (pointer: coarse) {
+  [data-theme^="paper"] .calendar-toolbar button,
+  [data-theme^="paper"] .event-preview button {
+    min-height: 44px;
+  }
+
+  [data-theme^="paper"] .calendar-toolbar .calendar-icon-button,
+  [data-theme^="paper"] .event-preview-actions button {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+}
+
+@media (max-width: 620px) {
+  [data-theme^="paper"] .home-workspace--phone .calendar-panel,
+  [data-theme^="paper"] .home-page--cover .home-workspace--phone .calendar-panel {
+    border-top: 1px solid var(--hairline);
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .calendar-header {
+    padding: var(--space-md) 0 var(--space-sm);
+  }
+
+  /* Words take more room than classic's 11px buttons, so they wrap instead of
+   * running off the end of a phone's toolbar. */
+  [data-theme^="paper"] .calendar-toolbar-actions {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  [data-theme^="paper"] .home-workspace--phone .calendar-toolbar .calendar-toolbar-title {
+    font: var(--heading);
+  }
+}
+
+@media (max-width: 1400px) {
+  [data-theme^="paper"] .calendar-panel {
+    padding: 0;
+    border-right: 0;
+  }
+}

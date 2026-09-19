@@ -280,6 +280,7 @@ export function EventEditor({
               <label className="event-checkbox">
                 <input
                   type="checkbox"
+                  className="paper-check"
                   checked={input.allDay}
                   onChange={(e) => change("allDay", e.target.checked)}
                 />

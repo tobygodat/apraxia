@@ -39,6 +39,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { calendarEventStyle } from "./calendarColors";
 import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
+import "./weekPaper.css";
 
 const VISIBLE_HOURS = 15;
 /** Below this the hour rows stop being readable, so the grid scrolls instead. */
@@ -237,6 +238,7 @@ export function CalendarPanel({
             disabled={state.loading}
           >
             <WorkspaceIcon name="refresh" />
+            <span className="calendar-icon-word">Refresh</span>
           </button>
           {editable && (
             <button
