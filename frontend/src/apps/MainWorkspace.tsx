@@ -45,6 +45,7 @@ import { WorkspaceDialog } from "./WorkspaceDialog";
 import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
 import "./workspace.css";
+import "./workspacePaper.css";
 
 /**
  * Wraps a route chunk loader so a route whose chunk was already resolved by
