@@ -15,6 +15,7 @@ import {
   WORKSPACE_THEME_PRESETS,
 } from "../apps/workspacePreferences";
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
+import { createFixtureCareer } from "./careerFixture";
 import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
 import {
   createFixtureAppearance,
@@ -519,6 +520,7 @@ const workspaceData = {
     return profile;
   },
 };
+const careerService = delayedFixtureService(createFixtureCareer({ scenario, today }), delay);
 const runtimeTodos = delayedFixtureService(todoService, delay);
 const runtimeCollections = delayedFixtureService(collectionService, delay);
 const runtimeData = delayedFixtureService(workspaceData, delay);
@@ -599,6 +601,7 @@ createRoot(document.getElementById("root")!).render(
         todoService={runtimeTodos}
         collectionService={runtimeCollections}
         calendarService={calendarService}
+        careerService={careerService}
         driveService={driveService}
         workspaceData={runtimeData}
       />

@@ -17,6 +17,13 @@ const icons = {
   ),
   ideas: <path d="M5 3h10l4 4v14H5ZM14 3v5h5M8 12h8m-8 4h6" />,
   projects: <path d="M3 7V4h6l3 3h9v13H3Z M3 10h18" />,
+  career: (
+    <>
+      <path d="M3.5 8.5h17V19h-17z" />
+      <path d="M9 8.5V6.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6.5v2" />
+      <path d="M3.5 13h17" />
+    </>
+  ),
   search: (
     <>
       <circle cx="10.5" cy="10.5" r="6.5" />
@@ -27,6 +34,7 @@ const icons = {
   left: <path d="m14 6-6 6 6 6" />,
   right: <path d="m10 6 6 6-6 6" />,
   down: <path d="m6 9 6 6 6-6" />,
+  up: <path d="m6 15 6-6 6 6" />,
   refresh: (
     <>
       <path d="M20 10a8 8 0 1 0-2 8M20 4v6h-6" />
