@@ -76,10 +76,25 @@
   --radius-sm: 2px;
   --radius: 6px;
 
+  /* The icon box. A control that has to restore an icon's size says
+     `var(--icon)` rather than repeating the number. */
+  --icon: 18px;
+
   --gutter: 20px;
   --sidebar: 208px;
   --measure: 600px;
   --measure-wide: 960px;
+}
+
+/* A phone gets a shorter long step and a shallower top and bottom, so a screen
+   does not open on 64px of nothing. Only these three move; everything else is
+   the same scale at every width. */
+@media (max-width: 560px) {
+  :root[data-theme^="paper"] {
+    --space-lg: 32px;
+    --space-top: 40px;
+    --space-bottom: 40px;
+  }
 }
 
 /* The page itself. */
@@ -107,8 +122,8 @@
 
 /* Words first. An icon rides beside its word at text size, never instead of it. */
 [data-theme^="paper"] .paper-icon {
-  width: 18px;
-  height: 18px;
+  width: var(--icon);
+  height: var(--icon);
   flex: none;
   fill: none;
   stroke: currentColor;
