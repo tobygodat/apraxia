@@ -1,0 +1,530 @@
+/* The app shell in the Paper theme: the rail, the page header and the shared
+ * error strip, rebuilt on the Toby Godat foundations.
+ *
+ * Sibling of `CloudAppShell.css`, imported straight after it. Every rule is
+ * scoped `[data-theme^="paper"]`, which matches both Paper presets and never
+ * matches classic, so the classic sheet stays exactly as it is. Tokens and
+ * primitives come from `paper.css`; nothing here declares a literal.
+ *
+ * Paper has no elevation and nothing animates, so the classic sheet's
+ * shadows, hover fills and 260ms rail transitions are undone rather than
+ * carried over.
+ */
+
+/* ---------------------------------------------------------------- the frame */
+
+[data-theme^="paper"] .cloud-shell {
+  --cloud-shell-sidebar-width: var(--sidebar);
+  --workspace-page-inset: var(--space-lg);
+  --workspace-page-top: var(--space-lg);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--body);
+  transition: none;
+}
+
+/* Both panes sit on `ground`; one hairline is what tells them apart. */
+[data-theme^="paper"] .cloud-shell__sidebar {
+  --cloud-shell-sidebar-pad-x: var(--space-md);
+  padding: var(--space-24) var(--cloud-shell-sidebar-pad-x) var(--space-md);
+  border-right: 1px solid var(--hairline);
+  background: transparent;
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell__skip-link {
+  padding: var(--space-8) var(--space-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  font: var(--small);
+}
+
+/* A cold load is a still 2px rule across the top. The classic bar slides. */
+[data-theme^="paper"] .cloud-shell__loading-bar::after {
+  left: 0;
+  width: 100%;
+  background: var(--muted);
+  opacity: 1;
+  animation: none;
+}
+
+/* ---------------------------------------------------------------- the brand */
+
+[data-theme^="paper"] .cloud-shell__brand-row {
+  margin-bottom: 0;
+}
+
+[data-theme^="paper"] .cloud-shell__wordmark {
+  gap: var(--space-sm);
+  padding: 0;
+  color: var(--text);
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell__mark {
+  width: var(--space-24);
+  height: var(--space-24);
+}
+
+/* ---------------------------------------------------------- search and nav */
+
+/* Search is set apart with `space-lg` above and below, its shortcut in `fine`. */
+[data-theme^="paper"] .cloud-shell .cloud-shell__search {
+  gap: var(--space-sm);
+  min-height: 0;
+  margin: var(--space-lg) 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--small);
+  text-transform: lowercase;
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell__search kbd {
+  color: var(--faint);
+  font: var(--fine);
+  font-family: var(--font);
+  opacity: 1;
+}
+
+[data-theme^="paper"] .cloud-shell__nav {
+  align-items: flex-start;
+  gap: var(--space-xs);
+}
+
+[data-theme^="paper"] .cloud-shell__nav-link {
+  gap: var(--space-sm);
+  min-height: 0;
+  padding: var(--space-8) 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--body);
+  text-transform: lowercase;
+  transition: none;
+}
+
+/* Where you are is a 2px green rule under the word, not behind the row. */
+[data-theme^="paper"] .cloud-shell__nav-link span {
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid transparent;
+}
+
+[data-theme^="paper"] .cloud-shell__nav-link:hover,
+[data-theme^="paper"] .cloud-shell .cloud-shell__search:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .cloud-shell__nav-link--active {
+  background: transparent;
+  color: var(--text);
+}
+
+[data-theme^="paper"] .cloud-shell__nav-link--active span {
+  border-bottom-color: var(--accent);
+}
+
+/* ------------------------------------------------------- add and the account */
+
+[data-theme^="paper"] .cloud-shell__actions {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--hairline);
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__add {
+  gap: var(--space-sm);
+  width: auto;
+  min-height: 0;
+  margin-bottom: 0;
+  padding: var(--space-8) 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--body);
+  text-transform: lowercase;
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__add:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__add:disabled {
+  color: var(--faint);
+  opacity: 1;
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__account-trigger {
+  gap: var(--space-xs);
+  min-height: 0;
+  padding: var(--space-8) 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: var(--body);
+  text-transform: lowercase;
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__account-trigger:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* No circles in Paper. The word "account" already says whose menu this is. */
+[data-theme^="paper"] .cloud-shell__avatar {
+  display: none;
+}
+
+[data-theme^="paper"] .cloud-shell__account-trigger .workspace-icon {
+  width: 1em;
+  height: 1em;
+  margin-left: var(--space-xs);
+}
+
+/* A thing that floats is `ground-raised` with a hairline. No shadow. */
+[data-theme^="paper"] .cloud-shell__account-menu {
+  bottom: calc(100% + var(--space-8));
+  width: max-content;
+  min-width: 100%;
+  max-width: var(--measure);
+  padding: var(--space-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .cloud-shell__account-email {
+  margin: 0 0 var(--space-8);
+  padding: var(--space-8) var(--space-8) var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+  font: var(--fine);
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__menu-item {
+  min-height: 0;
+  padding: var(--space-8);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: var(--small);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__menu-item:hover {
+  background: var(--selection);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__menu-item:disabled {
+  color: var(--faint);
+  opacity: 1;
+}
+
+/* An error is the sentence itself in `danger`, with no box around it. */
+[data-theme^="paper"] .cloud-shell__sign-out-error {
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--danger);
+  font: var(--small);
+}
+
+/* ------------------------------------------------------ the collapse toggle */
+
+/* The one icon allowed alone is a chevron that steps one way or the other,
+   so it keeps its aria-label and loses its circle. */
+[data-theme^="paper"] .cloud-shell .cloud-shell__collapse-toggle {
+  width: auto;
+  height: auto;
+  margin: var(--space-sm) 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  transition: none;
+}
+
+[data-theme^="paper"] .cloud-shell .cloud-shell__collapse-toggle:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .cloud-shell__collapse-icon {
+  transition: none;
+}
+
+/* ------------------------------------------------------- the page header */
+
+[data-theme^="paper"] .workspace-page-header {
+  gap: var(--space-24);
+  margin-bottom: var(--space-24);
+}
+
+/* An action is an underlined word, not a bordered rectangle. */
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action {
+  gap: var(--space-8);
+  min-height: 0;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action .workspace-icon {
+  width: var(--space-md);
+  height: var(--space-md);
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action:disabled {
+  color: var(--faint);
+  text-decoration: none;
+  opacity: 1;
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------- still, twice */
+
+/* The rail's label fades belong to the classic drawer. Paper has no motion. */
+[data-theme^="paper"] .cloud-shell__nav-link span,
+[data-theme^="paper"] .cloud-shell__wordmark span,
+[data-theme^="paper"] .cloud-shell .cloud-shell__add span,
+[data-theme^="paper"] .cloud-shell .cloud-shell__search span,
+[data-theme^="paper"] .cloud-shell__search kbd,
+[data-theme^="paper"] .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
+[data-theme^="paper"] .cloud-shell__account-trigger > .workspace-icon {
+  transition: none;
+}
+
+/* ------------------------------------------------------------- the widths */
+
+/* Collapsed, the rail is the icon column and nothing more: `min-content`
+   rather than a fixed rail, so no width has to be guessed. */
+@media (min-width: 761px) {
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] {
+    grid-template-columns: min-content minmax(0, 1fr);
+  }
+
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__sidebar {
+    --cloud-shell-sidebar-pad-x: var(--space-md);
+  }
+
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__brand-row {
+    gap: var(--space-8);
+  }
+
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__wordmark {
+    padding: 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__wordmark span,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav-link span,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__add span,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search span,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search kbd,
+  [data-theme^="paper"]
+    .cloud-shell[data-sidebar-collapsed="true"]
+    .cloud-shell__account-trigger
+    > span:not(.cloud-shell__avatar),
+  [data-theme^="paper"]
+    .cloud-shell[data-sidebar-collapsed="true"]
+    .cloud-shell__account-trigger
+    > .workspace-icon {
+    display: none;
+    opacity: 1;
+  }
+
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav-link,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__add,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search,
+  [data-theme^="paper"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__account-trigger {
+    padding: var(--space-8) 0;
+  }
+
+  /* The classic sheet hides the toggle under 980px to force its icon rail.
+     Paper keeps words to 760px, so the toggle stays with them. */
+  [data-theme^="paper"] .cloud-shell .cloud-shell__collapse-toggle {
+    display: flex;
+  }
+}
+
+/* Words stay words: the classic sheet's automatic icon-only rail is undone,
+   and the rail keeps its full width until it becomes a strip. */
+@media (max-width: 1200px) {
+  [data-theme^="paper"] .cloud-shell,
+  [data-theme^="paper"] .cloud-shell:not([data-sidebar-collapsed="true"]) {
+    --cloud-shell-sidebar-width: var(--sidebar);
+  }
+
+  [data-theme^="paper"] .cloud-shell__sidebar {
+    --cloud-shell-sidebar-pad-x: var(--space-md);
+  }
+}
+
+@media (max-width: 980px) {
+  [data-theme^="paper"] .cloud-shell {
+    grid-template-columns: var(--cloud-shell-sidebar-width) minmax(0, 1fr);
+  }
+
+  [data-theme^="paper"] .cloud-shell__sidebar {
+    padding: var(--space-24) var(--space-md) var(--space-md);
+  }
+
+  [data-theme^="paper"] .cloud-shell__brand-row {
+    flex-direction: row;
+    gap: var(--space-sm);
+  }
+
+  [data-theme^="paper"] .cloud-shell__wordmark {
+    padding: 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell__wordmark span,
+  [data-theme^="paper"] .cloud-shell__nav-link span,
+  [data-theme^="paper"] .cloud-shell__add span,
+  [data-theme^="paper"] .cloud-shell__search span,
+  [data-theme^="paper"] .cloud-shell__account-trigger > span:not(.cloud-shell__avatar) {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  /* The chevron takes its size from the rule above, not from the flex line. */
+  [data-theme^="paper"] .cloud-shell__account-trigger > .workspace-icon {
+    position: static;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  [data-theme^="paper"] .cloud-shell__nav-link,
+  [data-theme^="paper"] .cloud-shell .cloud-shell__search,
+  [data-theme^="paper"] .cloud-shell .cloud-shell__add,
+  [data-theme^="paper"] .cloud-shell .cloud-shell__account-trigger {
+    justify-content: flex-start;
+    padding: var(--space-8) 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell .cloud-shell__search {
+    margin: var(--space-lg) 0;
+  }
+}
+
+/* Under 760px the rail becomes a strip above the content, as the system says.
+   The nav is a row of words; the icons step aside rather than stand alone. */
+@media (max-width: 760px) {
+  [data-theme^="paper"] .cloud-shell {
+    --workspace-page-inset: var(--gutter);
+    --workspace-page-top: var(--space-24);
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  [data-theme^="paper"] .cloud-shell .cloud-shell__collapse-toggle {
+    display: none;
+  }
+
+  [data-theme^="paper"] .cloud-shell__sidebar {
+    position: relative;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--gutter);
+    border-right: 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  [data-theme^="paper"] .cloud-shell__brand-row {
+    margin: 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell .cloud-shell__search {
+    margin: 0 0 0 auto;
+  }
+
+  [data-theme^="paper"] .cloud-shell__search kbd {
+    display: none;
+  }
+
+  [data-theme^="paper"] .cloud-shell__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell .cloud-shell__add {
+    width: auto;
+    min-height: 0;
+    justify-content: flex-start;
+    margin: 0;
+    padding: var(--space-8) 0;
+  }
+
+  [data-theme^="paper"] .cloud-shell__nav {
+    order: 4;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-8);
+  }
+
+  [data-theme^="paper"] .cloud-shell__nav-link {
+    flex: 0 1 auto;
+    flex-direction: row;
+    gap: var(--space-8);
+    padding: var(--space-8) 0;
+    font: var(--small);
+  }
+
+  [data-theme^="paper"] .cloud-shell__nav-link .workspace-icon,
+  [data-theme^="paper"] .cloud-shell .cloud-shell__add .workspace-icon {
+    display: none;
+  }
+
+  [data-theme^="paper"] .cloud-shell__account-menu {
+    left: auto;
+    right: 0;
+    bottom: auto;
+    top: calc(100% + var(--space-8));
+  }
+
+  [data-theme^="paper"] .cloud-shell__sign-out-error {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: max-content;
+    max-width: var(--measure);
+  }
+}

@@ -1,0 +1,210 @@
+/* The shared page frame in the Paper theme: the page's padding and measure,
+ * its title, and the notice, dialog and warning every route borrows.
+ *
+ * Sibling of `workspace.css`, imported straight after it. Every rule is
+ * scoped `[data-theme^="paper"]`, so classic is untouched. Tokens come from
+ * `paper.css`. A page's own content belongs to that page's Paper sheet; this
+ * file only sets what it sits in.
+ */
+
+/* Content reveals instantly. The classic fade belongs to classic. */
+[data-theme^="paper"] .cold-load {
+  transition: none;
+}
+
+/* ------------------------------------------------------------- the page */
+
+[data-theme^="paper"] .workspace-page {
+  max-width: var(--measure-wide);
+  padding: var(--workspace-page-top) var(--workspace-page-inset);
+}
+
+[data-theme^="paper"] .cloud-shell .collection-page {
+  max-width: var(--measure-wide);
+}
+
+/* One `display` per screen: the page's name. */
+[data-theme^="paper"] .cloud-shell .workspace-page h1,
+[data-theme^="paper"] .cloud-shell .collection-heading h1,
+[data-theme^="paper"] .cloud-shell .todos-board-toolbar h1,
+[data-theme^="paper"] .cloud-shell .calendar-settings h1 {
+  color: var(--text);
+  font: var(--display);
+  letter-spacing: var(--display-tracking);
+}
+
+[data-theme^="paper"] .workspace-page h1 {
+  margin: 0 0 var(--space-24);
+}
+
+[data-theme^="paper"] .workspace-page p {
+  color: var(--muted);
+}
+
+/* `:where()` keeps this at attribute-only weight, so a feature sheet's own
+   paragraph rule still wins, exactly as it does in classic. */
+[data-theme^="paper"] :where(.workspace-page p) {
+  font: var(--body);
+}
+
+[data-theme^="paper"] .workspace-page a {
+  color: inherit;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* There are no buttons in Paper: an action is a word with a rule under it.
+   A page's own Paper sheet overrides this for anything it shapes itself. */
+[data-theme^="paper"] .workspace-page button,
+[data-theme^="paper"] .workspace-notice button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+[data-theme^="paper"] .workspace-page button:hover:not(:disabled),
+[data-theme^="paper"] .workspace-notice button:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .workspace-page button:disabled,
+[data-theme^="paper"] .workspace-notice button:disabled {
+  color: var(--faint);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .workspace-home-scroll {
+  overflow-x: auto;
+}
+
+/* ------------------------------------------------- notice, dialog, warning */
+
+/* Things that float are `ground-raised` with a hairline. No shadows. */
+[data-theme^="paper"] .workspace-notice {
+  gap: var(--space-md);
+  bottom: var(--gutter);
+  max-width: calc(100vw - var(--space-lg));
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .workspace-notice p {
+  font: var(--small);
+}
+
+[data-theme^="paper"] .workspace-dialog-backdrop {
+  padding: var(--space-24);
+  background: var(--scrim);
+}
+
+[data-theme^="paper"] .workspace-dialog {
+  width: min(var(--measure), 100%);
+  padding: var(--space-24);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--ground-raised);
+  color: var(--text);
+  font: var(--body);
+  box-shadow: none;
+}
+
+[data-theme^="paper"] .workspace-dialog header {
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+[data-theme^="paper"] .workspace-dialog h2 {
+  font: var(--title);
+  letter-spacing: var(--title-tracking);
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .workspace-dialog button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .workspace-dialog button:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+/* The add choices are a ruled list, not a stack of bordered boxes. A row in a
+   menu takes `selection` under the pointer; nothing moves. */
+[data-theme^="paper"] .workspace-add-choices {
+  gap: 0;
+}
+
+[data-theme^="paper"] .workspace-add-choices button,
+[data-theme^="paper"] .workspace-add-choices a {
+  min-height: 0;
+  /* The row's highlight reaches past the text, so the words still line up
+     with the dialog's title rather than sitting a pad-width inside it. */
+  margin-inline: calc(var(--space-sm) * -1);
+  padding: var(--space-sm);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: var(--body);
+  text-transform: lowercase;
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .workspace-add-choices > :last-child {
+  border-bottom: 0;
+}
+
+[data-theme^="paper"] .workspace-add-choices button:hover,
+[data-theme^="paper"] .workspace-add-choices a:hover {
+  border-bottom-color: var(--hairline);
+  background: var(--selection);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .workspace-project-warning {
+  padding: var(--space-sm) var(--workspace-page-inset);
+  background: transparent;
+  color: var(--muted);
+  font: var(--small);
+}
+
+[data-theme^="paper"] .workspace-project-warning button {
+  color: var(--text);
+  font: var(--small);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+/* One focus ring everywhere: the green rule, held off the thing it marks. */
+[data-theme^="paper"] .workspace-dialog :focus-visible,
+[data-theme^="paper"] .workspace-notice :focus-visible,
+[data-theme^="paper"] .workspace-page :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Squared corners the classic sheet applies to two page surfaces from here. */
+[data-theme^="paper"] .cloud-shell .todos-board-nav button,
+[data-theme^="paper"] .cloud-shell .todos-board-add {
+  border-radius: 0;
+}
