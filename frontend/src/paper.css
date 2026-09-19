@@ -81,6 +81,10 @@
   --icon: 18px;
 
   --gutter: 20px;
+  /* A screen's side padding: the main area's `space-lg`, stepped down to the
+     `gutter` floor on a phone, where 32px a side costs a row of words. Read
+     this rather than writing the query, so every surface insets alike. */
+  --inset: var(--space-lg);
   --sidebar: 208px;
   --measure: 600px;
   --measure-wide: 960px;
@@ -94,6 +98,7 @@
     --space-lg: 32px;
     --space-top: 40px;
     --space-bottom: 40px;
+    --inset: var(--gutter);
   }
 }
 
