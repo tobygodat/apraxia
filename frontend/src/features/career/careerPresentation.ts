@@ -6,11 +6,19 @@
  * All of it is pure, so the page's behaviour is tested here rather than through
  * the markup. The default order and the stage tally stay in `careerOrdering`,
  * which is shared with the application page.
+ *
+ * The second half of the file belongs to one application's own page: how a round
+ * reads, the line under a company's name, and what a file says about itself.
  */
 import { formatTaskDate } from "../todos/taskFormatting";
-import { sqlDateDifferenceInDays } from "../todos/dateDomain";
+import { compareSqlDates, sqlDateDifferenceInDays } from "../todos/dateDomain";
 import { CAREER_STAGES, orderApplications, type CareerStage } from "./careerOrdering";
-import type { CareerApplicationRow, CareerStep } from "./careerService";
+import type {
+  CareerApplication,
+  CareerApplicationRow,
+  CareerResource,
+  CareerStep,
+} from "./careerService";
 
 /** The two stages that mean the process is over, however it ended. */
 export const CLOSED_STAGES: readonly CareerStage[] = ["rejected", "withdrawn"];
@@ -141,4 +149,120 @@ export function nextStepLabel(step: CareerStep | null, today: string): NextStepL
   if (late > 0)
     return { name: step.name, when: `${late} ${late === 1 ? "day" : "days"} late`, late: true };
   return { name: step.name, when: formatCareerDate(step.scheduledOn), late: false };
+}
+
+/* ------------------------------------------------ one application's own page */
+
+/**
+ * A date as a line of the application page writes it: lowercase, because these
+ * lines carry a round's own name beside the date and `text-transform` cannot
+ * tell the two apart. The table's cells hold the date alone, so they keep
+ * `formatCareerDate` and are lowercased by their sheet.
+ */
+function spokenDate(value: string): string {
+  return formatCareerDate(value).toLowerCase();
+}
+
+export interface Timing {
+  label: string;
+  /** Past its date and not done: the one thing `warning` is for. */
+  late: boolean;
+}
+
+/**
+ * How a dated row reads. Beyond a week the countdown stops helping and the date
+ * carries it alone, which is also why nothing here says "in 34 days".
+ */
+export function dateTiming(value: string | null, today: string, missing = "not scheduled"): Timing {
+  if (!value) return { label: missing, late: false };
+  const date = spokenDate(value);
+  const days = sqlDateDifferenceInDays(today, value);
+  if (days < 0) {
+    const late = -days;
+    return { label: `${date} · ${late === 1 ? "yesterday" : `${late} days late`}`, late: true };
+  }
+  if (days === 0) return { label: `${date} · today`, late: false };
+  if (days === 1) return { label: `${date} · tomorrow`, late: false };
+  if (days <= 7) return { label: `${date} · in ${days} days`, late: false };
+  return { label: date, late: false };
+}
+
+/** A round that is already done says when, and nothing about being late. */
+export function stepTiming(step: CareerStep, today: string): Timing {
+  if (step.doneAt)
+    return { label: step.scheduledOn ? spokenDate(step.scheduledOn) : "done", late: false };
+  return dateTiming(step.scheduledOn, today);
+}
+
+/**
+ * The line under a company: when it went out, where it stands, and what is next.
+ * Each part is dropped rather than filled with a placeholder, so the line never
+ * says something that is not known.
+ */
+export function applicationSummary(
+  application: CareerApplication,
+  nextStep: CareerStep | null,
+  today: string,
+): string {
+  const parts = [
+    application.appliedOn ? `applied ${spokenDate(application.appliedOn)}` : "not sent yet",
+    application.stage,
+  ];
+  if (nextStep)
+    parts.push(`next, ${nextStep.name} ${dateTiming(nextStep.scheduledOn, today).label}`);
+  if (application.location) parts.push(application.location);
+  return parts.join(" · ");
+}
+
+/** `pdf · 214 KB · added sep 04`, or the host of a link. */
+export function resourceMeta(resource: CareerResource): string {
+  const parts: string[] = [];
+  if (resource.kind === "link") {
+    parts.push("link");
+    try {
+      if (resource.url) parts.push(new URL(resource.url).host.replace(/^www\./, ""));
+    } catch {
+      // A stored link that no longer parses still lists; it just says less.
+    }
+  } else {
+    const extension = resource.title.split(".").pop()?.toLowerCase();
+    parts.push(extension && extension !== resource.title.toLowerCase() ? extension : "file");
+    if (resource.byteSize) parts.push(formatBytes(resource.byteSize));
+    if (!resource.uploadedAt) parts.push("not finished uploading");
+  }
+  parts.push(`added ${spokenDate(resource.createdAt.slice(0, 10))}`);
+  return parts.join(" · ");
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(kb / 1024 < 10 ? 1 : 0)} MB`;
+}
+
+/** Tags in the order a filter row shows them: most used first, then alphabetical. */
+export function tagsOf(rows: readonly { tags: readonly string[] }[]): string[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) for (const tag of row.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort(([leftTag, left], [rightTag, right]) => right - left || leftTag.localeCompare(rightTag))
+    .map(([tag]) => tag);
+}
+
+/**
+ * Prep items in the order the page lists them: what is still to do first, by
+ * date, then what is done. `position` is the tie-break the table stores.
+ */
+export function orderPrep<
+  Item extends { dueOn: string | null; doneAt: string | null; position: number; id: string },
+>(items: readonly Item[]): Item[] {
+  return [...items].sort(
+    (a, b) =>
+      Number(!!a.doneAt) - Number(!!b.doneAt) ||
+      Number(a.dueOn === null) - Number(b.dueOn === null) ||
+      (a.dueOn && b.dueOn ? compareSqlDates(a.dueOn, b.dueOn) : 0) ||
+      a.position - b.position ||
+      a.id.localeCompare(b.id),
+  );
 }
