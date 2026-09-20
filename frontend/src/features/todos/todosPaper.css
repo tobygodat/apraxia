@@ -461,6 +461,23 @@
   margin: 0 var(--workspace-page-inset, var(--inset)) var(--space-lg);
 }
 
+/* On a phone the three action words take 200px beside a title with 350 to live
+   in, so the title wraps to three lines. Below the theme's phone step they move
+   under the task, indented to the task rather than to the checkbox. The week
+   grid keeps its word on the row: a day column carries only "edit", and a
+   second line for one word would double every row's height. */
+@media (max-width: 560px) {
+  [data-theme^="paper"] .todos-board-page .todos-board-pile .todos-board-card {
+    grid-template-columns: var(--icon) minmax(0, 1fr);
+  }
+
+  [data-theme^="paper"] .todos-board-page .todos-board-pile .todos-board-card__actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+}
+
 [data-theme^="paper"] .todos-board-page .todos-board-pile__tasks {
   display: flex;
   flex-direction: column;
