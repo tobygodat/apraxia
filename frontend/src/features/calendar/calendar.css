@@ -1247,8 +1247,7 @@
   }
 }
 
-/* Paper prints these; classic keeps the legend off and the time in the gutter. */
-.calendar-legend,
+/* Paper prints this; classic keeps the time in the gutter. */
 .week-now__label {
   display: none;
 }

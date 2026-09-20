@@ -326,7 +326,7 @@
 }
 
 [data-theme^="paper"] .calendar-footer {
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-md);
   padding-top: var(--space-sm);
   margin-top: var(--space-sm);
@@ -334,17 +334,6 @@
   font: var(--fine);
   color: var(--muted);
   text-transform: lowercase;
-}
-
-/* What the week's type means, in the type it is describing. */
-[data-theme^="paper"] .calendar-legend {
-  display: block;
-  margin: 0;
-}
-
-[data-theme^="paper"] .calendar-legend strong {
-  color: var(--text);
-  font-weight: 600;
 }
 
 /* ------------------------------------------------------ the tasks column */

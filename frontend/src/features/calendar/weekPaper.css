@@ -134,30 +134,37 @@
 
 /* ---- events ---- */
 
-/* An event is a name, not a block: a 1px neutral rule at its left and nowhere
- * else, with the hour rules running on through the time it occupies. Only the
- * words themselves carry the page's ground, which is what lets a name stay
- * readable where two events stack.
- *
- * The rule is `--outline`, not the calendar's own colour, because the redesign
- * reference draws every event the same: the week is read as a shape, and seven
- * colours fighting across it is the thing the theme set out to remove. The
- * colour still identifies a calendar in the event preview and in settings. */
+/* An event is raised off the ruled ground the way a menu is: opaque
+ * `--ground-raised` inside a hairline, so the hour rules stop at its edge and a
+ * name stays readable where two events stack. The fill is neutral on purpose:
+ * tinting it with the calendar's colour put seven muddy hues across a warm
+ * page. The colour is kept to the 2px rule at the event's left, and every name
+ * is set the same, `text` at 600, a shift included. */
 [data-theme^="paper"] .calendar-panel button.calendar-event,
 [data-theme^="paper"] .calendar-panel .calendar-event--more {
   padding: 1px 0 0 var(--space-8);
-  border: 0;
-  border-left: 1px solid var(--outline);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--calendar-event-color, var(--outline));
   border-radius: 0;
-  background: transparent;
+  background: var(--ground-raised);
   color: var(--text);
   font: var(--fine);
   transition: none;
 }
 
+/* The other choice on the Appearance page: the same event washed with its
+ * calendar's colour. The wash is mixed into `--ground`, not laid over it, so
+ * the event stays opaque and the hour rules still stop at its edge. The tint
+ * is its own edge, so the hairline goes. */
+[data-theme^="paper"][data-calendar-events="tinted"] .calendar-panel button.calendar-event {
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--calendar-event-color, var(--outline)) 16%, var(--ground));
+}
+
 [data-theme^="paper"] .calendar-panel button.calendar-event--all-day {
   margin: 0;
-  background: var(--ground);
   padding: 0 0 0 var(--space-8);
   font: var(--fine);
   line-height: 20px;
@@ -177,7 +184,6 @@
 [data-theme^="paper"] .calendar-event--timed strong,
 [data-theme^="paper"] .calendar-event--timed .calendar-event__inline {
   max-width: 100%;
-  background: var(--ground);
   font: var(--fine);
   font-weight: 600;
   line-height: 1.3;
@@ -186,27 +192,12 @@
   text-overflow: ellipsis;
 }
 
-/* A shift is the one thing on the week you are not meant to read: same weight
- * as everything else, one step back in colour, as the footer's line says. */
-[data-theme^="paper"] .calendar-event--work strong,
-[data-theme^="paper"] .calendar-event--work .calendar-event__inline strong,
-[data-theme^="paper"] .calendar-panel button.calendar-event--work {
-  color: var(--muted);
-}
-
 [data-theme^="paper"] .calendar-event--timed span,
 [data-theme^="paper"] .calendar-event--timed .calendar-event__inline-rest {
   max-width: 100%;
-  background: var(--ground);
   color: var(--muted);
   font: var(--fine);
   line-height: 1.3;
-}
-
-/* The inline variant is one line, so its halves share the line's own ground. */
-[data-theme^="paper"] .calendar-event--timed .calendar-event__inline strong,
-[data-theme^="paper"] .calendar-event--timed .calendar-event__inline-rest {
-  background: transparent;
 }
 
 [data-theme^="paper"] .calendar-event__time {
@@ -216,7 +207,6 @@
 /* What does not fit is said in words, in the same voice as a row's metadata. */
 [data-theme^="paper"] .calendar-panel .calendar-event--more {
   border-left-color: var(--hairline-strong);
-  background: var(--ground);
   color: var(--muted);
   cursor: default;
 }

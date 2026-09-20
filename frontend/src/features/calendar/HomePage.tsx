@@ -359,9 +359,6 @@ export function CalendarPanel({
         </>
       )}
       <footer className="calendar-footer">
-        <p className="calendar-legend">
-          <strong>Classes</strong> in bold · work in grey · everything else plain
-        </p>
         <span className="calendar-timezone">{timezone.replace(/_/g, " ")}</span>
       </footer>
     </section>

@@ -122,8 +122,7 @@ it("marks an event named Work, and leaves every other name alone", () => {
   const cards = [...container.querySelectorAll(".calendar-event--timed")];
   expect(cards.map((card) => card.querySelector("strong")?.textContent)).toEqual(titles);
   // The whole title has to be the word, so a shift is marked and a task that
-  // merely mentions work is not. Paper prints the marked one in the quiet
-  // colour, which is what the week's footer line describes.
+  // merely mentions work is not.
   expect(cards.map((card) => card.classList.contains("calendar-event--work"))).toEqual([
     true,
     true,
@@ -553,9 +552,7 @@ it("shows only month and year and omits the calendar source legend", async () =>
     expect(screen.getByRole("heading", { name: "September 2026" })).toBeTruthy();
     expect(screen.queryByLabelText("Visible calendars")).toBeNull();
     expect(screen.queryByText("Work calendar")).toBeNull();
-    // The footer says how to read the week's type, and where its hours are
-    // kept. Paper prints the first; classic hides it and keeps the second.
-    expect(screen.getByText(/in bold · work in grey · everything else plain/)).toBeTruthy();
+    // The footer says where the week's hours are kept.
     expect(screen.getByText("UTC")).toBeTruthy();
     // The arrows belong to Today, so one group moves the week.
     const actions = [...document.querySelectorAll(".calendar-toolbar-actions > button")].map(

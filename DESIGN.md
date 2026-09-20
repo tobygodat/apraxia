@@ -200,9 +200,10 @@ components:
     fill: "none"
     color: "currentColor"
   event-rule:
-    backgroundColor: "transparent"
+    backgroundColor: "{colors.ground-raised}"
     typography: "{typography.fine}"
-    borderLeft: "1px solid {colors.outline}"
+    border: "1px solid {colors.hairline}"
+    borderLeft: "2px solid {colors.outline}"
     padding: "0 0 0 {spacing.space-8}"
     fontFeature: "tabular-nums"
   focus-ring:
@@ -368,17 +369,20 @@ the pointer or keyboard. `scrim` sits behind a modal dialog and nowhere else.
 ### Calendar colours
 
 Google calendars are colour-coded upstream, and losing that loses information
-the person put there. **An event is a name on the page with a 1px rule at its
-left, and that rule carries the calendar's own colour.** This is the recorded
-exception to the one-hue rule, and the only one.
+the person put there. **An event is raised off the ruled grid, and the 2px rule
+at its left carries the calendar's own colour.** This is the recorded exception
+to the one-hue rule, and the only one.
 
-- The rule is 1px and at the event's left edge; the event itself is never
-  filled and never boxed.
+- The rule is 2px and at the event's left edge. The event is opaque
+  `ground-raised` inside a 1px `hairline`, so the hour rules stop at its edge.
+  The fill is neutral by default. **Appearance** offers the other choice,
+  `tinted`: the calendar's colour mixed 16% into `ground`, still opaque, with
+  no hairline because the tint is its own edge. It is a preference, not the
+  default, because seven tints across a warm page fight the one-hue rule.
 - `calendarColors.ts` keeps preserving valid Google colours and supplying stable
-  fallbacks. Its luminance-based text choice is no longer needed once nothing is
-  filled — event text is `text`, and its time and place are `muted`.
-- An event you only attend uses `hairline-strong` for its rule and `muted` for
-  its name, as the system's own reference page draws it.
+  fallbacks. Its luminance-based text choice is not needed on a neutral fill —
+  every event's name is `text` at 600, a shift included, and its time and place
+  are `muted`.
 - Calendar fallback colours are data, not a brand palette. They appear on
   calendar event rules and nowhere else.
 
@@ -578,12 +582,13 @@ beside it. No shadow.
 
 ### Calendar
 
-The time grid stays neutral. An event is a name in `text` with its time and
-place in `muted` on the line below, both in `fine` with tabular figures, and a
-1px rule at its left carrying its calendar's colour (see **Calendar colours**).
-The current-time line is a 2px `accent` rule. Nothing is filled, so nothing
-needs to choose black or white text to survive its own background, and a dense
-day stops being a wall of colour.
+The time grid stays neutral. An event is a name in `text` at 600 with its time
+and place in `muted` on the line below, both in `fine` with tabular figures, on
+opaque `ground-raised` inside a `hairline`, with a 2px rule at its left carrying
+its calendar's colour (see **Calendar colours**). The current-time line is a 2px
+`accent` rule. The fill is neutral, so nothing needs to choose black or white
+text to survive its own background, and a dense day stops being a wall of
+colour.
 
 ### The week
 
