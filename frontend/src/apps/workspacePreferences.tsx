@@ -9,7 +9,7 @@ import {
 } from "react";
 
 /**
- * Device-local workspace preferences: the visual theme preset and whether the
+ * Device-local workspace preferences: the visual theme and whether the
  * sidebar is collapsed to its icon rail. They live in localStorage so they
  * follow the browser, not the account; a per-account service can replace the
  * store later without touching the consumers.
@@ -17,13 +17,18 @@ import {
  * The theme preset applies to the whole workspace, not to one page. `classic`
  * is the workspace as it ships today; `paper` and `paper-light` are the two
  * themes of the Toby Godat foundations, whose tokens live in `paper.css`.
+ * `device` is not a fourth look: it is Paper, following the device between the
+ * dark page and the light one, so `data-theme` only ever carries a real preset.
  */
 
 export const WORKSPACE_THEME_PRESETS = ["classic", "paper", "paper-light"] as const;
 export type WorkspaceThemePreset = (typeof WORKSPACE_THEME_PRESETS)[number];
 
+export const WORKSPACE_THEME_CHOICES = [...WORKSPACE_THEME_PRESETS, "device"] as const;
+export type WorkspaceThemeChoice = (typeof WORKSPACE_THEME_CHOICES)[number];
+
 export interface WorkspacePreferences {
-  readonly theme: WorkspaceThemePreset;
+  readonly theme: WorkspaceThemeChoice;
   readonly sidebarCollapsed: boolean;
 }
 
@@ -41,17 +46,40 @@ export interface WorkspacePreferencesStore {
 export const WORKSPACE_PREFERENCES_STORAGE_KEY = "apraxia:workspace-preferences:v1";
 const STORAGE_KEY = WORKSPACE_PREFERENCES_STORAGE_KEY;
 
-function isThemePreset(value: unknown): value is WorkspaceThemePreset {
-  return (
-    typeof value === "string" && (WORKSPACE_THEME_PRESETS as readonly string[]).includes(value)
-  );
+function isOneOf<T extends string>(choices: readonly T[], value: unknown): value is T {
+  return typeof value === "string" && (choices as readonly string[]).includes(value);
+}
+
+const DEVICE_LIGHT_QUERY = "(prefers-color-scheme: light)";
+
+function deviceLightQuery(): MediaQueryList | null {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia(DEVICE_LIGHT_QUERY)
+    : null;
+}
+
+function subscribeToDeviceScheme(listener: () => void): () => void {
+  const query = deviceLightQuery();
+  query?.addEventListener("change", listener);
+  return () => query?.removeEventListener("change", listener);
+}
+
+/** The preset a choice paints with. Dark is Paper's default, so it is the fallback. */
+export function resolveWorkspaceTheme(
+  theme: WorkspaceThemeChoice,
+  deviceIsLight: boolean,
+): WorkspaceThemePreset {
+  if (theme !== "device") return theme;
+  return deviceIsLight ? "paper-light" : "paper";
 }
 
 export function normalizeWorkspacePreferences(value: unknown): WorkspacePreferences {
   if (!value || typeof value !== "object") return DEFAULT_WORKSPACE_PREFERENCES;
   const record = value as Record<string, unknown>;
   return {
-    theme: isThemePreset(record.theme) ? record.theme : DEFAULT_WORKSPACE_PREFERENCES.theme,
+    theme: isOneOf(WORKSPACE_THEME_CHOICES, record.theme)
+      ? record.theme
+      : DEFAULT_WORKSPACE_PREFERENCES.theme,
     sidebarCollapsed:
       typeof record.sidebarCollapsed === "boolean"
         ? record.sidebarCollapsed
@@ -121,7 +149,9 @@ function safeLocalStorage(): Storage | null {
 
 interface WorkspacePreferencesContextValue {
   readonly preferences: WorkspacePreferences;
-  readonly setTheme: (theme: WorkspaceThemePreset) => void;
+  /** The preset on screen: `preferences.theme` with `device` already answered. */
+  readonly resolvedTheme: WorkspaceThemePreset;
+  readonly setTheme: (theme: WorkspaceThemeChoice) => void;
   readonly setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
@@ -139,7 +169,7 @@ export function WorkspacePreferencesProvider({
   const preferences = useSyncExternalStore(store.subscribe, store.read, store.read);
 
   const setTheme = useCallback(
-    (theme: WorkspaceThemePreset) => store.write({ ...store.read(), theme }),
+    (theme: WorkspaceThemeChoice) => store.write({ ...store.read(), theme }),
     [store],
   );
   const setSidebarCollapsed = useCallback(
@@ -147,19 +177,26 @@ export function WorkspacePreferencesProvider({
     [store],
   );
 
+  const deviceIsLight = useSyncExternalStore(
+    subscribeToDeviceScheme,
+    () => deviceLightQuery()?.matches ?? false,
+    () => false,
+  );
+  const resolvedTheme = resolveWorkspaceTheme(preferences.theme, deviceIsLight);
+
   // The preset rides on the document root so any surface can style against
   // `[data-theme]` without prop drilling. `paper.css` answers to the two Paper
   // values; classic is the absence of a Paper value, which is why it needs no
   // rules of its own.
   useEffect(() => {
     const root = document.documentElement;
-    root.setAttribute("data-theme", preferences.theme);
+    root.setAttribute("data-theme", resolvedTheme);
     return () => root.removeAttribute("data-theme");
-  }, [preferences.theme]);
+  }, [resolvedTheme]);
 
   const value = useMemo(
-    () => ({ preferences, setTheme, setSidebarCollapsed }),
-    [preferences, setTheme, setSidebarCollapsed],
+    () => ({ preferences, resolvedTheme, setTheme, setSidebarCollapsed }),
+    [preferences, resolvedTheme, setTheme, setSidebarCollapsed],
   );
 
   return (
@@ -175,6 +212,7 @@ export function useWorkspacePreferences(): WorkspacePreferencesContextValue {
   return (
     context ?? {
       preferences: DEFAULT_WORKSPACE_PREFERENCES,
+      resolvedTheme: resolveWorkspaceTheme(DEFAULT_WORKSPACE_PREFERENCES.theme, false),
       setTheme: () => {},
       setSidebarCollapsed: () => {},
     }

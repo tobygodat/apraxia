@@ -8,32 +8,8 @@ import type { CalendarService } from "./calendarService";
 import "./calendar.css";
 import "./settingsPaper.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
-import {
-  WORKSPACE_THEME_PRESETS,
-  useWorkspacePreferences,
-  type WorkspaceThemePreset,
-} from "../../apps/workspacePreferences";
 import { peekRead } from "../../apps/navigationCache";
 import { useColdLoad } from "../../apps/coldLoad";
-
-/**
- * What each preset is called and what it looks like. The names are interface
- * words, so Paper lowercases them; classic prints them as written.
- */
-const THEME_COPY: Record<WorkspaceThemePreset, { name: string; description: string }> = {
-  classic: {
-    name: "Classic",
-    description: "Charcoal surfaces, Georgia headings, the workspace as it is today.",
-  },
-  paper: {
-    name: "Paper",
-    description: "Warm dark paper, Literata throughout, rules instead of boxes.",
-  },
-  "paper-light": {
-    name: "Paper light",
-    description: "The same page on light paper.",
-  },
-};
 
 /** `Intl.supportedValuesOf` is ES2022; this build targets ES2020. */
 type IntlWithSupportedValues = typeof Intl & {
@@ -137,43 +113,10 @@ export function SettingsPage({
       }
     })();
   };
-  const { preferences, setTheme } = useWorkspacePreferences();
   useColdLoad(loading && status === null && !error);
   return (
     <section className="calendar-settings" aria-labelledby="calendar-settings-title">
       <h1 id="calendar-settings-title">Settings</h1>
-
-      <section>
-        {/* The heading names the group, so there is no legend repeating it. */}
-        <h2 className="paper-heading settings-heading" id="settings-appearance-title">
-          Appearance
-        </h2>
-        <fieldset role="radiogroup" aria-labelledby="settings-appearance-title">
-          <div className="settings-list">
-            {WORKSPACE_THEME_PRESETS.map((preset) => (
-              <label key={preset} className="paper-row settings-choice">
-                {/* The name alone names the control; the sentence describes it,
-                    rather than both running together into one long label. */}
-                <input
-                  className="paper-radio"
-                  type="radio"
-                  name="workspace-theme"
-                  value={preset}
-                  checked={preferences.theme === preset}
-                  onChange={() => setTheme(preset)}
-                  aria-label={THEME_COPY[preset].name}
-                  aria-describedby={`settings-theme-${preset}-note`}
-                />
-                <span className="settings-choice__name">{THEME_COPY[preset].name}</span>
-                <span className="settings-choice__note" id={`settings-theme-${preset}-note`}>
-                  {THEME_COPY[preset].description}
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <p className="calendar-muted">This choice is saved on this device only.</p>
-      </section>
 
       <section>
         <h2 className="paper-heading">Google Calendar</h2>

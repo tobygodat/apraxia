@@ -271,8 +271,8 @@ deliberate.
   `apraxia:workspace-preferences` store the board theme used, widened from the
   board to the whole app. Their foundations — both token sets, the document
   base and the shared primitives — live in `frontend/src/paper.css`. The
-  Settings picker that offers them returns once every surface is rebuilt; until
-  then `/qa/workspace.html?theme=paper` is how you look at one.
+  Appearance page offers them, and `/qa/workspace.html?theme=paper` opens the
+  fixture in one.
 - The classic palette, type and radii stay in the frontmatter above, prefixed
   `classic-`, for as long as the classic stylesheets ship. They are frozen: do
   not extend them, do not reach for them in new work, and do not mix the two
@@ -598,12 +598,23 @@ filled yet, so an empty day is a ruled column rather than a blank one, and the
 row that has not been written yet is a rule with a `muted` label on it, not a
 button.
 
-### Settings
+### Appearance
 
-Appearance is a list of three choices — **classic**, **paper**, **paper
-light** — each a radio, its name in `body` and its description in `small`
-`muted`, ruled like any other list, capped at `measure`, with "Saved on this
-device only." in `muted` beneath. Classic is the default.
+Appearance is a page of its own, reached from the account menu between
+settings and sign out. Each group is a list of choices — a radio, its name in
+`body` and its description in `small` `muted`, ruled like any other list and
+capped at `measure` — with "These choices are saved on this device only." in
+`muted` under the page's name.
+
+- **theme**: **classic**, **paper**, **paper light** and **match device**.
+  Classic is the default. Match device is not a fourth look: it is Paper,
+  following the device between the dark page and the light one, so `data-theme`
+  still only carries a real preset.
+- **sidebar**: **words** or **icons only**, the same preference the sidebar's
+  own chevron sets.
+
+There is no text-size choice. Scaling the root overflows the grids that size
+against the viewport, and browser zoom already does the job properly.
 
 ## Do's and Don'ts
 

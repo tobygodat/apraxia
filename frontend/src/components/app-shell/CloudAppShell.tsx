@@ -79,6 +79,7 @@ export function CloudAppShell({
   const accountRootRef = useRef<HTMLDivElement>(null);
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const settingsLinkRef = useRef<HTMLAnchorElement>(null);
+  const appearanceLinkRef = useRef<HTMLAnchorElement>(null);
   const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const email = identity.email?.trim() || null;
   const { preferences, setSidebarCollapsed } = useWorkspacePreferences();
@@ -111,7 +112,11 @@ export function CloudAppShell({
         return;
       }
 
-      const items = [settingsLinkRef.current, signOutButtonRef.current].filter(
+      const items = [
+        settingsLinkRef.current,
+        appearanceLinkRef.current,
+        signOutButtonRef.current,
+      ].filter(
         (item): item is HTMLAnchorElement | HTMLButtonElement =>
           item !== null && !item.hasAttribute("disabled"),
       );
@@ -139,7 +144,7 @@ export function CloudAppShell({
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("focusin", handleFocusIn);
     document.addEventListener("keydown", handleKeyDown);
-    settingsLinkRef.current?.focus();
+    (settingsLinkRef.current ?? appearanceLinkRef.current)?.focus();
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
@@ -282,6 +287,14 @@ export function CloudAppShell({
                     settings
                   </Link>
                 ) : null}
+                <Link
+                  ref={appearanceLinkRef}
+                  className="cloud-shell__menu-item"
+                  to="/appearance"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  appearance
+                </Link>
                 <button
                   ref={signOutButtonRef}
                   className="cloud-shell__menu-item cloud-shell__sign-out"
