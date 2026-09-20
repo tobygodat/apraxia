@@ -4,10 +4,6 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { CalendarService } from "./calendarService";
 import type { GoogleCalendarConnectionStatus } from "../../types/domain";
 import { SettingsPage } from "./SettingsPage";
-import {
-  createMemoryWorkspacePreferencesStore,
-  WorkspacePreferencesProvider,
-} from "../../apps/workspacePreferences";
 import { cacheNavigationService, NavigationCache } from "../../apps/navigationCache";
 import { ColdLoadGate } from "../../apps/coldLoad";
 afterEach(cleanup);
@@ -34,23 +30,6 @@ it("keeps the saved visibility when an update fails", async () => {
   await screen.findByText("Calendar visibility was not saved. Try again.");
   expect((toggle as HTMLInputElement).checked).toBe(true);
   expect(service.setVisibility).toHaveBeenCalledWith("calendar", false);
-});
-
-it("saves the chosen theme preset, so Paper is reachable from classic", async () => {
-  const service = {
-    status: async () => ({ connectionState: "disconnected" }),
-    calendars: async () => [],
-  } as unknown as CalendarService;
-  const store = createMemoryWorkspacePreferencesStore({ theme: "classic" });
-  render(
-    <WorkspacePreferencesProvider store={store}>
-      <SettingsPage calendarService={service} profile={profile} onSignOut={() => {}} />
-    </WorkspacePreferencesProvider>,
-  );
-  const paper = await screen.findByRole("radio", { name: "Paper" });
-  expect((paper as HTMLInputElement).checked).toBe(false);
-  fireEvent.click(paper);
-  expect(store.read().theme).toBe("paper");
 });
 
 it("renders settings immediately from a warmed cache with no loading flash", async () => {

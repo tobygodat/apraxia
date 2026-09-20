@@ -95,6 +95,10 @@ const homeChunk = preloadable<
 const settingsChunk = preloadable<
   Parameters<(typeof import("../features/calendar/SettingsPage"))["SettingsPage"]>[0]
 >(() => import("../features/calendar/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+// Appearance takes no props, so there is no prop type to name.
+const appearanceChunk = preloadable<Record<string, never>>(() =>
+  import("../features/appearance/AppearancePage").then((m) => ({ default: m.AppearancePage })),
+);
 const todosChunk = preloadable<
   Parameters<(typeof import("../features/todos/TodosWorkspace"))["TodosWorkspaceContent"]>[0]
 >(() =>
@@ -125,6 +129,7 @@ const careerApplicationChunk = preloadable<
 
 const HomePage = homeChunk.Component;
 const SettingsPage = settingsChunk.Component;
+const AppearancePage = appearanceChunk.Component;
 const TodosWorkspaceContent = todosChunk.Component;
 const ClassesPage = classesChunk.Component;
 const CollectionPage = collectionChunk.Component;
@@ -136,6 +141,7 @@ export function preloadWorkspaceChunks(): Promise<void> {
   return Promise.all([
     homeChunk.preload(),
     settingsChunk.preload(),
+    appearanceChunk.preload(),
     todosChunk.preload(),
     classesChunk.preload(),
     collectionChunk.preload(),
@@ -163,7 +169,9 @@ export function preloadRouteChunk(pathname: string): Promise<void> | undefined {
                 ? careerChunk
                 : pathname.startsWith("/settings")
                   ? settingsChunk
-                  : undefined;
+                  : pathname.startsWith("/appearance")
+                    ? appearanceChunk
+                    : undefined;
   return chunk?.preload();
 }
 
@@ -292,6 +300,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
             <Route path="classes" element={<ClassesRoute {...props} />} />
             <Route path="classes/:id" element={<ClassesRoute {...props} />} />
             <Route path="settings" element={<SettingsRoute {...props} />} />
+            <Route path="appearance" element={<AppearancePage />} />
             <Route
               path="*"
               element={

@@ -104,6 +104,9 @@ describe("CloudAppShell", () => {
     expect(within(popover).getByRole("link", { name: "settings" }).getAttribute("href")).toBe(
       "/settings",
     );
+    expect(within(popover).getByRole("link", { name: "appearance" }).getAttribute("href")).toBe(
+      "/appearance",
+    );
     expect(container.textContent).not.toContain(IDENTITY.userId);
     expect(container.textContent).not.toContain(String(IDENTITY.expiresAt));
 

@@ -47,10 +47,10 @@ const reducedMotion = () =>
 export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
-  const { preferences } = useWorkspacePreferences();
+  const { resolvedTheme } = useWorkspacePreferences();
   // Paper draws several of this page's controls as words rather than icons,
   // and states its filter as a row of words, so the markup forks on the preset.
-  const paper = preferences.theme.startsWith("paper");
+  const paper = resolvedTheme.startsWith("paper");
   const isDetail = kind === "project" && Boolean(recordId);
   const [seed] = useState(() => {
     const peekedProjectRaw = isDetail ? peekRead(service, "getProject", recordId!) : undefined;
