@@ -27,13 +27,23 @@ export type WorkspaceThemePreset = (typeof WORKSPACE_THEME_PRESETS)[number];
 export const WORKSPACE_THEME_CHOICES = [...WORKSPACE_THEME_PRESETS, "device"] as const;
 export type WorkspaceThemeChoice = (typeof WORKSPACE_THEME_CHOICES)[number];
 
+/**
+ * How Paper fills a calendar event. `raised` is the neutral surface every event
+ * shares; `tinted` washes each one with its calendar's colour. Classic fills
+ * events with the calendar's colour outright, so the choice does not reach it.
+ */
+export const CALENDAR_EVENT_STYLES = ["raised", "tinted"] as const;
+export type CalendarEventStyle = (typeof CALENDAR_EVENT_STYLES)[number];
+
 export interface WorkspacePreferences {
   readonly theme: WorkspaceThemeChoice;
+  readonly calendarEvents: CalendarEventStyle;
   readonly sidebarCollapsed: boolean;
 }
 
 export const DEFAULT_WORKSPACE_PREFERENCES: WorkspacePreferences = {
   theme: "classic",
+  calendarEvents: "raised",
   sidebarCollapsed: false,
 };
 
@@ -80,6 +90,9 @@ export function normalizeWorkspacePreferences(value: unknown): WorkspacePreferen
     theme: isOneOf(WORKSPACE_THEME_CHOICES, record.theme)
       ? record.theme
       : DEFAULT_WORKSPACE_PREFERENCES.theme,
+    calendarEvents: isOneOf(CALENDAR_EVENT_STYLES, record.calendarEvents)
+      ? record.calendarEvents
+      : DEFAULT_WORKSPACE_PREFERENCES.calendarEvents,
     sidebarCollapsed:
       typeof record.sidebarCollapsed === "boolean"
         ? record.sidebarCollapsed
@@ -152,6 +165,7 @@ interface WorkspacePreferencesContextValue {
   /** The preset on screen: `preferences.theme` with `device` already answered. */
   readonly resolvedTheme: WorkspaceThemePreset;
   readonly setTheme: (theme: WorkspaceThemeChoice) => void;
+  readonly setCalendarEvents: (calendarEvents: CalendarEventStyle) => void;
   readonly setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
@@ -170,6 +184,10 @@ export function WorkspacePreferencesProvider({
 
   const setTheme = useCallback(
     (theme: WorkspaceThemeChoice) => store.write({ ...store.read(), theme }),
+    [store],
+  );
+  const setCalendarEvents = useCallback(
+    (calendarEvents: CalendarEventStyle) => store.write({ ...store.read(), calendarEvents }),
     [store],
   );
   const setSidebarCollapsed = useCallback(
@@ -194,9 +212,17 @@ export function WorkspacePreferencesProvider({
     return () => root.removeAttribute("data-theme");
   }, [resolvedTheme]);
 
+  // The event style rides beside it for the same reason: the week's sheet
+  // answers to the attribute, and the grid never has to be told.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-calendar-events", preferences.calendarEvents);
+    return () => root.removeAttribute("data-calendar-events");
+  }, [preferences.calendarEvents]);
+
   const value = useMemo(
-    () => ({ preferences, resolvedTheme, setTheme, setSidebarCollapsed }),
-    [preferences, resolvedTheme, setTheme, setSidebarCollapsed],
+    () => ({ preferences, resolvedTheme, setTheme, setCalendarEvents, setSidebarCollapsed }),
+    [preferences, resolvedTheme, setTheme, setCalendarEvents, setSidebarCollapsed],
   );
 
   return (
@@ -214,6 +240,7 @@ export function useWorkspacePreferences(): WorkspacePreferencesContextValue {
       preferences: DEFAULT_WORKSPACE_PREFERENCES,
       resolvedTheme: resolveWorkspaceTheme(DEFAULT_WORKSPACE_PREFERENCES.theme, false),
       setTheme: () => {},
+      setCalendarEvents: () => {},
       setSidebarCollapsed: () => {},
     }
   );

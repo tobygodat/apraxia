@@ -1,6 +1,8 @@
 import {
+  CALENDAR_EVENT_STYLES,
   WORKSPACE_THEME_CHOICES,
   useWorkspacePreferences,
+  type CalendarEventStyle,
   type WorkspaceThemeChoice,
 } from "../../apps/workspacePreferences";
 // Appearance is a page of ruled choices like Settings, so it wears the same
@@ -36,6 +38,18 @@ const THEME_COPY: Record<WorkspaceThemeChoice, ChoiceCopy> = {
   },
 };
 
+const CALENDAR_EVENT_COPY: Record<CalendarEventStyle, ChoiceCopy> = {
+  raised: {
+    name: "Raised",
+    description:
+      "Every event on the same neutral surface, with its calendar's colour kept to the rule at its left.",
+  },
+  tinted: {
+    name: "Tinted",
+    description: "Each event filled with a faint wash of its calendar's colour.",
+  },
+};
+
 const SIDEBAR_CHOICES = ["expanded", "collapsed"] as const;
 type SidebarChoice = (typeof SIDEBAR_CHOICES)[number];
 
@@ -53,6 +67,7 @@ function ChoiceGroup<T extends string>({
   title,
   choices,
   copy,
+  note,
   value,
   onChange,
 }: {
@@ -60,6 +75,8 @@ function ChoiceGroup<T extends string>({
   title: string;
   choices: readonly T[];
   copy: Record<T, ChoiceCopy>;
+  /** A sentence under the heading, for what the whole group needs said once. */
+  note?: string;
   value: T;
   onChange: (next: T) => void;
 }) {
@@ -69,6 +86,7 @@ function ChoiceGroup<T extends string>({
       <h2 className="paper-heading settings-heading" id={`${id}-title`}>
         {title}
       </h2>
+      {note ? <p className="calendar-muted">{note}</p> : null}
       <fieldset role="radiogroup" aria-labelledby={`${id}-title`}>
         <div className="settings-list">
           {choices.map((choice) => (
@@ -98,7 +116,8 @@ function ChoiceGroup<T extends string>({
 }
 
 export function AppearancePage() {
-  const { preferences, setTheme, setSidebarCollapsed } = useWorkspacePreferences();
+  const { preferences, setTheme, setCalendarEvents, setSidebarCollapsed } =
+    useWorkspacePreferences();
   return (
     <section className="calendar-settings" aria-labelledby="appearance-title">
       <h1 id="appearance-title">Appearance</h1>
@@ -110,6 +129,15 @@ export function AppearancePage() {
         copy={THEME_COPY}
         value={preferences.theme}
         onChange={setTheme}
+      />
+      <ChoiceGroup
+        id="appearance-calendar-events"
+        title="Calendar events"
+        choices={CALENDAR_EVENT_STYLES}
+        copy={CALENDAR_EVENT_COPY}
+        note="How Paper fills an event on the week. Classic keeps its own colours."
+        value={preferences.calendarEvents}
+        onChange={setCalendarEvents}
       />
       <ChoiceGroup
         id="appearance-sidebar"

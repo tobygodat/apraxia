@@ -44,6 +44,14 @@ it("paints Match device with the Paper preset the device asks for", () => {
   expect(document.documentElement.getAttribute("data-theme")).toBe("paper-light");
 });
 
+it("saves the calendar event style and puts it where the week's sheet reads it", () => {
+  const store = renderPage();
+  expect(document.documentElement.getAttribute("data-calendar-events")).toBe("raised");
+  fireEvent.click(screen.getByRole("radio", { name: "Tinted" }));
+  expect(store.read().calendarEvents).toBe("tinted");
+  expect(document.documentElement.getAttribute("data-calendar-events")).toBe("tinted");
+});
+
 it("collapses the sidebar from the page", () => {
   const store = renderPage();
   fireEvent.click(screen.getByRole("radio", { name: "Icons only" }));
@@ -53,6 +61,7 @@ it("collapses the sidebar from the page", () => {
 it("falls back to classic for a theme this build does not know", () => {
   expect(normalizeWorkspacePreferences({ theme: "sepia", sidebarCollapsed: true })).toEqual({
     theme: "classic",
+    calendarEvents: "raised",
     sidebarCollapsed: true,
   });
 });
