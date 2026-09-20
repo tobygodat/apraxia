@@ -13,12 +13,12 @@ function git(...args: string[]) {
   return execFileSync("git", args, { cwd: scratch, encoding: "utf8" }).trim();
 }
 
-function commitFiles(files: string[]) {
+function commitFiles(files: string[], content?: string) {
   const base = git("rev-parse", "HEAD");
   for (const file of files) {
     const target = path.join(scratch, file);
     mkdirSync(path.dirname(target), { recursive: true });
-    writeFileSync(target, `fixture ${version++}\n`);
+    writeFileSync(target, `${content ?? "fixture"} ${version++}\n`);
   }
   git("add", "--", ...files);
   git(
@@ -95,15 +95,60 @@ describe("database CI scope", () => {
       "DESIGN.md",
       "docs/a guide.md",
       "frontend/src/features/calendar/calendar.css",
+      ".impeccable/design.json",
     ]);
     expect(scope(event, base, head)).toBe("required=false");
+  });
+
+  it("skips presentational components and tests the database job never runs", () => {
+    const { base, head } = commitFiles([
+      "frontend/src/components/Button.tsx",
+      "frontend/src/features/todos/TodoRow.test.tsx",
+      "frontend/src/features/todos/dateDomain.test.ts",
+      "frontend/src/qa/workspaceFixture.tsx",
+      "frontend/qa/workspace.html",
+      "tests/contract/search.test.ts",
+    ]);
+    expect(scope("pull_request", base, head)).toBe("required=false");
+  });
+
+  it.each([
+    'import { supabase } from "../lib/supabaseClient";',
+    'import type { Database } from "../types/database";',
+  ])("runs for a component containing %s", (content) => {
+    const { base, head } = commitFiles(["frontend/src/apps/CloudApp.tsx"], content);
+    expect(scope("pull_request", base, head)).toBe("required=true");
+  });
+
+  it("runs when a component stops naming Supabase or is deleted while naming it", () => {
+    const file = "frontend/src/auth/SessionGate.tsx";
+    commitFiles([file], "createClient from supabase");
+    const cleaned = commitFiles([file]);
+    expect(scope("pull_request", cleaned.base, cleaned.head)).toBe("required=true");
+
+    commitFiles([file], "createClient from supabase");
+    const base = git("rev-parse", "HEAD");
+    git("rm", "-q", file);
+    git(
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.invalid",
+      "commit",
+      "-qm",
+      "rm",
+    );
+    expect(scope("pull_request", base, git("rev-parse", "HEAD"))).toBe("required=true");
   });
 
   it.each([
     "supabase/migrations/change.sql",
     "frontend/src/auth/session.ts",
     "frontend/src/features/todos/service.ts",
-    "frontend/src/Button.tsx",
+    "frontend/src/lib/usePhoneLayout.ts",
+    "frontend/tests/local/todos-ui.test.tsx",
+    "tests/local/todos.test.ts",
+    "server/calendar/calendarStore.ts",
     "package-lock.json",
     "vercel.json",
     ".github/workflows/ci.yml",

@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
 
-// Only positively identified documentation and styles can skip database work.
+// Only positively identified paths that cannot change a database result skip it.
 // Unknown events, missing history, empty diffs, and errors always run the suite.
 function databaseScope() {
   const eventName = process.env.GITHUB_EVENT_NAME;
@@ -26,11 +26,34 @@ function databaseScope() {
     const documentationOrStyle = (file) =>
       /^(AGENTS|README|PRODUCT|DESIGN)\.md$/.test(file) ||
       /^docs\/.+\.md$/.test(file) ||
+      /^\.impeccable\//.test(file) ||
       /^frontend\/src\/.+\.css$/.test(file);
-    if (paths.length > 0 && paths.every(documentationOrStyle)) {
+    // None of these run in the database job: it executes tests/local and
+    // frontend/tests/local only, and the static job repeats its typecheck.
+    const outsideDatabaseJob = (file) =>
+      /^tests\/contract\//.test(file) ||
+      /^frontend\/qa\//.test(file) ||
+      /^frontend\/src\/qa\//.test(file) ||
+      /^frontend\/src\/.+\.test\.tsx?$/.test(file);
+    // A component reaches the database through a service module (.ts), which
+    // always runs the suite. One that names Supabase or the generated types on
+    // either side of the diff is data code, not presentation.
+    const contentAt = (revision, file) =>
+      git(["--literal-pathspecs", "ls-tree", "-r", "--name-only", revision, "--", file])
+        ? git(["show", `${revision}:${file}`])
+        : "";
+    const presentationalComponent = (file) =>
+      /^frontend\/src\/.+\.tsx$/.test(file) &&
+      ![start, head].some((revision) =>
+        /supabase|types\/database/i.test(contentAt(revision, file)),
+      );
+    const skippable = (file) =>
+      documentationOrStyle(file) || outsideDatabaseJob(file) || presentationalComponent(file);
+    if (paths.length > 0 && paths.every(skippable)) {
       return {
         required: false,
-        reason: "Documentation/styles only: database execution is not required.",
+        reason:
+          "Documentation, styles, presentational components, or tests outside the database job only: database execution is not required.",
       };
     }
     return {

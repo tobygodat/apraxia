@@ -64,8 +64,8 @@ nothing. The table is the scope of local iteration:
   concern. Local fixture checks need no per-step confirmation.
 - A release commit needs **App checks** and **Database checks** green. CI's
   `verify` is full app verification, so do not run the identical suite again
-  locally for a release. Database CI skips execution for the documented
-  docs/style-only diffs listed in the development guide.
+  locally for a release. Database CI skips execution for the diffs
+  that cannot change a database result, listed in the development guide.
 - A **Database checks** failure means running `npm run verify:db` locally; the
   size of a refactor alone does not. It resets disposable local Supabase and
   regenerates `frontend/src/types/database.ts`, so review that diff and commit
