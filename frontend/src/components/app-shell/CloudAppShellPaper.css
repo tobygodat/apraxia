@@ -315,6 +315,14 @@
   font-weight: 600;
 }
 
+/* Hover turns the word; the border does not change. The classic hover rule
+   ties with the rule above, so the border is held here. */
+[data-theme^="paper"]
+  .cloud-shell
+  .workspace-page-header__action.paper-button--primary:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-button:disabled {
   border-color: var(--hairline);
 }

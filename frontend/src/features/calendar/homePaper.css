@@ -412,10 +412,17 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .home-workspace .today-list__add:hover {
+[data-theme^="paper"] .home-workspace .today-list__add:hover:not([aria-disabled="true"]) {
   border-color: var(--accent);
   background: transparent;
   color: var(--accent);
+}
+
+/* Held while a change is pending: a disabled `Button`, not the `muted` the
+   list gives its other held controls further down. */
+[data-theme^="paper"] .home-workspace .today-list .today-list__add[aria-disabled="true"] {
+  border-color: var(--hairline);
+  color: var(--faint);
 }
 
 [data-theme^="paper"] .home-workspace .today-list__add svg {

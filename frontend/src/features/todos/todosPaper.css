@@ -658,10 +658,18 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .today-list .today-list__add:hover {
+[data-theme^="paper"] .today-list .today-list__add:hover:not([aria-disabled="true"]) {
   border-color: var(--accent);
   background: transparent;
   color: var(--accent);
+}
+
+/* The list holds "add task" with `aria-disabled` while a change is pending, so
+   it keeps focus; it reads as a disabled `Button` all the same. */
+[data-theme^="paper"] .today-list .today-list__add[aria-disabled="true"] {
+  border-color: var(--hairline);
+  color: var(--faint);
+  cursor: default;
 }
 
 [data-theme^="paper"] .today-list__add svg {

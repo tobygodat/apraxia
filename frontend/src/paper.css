@@ -310,7 +310,8 @@
   font-weight: 600;
 }
 
-[data-theme^="paper"] .paper-button:disabled {
+[data-theme^="paper"] .paper-button:disabled,
+[data-theme^="paper"] .paper-button[aria-disabled="true"] {
   border-color: var(--hairline);
   color: var(--faint);
   cursor: default;

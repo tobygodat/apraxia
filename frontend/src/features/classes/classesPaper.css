@@ -27,20 +27,22 @@
    down; this undoes what the classic classes sheet adds on top of it.
    `.paper-action` carries its own type and hover, and a blanket rule here would
    outrank the primitive by one element, so it is excluded. */
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)) {
+[data-theme^="paper"] .classes-page button:where(:not(.paper-action, .paper-button)) {
   gap: var(--space-8);
   min-height: 0;
   border-radius: 0;
   font: var(--small);
 }
 
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)):hover:not(:disabled) {
+[data-theme^="paper"]
+  .classes-page
+  button:where(:not(.paper-action, .paper-button)):hover:not(:disabled) {
   border-color: transparent;
   background: transparent;
   color: var(--accent);
 }
 
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)):disabled {
+[data-theme^="paper"] .classes-page button:where(:not(.paper-action, .paper-button)):disabled {
   color: var(--faint);
   text-decoration: none;
   opacity: 1;
