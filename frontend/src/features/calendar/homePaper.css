@@ -258,7 +258,7 @@
   stroke-width: 1.5;
 }
 
-/* Refresh is a word alone and add event a `Button` with no glyph beside its
+/* Refresh is a word alone, and add event a `Button` whose plus rides beside its
  * word; the two chevrons are the one icon on this toolbar that stands by
  * itself, because stepping a week has no word short enough to carry it. */
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh {
@@ -271,8 +271,7 @@
   content: "refresh";
 }
 
-[data-theme^="paper"] .calendar-toolbar .calendar-refresh .workspace-icon,
-[data-theme^="paper"] .calendar-toolbar .calendar-add .workspace-icon {
+[data-theme^="paper"] .calendar-toolbar .calendar-refresh .workspace-icon {
   display: none;
 }
 
@@ -420,7 +419,8 @@
 }
 
 [data-theme^="paper"] .home-workspace .today-list__add svg {
-  display: none;
+  width: var(--icon);
+  height: var(--icon);
 }
 
 /* today / tomorrow: the one you are on is marked by a green rule. */

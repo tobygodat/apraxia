@@ -665,7 +665,8 @@
 }
 
 [data-theme^="paper"] .today-list__add svg {
-  display: none;
+  width: var(--icon);
+  height: var(--icon);
 }
 
 /* Today and tomorrow are two words; where you are carries the green rule. */

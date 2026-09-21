@@ -646,7 +646,8 @@ never has two.
   in a page header or a section header: "add project", "add event", "add task",
   "add assignment". A header's "edit" beside it stays quiet, and an "add" that
   repeats down a list or across columns ("add task" under each day, "add step")
-  stays a word, because a row of borders is a toolbar.
+  stays a word, because a row of borders is a toolbar. An "add" `Button` carries
+  a plus at `icon` size, `space-sm` before its word.
 - A standalone action with no companions — "new task" in a header — may take
   the same box with an `outline` border.
 - A destructive action is its word in `danger`: "delete", "remove". It takes a

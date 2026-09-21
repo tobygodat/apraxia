@@ -332,6 +332,7 @@
    "add assignment" is on a class. The box is restated because the classic rule
    ties with `.paper-button`. */
 [data-theme^="paper"] .collection-page .collection-section__add {
+  gap: var(--space-sm);
   margin: 0;
   min-height: var(--size-control);
   padding: 3px 14px;
@@ -351,7 +352,8 @@
 }
 
 [data-theme^="paper"] .collection-page .collection-section__add .workspace-icon {
-  display: none;
+  width: var(--icon);
+  height: var(--icon);
 }
 
 [data-theme^="paper"] .collection-page--project .collection-section header {

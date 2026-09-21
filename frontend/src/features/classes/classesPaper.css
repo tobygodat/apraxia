@@ -93,8 +93,12 @@
   text-transform: lowercase;
 }
 
-/* A word standing alone needs no icon beside it. */
-[data-theme^="paper"] .classes-page .workspace-page-header__action .workspace-icon {
+/* A word standing alone needs no icon beside it; "add class" is a `Button` and
+   keeps its plus, as "add project" does. */
+[data-theme^="paper"]
+  .classes-page
+  .workspace-page-header__action:where(:not(.paper-button))
+  .workspace-icon {
   display: none;
 }
 
@@ -217,6 +221,7 @@
 /* The action that completes the screen: the primary `Button`. The box is
    restated because the classic header rule outranks `.paper-button`. */
 [data-theme^="paper"] .classes-page .class-assignments > header > button {
+  gap: var(--space-sm);
   min-height: var(--size-control);
   padding: 3px 14px;
   border: 1px solid var(--accent);
@@ -240,9 +245,10 @@
   color: var(--faint);
 }
 
-/* The word carries the Button; no icon rides beside it. */
+/* The plus rides beside the word at text size, as on every "add" `Button`. */
 [data-theme^="paper"] .class-assignments > header > button > .workspace-icon {
-  display: none;
+  width: var(--icon);
+  height: var(--icon);
 }
 
 [data-theme^="paper"] .assignment-table-wrap {

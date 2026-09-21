@@ -346,6 +346,7 @@ export function CareerPage({ service, userId, today, onOpenApplication }: Props)
             className="career-add__open paper-button paper-button--primary"
             onClick={() => setAdding(true)}
           >
+            <WorkspaceIcon name="plus" />
             Add application
           </button>
         </div>

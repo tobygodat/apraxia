@@ -301,6 +301,7 @@
    restated here rather than taken from `.paper-button`, because the word rule
    above outranks the primitive and the classic header rule ties with it. */
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-button {
+  gap: var(--space-sm);
   min-height: var(--size-control);
   padding: 3px 14px;
   border: 1px solid var(--outline);
