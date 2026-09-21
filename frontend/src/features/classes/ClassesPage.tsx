@@ -182,7 +182,7 @@ export function ClassesPage({
           <header className="classes-heading workspace-page-header">
             <h1>Classes</h1>
             <button
-              className="workspace-page-header__action"
+              className="workspace-page-header__action paper-button paper-button--primary"
               onClick={() => {
                 setError("");
                 setEditing({

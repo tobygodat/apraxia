@@ -319,7 +319,7 @@ export function CareerPage({ service, userId, today, onOpenApplication }: Props)
           />
           <button
             type="submit"
-            className="paper-action paper-action--completing"
+            className="paper-button paper-button--primary"
             disabled={busy || !company.trim() || !role.trim()}
           >
             Add
@@ -343,9 +343,10 @@ export function CareerPage({ service, userId, today, onOpenApplication }: Props)
           <button
             ref={addRef}
             type="button"
-            className="career-add__open paper-action paper-action--completing"
+            className="career-add__open paper-button paper-button--primary"
             onClick={() => setAdding(true)}
           >
+            <WorkspaceIcon name="plus" />
             Add application
           </button>
         </div>

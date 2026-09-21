@@ -143,6 +143,17 @@
   text-transform: lowercase;
 }
 
+/* The connect action is the region's one `Button`, so it takes back the height
+   and corners the word rule above clears, and keeps its border on hover. */
+[data-theme^="paper"] .calendar-settings .paper-button {
+  min-height: var(--size-control);
+  border-radius: var(--radius);
+}
+
+[data-theme^="paper"] .calendar-settings .paper-button--primary:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
 /* A word that sits straight in a region is only as wide as itself, so the
    pointer finds the word rather than the whole line. */
 [data-theme^="paper"] .calendar-settings > section > button {

@@ -141,7 +141,7 @@ export function SettingsPage({
             <div className="calendar-controls">
               {
                 <button
-                  className="paper-action paper-action--completing"
+                  className="paper-button paper-button--primary"
                   disabled={busy}
                   onClick={() =>
                     void act(async () => {

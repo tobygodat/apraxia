@@ -260,7 +260,7 @@ export function CalendarPanel({
           </button>
           {editable && (
             <button
-              className="calendar-add"
+              className="calendar-add paper-button paper-button--primary"
               disabled={!visibleWeek || state.loading}
               onClick={() =>
                 setEditor({

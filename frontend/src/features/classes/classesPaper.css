@@ -27,20 +27,22 @@
    down; this undoes what the classic classes sheet adds on top of it.
    `.paper-action` carries its own type and hover, and a blanket rule here would
    outrank the primitive by one element, so it is excluded. */
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)) {
+[data-theme^="paper"] .classes-page button:where(:not(.paper-action, .paper-button)) {
   gap: var(--space-8);
   min-height: 0;
   border-radius: 0;
   font: var(--small);
 }
 
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)):hover:not(:disabled) {
+[data-theme^="paper"]
+  .classes-page
+  button:where(:not(.paper-action, .paper-button)):hover:not(:disabled) {
   border-color: transparent;
   background: transparent;
   color: var(--accent);
 }
 
-[data-theme^="paper"] .classes-page button:where(:not(.paper-action)):disabled {
+[data-theme^="paper"] .classes-page button:where(:not(.paper-action, .paper-button)):disabled {
   color: var(--faint);
   text-decoration: none;
   opacity: 1;
@@ -80,8 +82,8 @@
   text-transform: none;
 }
 
-/* Only one word on a screen carries the green rule. On the class page that is
-   "add assignment", so the header's own action steps back to a quiet word.
+/* Only one action on a screen carries the green border. On the class page that
+   is "add assignment", so the header's own action steps back to a quiet word.
    The class page is the header whose title sits in a wrapper; the list page's
    title is the header's own child, and its action stays the completing one. */
 [data-theme^="paper"] .classes-page .classes-heading > div + .workspace-page-header__action {
@@ -93,8 +95,12 @@
   text-transform: lowercase;
 }
 
-/* A word standing alone needs no icon beside it. */
-[data-theme^="paper"] .classes-page .workspace-page-header__action .workspace-icon {
+/* A word standing alone needs no icon beside it; "add class" is a `Button` and
+   keeps its plus, as "add project" does. */
+[data-theme^="paper"]
+  .classes-page
+  .workspace-page-header__action:where(:not(.paper-button))
+  .workspace-icon {
   display: none;
 }
 
@@ -214,34 +220,37 @@
   margin-bottom: var(--space-sm);
 }
 
-/* The word that completes the screen: 600, with the green rule under it. */
+/* The action that completes the screen: the primary `Button`. The box is
+   restated because the classic header rule outranks `.paper-button`. */
 [data-theme^="paper"] .classes-page .class-assignments > header > button {
-  min-height: 0;
-  padding: 0;
-  border: 0;
+  gap: var(--space-sm);
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
   background: transparent;
-  font: var(--small);
+  font: var(--body);
   font-weight: 600;
   color: var(--text);
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
+  text-decoration: none;
   text-transform: lowercase;
 }
 
 [data-theme^="paper"] .classes-page .class-assignments > header > button:hover:not(:disabled) {
-  border-color: transparent;
+  border-color: var(--accent);
   background: transparent;
   color: var(--accent);
 }
 
 [data-theme^="paper"] .classes-page .class-assignments > header > button:disabled {
+  border-color: var(--hairline);
   color: var(--faint);
-  text-decoration: none;
 }
 
-/* A word needs no icon beside it when it is the only thing there. */
+/* The plus rides beside the word at text size, as on every "add" `Button`. */
 [data-theme^="paper"] .class-assignments > header > button > .workspace-icon {
-  display: none;
+  width: var(--icon);
+  height: var(--icon);
 }
 
 [data-theme^="paper"] .assignment-table-wrap {

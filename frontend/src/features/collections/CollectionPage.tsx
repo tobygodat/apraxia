@@ -435,7 +435,7 @@ export function CollectionPage(props: Props) {
         </div>
         {detail ? (
           <button
-            className="workspace-page-header__action paper-action paper-action--completing"
+            className="workspace-page-header__action paper-action paper-action--quiet"
             disabled={!project}
             onClick={() => project && setEditor({ kind: "project", record: project })}
           >
@@ -444,7 +444,7 @@ export function CollectionPage(props: Props) {
           </button>
         ) : (
           <button
-            className="workspace-page-header__action paper-action paper-action--completing"
+            className="workspace-page-header__action paper-button paper-button--primary"
             onClick={() => setEditor({ kind })}
           >
             <WorkspaceIcon name="plus" />
@@ -488,7 +488,7 @@ export function CollectionPage(props: Props) {
                 )}
               </h2>
               <button
-                className="collection-section__add paper-action paper-action--completing"
+                className="collection-section__add paper-button paper-button--primary"
                 onClick={() => setComposer(true)}
               >
                 <WorkspaceIcon name="plus" />
@@ -538,7 +538,7 @@ export function CollectionPage(props: Props) {
                 {!coldDetail && <span className="collection-section__count">{ideas.length}</span>}
               </h2>
               <button
-                className="collection-section__add paper-action paper-action--completing"
+                className="collection-section__add paper-button paper-button--primary"
                 onClick={() => recordId && setEditor({ kind: "idea", projectId: recordId })}
               >
                 <WorkspaceIcon name="plus" />

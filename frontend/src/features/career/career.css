@@ -208,6 +208,10 @@
   font-size: 14px;
   text-decoration: underline;
 }
+/* The plus belongs to Paper's Button; classic keeps the bare word it had. */
+.career-add__open .workspace-icon {
+  display: none;
+}
 .career-add__field {
   flex: 1 1 180px;
   min-width: 0;

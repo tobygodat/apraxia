@@ -409,6 +409,7 @@ function AssignmentSession({
         <h2>Assignments</h2>
         <button
           ref={addButton}
+          className="paper-button paper-button--primary"
           disabled={!!editing || pending || loading || !!loadError}
           onClick={() => {
             setNotice("");
