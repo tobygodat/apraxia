@@ -18,6 +18,7 @@
 [data-theme^="paper"] .search-backdrop {
   padding: var(--space-top) var(--inset) var(--space-24);
   background: var(--scrim);
+  animation: var(--arrive-scrim);
 }
 
 [data-theme^="paper"] .search-dialog {
@@ -31,6 +32,7 @@
   color: var(--text);
   box-shadow: none;
   scrollbar-color: var(--hairline-strong) var(--ground-raised);
+  animation: var(--arrive-centre);
 }
 
 [data-theme^="paper"] .search-header {

@@ -149,7 +149,7 @@
   background: var(--ground-raised);
   color: var(--text);
   font: var(--fine);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 /* The other choice on the Appearance page: the same event washed with its
@@ -270,7 +270,8 @@
   color: var(--text);
   font: var(--small);
   scrollbar-color: var(--hairline-strong) var(--ground-raised);
-  animation: none;
+  /* Anchored to the event that was pressed, so it arrives from it. */
+  animation: var(--arrive-below);
 }
 
 [data-theme^="paper"] .event-preview :focus-visible {
@@ -587,10 +588,11 @@
   margin-left: var(--space-md);
 }
 
-/* Still: the preview does not slide in, in either motion preference. */
+/* The classic sheet swaps in its own fade under reduced motion. Paper's
+   arrival already runs through `motion-scale`, which is 0 there. */
 @media (prefers-reduced-motion: reduce) {
   [data-theme^="paper"] .event-preview {
-    animation: none;
+    animation: var(--arrive-below);
   }
 }
 

@@ -111,13 +111,14 @@
   border-top: 1px solid var(--hairline);
 }
 
-/* Rules, not boxes, and nothing moves under the pointer: the name answers. */
+/* Rules, not boxes, and nothing moves under the pointer: the name answers,
+   in `duration-quick`. */
 [data-theme^="paper"] .classes-row {
   gap: var(--space-md);
   align-items: baseline;
   padding: var(--space-sm) 0;
   border-bottom: 1px solid var(--hairline);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .classes-row:hover {
@@ -523,6 +524,7 @@
   border-radius: var(--radius);
   background: var(--ground-raised);
   box-shadow: none;
+  animation: var(--arrive-below);
 }
 
 [data-theme^="paper"] .classes-page .drive-menu > div button {
@@ -758,6 +760,8 @@
   color: var(--text);
   box-shadow: none;
   font: var(--body);
+  /* Each opens under the control that asked for it, and arrives from it. */
+  animation: var(--arrive-below);
 }
 
 /* The native date and time controls inside follow the preset, not the sheet. */
@@ -999,10 +1003,9 @@
   text-transform: lowercase;
 }
 
-/* ------------------------------------------------------------------ still */
+/* ----------------------------------------------------------------- motion */
 
-/* Nothing on this page animates; state changes are instant. */
-[data-theme^="paper"] .classes-row,
+/* The reader's chevron steps rather than turns; colour is all that eases. */
 [data-theme^="paper"] .classes-reader-tools[aria-expanded] .workspace-icon {
   transition: none;
 }
