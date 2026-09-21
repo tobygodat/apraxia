@@ -159,3 +159,19 @@
   background: #515151;
   color: #fff;
 }
+.search-group {
+  margin: 16px 0 6px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #ada9a3;
+}
+/* The row Enter will open. Declared after the hover rule so it holds while the pointer is elsewhere. */
+.search-results button[data-highlighted] {
+  background: #262626;
+}
+.search-foot {
+  margin: 18px 0 0;
+  font-size: 12px;
+  color: #ada9a3;
+}

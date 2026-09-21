@@ -193,6 +193,43 @@
   color: var(--muted);
 }
 
+/* The row enter will open takes `selection`, as the highlighted row of any menu
+ * does. It bleeds `space-8` past the rules on both sides so the words keep
+ * their column and the fill still has air around them. */
+[data-theme^="paper"] .search-results button {
+  width: calc(100% + 2 * var(--space-8));
+  margin-inline: calc(-1 * var(--space-8));
+  padding-inline: var(--space-8);
+}
+
+[data-theme^="paper"] .search-results button[data-highlighted]:not(:disabled) {
+  background: var(--selection);
+}
+
+/* A group's name, as a menu's `.group-label`: `fine`, `muted`, lowercase. */
+[data-theme^="paper"] .search-group {
+  margin: var(--space-md) 0 var(--space-xs);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* A page's name is an interface word, so it is lowercase as it is in the
+ * sidebar; a record's title is the person's and keeps its own case. */
+[data-theme^="paper"] .search-result-content .search-page-name {
+  text-transform: lowercase;
+}
+
+/* The keys, said in words, above the rule that closes the palette. */
+[data-theme^="paper"] .search-foot {
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--hairline-strong);
+  font: var(--fine);
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
 [data-theme^="paper"] .search-more {
   margin-top: var(--space-md);
 }

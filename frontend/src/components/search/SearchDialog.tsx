@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { CollectionService } from "../../features/collections/collectionService";
 import type { SearchRecordType, SearchResult } from "../../types/domain";
 import { useDialogPresence, useWorkspaceRevision } from "../../apps/workspaceStore";
+import { matchPages, stepHighlight } from "./searchPages";
 import "./SearchDialog.css";
 import "./searchPaper.css";
 
@@ -11,6 +12,8 @@ export interface SearchDialogProps {
   service: Pick<CollectionService, "search">;
   onClose: () => void;
   onSelect: (result: SearchResult) => Promise<void> | void;
+  /** Lists the workspace pages above the results; without it the dialog only finds records. */
+  onNavigate?: (to: string) => void;
 }
 
 /** The interface says "Tasks" where the database says todos, and "note" reads better than the column name. */
@@ -25,7 +28,7 @@ const RESULT_KIND: Record<SearchRecordType, string> = {
 };
 
 /** Remains mounted in the authenticated shell so closing search keeps its place. */
-export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogProps) {
+export function SearchDialog({ open, service, onClose, onSelect, onNavigate }: SearchDialogProps) {
   const id = useId();
   const refreshKey = useWorkspaceRevision();
   useDialogPresence(open);
@@ -45,6 +48,8 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
   const [selection, setSelection] = useState<string | null>(null);
   const [nextOffset, setNextOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  // The first row starts highlighted so Enter always does something.
+  const [highlight, setHighlight] = useState(0);
 
   useEffect(() => {
     alive.current = true;
@@ -144,6 +149,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
     requestGeneration.current += 1;
     requestController.current?.abort();
     setQuery(value.slice(0, 256));
+    setHighlight(0);
     setError("");
     setRetry(0);
   }
@@ -166,6 +172,30 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
 
   function close() {
     if (!selectingRef.current) onClose();
+  }
+
+  const pages = onNavigate ? matchPages(query) : [];
+  const rowCount = pages.length + results.length;
+  const highlighted = Math.min(highlight, rowCount - 1);
+  const rowId = (index: number) => `${id}-row-${index}`;
+
+  function activate(index: number) {
+    if (index < 0) return;
+    const page = pages[index];
+    if (page) onNavigate?.(page.to);
+    else void select(results[index - pages.length]);
+  }
+  function onInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const next = stepHighlight(highlighted, event.key === "ArrowDown" ? 1 : -1, rowCount);
+      setHighlight(next);
+      // Optional call: happy-dom has no scrollIntoView.
+      document.getElementById(rowId(next))?.scrollIntoView?.({ block: "nearest" });
+    } else if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      activate(highlighted);
+    }
   }
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
@@ -230,7 +260,10 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
           maxLength={256}
           value={query}
           disabled={Boolean(selection)}
+          aria-controls={`${id}-rows`}
+          aria-activedescendant={highlighted >= 0 ? rowId(highlighted) : undefined}
           onChange={(event) => updateQuery(event.target.value)}
+          onKeyDown={onInputKeyDown}
           placeholder="Search your workspace"
         />
         {error && (
@@ -251,35 +284,73 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
               : !query.trim()
                 ? "Search includes completed tasks and archived projects."
                 : !results.length && !error
-                  ? "No matches. Try another word."
+                  ? pages.length
+                    ? "No matching records."
+                    : "No matches. Try another word."
                   : previousResults
                     ? `Previous results for “${loadedQuery}”`
                     : `${results.length} ${results.length === 1 ? "result" : "results"}${hasMore ? " shown" : ""}`}
         </div>
-        <ul className="search-results" aria-label="Search results">
-          {results.map((result) => (
-            <li key={`${result.recordType}:${result.recordId}`}>
-              <button
-                type="button"
-                disabled={Boolean(selection)}
-                onClick={() => void select(result)}
-              >
-                <span className="search-result-type">{RESULT_KIND[result.recordType]}</span>
-                <span className="search-result-content">
-                  <strong>
-                    {result.title ||
-                      result.snippet.split(/\r?\n/).find((line) => line.trim()) ||
-                      "Untitled"}
-                  </strong>
-                  {result.parentId && (
-                    <span className="search-result-parent">{result.parentId}</span>
-                  )}
-                  {result.snippet && <span>{result.snippet}</span>}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div id={`${id}-rows`}>
+          {pages.length > 0 && (
+            <>
+              <h3 className="search-group" id={`${id}-pages`}>
+                Go to
+              </h3>
+              <ul className="search-results" aria-labelledby={`${id}-pages`}>
+                {pages.map((page, index) => (
+                  <li key={page.to}>
+                    <button
+                      type="button"
+                      id={rowId(index)}
+                      data-highlighted={index === highlighted ? "" : undefined}
+                      disabled={Boolean(selection)}
+                      onMouseMove={() => setHighlight(index)}
+                      onClick={() => onNavigate?.(page.to)}
+                    >
+                      <span className="search-result-type">page</span>
+                      <span className="search-result-content">
+                        <strong className="search-page-name">{page.label}</strong>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {pages.length > 0 && results.length > 0 && (
+            <h3 className="search-group" id={`${id}-records`}>
+              Records
+            </h3>
+          )}
+          <ul className="search-results" aria-label="Search results">
+            {results.map((result, index) => (
+              <li key={`${result.recordType}:${result.recordId}`}>
+                <button
+                  type="button"
+                  id={rowId(pages.length + index)}
+                  data-highlighted={pages.length + index === highlighted ? "" : undefined}
+                  disabled={Boolean(selection)}
+                  onMouseMove={() => setHighlight(pages.length + index)}
+                  onClick={() => void select(result)}
+                >
+                  <span className="search-result-type">{RESULT_KIND[result.recordType]}</span>
+                  <span className="search-result-content">
+                    <strong>
+                      {result.title ||
+                        result.snippet.split(/\r?\n/).find((line) => line.trim()) ||
+                        "Untitled"}
+                    </strong>
+                    {result.parentId && (
+                      <span className="search-result-parent">{result.parentId}</span>
+                    )}
+                    {result.snippet && <span>{result.snippet}</span>}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
         {hasMore && !previousResults && (
           <button
             type="button"
@@ -290,6 +361,7 @@ export function SearchDialog({ open, service, onClose, onSelect }: SearchDialogP
             Load more
           </button>
         )}
+        <p className="search-foot">Enter to open · arrows to move · esc to close</p>
       </div>
     </div>,
     document.body,

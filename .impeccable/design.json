@@ -653,7 +653,28 @@
       }
     },
     "shadows": [],
-    "motion": [],
+    "motion": [
+      {
+        "name": "duration-quick",
+        "value": "150ms",
+        "purpose": "Hover, focus and selection colour; anything closing. Multiplied by motion-scale, which is 0 under reduced motion."
+      },
+      {
+        "name": "duration-fast",
+        "value": "250ms",
+        "purpose": "Menus, dialogs, toasts and the command palette opening; the line under the current word drawing in."
+      },
+      {
+        "name": "duration-medium",
+        "value": "350ms",
+        "purpose": "A toast leaving by itself; a panel closing."
+      },
+      {
+        "name": "ease-smooth-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Open, close and position. The only curve."
+      }
+    ],
     "breakpoints": [
       {
         "name": "home-cover-narrow",
@@ -697,7 +718,7 @@
       }
     ],
     "notes": [
-      "Paper carries no elevation and no motion. Both arrays above are empty on purpose, not unfilled: the theme separates with rules and space, and a dialog is the one surface that floats, with a hairline and a scrim rather than a shadow.",
+      "Paper carries no elevation, so `shadows` is empty on purpose, not unfilled. Its motion is quiet and short, from the timing tokens only: colour on hover and selection, the line under the current word drawing in, and surfaces arriving by a fade and a few pixels. The theme separates with rules and space, and a dialog is the one surface that floats, with a hairline and a scrim rather than a shadow.",
       "Four rules in the Paper sheets are written as `box-shadow: inset 2px 0 0 var(--accent)`. They draw a 2px rule where a border would change an element's box, so they are geometry, not elevation.",
       "Classic still ships as the default preset and does carry shadows and transitions. They are deliberately not recorded here: this sidecar describes the system new work is written against, and DESIGN.md names classic frozen.",
       "Tonal ramps are synthesized preview metadata at each colour's own chroma and hue. The shipped token is `canonical`; a ramp step is not an application token.",
@@ -787,7 +808,7 @@
       "Words, not buttons: an action is a word with a green rule under it.",
       "One green, one meaning: the accent marks where you are and the action that completes a screen, and is never used as decoration or as a fill.",
       "Literata throughout, at seven sizes and two weights, in both presets.",
-      "No shadow, no gradient, no motion, no pill.",
+      "No shadow, no gradient, no pill, and no motion beyond the timing tokens.",
       "Interface words are lowercase; the account's own words keep their case."
     ],
     "rules": [
@@ -798,7 +819,7 @@
       },
       {
         "name": "The Rules Not Boxes Rule",
-        "body": "Separation is a 1px hairline and space. A dialog is the only surface that floats, and it floats with a hairline and a scrim rather than a shadow. `elevation` and `motion` in this sidecar are empty because the theme has neither.",
+        "body": "Separation is a 1px hairline and space. A dialog is the only surface that floats, and it floats with a hairline and a scrim rather than a shadow. `elevation` in this sidecar is empty because the theme has none; `motion` holds the timing tokens and nothing else.",
         "section": "elevation"
       },
       {
@@ -831,7 +852,7 @@
       "Do measure with computed styles in the QA fixture rather than judging by eye."
     ],
     "donts": [
-      "Don't add a shadow, a gradient, a transition or a pill. If something needs separating, give it a rule or space.",
+      "Don't add a shadow, a gradient or a pill, and don't write a duration that is not a timing token. If something needs separating, give it a rule or space.",
       "Don't fill anything with the accent, or use it to decorate. It means here.",
       "Don't edit a classic sheet or a shared string to make Paper look right; the fix belongs in a Paper sheet.",
       "Don't draw a weight other than 400 or 600; Literata ships only those two, and anything else is synthetic.",

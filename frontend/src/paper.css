@@ -76,6 +76,17 @@
   --radius-sm: 2px;
   --radius: 6px;
 
+  /* What a control looks like and what a finger can hit are separate numbers. */
+  --size-control: 36px;
+  --size-hit: 44px;
+  --size-menu-row: 34px;
+  --size-table-row: 48px;
+  --width-menu: 260px;
+  --width-toast: 360px;
+  --width-alert: 440px;
+  --width-dialog: 512px;
+  --width-command: 560px;
+
   /* The icon box. A control that has to restore an icon's size says
      `var(--icon)` rather than repeating the number. */
   --icon: 18px;
@@ -266,6 +277,60 @@
 
 [data-theme^="paper"] .paper-action--completing {
   font-weight: 600;
+}
+
+/* The one bordered action of a group; everything beside it is a word, so a
+   group never has two. `--primary` completes a screen or a dialog; the plain
+   box is for a standalone action with no companions. Its colour eases with
+   every other button's, from the shared state transition above. */
+[data-theme^="paper"] .paper-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: transparent;
+  font: var(--body);
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Hover turns the word; the border does not change. */
+[data-theme^="paper"] .paper-button:hover:not(:disabled, [aria-disabled="true"]) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .paper-button--primary {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+[data-theme^="paper"] .paper-button:disabled {
+  border-color: var(--hairline);
+  color: var(--faint);
+  cursor: default;
+}
+
+[data-theme^="paper"] .paper-button[aria-busy="true"] {
+  border-color: var(--hairline-strong);
+  color: var(--muted);
+  font-weight: 400;
+  cursor: default;
+}
+
+/* Looks small, touches big: the drawing stays `size-control`, and a finger
+   gets `size-hit` around it. */
+@media (pointer: coarse) {
+  [data-theme^="paper"] .paper-button::after {
+    content: "";
+    position: absolute;
+    inset: calc((var(--size-control) - var(--size-hit)) / 2) 0;
+  }
 }
 
 [data-theme^="paper"] .paper-action--quiet {

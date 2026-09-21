@@ -651,6 +651,10 @@ function WorkspaceLayout({
         service={props.collectionService}
         onClose={() => setSearchOpen(false)}
         onSelect={selectResult}
+        onNavigate={(to) => {
+          navigate(to);
+          setSearchOpen(false);
+        }}
       />
       {notice && (
         <aside className="workspace-notice">

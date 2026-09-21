@@ -540,6 +540,7 @@ function TodoForm({
           </button>
           <button
             aria-disabled={isSubmitting}
+            aria-busy={isSubmitting}
             aria-describedby={
               isSubmitting ? ids.saveStatus : submitError ? ids.submitError : undefined
             }

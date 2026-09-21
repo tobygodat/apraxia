@@ -947,8 +947,31 @@
   box-shadow: none;
 }
 
+/* The one border in the dialog: the system's primary `Button`. Its companion
+   stays a word. The box is restated here rather than taken from
+   `.paper-button`, because the rule above would tie with it on specificity. */
 [data-theme^="paper"] .todo-dialog__button--primary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font: var(--body);
   font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+[data-theme^="paper"] .todo-dialog__button--primary:hover:not([aria-busy="true"]) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .todo-dialog__button--primary[aria-busy="true"] {
+  border-color: var(--hairline-strong);
+  color: var(--muted);
+  font-weight: 400;
+  cursor: default;
 }
 
 [data-theme^="paper"] .todo-dialog__button--quiet {
