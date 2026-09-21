@@ -238,7 +238,7 @@ system disagree, the system wins and this document is wrong. Where this
 document records an apraxia decision the system leaves open, it is the
 authority.
 
-**The six principles, in the system's words:**
+**The principles, in the system's words:**
 
 1. **It reads like a page.** If a plain sentence or a plain line of words will
    do, use it.
@@ -249,8 +249,7 @@ authority.
 4. **Words first; an icon never stands alone.** A control may carry a small
    line icon beside its word, never instead of it. The one exception is a
    chevron that steps backward or forward.
-5. **Still.** Nothing animates. State changes are instant.
-6. **Two themes, same page.** Dark is the default; light is the same thing on
+5. **Two themes, same page.** Dark is the default; light is the same thing on
    light paper. Every colour decision is made in both.
 
 ## What ships today
@@ -475,14 +474,44 @@ There is no elevation. **No shadows and no gradients**: a thing that floats is
 focus outlines and checkboxes. Nothing is rounder — **no pills**, and no circle
 except a radio.
 
-**Nothing animates.** State changes are instant. There is no transition, no
-fade, no hover raise, no entrance. This removes the reduced-motion question
-rather than answering it, and it is not a density decision to be revisited per
-surface.
+## Motion
+
+Quiet and short. Motion says where something came from or that something
+changed; it never performs. The foundations dropped their Still principle in
+draft 3 (20 September 2026) and this section took its place.
+
+- Arriving takes `duration-fast` (250ms); leaving takes `duration-quick`
+  (150ms); a toast leaving by itself takes `duration-medium` (350ms). One
+  curve, `ease-smooth-out`, `cubic-bezier(0.22, 1, 0.36, 1)`.
+- Animate opacity and position only, listed by name. Never `transition: all`.
+  Layout does not animate: the rail changes width at once, and a row never
+  grows under the pointer.
+- A surface anchored to a trigger arrives from that trigger, `distance-micro`
+  (4px): a menu under its control from above, the account menu over its
+  trigger from below, the notice from the top edge. A centred one (a dialog,
+  search) arrives from just below centre, `distance-base` (8px), while its
+  `scrim` fades in. Surfaces fade and shift; they do not scale.
+- Hover, focus and selection change colour over `duration-quick` and move
+  nothing. The 2px `accent` line under a tab or the current sidebar word draws
+  in over `duration-fast`.
+- No bounce, stagger, blur, shimmer or parallax. Loading is still the word
+  "loading…", and the cold-load rule across the top stays still.
+- Every duration is multiplied by `motion-scale`. It is 1, and 0 under
+  `prefers-reduced-motion`, so all motion stops from one place. Never write a
+  duration as a bare number.
+
+In `frontend/src/paper.css` the duration tokens already carry the multiplier,
+so a sheet writes `var(--duration-quick)` and nothing else. Reach for
+`var(--transition-state)` for colour and `var(--arrive-below)`,
+`var(--arrive-above)`, `var(--arrive-centre)` and `var(--arrive-scrim)` for a
+surface; the keyframes move `translate`, so a surface that centres itself with
+`transform` keeps its place. Surfaces do not yet animate on leaving: they
+unmount at once, which `duration-quick` will replace when a surface is next
+rebuilt.
 
 ## States
 
-- **Hover:** the word turns `accent`; a row in a menu takes `selection`.
+- **Hover:** the word turns `accent` over `duration-quick`; a row in a menu takes `selection`.
   Nothing moves, grows or lifts.
 - **Focus:** a solid 2px `accent` outline, offset 3px, `radius-sm` corners. At
   least 3:1 on both surfaces in both themes. Never removed.
@@ -646,7 +675,8 @@ against the viewport, and browser zoom already does the job properly.
 - Don't put a card, a shadow, a gradient or a pill on the page. If it floats it
   is `ground-raised` with a 1px border; if it doesn't float it sits on `ground`
   between rules.
-- Don't animate. No transitions, no fades, no hover raises, no entrances.
+- Don't perform. No bounce, stagger, blur, shimmer, parallax, hover raise or
+  scale, no `transition: all`, and no duration written as a bare number.
 - Don't go below `fine`, and don't invent a step between the seven.
 - Don't mix the classic vocabulary with Paper on one surface, and don't extend
   the frozen `classic-` tokens.
