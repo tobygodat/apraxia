@@ -111,6 +111,37 @@ describe("Search dialog", () => {
     await waitFor(() => expect(document.activeElement).toBe(opener));
     opener.remove();
   });
+  it("lists the pages, moves the highlight with the arrows, and opens it with Enter", async () => {
+    const onNavigate = vi.fn();
+    const onSelect = vi.fn();
+    const search = vi.fn().mockResolvedValue([row("i1", "Career fair notes")]);
+    render(
+      <SearchDialog
+        open
+        service={{ search }}
+        onClose={vi.fn()}
+        onSelect={onSelect}
+        onNavigate={onNavigate}
+      />,
+    );
+    const input = screen.getByRole("searchbox");
+    const highlighted = () => document.getElementById(input.getAttribute("aria-activedescendant")!);
+    expect(highlighted()?.textContent).toBe("pageHome");
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(highlighted()?.textContent).toBe("pageTasks");
+    fireEvent.keyDown(input, { key: "ArrowUp" });
+    fireEvent.keyDown(input, { key: "ArrowUp" });
+    expect(highlighted()?.textContent).toBe("pageSettings");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onNavigate).toHaveBeenCalledWith("/settings");
+
+    enter("care");
+    await screen.findByText("Career fair notes");
+    expect(highlighted()?.textContent).toBe("pageCareer");
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith(row("i1", "Career fair notes")));
+  });
   it("debounces queries and ignores stale responses that arrive after a newer result", async () => {
     let finishOld!: (value: SearchResult[]) => void;
     const search = vi

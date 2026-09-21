@@ -190,6 +190,7 @@ export function CollectionEditor({
             type="submit"
             className="todo-dialog__button todo-dialog__button--primary paper-action paper-action--completing"
             aria-disabled={busy}
+            aria-busy={busy}
           >
             {busy ? "Saving…" : record ? "Save changes" : `Add ${kind}`}
           </button>

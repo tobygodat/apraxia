@@ -579,7 +579,8 @@
 [data-theme^="paper"] .collection-editor .todo-dialog__actions {
   align-items: baseline;
   gap: var(--space-md);
-  padding-block-start: 0;
+  /* A bordered button needs air under the footer's rule; a word did not. */
+  padding-block-start: var(--space-md);
 }
 
 [data-theme^="paper"] .collection-editor .todo-dialog__button {
@@ -597,8 +598,32 @@
   background: transparent;
 }
 
+/* The one border in the dialog: the system's primary `Button`. */
 [data-theme^="paper"] .collection-editor .todo-dialog__button--primary {
-  border-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font: var(--body);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
   background: transparent;
   color: var(--text);
+  transition: color var(--quick) var(--ease);
+}
+
+[data-theme^="paper"]
+  .collection-editor
+  .todo-dialog__button--primary:hover:not([aria-busy="true"]) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"] .collection-editor .todo-dialog__button--primary[aria-busy="true"] {
+  border-color: var(--hairline-strong);
+  color: var(--muted);
+  font-weight: 400;
+  cursor: default;
 }
