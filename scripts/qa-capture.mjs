@@ -112,12 +112,19 @@ const snippet = `async (page) => {
   return shots.map(({ image, ...shot }) => shot);
 }`;
 
-function cli(...args) {
-  const result = spawnSync("npx", ["playwright-cli", `-s=${session}`, ...args], {
+// npx is a .cmd shim on Windows and only spawns through a shell, so every
+// call, the closing one included, goes through here.
+function run(...args) {
+  return spawnSync("npx", ["playwright-cli", `-s=${session}`, ...args], {
     cwd: output,
     encoding: "utf8",
     shell: process.platform === "win32",
   });
+}
+
+function cli(...args) {
+  const result = run(...args);
+  if (result.error) throw result.error;
   if (result.status !== 0 || result.stdout.startsWith("### Error")) {
     throw new Error(result.stdout + result.stderr);
   }
@@ -129,12 +136,13 @@ mkdirSync(output, { recursive: true });
 const scratch = mkdtempSync(resolve(tmpdir(), "apraxia-qa-capture-"));
 writeFileSync(resolve(scratch, "capture.js"), snippet);
 
-cli("open", `--config=${resolve(root, "scripts/qa-playwright.json")}`);
 let report;
 try {
+  cli("open", `--config=${resolve(root, "scripts/qa-playwright.json")}`);
   report = JSON.parse(cli("--raw", "run-code", `--filename=${resolve(scratch, "capture.js")}`));
 } finally {
-  spawnSync("npx", ["playwright-cli", `-s=${session}`, "close"], { cwd: output });
+  // Not cli(): a failed close must not replace the error that got us here.
+  run("close");
   rmSync(scratch, { recursive: true, force: true });
 }
 
