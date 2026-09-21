@@ -181,16 +181,29 @@ dispatch from the repository's **Actions → CI → Run workflow** page.
   typechecks the app against them. It stops the temporary instance afterward.
 
 The **Database checks** job always reports a status. Its scope step skips database
-execution only when every changed path is root `AGENTS.md`, `README.md`,
-`PRODUCT.md`, or `DESIGN.md`, a Markdown file under `docs/`, or CSS under
-`frontend/src/`. It records the decision in the run summary. Everything else,
-including mixed changes, dependencies, CI/configuration, data/auth code, and
-unknown paths, runs the full suite. Manual dispatch always runs the suite.
+execution only when every changed path is one of:
+
+- root `AGENTS.md`, `README.md`, `PRODUCT.md`, or `DESIGN.md`, a Markdown file
+  under `docs/`, anything under `.impeccable/`, or CSS under `frontend/src/`;
+- a test or fixture the job never executes: `tests/contract/`, `frontend/qa/`,
+  `frontend/src/qa/`, or a `*.test.ts(x)` file under `frontend/src/`;
+- a `.tsx` component under `frontend/src/` that does not name `supabase` or
+  `types/database` on either side of the diff. Components reach the database
+  through `.ts` service modules, and those always run the suite.
+
+It records the decision in the run summary. Everything else, including mixed
+changes, every non-test `.ts` module, `tests/local`, `frontend/tests/local`,
+server code, dependencies, CI/configuration, and unknown paths, runs the full
+suite. Manual dispatch always runs the suite. The job's one blind spot is
+`frontend/tests/local/todos-ui.test.tsx`, which renders the whole app against
+local Supabase: a component-only change that breaks it is caught by the next
+run of the suite, so run `npm run verify:db` yourself when a component change
+alters how the todo flow reads or writes.
 
 `scripts/ci-database-scope.mjs` compares the PR merge base to the checked-out
 commit, or the complete before/after range for a push. Both paths of a rename
 count. Missing history, invalid event data, and empty diffs fall back to the full
-suite. Checkout fetches full history for this comparison. A docs/style skip
+suite. Checkout fetches full history for this comparison. A skip
 does not install dependencies, start Supabase, or generate database types.
 
 The workflow needs no repository secrets, production credentials, or separate
