@@ -616,7 +616,6 @@
   font: var(--small);
 }
 
-[data-theme^="paper"] .today-list__add,
 [data-theme^="paper"] .today-list__error button,
 [data-theme^="paper"] .today-list__empty button,
 [data-theme^="paper"] .today-list__undo button,
@@ -634,7 +633,6 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .today-list__add:hover,
 [data-theme^="paper"] .today-list__error button:hover,
 [data-theme^="paper"] .today-list__empty button:hover,
 [data-theme^="paper"] .today-list__undo button:hover:not([aria-disabled="true"]),
@@ -642,6 +640,28 @@
   border-color: transparent;
   background: transparent;
   color: var(--text);
+}
+
+/* "add task" completes the list, so it is the primary `Button`. The classic
+   rule ties with `.paper-button`, so the box is restated under the list's own
+   block to outrank it. */
+[data-theme^="paper"] .today-list .today-list__add {
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: transparent;
+  font: var(--body);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  text-transform: lowercase;
+}
+
+[data-theme^="paper"] .today-list .today-list__add:hover {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .today-list__add svg {

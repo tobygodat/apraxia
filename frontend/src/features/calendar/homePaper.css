@@ -182,7 +182,7 @@
 }
 
 /* Actions are words underlined in green, not buttons. */
-[data-theme^="paper"] .calendar-toolbar button:where(:not(.paper-action)),
+[data-theme^="paper"] .calendar-toolbar button:where(:not(.paper-action, .paper-button)),
 [data-theme^="paper"] .calendar-message button:where(:not(.paper-action)) {
   min-height: 0;
   padding: 0;
@@ -196,14 +196,16 @@
   text-underline-offset: 0.2em;
 }
 
-[data-theme^="paper"] .calendar-toolbar button:where(:not(.paper-action)):hover:not(:disabled),
+[data-theme^="paper"]
+  .calendar-toolbar
+  button:where(:not(.paper-action, .paper-button)):hover:not(:disabled),
 [data-theme^="paper"] .calendar-message button:where(:not(.paper-action)):hover:not(:disabled) {
   background: transparent;
   border-color: transparent;
   color: var(--accent);
 }
 
-[data-theme^="paper"] .calendar-toolbar button:where(:not(.paper-action)):disabled {
+[data-theme^="paper"] .calendar-toolbar button:where(:not(.paper-action, .paper-button)):disabled {
   color: var(--faint);
   text-decoration: none;
   opacity: 1;
@@ -256,8 +258,8 @@
   stroke-width: 1.5;
 }
 
-/* Refresh and add event are words alone. The reference draws no glyph beside
- * either; the two chevrons are the one icon on this toolbar that stands by
+/* Refresh is a word alone and add event a `Button` with no glyph beside its
+ * word; the two chevrons are the one icon on this toolbar that stands by
  * itself, because stepping a week has no word short enough to carry it. */
 [data-theme^="paper"] .calendar-toolbar .calendar-refresh {
   gap: var(--space-8);
@@ -278,14 +280,22 @@
   color: var(--accent);
 }
 
+/* "add event" completes the calendar, so it is the primary `Button`. Its box is
+   `.paper-button`'s; what the classic toolbar rule ties with is restated. */
 [data-theme^="paper"] .calendar-toolbar .calendar-add {
-  gap: var(--space-8);
-  padding-inline: 0;
-  border-color: transparent;
+  padding: 3px 14px;
+  border-color: var(--accent);
+  text-transform: lowercase;
 }
 
 [data-theme^="paper"] .calendar-toolbar .calendar-add:hover:not(:disabled) {
-  border-color: transparent;
+  border-color: var(--accent);
+  background: transparent;
+}
+
+[data-theme^="paper"] .calendar-toolbar .calendar-add:disabled {
+  border-color: var(--hairline);
+  opacity: 1;
 }
 
 [data-theme^="paper"] .calendar-message {
@@ -387,21 +397,24 @@
   padding-bottom: 0;
 }
 
-/* Words, not buttons: the plus sign goes and "add task" carries itself. */
+/* "add task" completes the task list, so it is the primary `Button`; the plus
+   sign goes. The box is restated because the classic home rule ties with
+   `.paper-button`. */
 [data-theme^="paper"] .home-workspace .today-list__add {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
   background: transparent;
-  font: var(--small);
+  font: var(--body);
+  font-weight: 600;
   color: var(--text);
+  text-decoration: none;
   text-transform: lowercase;
-  text-decoration: underline 1px var(--accent);
-  text-underline-offset: 0.2em;
 }
 
 [data-theme^="paper"] .home-workspace .today-list__add:hover {
+  border-color: var(--accent);
   background: transparent;
   color: var(--accent);
 }

@@ -221,7 +221,7 @@ export function TodayList({
           ) : null}
         </div>
         <button
-          className="today-list__add"
+          className="today-list__add paper-button paper-button--primary"
           id={addTodoId}
           type="button"
           aria-disabled={state.pendingMutation !== null || undefined}

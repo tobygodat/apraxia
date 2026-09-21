@@ -86,6 +86,27 @@
   text-transform: lowercase;
 }
 
+/* On a project the sections' adds are the Buttons, so "edit project" steps back
+   to a quiet word, as "edit class" does. The shell's word rule outranks
+   `.paper-action--quiet`, so the quiet is restated. */
+[data-theme^="paper"] .collection-page .workspace-page-header__action.paper-action--quiet {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+[data-theme^="paper"]
+  .collection-page
+  .workspace-page-header__action.paper-action--quiet:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+[data-theme^="paper"]
+  .collection-page
+  .workspace-page-header__action.paper-action--quiet
+  .workspace-icon {
+  display: none;
+}
+
 /* --------------------------------------------------- back to the list page */
 
 [data-theme^="paper"] .collection-page .collection-back {
@@ -307,18 +328,20 @@
   color: var(--muted);
 }
 
-/* A section's add stands alone in its header, so it is the plain `Button`: the
-   `outline` box, leaving the page's one `accent` border to the header. The box
-   is restated because the classic rule ties with `.paper-button`. */
+/* A section's add completes its region, so it is the primary `Button`, as
+   "add assignment" is on a class. The box is restated because the classic rule
+   ties with `.paper-button`. */
 [data-theme^="paper"] .collection-page .collection-section__add {
-  min-height: var(--size-control);
   margin: 0;
+  min-height: var(--size-control);
   padding: 3px 14px;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--accent);
   border-radius: var(--radius);
   background: transparent;
   font: var(--body);
+  font-weight: 600;
   color: var(--text);
+  text-decoration: none;
   text-transform: lowercase;
 }
 

@@ -336,8 +336,7 @@ deliberate.
   tokens, the motion in **Motion** below (colour, the line under the current
   word, surfaces arriving), the command palette's behaviour, the
   `.paper-button` primitive, and the `Button`: the bordered primary in the task
-  and collection dialogs and on a page's completing action, and the `outline`
-  box on a project section's standalone "add". Not built yet: `size-control`
+  and collection dialogs and on every page's and section's "add". Not built yet: `size-control`
   and `size-hit` on fields and words, the busy word holding its resting width,
   the 512px dialog with its header, panel and footer (Paper dialogs are still
   520px on a `hairline`), surfaces leaving, toasts, and the palette's
@@ -643,7 +642,11 @@ never has two.
 - **The one action that completes a screen or a dialog** — "add assignment",
   "save task", "add project" — is a `Button`: `size-control` tall, a 1px
   `accent` border, `radius` corners, the word at 600. One per screen region or
-  dialog. Nothing is ever filled with `accent`.
+  dialog. Nothing is ever filled with `accent`. In practice that is the "add"
+  in a page header or a section header: "add project", "add event", "add task",
+  "add assignment". A header's "edit" beside it stays quiet, and an "add" that
+  repeats down a list or across columns ("add task" under each day, "add step")
+  stays a word, because a row of borders is a toolbar.
 - A standalone action with no companions — "new task" in a header — may take
   the same box with an `outline` border.
 - A destructive action is its word in `danger`: "delete", "remove". It takes a
