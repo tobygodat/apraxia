@@ -66,7 +66,7 @@ tokens stay out of the response. See [Calendar](CALENDAR.md) and
 | `supabase/` | `migrations/` (forward-only schema) and `tests/` (pgTAP). |
 | `tests/contract/` | Node/PGlite tests that run everywhere, including CI, with no Docker. |
 | `tests/local/` | Tests that require local Supabase. Run by `npm run verify:db`, not by `npm test`. |
-| `scripts/` | Node check scripts invoked by npm scripts: browser secret scan, local Todo HTTP suite, OAuth concurrency suite, migration rewind. |
+| `scripts/` | Node check scripts invoked by npm scripts: browser secret scan, local Todo HTTP suite, OAuth concurrency suite, migration rewind. Also the two local full-stack helpers: the `vercel dev` config generator and the hosted-data import. |
 
 ## Where new code goes
 

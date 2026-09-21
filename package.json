@@ -11,9 +11,11 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "npm run db:start && vercel dev",
+    "dev": "npm run db:start && npm run dev:vercel",
+    "dev:vercel": "node scripts/vercel-dev-config.mjs && vercel dev --local-config .vercel/dev.json --listen 127.0.0.1:3000",
     "dev:web": "cross-env APRAXIA_CLOUD_DEV=1 VITE_APRAXIA_RUNTIME=cloud npm run dev --workspace=frontend",
     "qa:snapshot": "node scripts/qa-snapshot.mjs",
+    "db:import-hosted": "bash scripts/import-hosted-data.sh",
     "dev:legacy-web": "cross-env APRAXIA_CLOUD_DEV=0 VITE_APRAXIA_RUNTIME=legacy npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "typecheck": "npm run typecheck:server && npm run typecheck --workspace=frontend",
