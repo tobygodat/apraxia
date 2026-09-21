@@ -86,7 +86,13 @@ runs once at completion; the scenario matrix is in
 [cloud development](docs/CLOUD_DEVELOPMENT.md#pre-deployment-ui-checks).
 
 Fixtures cannot prove database persistence or Google sync, because the fixture
-services stand in for both. Before releasing a data-dependent or
+services stand in for both. The local full stack can: `npm run dev` serves the
+app, the API and local Supabase at `http://127.0.0.1:3000`, and
+`npm run db:import-hosted` fills it with a copy of the real account. Use the QA
+workspace for layout and styling, where its scenarios are deterministic and try
+to break things, and the full stack for anything that touches data, auth, the
+API or Google. Setup is in
+[cloud development](docs/CLOUD_DEVELOPMENT.md#optional-full-stack-local-setup). Before releasing a data-dependent or
 provider-dependent change, exercise the authenticated app with the intended
 configuration, and state which flows stayed unverified. Smoke-test the change
 after release.
