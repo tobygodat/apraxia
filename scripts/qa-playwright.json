@@ -1,0 +1,16 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "channel": "chrome",
+      "headless": true
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1218,
+        "height": 1133
+      },
+      "deviceScaleFactor": 1.44
+    }
+  }
+}

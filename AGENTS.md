@@ -82,7 +82,12 @@ so it shows the change on the data it is for; refresh it with
 `dense` is the attempt to break the layout. Check desktop at 1218×1133 CSS
 pixels, the owner's real window (device pixel ratio 1.44): it sits between the
 1200px and 1400px breakpoints, and a browser pane left at its own width is
-usually under 1200px, which is a different layout from the one in use. Add
+usually under 1200px, which is a different layout from the one in use.
+`npm run qa:capture -- --route=<route>` does that for a layout check: it
+captures both scenarios at that size and a phone in one collage and reports
+sideways scrolling and console errors. Use `npx playwright-cli` for the
+interaction itself
+([QA fixtures](docs/QA_FIXTURES.md#scripted-capture-and-playwright-cli)). Add
 `portrait` and `typical` for covers, and reload for persistence or
 initialization. The snapshot and screenshots of it are personal data: never
 commit them. Broader shared-layout QA runs once at completion; the scenario

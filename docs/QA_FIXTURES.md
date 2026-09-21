@@ -77,6 +77,35 @@ still due Thursday and what had slipped has still slipped. The captured week's
 events replay in every calendar week, on the fixture's own calendars with their
 real colors. Edits behave as in any scenario and never reach the account.
 
+## Scripted capture and playwright-cli
+
+`npm run qa:capture -- --route=/todos` loads one route in `personal` and `dense`
+at the desktop and phone sizes, in one headless
+[playwright-cli](https://github.com/microsoft/playwright-cli) session, and
+writes the screenshots and one labeled collage to
+`frontend/qa/local/captures/`. It takes about ten seconds and needs the dev
+server running. Desktop is 1218×1133 at device pixel ratio 1.44, the owner's
+real window; phone is 375×812 at the same ratio. It prints, per capture, any
+console error and whether the page scrolls sideways (with the outermost
+elements responsible), and exits non-zero if either happened. The folder is
+gitignored, and a `personal` capture is personal data.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--route=` | `/` | The `?route=` to open; also names the output files. |
+| `--scenarios=` | `personal,dense` | Comma-separated `?scenario=` values. |
+| `--viewports=` | `desktop,phone` | Either or both. |
+| `--theme=` | none | The `?theme=` preset. |
+| `--page=` | `workspace` | The fixture entry point, such as `todos-workspace`. |
+| `--base=` | `http://localhost:5173` | The dev server, when it took another port. |
+
+The capture shows a resting page. To exercise an interaction, drive the same
+tool by hand: `npx playwright-cli open --config=scripts/qa-playwright.json <url>`
+opens a session at the same size and ratio (that file also names the installed
+browser to drive, Chrome by default), then `snapshot`, `click <ref>`,
+`fill`, `eval`, `console`, and `screenshot` act on it, and `close` ends it.
+`npx playwright-cli --help` lists the rest.
+
 ## What persists
 
 Calendar edits, visibility, and page appearance are written to `sessionStorage`
