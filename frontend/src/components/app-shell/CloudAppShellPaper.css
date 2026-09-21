@@ -297,11 +297,25 @@
   text-underline-offset: 0.2em;
 }
 
-/* The rule above sets `font`, a shorthand, so it resets the weight the
-   completing action carries. Restate it rather than raise the modifier's
-   specificity in `paper.css`, where it would then outrank a page's own size. */
-[data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-action--completing {
+/* A header's completing action is the system's primary `Button`. The box is
+   restated here rather than taken from `.paper-button`, because the word rule
+   above outranks the primitive and the classic header rule ties with it. */
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-button {
+  min-height: var(--size-control);
+  padding: 3px 14px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  font: var(--body);
+  text-decoration: none;
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-button--primary {
+  border-color: var(--accent);
   font-weight: 600;
+}
+
+[data-theme^="paper"] .cloud-shell .workspace-page-header__action.paper-button:disabled {
+  border-color: var(--hairline);
 }
 
 [data-theme^="paper"] .cloud-shell .workspace-page-header__action .workspace-icon {

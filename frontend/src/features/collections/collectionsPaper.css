@@ -30,7 +30,7 @@
    being a shorthand, reset a completing action's weight back to 400. The guard
    is `:where()`, not `:not()`, because `:not()` would add its argument's
    specificity and let this rule outrank the class overrides further down. */
-[data-theme^="paper"] .collection-page button:where(:not(.paper-action)),
+[data-theme^="paper"] .collection-page button:where(:not(.paper-action, .paper-button)),
 [data-theme^="paper"] .collection-page select {
   font: inherit;
 }
@@ -307,17 +307,24 @@
   color: var(--muted);
 }
 
+/* A section's add stands alone in its header, so it is the plain `Button`: the
+   `outline` box, leaving the page's one `accent` border to the header. The box
+   is restated because the classic rule ties with `.paper-button`. */
 [data-theme^="paper"] .collection-page .collection-section__add {
-  min-height: 0;
+  min-height: var(--size-control);
   margin: 0;
-  padding: 0;
-  border-radius: 0;
+  padding: 3px 14px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
   background: transparent;
+  font: var(--body);
+  color: var(--text);
   text-transform: lowercase;
 }
 
 [data-theme^="paper"] .collection-page .collection-section__add:hover:not(:disabled) {
   background: transparent;
+  color: var(--accent);
 }
 
 [data-theme^="paper"] .collection-page .collection-section__add .workspace-icon {
