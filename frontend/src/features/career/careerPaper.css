@@ -287,6 +287,12 @@
   text-transform: lowercase;
 }
 
+[data-theme^="paper"] .career-page .career-add__open .workspace-icon {
+  display: block;
+  width: var(--icon);
+  height: var(--icon);
+}
+
 /* The two fields are `paper-field`; only their share of the row is this page's.
    The classic `input` rule sets `flex`, so it is restated: the fields take the
    width the first two columns have rather than the whole rule. */
