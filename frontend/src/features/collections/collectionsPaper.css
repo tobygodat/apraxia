@@ -400,15 +400,15 @@
   color: var(--muted);
 }
 
-/* Still: the row's actions are on the page, not waiting behind a hover, and
-   nothing fades or slides. */
+/* The row's actions are on the page, not waiting behind a hover, so nothing
+   fades or slides in; only their colour eases. */
 [data-theme^="paper"] .collection-page--project .collection-delete,
 [data-theme^="paper"] .collection-page--project .collection-row-action {
   width: auto;
   height: auto;
   flex: none;
   opacity: 1;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .collection-page--project .collection-task,
@@ -421,7 +421,7 @@
   .collection-task-title {
   opacity: 1;
   background-image: none;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .collection-page .collection-completed {
@@ -496,7 +496,7 @@
   box-shadow: none;
   color: var(--text);
   font: var(--body);
-  animation: none;
+  animation: var(--arrive-centre);
 }
 
 [data-theme^="paper"] .collection-editor .todo-dialog__header {
@@ -590,7 +590,7 @@
   border-radius: 0;
   letter-spacing: normal;
   text-transform: lowercase;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .collection-editor .todo-dialog__button--quiet {
@@ -612,7 +612,6 @@
   white-space: nowrap;
   background: transparent;
   color: var(--text);
-  transition: color var(--quick) var(--ease);
 }
 
 [data-theme^="paper"]

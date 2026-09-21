@@ -238,7 +238,7 @@
   gap: var(--space-8) var(--space-sm);
   padding: var(--space-sm) 0;
   border-bottom: 1px solid var(--hairline);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .todos-board-page .todos-board-card:hover {
@@ -350,7 +350,7 @@
   margin-top: 0;
   padding-top: 1px;
   opacity: 1;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 /* A row's actions repeat down the whole board, so they stay plain words:
@@ -689,7 +689,7 @@
   grid-template-columns: var(--icon) minmax(0, 1fr) auto;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--gutter);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .today-list-item article:hover,
@@ -708,7 +708,7 @@
   left: calc(-1 * var(--space-md));
   color: var(--faint);
   opacity: 0;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 /* With the handle out of flow there is no column for the other day to hold. */
@@ -837,14 +837,16 @@
 [data-theme^="paper"] .todo-dialog-backdrop {
   padding: var(--space-24);
   background: var(--scrim);
+  animation: var(--arrive-scrim);
 }
 
 /* The dialog itself is `.paper-dialog`; what is left here is what the classic
-   sheet adds on top of a box: a shadow and an entrance. Paper is still. */
+   sheet adds on top of a box: a shadow and its own entrance. Paper's arrival
+   comes from `.paper-dialog`: centred, so from just below centre. */
 [data-theme^="paper"] .todo-dialog {
   box-shadow: none;
   font: var(--body);
-  animation: none;
+  animation: var(--arrive-centre);
 }
 
 [data-theme^="paper"] .todo-dialog__header {
@@ -895,7 +897,7 @@
   color: var(--text);
   caret-color: var(--accent);
   font: var(--body);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .todo-dialog__field input::placeholder {
@@ -959,7 +961,6 @@
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: color var(--quick) var(--ease);
 }
 
 [data-theme^="paper"] .todo-dialog__button--primary:hover:not([aria-busy="true"]) {

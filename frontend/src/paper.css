@@ -87,21 +87,6 @@
   --width-dialog: 512px;
   --width-command: 560px;
 
-  /* Motion: quiet and short. Every duration is multiplied by `--motion-scale`,
-     which reduced motion sets to 0, so all motion stops from one place. Read
-     `--quick`, `--fast` and `--medium`; never write a bare duration. */
-  --motion-scale: 1;
-  --duration-quick: 150ms;
-  --duration-fast: 250ms;
-  --duration-medium: 350ms;
-  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --distance-micro: 4px;
-  --distance-base: 8px;
-  --quick: calc(var(--duration-quick) * var(--motion-scale));
-  --fast: calc(var(--duration-fast) * var(--motion-scale));
-  --medium: calc(var(--duration-medium) * var(--motion-scale));
-  --ease: var(--ease-smooth-out);
-
   /* The icon box. A control that has to restore an icon's size says
      `var(--icon)` rather than repeating the number. */
   --icon: 18px;
@@ -114,6 +99,69 @@
   --sidebar: 208px;
   --measure: 600px;
   --measure-wide: 960px;
+
+  /* Motion is quiet and short. Every duration is already multiplied by
+     `--motion-scale`, so nothing downstream writes a bare number and all of it
+     stops from the one line below. Arriving is `fast`, leaving and any change
+     of colour is `quick`, a toast going by itself is `medium`. One curve. */
+  --motion-scale: 1;
+  --duration-quick: calc(150ms * var(--motion-scale));
+  --duration-fast: calc(250ms * var(--motion-scale));
+  --duration-medium: calc(350ms * var(--motion-scale));
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --distance-micro: 4px;
+  --distance-base: 8px;
+
+  /* Hover, focus and selection change colour and move nothing. The properties
+     are listed by name; `transition: all` is never the answer. */
+  --transition-state:
+    color var(--duration-quick) var(--ease-smooth-out),
+    border-color var(--duration-quick) var(--ease-smooth-out),
+    background-color var(--duration-quick) var(--ease-smooth-out),
+    text-decoration-color var(--duration-quick) var(--ease-smooth-out);
+
+  /* A surface arrives from where it was asked for: an anchored one from its
+     trigger by `distance-micro`, a centred one from just below centre by
+     `distance-base`. They fade and shift; they do not scale. */
+  --arrive-below: paper-arrive-below var(--duration-fast) var(--ease-smooth-out) both;
+  --arrive-above: paper-arrive-above var(--duration-fast) var(--ease-smooth-out) both;
+  --arrive-centre: paper-arrive-centre var(--duration-fast) var(--ease-smooth-out) both;
+  --arrive-scrim: paper-arrive-fade var(--duration-fast) var(--ease-smooth-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme^="paper"] {
+    --motion-scale: 0;
+  }
+}
+
+/* The keyframes move `translate`, not `transform`, so a surface that centres
+   itself with a transform keeps its place while it arrives. */
+@keyframes paper-arrive-below {
+  from {
+    opacity: 0;
+    translate: 0 calc(-1 * var(--distance-micro));
+  }
+}
+
+@keyframes paper-arrive-above {
+  from {
+    opacity: 0;
+    translate: 0 var(--distance-micro);
+  }
+}
+
+@keyframes paper-arrive-centre {
+  from {
+    opacity: 0;
+    translate: 0 var(--distance-base);
+  }
+}
+
+@keyframes paper-arrive-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 /* A phone gets a shorter long step and a shallower top and bottom, so a screen
@@ -125,12 +173,6 @@
     --space-top: 40px;
     --space-bottom: 40px;
     --inset: var(--gutter);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root[data-theme^="paper"] {
-    --motion-scale: 0;
   }
 }
 
@@ -155,6 +197,24 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
+}
+
+/* Anything pressed or typed into changes colour over `duration-quick`. The
+   `:where()` keeps this at one attribute's weight, so a sheet that needs
+   something else says so without a fight. */
+[data-theme^="paper"]
+  :where(
+    a,
+    button,
+    summary,
+    input,
+    select,
+    textarea,
+    [role="option"],
+    [role="tab"],
+    [role="menuitem"]
+  ) {
+  transition: var(--transition-state);
 }
 
 /* Words first. An icon rides beside its word at text size, never instead of it. */
@@ -205,11 +265,11 @@
   text-decoration: underline 1px var(--accent);
   text-underline-offset: 0.2em;
   cursor: pointer;
-  transition: color var(--quick) var(--ease);
 }
 
-/* Hover turns the word, and any icon riding beside it, accent. Nothing moves,
-   grows or lifts, and a disabled word does not respond. */
+/* Hover turns the word, and any icon riding beside it, accent over
+   `duration-quick`. Nothing moves, grows or lifts, and a disabled word does
+   not respond. */
 [data-theme^="paper"] .paper-action:hover:not(:disabled) {
   color: var(--accent);
   text-decoration-color: var(--accent);
@@ -221,7 +281,8 @@
 
 /* The one bordered action of a group; everything beside it is a word, so a
    group never has two. `--primary` completes a screen or a dialog; the plain
-   box is for a standalone action with no companions. */
+   box is for a standalone action with no companions. Its colour eases with
+   every other button's, from the shared state transition above. */
 [data-theme^="paper"] .paper-button {
   position: relative;
   display: inline-flex;
@@ -237,7 +298,6 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--quick) var(--ease);
 }
 
 /* Hover turns the word; the border does not change. */
@@ -422,23 +482,19 @@
   font: var(--body);
   color: var(--muted);
   cursor: pointer;
-  /* Leaving is quick; nothing moves. */
+  /* The word answers in `quick`; the green line under it draws in over `fast`. */
   transition:
-    color var(--quick) var(--ease),
-    border-color var(--quick) var(--ease);
+    color var(--duration-quick) var(--ease-smooth-out),
+    border-color var(--duration-fast) var(--ease-smooth-out);
 }
 
 [data-theme^="paper"] .paper-nav__item:hover {
   color: var(--accent);
 }
 
-/* The green line under the chosen word draws in over `duration-fast`. */
 [data-theme^="paper"] .paper-nav__item--current {
   color: var(--text);
   border-bottom-color: var(--accent);
-  transition:
-    color var(--quick) var(--ease),
-    border-color var(--fast) var(--ease);
 }
 
 [data-theme^="paper"] .paper-dialog {
@@ -450,8 +506,13 @@
   color: var(--text);
 }
 
+[data-theme^="paper"] .paper-dialog {
+  animation: var(--arrive-centre);
+}
+
 [data-theme^="paper"] .paper-dialog::backdrop {
   background: var(--scrim);
+  animation: var(--arrive-scrim);
 }
 
 /* A calendar event is a 1px rule in its calendar's colour, never a filled block. */

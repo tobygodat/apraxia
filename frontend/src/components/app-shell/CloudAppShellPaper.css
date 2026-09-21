@@ -6,9 +6,9 @@
  * matches classic, so the classic sheet stays exactly as it is. Tokens and
  * primitives come from `paper.css`; nothing here declares a literal.
  *
- * Paper has no elevation, and its motion is colour only, from the `timing`
- * tokens, so the classic sheet's shadows, hover fills and 260ms rail
- * transitions are undone rather than carried over.
+ * Paper has no elevation and animates only colour and a surface's arrival, so
+ * the classic sheet's shadows, hover fills and 260ms rail transitions are
+ * undone rather than carried over.
  */
 
 /* ---------------------------------------------------------------- the frame */
@@ -89,7 +89,7 @@
   color: var(--muted);
   font: var(--small);
   text-transform: lowercase;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .cloud-shell__search kbd {
@@ -113,15 +113,13 @@
   color: var(--muted);
   font: var(--body);
   text-transform: lowercase;
-  transition: color var(--quick) var(--ease);
+  transition: var(--transition-state);
 }
 
-/* Where you are is a 2px green rule under the word, not behind the row. It
-   leaves over `duration-quick`; the classic label fade is replaced, not kept. */
+/* Where you are is a 2px green rule under the word, not behind the row. */
 [data-theme^="paper"] .cloud-shell__nav-link span {
   padding-bottom: var(--space-xs);
   border-bottom: 2px solid transparent;
-  transition: border-color var(--quick) var(--ease);
 }
 
 [data-theme^="paper"] .cloud-shell__nav-link:hover,
@@ -135,10 +133,8 @@
   color: var(--text);
 }
 
-/* The line draws in over `duration-fast`. */
 [data-theme^="paper"] .cloud-shell__nav-link--active span {
   border-bottom-color: var(--accent);
-  transition: border-color var(--fast) var(--ease);
 }
 
 /* ------------------------------------------------------- add and the account */
@@ -159,7 +155,7 @@
   color: var(--muted);
   font: var(--body);
   text-transform: lowercase;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .cloud-shell .cloud-shell__add:hover:not(:disabled) {
@@ -181,7 +177,7 @@
   color: var(--muted);
   font: var(--body);
   text-transform: lowercase;
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .cloud-shell .cloud-shell__account-trigger:hover {
@@ -213,6 +209,8 @@
   border-radius: var(--radius);
   background: var(--ground-raised);
   box-shadow: none;
+  /* It opens above its trigger, so it arrives from below. */
+  animation: var(--arrive-above);
 }
 
 [data-theme^="paper"] .cloud-shell__account-email {
@@ -265,7 +263,7 @@
   border-radius: 0;
   background: transparent;
   color: var(--muted);
-  transition: none;
+  transition: var(--transition-state);
 }
 
 [data-theme^="paper"] .cloud-shell .cloud-shell__collapse-toggle:hover {
@@ -327,10 +325,12 @@
   outline-offset: 3px;
 }
 
-/* ------------------------------------------------------- no label fades */
+/* -------------------------------------------------------- the rail is instant */
 
-/* The rail's label fades belong to the classic drawer; Paper's labels do not
-   fade. The nav word is left out: its one transition is the rule under it. */
+/* The rail's label fades belong to the classic drawer. Paper moves opacity and
+   position only, and a rail changing width is neither, so it and everything
+   riding on it change at once. */
+[data-theme^="paper"] .cloud-shell__nav-link span,
 [data-theme^="paper"] .cloud-shell__wordmark span,
 [data-theme^="paper"] .cloud-shell .cloud-shell__add span,
 [data-theme^="paper"] .cloud-shell .cloud-shell__search span,
@@ -338,6 +338,12 @@
 [data-theme^="paper"] .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
 [data-theme^="paper"] .cloud-shell__account-trigger > .workspace-icon {
   transition: none;
+}
+
+/* The one thing a label does animate: the green line that says where you are
+   draws in over `duration-fast`. */
+[data-theme^="paper"] .cloud-shell__nav-link span {
+  transition: border-color var(--duration-fast) var(--ease-smooth-out);
 }
 
 /* ------------------------------------------------------------- the widths */

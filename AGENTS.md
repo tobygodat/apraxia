@@ -64,8 +64,8 @@ nothing. The table is the scope of local iteration:
   concern. Local fixture checks need no per-step confirmation.
 - A release commit needs **App checks** and **Database checks** green. CI's
   `verify` is full app verification, so do not run the identical suite again
-  locally for a release. Database CI skips execution for the documented
-  docs/style-only diffs listed in the development guide.
+  locally for a release. Database CI skips execution for the diffs
+  that cannot change a database result, listed in the development guide.
 - A **Database checks** failure means running `npm run verify:db` locally; the
   size of a refactor alone does not. It resets disposable local Supabase and
   regenerates `frontend/src/types/database.ts`, so review that diff and commit
@@ -79,14 +79,24 @@ Reuse or start `npm run dev:web` and inspect the affected flow at
 first, then `dense`. `personal` is a private reproduction of the real account,
 so it shows the change on the data it is for; refresh it with
 `npm run qa:snapshot`, and without a snapshot it falls back to `realistic`.
-`dense` is the attempt to break the layout. Add `portrait` and `typical` for
-covers, and reload for persistence or initialization. The snapshot and
-screenshots of it are personal data: never commit them. Broader shared-layout QA
-runs once at completion; the scenario matrix is in
+`dense` is the attempt to break the layout. Check desktop at 1218×1133 CSS
+pixels, the owner's real window (device pixel ratio 1.44): it sits between the
+1200px and 1400px breakpoints, and a browser pane left at its own width is
+usually under 1200px, which is a different layout from the one in use. Add
+`portrait` and `typical` for covers, and reload for persistence or
+initialization. The snapshot and screenshots of it are personal data: never
+commit them. Broader shared-layout QA runs once at completion; the scenario
+matrix is in
 [cloud development](docs/CLOUD_DEVELOPMENT.md#pre-deployment-ui-checks).
 
 Fixtures cannot prove database persistence or Google sync, because the fixture
-services stand in for both. Before releasing a data-dependent or
+services stand in for both. The local full stack can: `npm run dev` serves the
+app, the API and local Supabase at `http://127.0.0.1:3000`, and
+`npm run db:import-hosted` fills it with a copy of the real account. Use the QA
+workspace for layout and styling, where its scenarios are deterministic and try
+to break things, and the full stack for anything that touches data, auth, the
+API or Google. Setup is in
+[cloud development](docs/CLOUD_DEVELOPMENT.md#optional-full-stack-local-setup). Before releasing a data-dependent or
 provider-dependent change, exercise the authenticated app with the intended
 configuration, and state which flows stayed unverified. Smoke-test the change
 after release.

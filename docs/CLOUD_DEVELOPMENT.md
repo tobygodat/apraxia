@@ -57,6 +57,8 @@ workflow holds no secrets.
 | `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS` | Calendar/Drive only | optional | **no, server only** | The key one version below the current one, set only while a rotation is in progress. See the rotation procedure in [calendar](CALENDAR.md#rotating-the-token-encryption-key). |
 | `GOOGLE_PICKER_API_KEY` | Drive Picker only | required for the Picker | server-held, released to the browser by `/api/drive/picker` | Not schema-validated. Restrict the key to the Picker API and the site referrers. |
 | `GOOGLE_PICKER_APP_ID` | Drive Picker only | required for the Picker | same | Not schema-validated. The Google Cloud project number. |
+| `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` | local sign-in only | never | no | Read by `supabase/config.toml`, not by the app. Hosted sign-in is configured in the Supabase dashboard. |
+| `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` | local sign-in only | never | **no, server only** | Same. Unset in CI, where the local stack starts without it and nothing signs in. |
 
 `/api/health` reports whether the application group and the Google group are
 configured. It is unauthenticated and deliberately does not name variables;
@@ -179,16 +181,29 @@ dispatch from the repository's **Actions → CI → Run workflow** page.
   typechecks the app against them. It stops the temporary instance afterward.
 
 The **Database checks** job always reports a status. Its scope step skips database
-execution only when every changed path is root `AGENTS.md`, `README.md`,
-`PRODUCT.md`, or `DESIGN.md`, a Markdown file under `docs/`, or CSS under
-`frontend/src/`. It records the decision in the run summary. Everything else,
-including mixed changes, dependencies, CI/configuration, data/auth code, and
-unknown paths, runs the full suite. Manual dispatch always runs the suite.
+execution only when every changed path is one of:
+
+- root `AGENTS.md`, `README.md`, `PRODUCT.md`, or `DESIGN.md`, a Markdown file
+  under `docs/`, anything under `.impeccable/`, or CSS under `frontend/src/`;
+- a test or fixture the job never executes: `tests/contract/`, `frontend/qa/`,
+  `frontend/src/qa/`, or a `*.test.ts(x)` file under `frontend/src/`;
+- a `.tsx` component under `frontend/src/` that does not name `supabase` or
+  `types/database` on either side of the diff. Components reach the database
+  through `.ts` service modules, and those always run the suite.
+
+It records the decision in the run summary. Everything else, including mixed
+changes, every non-test `.ts` module, `tests/local`, `frontend/tests/local`,
+server code, dependencies, CI/configuration, and unknown paths, runs the full
+suite. Manual dispatch always runs the suite. The job's one blind spot is
+`frontend/tests/local/todos-ui.test.tsx`, which renders the whole app against
+local Supabase: a component-only change that breaks it is caught by the next
+run of the suite, so run `npm run verify:db` yourself when a component change
+alters how the todo flow reads or writes.
 
 `scripts/ci-database-scope.mjs` compares the PR merge base to the checked-out
 commit, or the complete before/after range for a push. Both paths of a rename
 count. Missing history, invalid event data, and empty diffs fall back to the full
-suite. Checkout fetches full history for this comparison. A docs/style skip
+suite. Checkout fetches full history for this comparison. A skip
 does not install dependencies, start Supabase, or generate database types.
 
 The workflow needs no repository secrets, production credentials, or separate
@@ -223,19 +238,85 @@ Docker as routine cleanup, or automatically reset/delete its data.
 ```bash
 npm ci
 cp .env.cloud.example .env.local
+ln -s .env.local .env
 npm run db:start
 npm run db:status
 npm run dev
 ```
 
 On Windows PowerShell, use `Copy-Item .env.cloud.example .env.local` for the
-copy; the rest is identical.
+copy and `New-Item -ItemType SymbolicLink -Path .env -Target .env.local` for the
+link; the rest is identical.
 
-Populate the ignored `.env.local` with local Supabase settings. Never commit
-credentials. The first Vercel run may require account/project linking.
-The local app normally uses `http://127.0.0.1:3000`; `/api/health` should identify
-`apraxia-cloud` and `vercel-function`. `npm run dev:web` runs Vite alone for
-fictional UI fixtures; see the root README.
+The link is not optional. Vite reads `.env.local`, but `vercel dev` hands the
+API functions `.env` and nothing else, and the Supabase CLI reads `.env` too.
+Without it the browser half is configured and `/api/health` answers
+`not_configured`. One file behind a link keeps the two halves from drifting.
+Both names are ignored. `vercel link` appends `.vercel` and `.env*` to
+`.gitignore`; drop those lines, because `.env*` overrides the exceptions that
+keep the two `.example` templates tracked.
+
+Populate `.env.local` from `npm run db:status`: the project URL goes in both
+URL variables, the publishable key in both anon-key variables, the secret key
+in `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL` is `http://127.0.0.1:3000`. Never
+commit credentials. The first Vercel run asks to log in and link the project.
+
+Open the app at `http://127.0.0.1:3000`, never `localhost:3000`. `APP_URL`, the
+Supabase auth redirects and the Google redirect URIs all name `127.0.0.1`, and
+the API rejects a write whose origin is not `APP_URL`, so `npm run dev` listens
+on that address and announces it. Port 3000 has to be free: on another port the
+origins no longer match. `/api/health` should identify `apraxia-cloud` and
+`vercel-function`. `npm run dev:web` runs Vite alone for fictional UI fixtures;
+see the root README.
+
+`npm run dev` does not run `vercel dev` against `vercel.json` directly.
+`scripts/vercel-dev-config.mjs` first writes the ignored `.vercel/dev.json`:
+the same file without the Content-Security-Policy, which blocks the inline
+preamble Vite's React plugin needs and left the OAuth callback pages blank, and
+with the SPA rewrite narrowed to extensionless routes, because `vercel dev`
+rewrites before it proxies and was answering Vite's module requests with
+`index.html`. `vercel.json` stays the single source; edit it, not the copy. The
+`dev` script calls `dev:vercel` rather than naming the command, because the CLI
+refuses to start when the `dev` script's text contains `vercel dev`.
+
+### Signing in locally
+
+Google is the only sign-in, so the local stack needs a Google provider.
+`supabase/config.toml` enables one from two variables in `.env.local`. Create a
+separate OAuth client for local work rather than adding loopback addresses to
+the production one; Google shows a client secret once, at creation.
+
+| Authorized redirect URI | For |
+| --- | --- |
+| `http://127.0.0.1:54321/auth/v1/callback` | Sign-in, through local Supabase |
+| `http://127.0.0.1:3000/api/calendar/callback` | Connecting Calendar |
+| `http://127.0.0.1:3000/api/drive/callback` | Connecting Drive |
+
+These are redirect URIs, not JavaScript origins, and `http`, not `https`. Put
+the client's id and secret in `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`, then `npm run db:stop && npm run db:start`.
+The same pair in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, with a fresh
+`GOOGLE_TOKEN_ENCRYPTION_KEY` (`openssl rand -base64 32`), configures Calendar
+and Drive; restart `npm run dev` after changing them. An edited redirect URI can
+take minutes to reach Google, and until it does the consent screen answers
+`redirect_uri_mismatch`. Connecting Calendar locally links the real Google
+calendar: only the apraxia records are local.
+
+If a callback page stays blank after a configuration change, the browser is
+revalidating a copy it cached with older headers. Open DevTools, tick Disable
+cache on the Network tab, and repeat the flow.
+
+### Working on real content
+
+A new local database holds only `supabase/seed.sql`. After signing in once,
+`npm run db:import-hosted` copies the hosted account's rows into it, re-keyed
+to the local user, so persistence and the API can be exercised on real content
+without touching production. It only reads hosted, and it replaces the local
+`public` tables in one transaction. The Google connection rows and Storage files
+are not copied, so uploaded PDFs do not open locally. The dump lands in the
+ignored `supabase/.temp/` and is personal data: never commit it. Rerun the
+command to refresh; `npm run db:reset` returns to the seed, and needs a new
+sign-in before the next import.
 
 ### Agent-managed Docker startup on this Windows machine
 
@@ -352,9 +433,10 @@ Do not repeat unaffected scenarios for every copy or isolated styling revision.
 Fixture checks are insufficient evidence for data-dependent or
 provider-dependent changes. Before deploying those, also check the normal
 authenticated app with the intended account's data using the local
-full stack. `npm run dev` starts local Supabase; when intentionally testing the
-existing hosted account, run `npx vercel dev` with the matching ignored
-browser/server configuration and local `APP_URL` and allowed auth redirects (see
+full stack. `npm run dev` starts local Supabase, and with
+[imported data](#working-on-real-content) it is the default place for that
+check; when intentionally testing the existing hosted account, run
+`npm run dev:vercel` with the matching ignored browser/server configuration and local `APP_URL` and allowed auth redirects (see
 Calendar setup). That mode reads and writes the configured account's actual
 data. Vite alone does not serve Calendar API routes. Do not infer provider
 success from fixtures or a frontend build. Record which authenticated flows were

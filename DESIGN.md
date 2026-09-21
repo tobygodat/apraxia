@@ -333,14 +333,14 @@ deliberate.
   vocabularies on one surface.
 
 - **Draft 3 is only partly built.** Paper carries the `timing` and `sizing`
-  tokens, colour motion on action words, the sidebar and rows of words, the
-  line under the current word drawing in, the command palette's behaviour and
-  arrival, the `.paper-button` primitive, and the bordered primary `Button` in
+  tokens, the motion in **Motion** below (colour, the line under the current
+  word, surfaces arriving), the command palette's behaviour, the
+  `.paper-button` primitive, and the bordered primary `Button` in
   the task and collection dialogs. Not built yet: the `Button` on pages (a
   page's completing action is still a word at 600), `size-control` and
   `size-hit` on fields and words, the busy word holding its resting width, the
   512px dialog with its header, panel and footer (Paper dialogs are still 520px
-  on a `hairline`), menus and dialogs arriving and leaving, toasts, and the
+  on a `hairline`), surfaces leaving, toasts, and the
   palette's borderless input and `do` group.
 
 A surface being rebuilt in Paper is rebuilt whole. Half a screen in Literata
@@ -551,39 +551,39 @@ in `fine`. Widths are tokens too: `width-menu` (260px), `width-toast` (360px),
 
 ## Motion
 
-**Quiet and short.** Motion says where something came from or that something
-changed; it never performs.
+Quiet and short. Motion says where something came from or that something
+changed; it never performs. The foundations dropped their Still principle in
+draft 3 (20 September 2026) and this section took its place.
 
-| token | value | use |
-| --- | --- | --- |
-| `motion-scale` | 1 | multiplies every duration; 0 under `prefers-reduced-motion` |
-| `duration-quick` | 150ms | hover, focus and selection colour; anything closing; a word swapping |
-| `duration-fast` | 250ms | menus, dialogs, toasts and the command palette opening; the tab line drawing in |
-| `duration-medium` | 350ms | a toast leaving by itself; a panel closing |
-| `ease-smooth-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | open, close and position. The only curve |
-| `distance-micro` | 4px | travel of a menu or toast arriving from its trigger or edge |
-| `distance-base` | 8px | travel of a dialog arriving from below centre |
-
-- Animate opacity and transform only, and colour for a state; list properties
-  by name. Never `transition: all`.
-- A surface anchored to a trigger arrives from that trigger, `distance-micro`;
-  a centred one arrives from just below centre, `distance-base`. Surfaces fade
-  and shift; they do not scale.
-- Hover, focus and selection change colour over `duration-quick` and **move
-  nothing**. The 2px `accent` line under the current word draws in over
-  `duration-fast` and leaves over `duration-quick`. It does not slide between
-  words and it does not follow the pointer: the green line only ever sits
-  where you are.
+- Arriving takes `duration-fast` (250ms); leaving takes `duration-quick`
+  (150ms); a toast leaving by itself takes `duration-medium` (350ms). One
+  curve, `ease-smooth-out`, `cubic-bezier(0.22, 1, 0.36, 1)`.
+- Animate opacity and position only, listed by name. Never `transition: all`.
+  Layout does not animate: the rail changes width at once, and a row never
+  grows under the pointer.
+- A surface anchored to a trigger arrives from that trigger, `distance-micro`
+  (4px): a menu under its control from above, the account menu over its
+  trigger from below, the notice from the top edge. A centred one (a dialog,
+  search) arrives from just below centre, `distance-base` (8px), while its
+  `scrim` fades in. Surfaces fade and shift; they do not scale.
+- Hover, focus and selection change colour over `duration-quick` and move
+  nothing. The 2px `accent` line under a tab or the current sidebar word draws
+  in over `duration-fast`. It does not slide between words and it does not
+  follow the pointer: the green line only ever sits where you are.
 - No bounce, stagger, blur, shimmer or parallax. Loading is still the word
-  "loading…".
-- **Never write a duration as a bare number.** `paper.css` declares `--quick`,
-  `--fast` and `--medium`, each its duration multiplied by `--motion-scale`,
-  and `--ease`. Reduced motion sets the scale to 0, so all motion stops from
-  one place.
+  "loading…", and the cold-load rule across the top stays still.
+- Every duration is multiplied by `motion-scale`. It is 1, and 0 under
+  `prefers-reduced-motion`, so all motion stops from one place. Never write a
+  duration as a bare number.
 
-The classic sheets' own transitions — the 260ms rail, label fades, hover fills
-— are not this vocabulary. A Paper sheet still undoes them with
-`transition: none` and then declares the token motion it wants.
+In `frontend/src/paper.css` the duration tokens already carry the multiplier,
+so a sheet writes `var(--duration-quick)` and nothing else. Reach for
+`var(--transition-state)` for colour and `var(--arrive-below)`,
+`var(--arrive-above)`, `var(--arrive-centre)` and `var(--arrive-scrim)` for a
+surface; the keyframes move `translate`, so a surface that centres itself with
+`transform` keeps its place. Surfaces do not yet animate on leaving: they
+unmount at once, which `duration-quick` will replace when a surface is next
+rebuilt.
 
 ## States
 
@@ -847,9 +847,9 @@ against the viewport, and browser zoom already does the job properly.
 - Don't put a card, a shadow, a gradient or a pill on the page. If it floats it
   is `ground-raised` with a 1px border; if it doesn't float it sits on `ground`
   between rules.
-- Don't perform. No bounce, stagger, blur, shimmer, parallax or scaling
-  surfaces; no bare durations and no `transition: all`; nothing moves on hover,
-  and the green line never slides or follows the pointer.
+- Don't perform. No bounce, stagger, blur, shimmer, parallax, hover raise or
+  scale, no `transition: all`, and no duration written as a bare number. The
+  green line never slides or follows the pointer.
 - Don't put two borders in one group.
 - Don't give a hovered row a background; `selection` means chosen or
   highlighted.

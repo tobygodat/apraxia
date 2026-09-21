@@ -18,6 +18,7 @@
 [data-theme^="paper"] .search-backdrop {
   padding: var(--space-top) var(--inset) var(--space-24);
   background: var(--scrim);
+  animation: var(--arrive-scrim);
 }
 
 [data-theme^="paper"] .search-dialog {
@@ -31,30 +32,7 @@
   color: var(--text);
   box-shadow: none;
   scrollbar-color: var(--hairline-strong) var(--ground-raised);
-}
-
-/* Arriving: the scrim fades and the palette comes up `distance-base` from just
- * below where it rests, over `duration-fast`. It does not scale. The dialog
- * unmounts on close, so there is no leaving to draw. */
-[data-theme^="paper"] .search-backdrop {
-  animation: search-scrim-arrive var(--fast) var(--ease);
-}
-
-[data-theme^="paper"] .search-dialog {
-  animation: search-arrive var(--fast) var(--ease);
-}
-
-@keyframes search-scrim-arrive {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes search-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(var(--distance-base));
-  }
+  animation: var(--arrive-centre);
 }
 
 [data-theme^="paper"] .search-header {
@@ -222,7 +200,6 @@
   width: calc(100% + 2 * var(--space-8));
   margin-inline: calc(-1 * var(--space-8));
   padding-inline: var(--space-8);
-  transition: background-color var(--quick) var(--ease);
 }
 
 [data-theme^="paper"] .search-results button[data-highlighted]:not(:disabled) {

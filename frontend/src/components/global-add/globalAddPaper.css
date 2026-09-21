@@ -20,6 +20,8 @@
   background: var(--ground-raised);
   color: var(--text);
   box-shadow: none;
+  /* It hangs from the top edge, so it arrives from there. */
+  animation: var(--arrive-below);
 }
 
 [data-theme^="paper"] .global-add-notice p {
