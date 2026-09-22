@@ -69,7 +69,7 @@ export function useOneThingTaps(): () => void {
   }, []);
 }
 
-type Stage = "loading" | "ready" | "running" | "started";
+type Stage = "loading" | "failed" | "ready" | "running" | "started";
 
 export function OneThing({ service }: { readonly service: TodoService }) {
   const { profile } = useWorkspace();
@@ -77,8 +77,11 @@ export function OneThing({ service }: { readonly service: TodoService }) {
   const [stage, setStage] = useState<Stage>("loading");
   const [task, setTask] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(TWO_MINUTES_MS);
+  const [attempt, setAttempt] = useState(0);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const quietRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const titleId = useId();
 
@@ -117,7 +120,8 @@ export function OneThing({ service }: { readonly service: TodoService }) {
     };
   }, [show]);
 
-  // Read today's first task when the room opens.
+  // Read today's first task when the room opens, and again on Try again. A
+  // failed read says so rather than claiming nothing is due.
   useEffect(() => {
     if (!open) return undefined;
     const controller = new AbortController();
@@ -130,13 +134,16 @@ export function OneThing({ service }: { readonly service: TodoService }) {
         setStage("ready");
       })
       .catch(() => {
-        if (!controller.signal.aborted) setStage("ready");
+        if (!controller.signal.aborted) setStage("failed");
       });
     return () => controller.abort();
-  }, [open, profile, service]);
+  }, [open, attempt, profile, service]);
 
+  // Focus is in the card from the first frame: on Not now while the task
+  // loads, since Start is disabled until then, and on the primary action after.
   useEffect(() => {
-    if (open && stage !== "loading") primaryRef.current?.focus();
+    if (!open) return;
+    (stage === "loading" ? quietRef.current : (primaryRef.current ?? quietRef.current))?.focus();
   }, [open, stage]);
 
   useEffect(() => {
@@ -146,18 +153,20 @@ export function OneThing({ service }: { readonly service: TodoService }) {
         event.preventDefault();
         close();
       }
-      // Two buttons at most: keep Tab inside the card.
+      // Two buttons at most: keep Tab inside the card, and bring it back if
+      // focus has left.
       if (event.key === "Tab") {
-        const buttons = [...document.querySelectorAll<HTMLButtonElement>(".one-thing button")];
-        if (!buttons.length) return;
+        const buttons = [
+          ...(cardRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []),
+        ];
         const first = buttons[0];
         const last = buttons[buttons.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
+        if (!first || !last) return;
+        const active = document.activeElement;
+        const inside = buttons.some((button) => button === active);
+        if (!inside || active === (event.shiftKey ? first : last)) {
           event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
+          (event.shiftKey ? last : first).focus();
         }
       }
     };
@@ -200,6 +209,7 @@ export function OneThing({ service }: { readonly service: TodoService }) {
       <canvas ref={canvasRef} className="one-thing__confetti" aria-hidden="true" />
       <div className="one-thing__scrim" onClick={close} aria-hidden="true" />
       <section
+        ref={cardRef}
         className="one-thing__card"
         role="dialog"
         aria-modal="true"
@@ -208,19 +218,27 @@ export function OneThing({ service }: { readonly service: TodoService }) {
         <h2 className="one-thing__task" id={titleId}>
           {stage === "loading"
             ? "Finding it…"
-            : stage === "started"
-              ? "You started."
-              : (task ?? "Nothing is due today.")}
+            : stage === "failed"
+              ? "Today’s tasks didn’t load."
+              : stage === "started"
+                ? "You started."
+                : (task ?? "Nothing is due today.")}
         </h2>
         <p className="one-thing__hint">
-          {stage === "started"
-            ? "That was the hard part. Carry on for as long as it goes."
-            : task
-              ? "Just this, for two minutes. Starting is the whole trick."
-              : "Pick anything small and give it two minutes."}
+          {stage === "failed"
+            ? "Check the connection and try again."
+            : stage === "started"
+              ? "That was the hard part. Carry on for as long as it goes."
+              : task
+                ? "Just this, for two minutes. Starting is the whole trick."
+                : "Pick anything small and give it two minutes."}
         </p>
 
-        <div className="one-thing__ring" aria-hidden={stage !== "running"}>
+        <div
+          className="one-thing__ring"
+          aria-hidden={stage !== "running"}
+          hidden={stage === "failed"}
+        >
           <svg viewBox="0 0 128 128">
             <circle className="one-thing__track" cx="64" cy="64" r={RING_RADIUS} />
             <circle
@@ -253,7 +271,19 @@ export function OneThing({ service }: { readonly service: TodoService }) {
             >
               I’ve started
             </button>
-          ) : stage === "started" ? null : (
+          ) : stage === "started" ? null : stage === "failed" ? (
+            <button
+              ref={primaryRef}
+              type="button"
+              className="one-thing__primary"
+              onClick={() => {
+                setStage("loading");
+                setAttempt((count) => count + 1);
+              }}
+            >
+              Try again
+            </button>
+          ) : (
             <button
               ref={primaryRef}
               type="button"
@@ -264,7 +294,7 @@ export function OneThing({ service }: { readonly service: TodoService }) {
               Start two minutes
             </button>
           )}
-          <button type="button" className="one-thing__quiet" onClick={close}>
+          <button ref={quietRef} type="button" className="one-thing__quiet" onClick={close}>
             {stage === "started" ? "Close" : "Not now"}
           </button>
         </div>

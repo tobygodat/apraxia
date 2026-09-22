@@ -289,6 +289,17 @@
   }
 }
 
+/* ------------------------------------------------------- native controls */
+
+/* Classic declares `color-scheme: dark` on the element for every select, the
+   assignment date cell and the time field, which beats the `light` the
+   crisp-light root hands down, so their menus and pickers would open dark over
+   a light page. They follow the page instead. */
+:root[data-theme^="crisp"]
+  :is(select, .class-assignments td:nth-child(3), .assignment-calendar-time input) {
+  color-scheme: inherit;
+}
+
 /* ------------------------------------------------------------ checkboxes */
 
 /* Every native checkbox is the same square: an outline that fills blue and

@@ -64,3 +64,39 @@ it("opens from the mark's taps, says so when nothing is due, and closes on Escap
   fireEvent.keyDown(document, { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
 });
+
+it("says when today's tasks fail to load, and tries again", async () => {
+  const loadToday = vi
+    .fn()
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockResolvedValueOnce([{ id: "1", text: "Problem set 3" }]);
+  render(<OneThing service={{ loadToday } as unknown as TodoService} />);
+
+  await act(async () => press(KONAMI));
+  expect(await screen.findByRole("heading", { name: "Today’s tasks didn’t load." })).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Nothing is due today." })).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(await screen.findByRole("heading", { name: "Problem set 3" })).toBeTruthy();
+  expect(loadToday).toHaveBeenCalledTimes(2);
+});
+
+it("takes focus while the task is still loading, and keeps Tab inside", async () => {
+  const loadToday = vi.fn(() => new Promise(() => {}));
+  render(
+    <>
+      <button type="button">Behind</button>
+      <OneThing service={{ loadToday } as unknown as TodoService} />
+    </>,
+  );
+  screen.getByRole("button", { name: "Behind" }).focus();
+
+  await act(async () => press(KONAMI));
+  const notNow = screen.getByRole("button", { name: "Not now" });
+  expect(document.activeElement).toBe(notNow);
+
+  fireEvent.keyDown(document, { key: "Tab" });
+  expect(document.activeElement).toBe(notNow);
+  fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+  expect(document.activeElement).toBe(notNow);
+});
