@@ -4,7 +4,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type CSSProperties,
 } from "react";
 import { Temporal } from "@js-temporal/polyfill";
@@ -16,6 +15,7 @@ import type {
   ProjectSummary,
   WeekViewModel,
 } from "../../types/domain";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { usePhoneLayout } from "../../lib/usePhoneLayout";
 import { TodayPanel, type TodaySummary } from "../todos/TodayPanel";
 import type { TodoService } from "../todos/todoService";
@@ -59,28 +59,8 @@ const MIN_HOUR_HEIGHT = 32;
 const DAY_START_MINUTE = 0;
 const MAX_EVENT_LANES = 3;
 const HOUR_LABEL_HIDE_MINUTES = 25;
+/** The breakpoint where Home stops being a two-column workspace. */
 const HOME_STACKED_LAYOUT_QUERY = "(max-width: 1400px)";
-
-function homeStackedMediaQuery(): MediaQueryList | null {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
-  return window.matchMedia(HOME_STACKED_LAYOUT_QUERY);
-}
-
-function subscribeHomeStackedLayout(onChange: () => void): () => void {
-  const query = homeStackedMediaQuery();
-  if (!query || typeof query.addEventListener !== "function") return () => {};
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-/** Match the breakpoint where Home stops being a two-column workspace. */
-function useHomeStackedLayout(): boolean {
-  return useSyncExternalStore(
-    subscribeHomeStackedLayout,
-    () => homeStackedMediaQuery()?.matches ?? false,
-    () => false,
-  );
-}
 
 // Fit VISIBLE_HOURS to the panel, but never squeeze the rows past legibility:
 // a short panel shows fewer hours and scrolls within itself for the rest.
@@ -110,7 +90,7 @@ export function HomePage({
   // page opening a second read of the same slice.
   const [summary, setSummary] = useState<TodaySummary | null>(null);
   const phoneLayout = usePhoneLayout();
-  const stackedLayout = useHomeStackedLayout();
+  const stackedLayout = useMediaQuery(HOME_STACKED_LAYOUT_QUERY);
   const localDate = useLocalToday(profile.timezone);
   const calendar = (
     <CalendarPanel key="calendar" service={calendarService} timezone={profile.timezone} />
