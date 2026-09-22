@@ -17,6 +17,11 @@ jobs:
   # The app suite is split so the slow half (the PGlite contract tests) stops
   # holding up typecheck, lint, build and the frontend tests. "App checks"
   # below stays the single status to require; it fails if any part failed.
+  #
+  # Every job decides its own scope in a step rather than behind a gating job:
+  # `npm run lint` checks the formatting of every tracked file, so the static
+  # job always runs, and a gate that blocked the others would cost more setup
+  # than the skips save.
   static:
     name: Lint and types
     runs-on: ubuntu-latest
@@ -27,7 +32,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run verify:static
 
   contract-tests:
@@ -36,12 +41,23 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      # The runner's own Node runs this, so a skip restores no npm cache.
+      - name: Determine whether the contract suite is needed
+        id: scope
+        run: node scripts/ci-scope.mjs contract
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.scope.outputs.required != 'false'
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm test -- --maxWorkers=4 tests/contract
+      - run: npm ci --prefer-offline --no-audit --no-fund
+        if: steps.scope.outputs.required != 'false'
+      - name: Run the contract suite (reproduce locally with npm test -- tests/contract)
+        if: steps.scope.outputs.required != 'false'
+        run: npm test -- --maxWorkers=4 tests/contract
 
   frontend-tests:
     name: Frontend tests
@@ -49,12 +65,23 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      # The runner's own Node runs this, so a skip restores no npm cache.
+      - name: Determine whether the frontend suite is needed
+        id: scope
+        run: node scripts/ci-scope.mjs frontend
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.scope.outputs.required != 'false'
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm test -- --maxWorkers=4 frontend/src
+      - run: npm ci --prefer-offline --no-audit --no-fund
+        if: steps.scope.outputs.required != 'false'
+      - name: Run the frontend suite (reproduce locally with npm test -- frontend/src)
+        if: steps.scope.outputs.required != 'false'
+        run: npm test -- --maxWorkers=4 frontend/src
 
   # Aggregate status so branch protection keeps requiring one app check.
   app:
@@ -84,14 +111,16 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
+      # The runner's own Node runs this, so a skip restores no npm cache.
+      - name: Determine whether database execution is needed
+        id: scope
+        run: node scripts/ci-scope.mjs database
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.scope.outputs.required != 'false'
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Determine whether database execution is needed
-        id: scope
-        run: node scripts/ci-database-scope.mjs
-      - run: npm ci
+      - run: npm ci --prefer-offline --no-audit --no-fund
         if: steps.scope.outputs.required != 'false'
       - name: Verify database (reproduce locally with npm run verify:db)
         id: verify
