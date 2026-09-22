@@ -37,20 +37,13 @@ interface HandoffProps {
 export function CareerPlanHandoff(props: HandoffProps) {
   const [mode, setMode] = useState<"brief" | "import" | null>(null);
   const [receipt, setReceipt] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  // The import panel stays mounted once opened, so a save in flight survives
+  // switching to the brief and back.
   const [importStarted, setImportStarted] = useState(false);
   const briefButton = useRef<HTMLButtonElement>(null);
   const importButton = useRef<HTMLButtonElement>(null);
-  // Focus returns after the render that closes the panel. The import button is
-  // disabled while a save is in flight, and a disabled button refuses focus.
-  const [returnFocus, setReturnFocus] = useState<"brief" | "import" | null>(null);
-  useEffect(() => {
-    if (!returnFocus) return;
-    (returnFocus === "brief" ? briefButton : importButton).current?.focus();
-    setReturnFocus(null);
-  }, [returnFocus]);
   const close = () => {
-    setReturnFocus(mode === "brief" ? "brief" : "import");
+    (mode === "brief" ? briefButton : importButton).current?.focus();
     setMode(null);
   };
   return (
@@ -61,7 +54,6 @@ export function CareerPlanHandoff(props: HandoffProps) {
           type="button"
           className="paper-action"
           aria-expanded={mode === "brief"}
-          disabled={submitted}
           onClick={() => {
             setReceipt("");
             setMode(mode === "brief" ? null : "brief");
@@ -74,7 +66,6 @@ export function CareerPlanHandoff(props: HandoffProps) {
           type="button"
           className="paper-action"
           aria-expanded={mode === "import"}
-          disabled={submitted}
           onClick={() => {
             setReceipt("");
             setImportStarted(true);
@@ -90,10 +81,7 @@ export function CareerPlanHandoff(props: HandoffProps) {
           <CareerPlanImport
             {...props}
             onClose={close}
-            onSubmitted={() => setSubmitted(true)}
-            onSettled={() => setSubmitted(false)}
             onImported={(rows) => {
-              setSubmitted(false);
               setImportStarted(false);
               props.onImported(rows);
               setReceipt(
@@ -355,9 +343,7 @@ function CareerPlanImport({
   service,
   onImported,
   onClose,
-  onSubmitted,
-  onSettled,
-}: HandoffProps & { onClose(): void; onSubmitted(): void; onSettled(): void }) {
+}: HandoffProps & { onClose(): void }) {
   const [source, setSource] = useState("");
   const [tasks, setTasks] = useState<ReviewTask[] | null>(null);
   // Once submitted, retries send precisely the same IDs and values. An uncertain
@@ -447,7 +433,6 @@ function CareerPlanImport({
               return;
             }
             setSubmitted(batch);
-            onSubmitted();
             void run("Saving tasks…", async (signal) => {
               let saved: CareerPrepItem[];
               try {
@@ -465,7 +450,7 @@ function CareerPlanImport({
                 throw cause;
               }
               if (!signal.aborted) onImported(saved);
-            }).finally(onSettled);
+            });
           }}
         >
           <p className="career-plan__description">

@@ -5,7 +5,7 @@ set local search_path = public, extensions;
 grant usage on schema extensions to anon, authenticated;
 grant execute on all functions in schema extensions to anon, authenticated;
 
-select plan(15);
+select plan(16);
 
 insert into auth.users (id, email)
 values
@@ -75,14 +75,19 @@ select ok(
   and not has_table_privilege('authenticated', 'public.career_prep', 'DELETE')
   and has_function_privilege(
     'authenticated', 'public.import_career_prep_items(uuid,jsonb)', 'EXECUTE'
-  )
-  and has_function_privilege(
-    'authenticated', 'public.save_career_prep_item(uuid,jsonb)', 'EXECUTE'
-  )
-  and has_function_privilege(
-    'authenticated', 'public.remove_career_prep_item(uuid)', 'EXECUTE'
   ),
-  'career prep writes are restricted to the atomic task-link RPCs'
+  'career prep is created only by the atomic import RPC'
+);
+
+select ok(
+  to_regprocedure('public.save_career_prep_item(uuid,jsonb)') is null
+  and to_regprocedure('internal.save_career_prep_item(uuid,jsonb)') is null
+  and to_regprocedure('public.remove_career_prep_item(uuid)') is null
+  and to_regprocedure('internal.remove_career_prep_item(uuid)') is null
+  and not has_column_privilege('orbitos_rpc', 'public.todos', 'text', 'UPDATE')
+  and not has_column_privilege('orbitos_rpc', 'public.career_prep', 'position', 'UPDATE')
+  and has_column_privilege('orbitos_rpc', 'public.todos', 'deleted_at', 'UPDATE'),
+  'career prep edits go through the todo writes Tasks uses'
 );
 
 select ok(

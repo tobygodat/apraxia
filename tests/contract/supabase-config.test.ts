@@ -44,8 +44,6 @@ describe("migration security contract", () => {
       "restore_record",
       "search_records",
       "import_career_prep_items",
-      "save_career_prep_item",
-      "remove_career_prep_item",
     ];
 
     for (const name of publicRpcNames) {

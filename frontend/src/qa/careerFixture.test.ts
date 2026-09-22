@@ -37,10 +37,10 @@ describe("career QA fixture task integration", () => {
 
     const seeded = await service.listPrep("owner", application!.id, signal);
     expect(seeded.length).toBeGreaterThan(0);
-    expect(seeded.every((item) => item.todoId !== null && UUID.test(item.todoId))).toBe(true);
+    expect(seeded.every((item) => UUID.test(item.todoId))).toBe(true);
 
     const first = seeded[0]!;
-    bridge.update(first.todoId!, {
+    bridge.update(first.todoId, {
       text: "Canonical task edit",
       dueDate: "2026-09-29",
       completed: true,
@@ -84,7 +84,7 @@ describe("career QA fixture task integration", () => {
     );
     expect(unicode?.body).toBe(unicodeBody);
 
-    await service.removePrep("owner", importedId, signal);
+    await service.removePrep("owner", replay[0]!, signal);
     expect(
       (await service.listPrep("owner", application!.id, signal)).some(
         (item) => item.id === importedId,

@@ -215,7 +215,7 @@ export function createFixtureCareer({
   };
 
   const projectedPrep = (item: CareerPrepItem): CareerPrepItem | null => {
-    const todo = item.todoId ? todoBridge.get(item.todoId) : undefined;
+    const todo = todoBridge.get(item.todoId);
     if (!todo) return null;
     return {
       ...item,
@@ -482,9 +482,7 @@ export function createFixtureCareer({
     },
     async deleteApplication(applicationId) {
       const index = applications.findIndex((row) => row.id === applicationId);
-      prepFor(applicationId).forEach((item) => {
-        if (item.todoId) todoBridge.remove(item.todoId);
-      });
+      prepFor(applicationId).forEach((item) => todoBridge.remove(item.todoId));
       if (index >= 0) applications.splice(index, 1);
       return { id: applicationId, deletedAt: new Date().toISOString() };
     },
@@ -593,40 +591,25 @@ export function createFixtureCareer({
         );
       });
     },
-    async savePrep(_userId, applicationId, item) {
-      const existing = item.id && prep.find((row) => row.id === item.id);
-      if (existing) {
-        const todo = projectedPrep(existing);
-        if (!todo) throw new ServiceError("not_found", "Couldn’t load this prep task.");
-        if (item.body !== undefined && !item.body.trim())
-          throw new ServiceError("invalid_input", "Add prep text before saving.");
-        todoBridge.update(existing.todoId!, {
-          ...(item.body !== undefined ? { text: item.body.trim() } : {}),
-          ...(item.dueOn !== undefined ? { dueDate: item.dueOn } : {}),
-          ...(item.doneAt !== undefined
-            ? {
-                completed: item.doneAt !== null,
-                completedAt: item.doneAt !== null ? new Date().toISOString() : null,
-              }
-            : {}),
-        });
-        if (item.position !== undefined) existing.position = item.position;
-        return projectedPrep(existing)!;
-      }
-      find(applicationId);
-      if (item.body === undefined)
+    async savePrep(_userId, item, changes) {
+      if (!todoBridge.get(item.todoId))
+        throw new ServiceError("unavailable", "Couldn’t save this prep note. Try again.");
+      if (changes.body !== undefined && !changes.body.trim())
         throw new ServiceError("invalid_input", "Add prep text before saving.");
-      return addPrep(
-        applicationId,
-        item.body.trim(),
-        item.dueOn ?? null,
-        item.doneAt ?? null,
-        item.position ?? prep.filter((row) => row.applicationId === applicationId).length,
-      );
+      todoBridge.update(item.todoId, {
+        ...(changes.body !== undefined ? { text: changes.body.trim() } : {}),
+        ...(changes.dueOn !== undefined ? { dueDate: changes.dueOn } : {}),
+        ...(changes.doneAt !== undefined
+          ? {
+              completed: changes.doneAt !== null,
+              completedAt: changes.doneAt !== null ? new Date().toISOString() : null,
+            }
+          : {}),
+      });
+      return projectedPrep(item)!;
     },
-    async removePrep(_userId, itemId) {
-      const item = prep.find((row) => row.id === itemId);
-      if (item?.todoId) todoBridge.remove(item.todoId);
+    async removePrep(_userId, item) {
+      todoBridge.remove(item.todoId);
     },
 
     async listStories() {

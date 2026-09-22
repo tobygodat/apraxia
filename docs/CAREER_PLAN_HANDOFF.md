@@ -71,14 +71,16 @@ own prep item, and undoing the completion removes it again.
 `career_prep.todo_id` identifies the canonical todo. The todo owns text, due date,
 completion, and soft deletion; Career owns application membership and ordering.
 The prep fields are a database-maintained projection, not an independently
-writable task store. Browser writes use authenticated RPCs under RLS.
+writable task store. Creating actions goes through the authenticated import RPC;
+editing and removing one writes its todo, the same way Tasks does, under RLS.
 
 The forward migration
 `20260922062559_canonical_career_prep_todos.sql` links existing isolated prep to
 tasks and preserves existing linked todos as authoritative. It rejects an
-ambiguous legacy case where multiple prep rows link to one todo. Hosted rollout
-requires the normal data inspection and backup; implementing this feature does
-not apply that migration to the hosted app.
+ambiguous legacy case where multiple prep rows link to one todo. It is applied to
+the hosted app. `20260922190408_retire_career_prep_edit_rpcs.sql` drops the two
+Career-only write RPCs that migration added; apply it only after the frontend
+that stops calling them is deployed.
 
 Per-account assistant OAuth, direct Career MCP tools, hosted model inference,
 PDF extraction, and configurable page sections remain later stages from the

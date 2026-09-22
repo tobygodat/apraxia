@@ -992,7 +992,6 @@ export type Database = {
         Args: { p_verified_user_id: string };
         Returns: Json;
       };
-      remove_career_prep_item: { Args: { p_item_id: string }; Returns: boolean };
       reorder_today_todos: {
         Args: { p_local_date: string; p_todo_ids: string[] };
         Returns: Json;
@@ -1030,28 +1029,6 @@ export type Database = {
             };
             Returns: boolean;
           };
-      save_career_prep_item: {
-        Args: { p_application_id: string; p_item: Json };
-        Returns: {
-          application_id: string;
-          body: string;
-          created_at: string;
-          deleted_at: string | null;
-          done_at: string | null;
-          due_on: string | null;
-          id: string;
-          position: number;
-          todo_id: string;
-          updated_at: string;
-          user_id: string;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "career_prep";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
       save_drive_credentials:
         | {
             Args: {

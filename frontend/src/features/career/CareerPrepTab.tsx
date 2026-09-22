@@ -6,8 +6,8 @@ import { CareerPlanHandoff } from "./CareerPlanHandoff";
 import { MarkdownField } from "../../components/markdown/MarkdownField";
 import { dateTiming, orderPrep, tagsOf, type Timing } from "./careerPresentation";
 import {
-  isDefiniteRejection,
   type CareerApplication,
+  type CareerPrepChanges,
   type CareerPrepItem,
   type CareerQuestion,
   type CareerService,
@@ -88,12 +88,7 @@ function PrepList({
   const [body, setBody] = useState("");
   const [dueOn, setDueOn] = useState("");
   const [adding, setAdding] = useState(false);
-  const [draftId, setDraftId] = useState(() => crypto.randomUUID());
-  const [submittedDraft, setSubmittedDraft] = useState<{
-    body: string;
-    dueOn: string | null;
-  } | null>(null);
-  const { busy, error, setError, run } = useCareerRun("Couldn’t save this prep item. Try again.");
+  const { busy, error, run } = useCareerRun("Couldn’t save this prep item. Try again.");
   useEffect(() => {
     void run("Loading prep…", async (signal) => {
       const rows = await service.listPrep(userId, applicationId, signal);
@@ -103,9 +98,9 @@ function PrepList({
   }, [service, userId, applicationId, revision]);
   const replace = (item: CareerPrepItem) =>
     setItems((rows) => [...rows.filter((row) => row.id !== item.id), item]);
-  const save = (item: Partial<CareerPrepItem>, label: string) =>
+  const save = (item: CareerPrepItem, changes: CareerPrepChanges, label: string) =>
     run(label, async (signal) => {
-      const row = await service.savePrep(userId, applicationId, item, signal);
+      const row = await service.savePrep(userId, item, changes, signal);
       if (!signal.aborted) {
         replace(row);
         onTasksChanged?.();
@@ -153,10 +148,8 @@ function PrepList({
                   disabled={!!busy}
                   onChange={(event) =>
                     void save(
-                      {
-                        id: item.id,
-                        doneAt: event.target.checked ? new Date().toISOString() : null,
-                      },
+                      item,
+                      { doneAt: event.target.checked ? new Date().toISOString() : null },
                       event.target.checked ? "Ticking off…" : "Reopening…",
                     )
                   }
@@ -167,7 +160,7 @@ function PrepList({
                   value={item.dueOn}
                   timing={timing}
                   done={!!item.doneAt}
-                  onChange={(next) => void save({ id: item.id, dueOn: next }, "Saving the date…")}
+                  onChange={(next) => void save(item, { dueOn: next }, "Saving the date…")}
                 />
                 <button
                   type="button"
@@ -175,7 +168,7 @@ function PrepList({
                   disabled={!!busy}
                   onClick={() =>
                     void run("Removing…", async (signal) => {
-                      await service.removePrep(userId, item.id, signal);
+                      await service.removePrep(userId, item, signal);
                       if (!signal.aborted) {
                         setItems((rows) => rows.filter((row) => row.id !== item.id));
                         onTasksChanged?.();
@@ -196,39 +189,19 @@ function PrepList({
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!body.trim()) return;
-                const draft = submittedDraft ?? { body, dueOn: dueOn || null };
-                if ([...draft.body.trim()].length > 2000) {
-                  setError("Use a prep item of up to 2,000 characters.");
-                  return;
-                }
-                setSubmittedDraft(draft);
+                // One action is created the way Tasks creates one: every attempt
+                // is new. Only a reviewed plan keeps its IDs across retries.
                 void run("Adding…", async (signal) => {
-                  let rows: CareerPrepItem[];
-                  try {
-                    rows = await service.importPrep(
-                      userId,
-                      applicationId,
-                      [{ id: draftId, ...draft }],
-                      signal,
-                    );
-                  } catch (cause) {
-                    // A definite rejection saved nothing, so the draft is
-                    // editable again, under a fresh ID if the old one clashed.
-                    if (!signal.aborted && isDefiniteRejection(cause)) {
-                      setSubmittedDraft(null);
-                      setDraftId(crypto.randomUUID());
-                    }
-                    throw cause;
-                  }
+                  const [row] = await service.importPrep(
+                    userId,
+                    applicationId,
+                    [{ id: crypto.randomUUID(), body, dueOn: dueOn || null }],
+                    signal,
+                  );
                   if (signal.aborted) return;
-                  // An empty replay means the first attempt saved the item and
-                  // it has been removed since, so the draft is finished either way.
-                  const [row] = rows;
                   if (row) replace(row);
                   setBody("");
                   setDueOn("");
-                  setSubmittedDraft(null);
-                  setDraftId(crypto.randomUUID());
                   onTasksChanged?.();
                 });
               }}
@@ -239,7 +212,6 @@ function PrepList({
                 autoFocus
                 required
                 maxLength={4000}
-                disabled={!!submittedDraft}
                 placeholder="re-read the payments primer"
                 aria-label="prep item"
                 onChange={(event) => setBody(event.target.value)}
@@ -250,12 +222,11 @@ function PrepList({
                 min="0001-01-01"
                 max="9999-12-31"
                 value={dueOn}
-                disabled={!!submittedDraft}
                 aria-label="prep item due"
                 onChange={(event) => setDueOn(event.target.value)}
               />
               <button type="submit" className="paper-action" disabled={!!busy}>
-                {submittedDraft ? "try adding again" : "add"}
+                add
               </button>
               <button
                 type="button"
