@@ -1,12 +1,22 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import type { AuthIdentity } from "../../auth/authPort";
 import type { SignOutStatus } from "../../auth/AuthProvider";
 import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { useColdLoadState } from "../../apps/coldLoad";
 import { WorkspaceIcon } from "../WorkspaceIcon";
+import { useOneThingTaps } from "../one-thing/OneThing";
 import "./CloudAppShell.css";
 import "./CloudAppShellPaper.css";
+import "./CloudAppShellCrisp.css";
 
 /** Delay before showing the indeterminate bar, so fast loads never flash it. */
 const LOADING_BAR_DELAY_MS = 150;
@@ -35,6 +45,76 @@ function LoadingBar() {
 
   if (!visible) return null;
   return <div className="cloud-shell__loading-bar" aria-hidden="true" />;
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * Crisp's current-section highlight: one fill that glides from the section you
+ * left to the one you chose, rather than each row lighting on its own. It
+ * measures the active row after every navigation and resize, and it is only
+ * mounted in Crisp, so classic and Paper keep exactly the markup they had.
+ */
+function NavPill({ navRef }: { readonly navRef: RefObject<HTMLElement | null> }) {
+  const { pathname } = useLocation();
+  const pillRef = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const pill = pillRef.current;
+    if (!nav || !pill) return undefined;
+    nav.setAttribute("data-pill", "");
+    const place = () => {
+      const active = nav.querySelector<HTMLElement>(".cloud-shell__nav-link--active");
+      if (!active) {
+        pill.style.opacity = "0";
+        return;
+      }
+      pill.style.opacity = "1";
+      pill.style.translate = `${active.offsetLeft}px ${active.offsetTop}px`;
+      pill.style.width = `${active.offsetWidth}px`;
+      pill.style.height = `${active.offsetHeight}px`;
+    };
+    place();
+    // The first placement lands without travel; only later moves glide.
+    const ready = window.requestAnimationFrame(() => pill.setAttribute("data-ready", ""));
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(place) : null;
+    observer?.observe(nav);
+    return () => {
+      window.cancelAnimationFrame(ready);
+      observer?.disconnect();
+      nav.removeAttribute("data-pill");
+    };
+  }, [navRef, pathname]);
+
+  return <span ref={pillRef} className="cloud-shell__nav-pill" aria-hidden="true" />;
+}
+
+/** In Crisp, a page's content rises into place when you arrive on it. */
+function usePageArrival(mainRef: RefObject<HTMLElement | null>, enabled: boolean) {
+  const { pathname } = useLocation();
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const main = mainRef.current;
+    if (!enabled || !main || typeof main.animate !== "function" || prefersReducedMotion()) return;
+    main.animate(
+      [
+        { opacity: 0, translate: "0 8px" },
+        { opacity: 1, translate: "0 0" },
+      ],
+      { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }, [enabled, mainRef, pathname]);
 }
 
 const PRIMARY_DESTINATIONS = [
@@ -82,8 +162,13 @@ export function CloudAppShell({
   const appearanceLinkRef = useRef<HTMLAnchorElement>(null);
   const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const email = identity.email?.trim() || null;
-  const { preferences, setSidebarCollapsed } = useWorkspacePreferences();
+  const { preferences, resolvedTheme, setSidebarCollapsed } = useWorkspacePreferences();
   const collapsed = preferences.sidebarCollapsed;
+  const crisp = resolvedTheme.startsWith("crisp");
+  const navRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const tapMark = useOneThingTaps();
+  usePageArrival(mainRef, crisp && children === undefined);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -172,7 +257,7 @@ export function CloudAppShell({
 
       <aside className="cloud-shell__sidebar" aria-label="Workspace sidebar">
         <div className="cloud-shell__brand-row">
-          <Link to="/" className="cloud-shell__wordmark">
+          <Link to="/" className="cloud-shell__wordmark" onClick={tapMark}>
             <img
               className="cloud-shell__mark"
               src="/brand/apraxia-mark-96.png"
@@ -192,7 +277,8 @@ export function CloudAppShell({
           </button>
         ) : null}
 
-        <nav id={navId} className="cloud-shell__nav" aria-label="Primary navigation">
+        <nav id={navId} ref={navRef} className="cloud-shell__nav" aria-label="Primary navigation">
+          {crisp ? <NavPill navRef={navRef} /> : null}
           {PRIMARY_DESTINATIONS.filter(
             (destination) =>
               !availableDestinations || availableDestinations.includes(destination.to),
@@ -320,7 +406,7 @@ export function CloudAppShell({
       </aside>
 
       <div className="cloud-shell__body">
-        <main id="cloud-main-content" className="cloud-shell__content" tabIndex={-1}>
+        <main id="cloud-main-content" ref={mainRef} className="cloud-shell__content" tabIndex={-1}>
           {children === undefined ? <Outlet /> : children}
         </main>
       </div>

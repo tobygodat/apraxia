@@ -48,7 +48,8 @@ fixture defaults to `realistic`; the QA menu switches between them by reloading.
 The standalone Todo fixtures accept `default`, `empty`, `dense`, and `error`.
 
 **`?theme=`** (workspace only) seeds the device theme preset before the
-workspace mounts: `classic` (the default), `paper`, or `paper-light`. It writes
+workspace mounts: `crisp` (the default), `crisp-light`, `classic`, `paper`,
+`paper-light`, or `device` (Crisp following the device). It writes
 the same `apraxia:workspace-preferences` entry Settings writes, so the choice
 survives a reload until another `?theme=` replaces it.
 

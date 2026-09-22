@@ -1,867 +1,476 @@
 ---
 name: "apraxia"
-description: "apraxia on the Toby Godat foundations: warm paper in two themes, Literata throughout, one green that only ever means here, and rules instead of boxes."
+description: "apraxia in Crisp: Notion's discipline done properly. Content is the interface, type makes the hierarchy, warm translucent neutrals, one blue for acting, and colour kept for the person's data."
 colors:
-  ground: "#1b1a19"
-  ground-raised: "#252422"
-  text: "#e8e5df"
-  muted: "#a39e96"
-  faint: "#6f6b65"
-  hairline: "#3b3936"
-  hairline-strong: "#5a5752"
-  outline: "#7d7972"
-  selection: "#4a463f"
-  accent: "#8fd18a"
-  danger: "#e8907c"
-  warning: "#e0b565"
-  scrim: "rgba(0, 0, 0, 0.55)"
-  light-ground: "#f4f1eb"
-  light-ground-raised: "#fbf9f5"
-  light-text: "#1b1a19"
-  light-muted: "#6b665e"
-  light-faint: "#9a948a"
-  light-hairline: "#d9d3c9"
-  light-hairline-strong: "#b8b1a5"
-  light-outline: "#857f75"
-  light-selection: "#e3dccf"
-  light-accent: "#2e7d4f"
-  light-danger: "#a63d2a"
-  light-warning: "#8a5a00"
-  light-scrim: "rgba(27, 26, 25, 0.32)"
-  classic-primary: "#f0efed"
-  classic-today: "#8fc981"
-  classic-canvas: "#191919"
-  classic-sidebar: "#202020"
-  classic-hover: "#292929"
-  classic-selected: "#2c2c2c"
-  classic-line: "#303030"
-  classic-muted: "#ada9a3"
-  classic-field: "#111111"
-  classic-dialog: "#181818"
-  classic-raised: "#242424"
-  classic-error: "#ffb4b4"
-  classic-overdue: "#ddb1a4"
+  page: "#191919"
+  sidebar: "#202020"
+  raised: "#252525"
+  text: "#f0efed"
+  muted: "#ada9a3"
+  faint: "#8d8983"
+  field: "rgba(255, 255, 255, 0.055)"
+  hover: "rgba(255, 255, 255, 0.055)"
+  selected: "rgba(255, 255, 255, 0.09)"
+  fill-strong: "rgba(255, 255, 255, 0.13)"
+  line-soft: "rgba(255, 255, 235, 0.07)"
+  line: "rgba(255, 255, 235, 0.1)"
+  line-strong: "rgba(255, 255, 235, 0.14)"
+  outline: "rgba(255, 255, 235, 0.18)"
+  outline-strong: "rgba(255, 255, 235, 0.42)"
+  accent: "#2783de"
+  accent-hover: "#3a90e5"
+  accent-soft: "rgba(39, 131, 222, 0.2)"
+  accent-text: "#62a8ee"
+  on-accent: "#ffffff"
+  accent-fill: "#1f6fc5"
+  accent-fill-hover: "#1a61ad"
+  danger: "#ee6a62"
+  danger-fill: "rgba(238, 106, 98, 0.12)"
+  warning: "#d6a34f"
+  today: "#eb5757"
+  today-fill: "#d63c3c"
+  selection: "rgba(35, 131, 226, 0.28)"
+  scrim: "rgba(0, 0, 0, 0.6)"
+  tag-ink: "rgba(255, 255, 255, 0.86)"
+  tag-gray: "#474747"
+  tag-brown: "#5c3b2a"
+  tag-orange: "#7a4518"
+  tag-yellow: "#7c5c22"
+  tag-green: "#2b593f"
+  tag-blue: "#28456c"
+  tag-purple: "#492f64"
+  tag-pink: "#69314c"
+  tag-red: "#6e3630"
+  light-page: "#ffffff"
+  light-sidebar: "#f8f8f7"
+  light-raised: "#ffffff"
+  light-text: "#2c2c2b"
+  light-muted: "#5f5d58"
+  light-faint: "#6f6c67"
+  light-field: "rgba(242, 241, 238, 0.6)"
+  light-hover: "rgba(55, 53, 47, 0.06)"
+  light-selected: "rgba(55, 53, 47, 0.09)"
+  light-fill-strong: "rgba(55, 53, 47, 0.12)"
+  light-line-soft: "rgba(28, 19, 1, 0.06)"
+  light-line: "rgba(28, 19, 1, 0.1)"
+  light-line-strong: "rgba(28, 19, 1, 0.14)"
+  light-outline: "rgba(28, 19, 1, 0.18)"
+  light-outline-strong: "rgba(28, 19, 1, 0.42)"
+  light-accent: "#2383e2"
+  light-accent-hover: "#0f74d6"
+  light-accent-soft: "rgba(35, 131, 226, 0.14)"
+  light-accent-text: "#1f73c9"
+  light-danger: "#c33f3a"
+  light-danger-fill: "rgba(195, 63, 58, 0.07)"
+  light-warning: "#a3690f"
+  light-scrim: "rgba(15, 15, 15, 0.4)"
+  light-tag-ink: "#32302c"
+  light-tag-gray: "#e3e2e0"
+  light-tag-brown: "#eee0da"
+  light-tag-orange: "#fadec9"
+  light-tag-yellow: "#fdecc8"
+  light-tag-green: "#dbeddb"
+  light-tag-blue: "#d3e5ef"
+  light-tag-purple: "#e8deee"
+  light-tag-pink: "#f5e0e9"
+  light-tag-red: "#ffe2dd"
 typography:
-  display:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
+  title:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "40px"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.022em"
+    fontFeature: "\"cv11\""
+  h2:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
     fontSize: "24px"
     fontWeight: 600
     lineHeight: 1.3
-    letterSpacing: "-0.01em"
-  title:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "20px"
+    letterSpacing: "-0.012em"
+    fontFeature: "\"cv11\""
+  h3:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "18px"
     fontWeight: 600
-    lineHeight: 1.3
-    letterSpacing: "-0.005em"
-  heading:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "17px"
-    fontWeight: 600
-    lineHeight: 1.3
+    lineHeight: 1.35
+    letterSpacing: "-0.012em"
+    fontFeature: "\"cv11\""
   body:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "17px"
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "16px"
     fontWeight: 400
-    lineHeight: 1.6
+    lineHeight: 1.5
+    fontFeature: "\"cv11\""
+  ui:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: "20px"
+    fontFeature: "\"cv11\""
+  control:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "14px"
+    fontWeight: 500
+    lineHeight: "20px"
+    fontFeature: "\"cv11\""
+  input:
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: "22px"
+    fontFeature: "\"cv11\""
   small:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "15px"
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
+    fontSize: "13px"
     fontWeight: 400
-    lineHeight: 1.6
+    lineHeight: "18px"
+    fontFeature: "\"cv11\""
   fine:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "13px"
-    fontWeight: 400
-    lineHeight: 1.5
-  caption:
-    fontFamily: "Literata, \"Iowan Old Style\", \"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, \"Times New Roman\", serif"
-    fontSize: "15px"
-    fontWeight: 400
-    lineHeight: 1.6
-    fontStyle: "italic"
-  classic-headline:
-    fontFamily: "Georgia, \"Times New Roman\", serif"
-    fontSize: "38px"
-    fontWeight: 400
-    lineHeight: 1.15
-    letterSpacing: "-1px"
-  classic-section-heading:
-    fontFamily: "Georgia, \"Times New Roman\", serif"
-    fontSize: "26px"
-    fontWeight: 400
-    letterSpacing: "-0.01em"
-  classic-body:
-    fontFamily: "\"Segoe UI\", system-ui, sans-serif"
-    fontSize: "13px"
-    fontWeight: 400
-    lineHeight: 1.5
-  classic-label:
-    fontFamily: "\"Segoe UI\", system-ui, sans-serif"
+    fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Helvetica, Arial, sans-serif"
     fontSize: "12px"
     fontWeight: 400
-    lineHeight: 1.4
-  classic-dialog-action:
-    fontFamily: "\"Segoe UI\", system-ui, sans-serif"
-    fontSize: "11px"
-    fontWeight: 500
-    lineHeight: 1.2
-    letterSpacing: "0.025em"
-  sign-in-headline:
-    fontFamily: "\"Space Grotesk\", sans-serif"
-    fontSize: "52px"
-    fontWeight: 500
-    lineHeight: 0.98
-    letterSpacing: "-0.045em"
-  sign-in-eyebrow:
-    fontFamily: "\"JetBrains Mono\", ui-monospace, monospace"
-    fontSize: "11px"
-    fontWeight: 500
-    lineHeight: 1.4
-    letterSpacing: "0.08em"
+    lineHeight: "16px"
+    fontFeature: "\"cv11\""
+  mono:
+    fontFamily: "\"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace"
+    fontSize: "13px"
+    fontWeight: 400
 rounded:
-  radius-sm: "2px"
-  radius: "6px"
-  classic-compact: "4px"
-  classic-navigation: "5px"
-  classic-collection: "7px"
-  classic-field: "8px"
-  classic-toast: "10px"
-  classic-dialog: "14px"
-  classic-pill: "999px"
+  sm: "4px"
+  md: "6px"
+  lg: "10px"
+  xl: "12px"
+  2xl: "16px"
+  full: "999px"
 spacing:
-  space-xs: "4px"
-  space-8: "8px"
-  space-sm: "12px"
-  space-md: "16px"
-  space-24: "24px"
-  space-lg: "40px"
-  space-bottom: "56px"
-  space-top: "64px"
-  gutter: "20px"
-  sidebar: "208px"
-  measure: "600px"
-  measure-wide: "960px"
-  size-control: "36px"
-  size-hit: "44px"
-  size-menu-row: "34px"
-  size-table-row: "48px"
-  width-menu: "260px"
-  width-toast: "360px"
-  width-alert: "440px"
-  width-dialog: "512px"
-  width-command: "560px"
-  distance-micro: "4px"
-  distance-base: "8px"
+  row: "30px"
+  control: "32px"
+  field: "36px"
+  row-pad-x: "8px"
+  control-pad-x: "12px"
+  dialog-pad: "24px"
+  sidebar: "240px"
+  sidebar-collapsed: "56px"
+  page-inset: "clamp(20px, 5vw, 64px)"
+  page-top: "44px"
+  page-top-phone: "24px"
+  page-max: "1040px"
+  header-gap: "28px"
 components:
-  action-word:
-    backgroundColor: "transparent"
-    textColor: "{colors.text}"
-    typography: "{typography.small}"
-    textDecoration: "underline 1px {colors.accent}"
-    textUnderlineOffset: "0.2em"
-  action-word-completing:
-    textColor: "{colors.text}"
-    fontWeight: 600
-  action-word-quiet:
-    textColor: "{colors.muted}"
-    textDecoration: "none"
-  action-word-danger:
-    textColor: "{colors.danger}"
-  row:
-    backgroundColor: "transparent"
-    typography: "{typography.body}"
-    padding: "{spacing.space-sm} 0"
-    borderBottom: "1px solid {colors.hairline}"
-  row-meta:
-    textColor: "{colors.muted}"
-    typography: "{typography.fine}"
-    fontFeature: "tabular-nums"
-  field:
-    backgroundColor: "{colors.ground-raised}"
-    textColor: "{colors.text}"
-    typography: "{typography.body}"
-    border: "1px solid {colors.outline}"
-    rounded: "{rounded.radius}"
-    padding: "{spacing.space-8} {spacing.space-sm}"
-  checkbox:
-    backgroundColor: "{colors.ground-raised}"
-    border: "1px solid {colors.outline}"
-    rounded: "{rounded.radius-sm}"
-    size: "18px"
-    checkColor: "{colors.accent}"
-  navigation:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    typography: "{typography.body}"
-    padding: "{spacing.space-8} 0"
-  navigation-current:
-    textColor: "{colors.text}"
-    borderBottom: "2px solid {colors.accent}"
   button-primary:
+    backgroundColor: "{colors.accent-fill}"
+    textColor: "{colors.on-accent}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "{spacing.control}"
+  button-primary-hover:
+    backgroundColor: "{colors.accent-fill-hover}"
+    textColor: "{colors.on-accent}"
+  button-outline:
     backgroundColor: "transparent"
     textColor: "{colors.text}"
-    typography: "{typography.body}"
-    fontWeight: 600
-    border: "1px solid {colors.accent}"
-    rounded: "{rounded.radius}"
-    height: "{spacing.size-control}"
-  button-standalone:
-    border: "1px solid {colors.outline}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "{spacing.control}"
+  button-outline-hover:
+    backgroundColor: "{colors.hover}"
+  button-ghost:
+    backgroundColor: "transparent"
+    textColor: "{colors.text}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "0 8px"
+    height: "28px"
+  button-ghost-hover:
+    backgroundColor: "{colors.hover}"
+  button-ghost-quiet:
+    textColor: "{colors.muted}"
+  field:
+    backgroundColor: "{colors.field}"
+    textColor: "{colors.text}"
+    typography: "{typography.input}"
+    rounded: "{rounded.md}"
+    padding: "7px 10px"
+    height: "{spacing.field}"
+  nav-item:
+    backgroundColor: "transparent"
+    textColor: "{colors.muted}"
+    typography: "{typography.control}"
+    rounded: "{rounded.md}"
+    padding: "0 8px"
+    height: "{spacing.row}"
+  nav-item-hover:
+    backgroundColor: "{colors.hover}"
+    textColor: "{colors.text}"
+  nav-item-active:
+    backgroundColor: "{colors.selected}"
+    textColor: "{colors.text}"
+  tag:
+    backgroundColor: "{colors.tag-gray}"
+    textColor: "{colors.tag-ink}"
+    rounded: "{rounded.sm}"
+    padding: "0 8px"
+    height: "24px"
+  source-chip:
+    backgroundColor: "{colors.selected}"
+    textColor: "{colors.muted}"
+    rounded: "{rounded.sm}"
+    padding: "0 6px"
+    height: "20px"
+  checkbox:
+    backgroundColor: "transparent"
+    rounded: "{rounded.sm}"
+    size: "16px"
+  checkbox-checked:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.on-accent}"
+  task-card:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.md}"
+    padding: "8px 8px 8px 6px"
+  event-card:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.sm}"
+    padding: "3px 6px 3px 8px"
+  menu:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+    padding: "6px"
   dialog:
-    backgroundColor: "{colors.ground-raised}"
-    border: "1px solid {colors.hairline-strong}"
-    rounded: "{rounded.radius}"
-    padding: "{spacing.space-24}"
-    maxWidth: "{spacing.width-dialog}"
-  menu-row:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.text}"
+    typography: "{typography.ui}"
+    rounded: "{rounded.xl}"
+    padding: "{spacing.dialog-pad}"
+  palette:
+    backgroundColor: "{colors.raised}"
+    rounded: "{rounded.xl}"
+    width: "640px"
+  palette-input:
     backgroundColor: "transparent"
     textColor: "{colors.text}"
-    typography: "{typography.body}"
-    height: "{spacing.size-menu-row}"
-    padding: "3px {spacing.space-sm}"
-  menu-row-highlighted:
-    backgroundColor: "{colors.selection}"
-  command:
-    backgroundColor: "{colors.ground-raised}"
-    border: "1px solid {colors.hairline-strong}"
-    rounded: "{rounded.radius}"
-    maxWidth: "{spacing.width-command}"
-  icon:
-    size: "18px"
-    viewBox: "24"
-    strokeWidth: "1.5"
-    fill: "none"
-    color: "currentColor"
-  event-rule:
-    backgroundColor: "{colors.ground-raised}"
-    typography: "{typography.fine}"
-    border: "1px solid {colors.hairline}"
-    borderLeft: "2px solid {colors.outline}"
-    padding: "0 0 0 {spacing.space-8}"
-    fontFeature: "tabular-nums"
-  focus-ring:
-    outline: "2px solid {colors.accent}"
-    outlineOffset: "3px"
-    rounded: "{rounded.radius-sm}"
+    height: "56px"
+    padding: "0 88px 0 48px"
+  today-disc:
+    backgroundColor: "{colors.today}"
+    textColor: "{colors.on-accent}"
+    rounded: "{rounded.full}"
+    size: "28px"
 ---
 
 # Design System: apraxia
 
 ## Overview
 
-**Creative North Star: "It reads like a page."**
+**Creative North Star: "The Quiet Page"**
 
-apraxia is set type on warm paper. A screen is a page of words with rules
-between them, not a dashboard of widgets. Hierarchy comes from weight, from
-`muted`, and from the space before a thing — never from a box around it.
+apraxia's default look is **Crisp**, in a dark theme (`crisp`, the default) and a light one (`crisp-light`); "match device" in Appearance is Crisp following the device between the two. The owner pinned the direction after research: Notion's discipline, done properly. Content is the interface. The page is a quiet warm neutral, the person's tasks, events and notes are the loudest thing on it, and hierarchy comes from type size and weight rather than from boxes, bands or borders.
 
-apraxia does not have a design system of its own. It takes the **Toby Godat
-design system** whole and brings its own structure: the tokens, both themes,
-Literata, the seven text styles, the spacing scale, the `sizing` and `timing`
-tokens, the two radii, the states, and the rule that a word comes before an
-icon are fixed here. What apraxia
-decides for itself is hierarchy, navigation, density and its own surfaces.
+Crisp takes Notion's system, not its brand, and fixes what people report against it. Primary actions are always in view: every page and section has one filled blue button for its main act. Secondary controls (a row's drag handle, edit and delete) wait for hover or focus, and stay in view on touch, where nothing hovers. Secondary text keeps reading contrast. Home is an opinionated day (the date, what is owed, the Today list, the week) rather than a blank page.
 
-The system's own source is at
-<https://claude.ai/artifact/XoJ7FUqR1v7ZKfTDkpfBV3>; the apraxia Paper mock, the
-authority for the surfaces the reference pages don't cover, is at
-<https://claude.ai/artifact/5p3JsHY2KVmYnHffzYcR6g>; the redesign reference
-pages for home and tasks are at
-<https://claude.ai/artifact/CopJWGga2itvMMmfbk4mVv>. Where this document and the
-system disagree, the system wins and this document is wrong. Where this
-document records an apraxia decision the system leaves open, it is the
-authority.
+Motion is calm and short, 120 to 320ms on one curve, and it always explains a change: a surface arrives from just below where it rests, the current-section highlight glides between rows, a ticked task draws its check and the list closes the gap. Every duration is multiplied by one motion scale that drops to zero under reduced motion.
 
-This document follows the system's **draft 3** (20 September 2026), which
-removed the Still principle and put a Motion section in its place, added
-principles 6 to 10, the Density section, the `sizing` and `timing` token
-families, the highlighted and busy states, and `Button`, `Field`, `Menu`,
-`Dialog`, `Table`, `Toast`, `Empty`, `Motion`, `Command` and `CalendarEvent`.
+**Key Characteristics:**
 
-**The ten principles, in the system's words:**
+- One face, Inter, for everything; weight and size carry hierarchy.
+- Warm neutrals whose fills and lines are translucent, so they sit on any surface.
+- One blue that means "act here": primary buttons, the checked box, focus, selection.
+- Colour belongs to the person's data: nine tag tints and the calendars' own colours.
+- A red disc for today and a red line for now; red otherwise only for late and destructive.
+- 6px corners, 28 to 32px controls, 30px rows.
+- Flat pages; menus, dialogs and cards lift on soft layered shadows.
 
-1. **It reads like a page.** If a plain sentence or a plain line of words will
-   do, use it.
-2. **One green, and it means "here".** `accent` marks what you can act on and
-   where you are. Never decoration, never a status, never a filled area.
-3. **Rules, not boxes.** Space separates first, a 1px `hairline` second.
-   Nothing on the page is wrapped in a card.
-4. **Words first; an icon never stands alone.** A control may carry a small
-   line icon beside its word, never instead of it. The one exception is a
-   chevron that steps backward or forward.
-5. **Two themes, same page.** Dark is the default; light is the same thing on
-   light paper. Every colour decision is made in both.
-6. **One border per group.** The primary action carries the border; its
-   companions are words. Hierarchy comes from how many things are boxed.
-7. **Looks small, touches big.** Controls are `size-control` (36px) to the eye
-   and `size-hit` (44px) to a finger. The hit area grows on coarse pointers;
-   the drawing does not.
-8. **Hover is weaker than selected.** Hover turns a word `accent`. `selection`
-   as a background means chosen, or the row a menu will act on.
-9. **State lives in the markup.** `aria-invalid`, `aria-selected`,
-   `aria-pressed`, `aria-busy`, `aria-sort` and `disabled` drive the look. No
-   state exists only as a class.
-10. **Layout holds when state changes.** A loading button keeps its width. A
-    sentence replaces a sentence. Room is reserved before the content arrives,
-    so nothing jumps.
+### How the system is applied
 
-## What ships today
+Crisp is built over the classic theme's markup rather than beside it. Classic's stylesheets read every colour and face through a custom property with the classic literal as its fallback, `var(--c-*, <classic value>)`, so classic renders pixel-identical when nothing defines the property. `frontend/src/crisp.css` defines the `--c-*` properties for both Crisp themes, the type roles, radii, sizes, motion and shadows, the global primitives and the checkbox. Where structure has to change, a `*Crisp.css` sheet sits beside each classic sheet (`workspaceCrisp.css`, `CloudAppShellCrisp.css`, `calendarCrisp.css`, `todosCrisp.css`, `collectionsCrisp.css`, `classesCrisp.css`, `careerCrisp.css`, `searchCrisp.css`, `markdownCrisp.css`), imported after it, with every rule scoped `[data-theme^="crisp"]`, which matches both Crisp presets and nothing else. Behaviour that only Crisp shows (the gliding highlight, page arrival, completion as a view transition) is mounted only when the resolved theme starts with `crisp`, so classic and Paper keep exactly the markup they had.
 
-This document is the direction for every new surface and every change to an
-existing one. It is not yet a record of what is deployed, and the gap is
-deliberate.
+New work in Crisp reads `--c-*` tokens; it never writes a literal colour, face or duration that a token already names.
 
-- The workspace still ships the **classic** theme: charcoal surfaces, Georgia
-  page headings, Segoe UI controls, bordered day columns. It is the default
-  preset and stays pixel-identical while Paper is built beside it.
-- The **Ledger** board theme is gone: the Tasks board now has one look in
-  classic, and the per-page theme switch in Settings went with it. Ledger's
-  vocabulary is not lost — the ruled row, the 2px rule that marks now, the
-  struck-through finished item and the "12 days late" count in `warning` were
-  drawn from it into the foundations in September 2026, and Paper inherits all
-  four.
-- **Paper** and **Paper light** are presets in the same
-  `apraxia:workspace-preferences` store the board theme used, widened from the
-  board to the whole app. Their foundations — both token sets, the document
-  base and the shared primitives — live in `frontend/src/paper.css`. The
-  Appearance page offers them, and `/qa/workspace.html?theme=paper` opens the
-  fixture in one.
-- The classic palette, type and radii stay in the frontmatter above, prefixed
-  `classic-`, for as long as the classic stylesheets ship. They are frozen: do
-  not extend them, do not reach for them in new work, and do not mix the two
-  vocabularies on one surface.
+### The other themes
 
-- **Draft 3 is only partly built.** Paper carries the `timing` and `sizing`
-  tokens, the motion in **Motion** below (colour, the line under the current
-  word, surfaces arriving), the command palette's behaviour, the
-  `.paper-button` primitive, and the `Button`: the bordered primary in the task
-  and collection dialogs and on every page's and section's "add". Not built yet: `size-control`
-  and `size-hit` on fields and words, the busy word holding its resting width,
-  the 512px dialog with its header, panel and footer (Paper dialogs are still
-  520px on a `hairline`), surfaces leaving, toasts, and the palette's
-  borderless input and `do` group.
+Two older looks stay selectable in Appearance, each with its own vocabulary. They are never mixed with Crisp or with each other on one surface, and neither's rules are Crisp's rules.
 
-A surface being rebuilt in Paper is rebuilt whole. Half a screen in Literata
-over half a screen in Segoe UI is worse than either.
+- **Paper** (`paper`, `paper-light`): the Toby Godat system. Warm paper grounds, Literata throughout, one green that means "here", rules instead of boxes, words instead of buttons, lowercase interface words and a green `// ` before section headings. Its tokens and primitives live in `frontend/src/paper.css`, scoped `[data-theme^="paper"]`.
+- **Classic** (`classic`): the charcoal workspace Crisp replaced, with Georgia headings and Segoe UI controls. Its literals are the fallbacks inside the `--c-*` reads and are frozen; do not extend them.
 
-## Voice
-
-Copy is part of the design here, not a layer over it.
-
-- Plain and direct, friendly without selling. Interface words are **lowercase**:
-  tabs, section headings, action words, footers, captions — "add project",
-  "saved on this device only", "nothing here yet."
-- Proper nouns and user content keep their own case: "MATH3012", "Problem set
-  3", "Google Drive", "apraxia".
-- Join items on a line with a spaced middle dot, ` · `. Ranges take an en dash.
-  Keep a month and its year together with a non-breaking space.
-- State facts with their numbers: "5 open · 1 note", "12 days late". No
-  adjective does a number's job.
-- Errors say what happened and what to do, in a sentence, without blame and
-  without "oops": "September has 30 days. Pick a date on or before sep 30."
-- Section headings carry a green `// ` prefix. That comment mark is the only
-  nod to code — no terminal prompts, file paths or monospace styling.
-- No emoji.
+Some pages are built from Paper's primitives (`.paper-action`, `.paper-button`, `.paper-nav__item`, `.paper-field`, `.paper-heading`). Crisp redraws that markup in its own terms, listed under Components; the class names are shared, the vocabulary is not.
 
 ## Colors
 
-Two surfaces, three inks, three lines, one green, two for trouble.
+A warm charcoal or white page, translucent warm lines and fills, one saturated blue, and nine muted tag tints; every token exists in both themes, and the light values carry the `light-` prefix in the frontmatter.
 
-### Surfaces
+### Primary
 
-- **`ground`**: the screen. Most of apraxia is this and nothing else — every
-  list, board, table and page region sits directly on it.
-- **`ground-raised`**: the one other surface, for what floats over the page
-  (menus, popovers, dialogs, the undo toast) and for the inside of form fields.
-  It always carries a 1px border and never a shadow. Content laid out *in* the
-  page never uses it.
+- **Action Blue** (`accent`, light `light-accent`): the interface's only saturated colour, and it means "act here". It fills the checked checkbox, draws every focus ring, the calendar's new-event selection, drop indicators and the cold-load rule. A button that carries white words is filled with `accent-fill`, one shade deeper, so its label reads at about 5:1, and `accent-fill-hover` deepens it under the pointer; the account initial takes the same fill. `accent-soft` is its halo: the 3px ring round a focused field and the fill of a new-event selection.
+- **Link Blue** (`accent-text`): the blue as ink, for text actions inside notices and undo bars and for the active tab on the phone's tab bar, where the fill blue would not read as text.
 
-### Inks
+### Tertiary: the person's data
 
-- **`text`**: everything that matters — prose, row names, field values, the
-  current section, the title.
-- **`muted`**: what supports it — labels, dates, metadata, help text, captions,
-  unselected tabs, placeholders, and the name of a finished item.
-- **`faint`**: disabled words and controls only. Deliberately below reading
-  contrast; never for anything a person must read or press.
+- **Tag tints** (`tag-gray` through `tag-red`, with `tag-ink`): Notion's nine tag colours, deep and muted on the dark page, pale on the light one, always with the one `tag-ink`. They mark a career stage (applied blue, screen purple, interview orange, offer green, rejected red, withdrawn brown), a project's status, and an assignment's type (homework blue, quiz orange, reading green, exam red). Unmapped values fall back to gray.
+- **Calendar colours**: an event carries its Google calendar's own colour as a 3px bar at its left edge, or, with "tinted" events chosen in Appearance, as a 20% wash of that colour over the page. These colours come from the data and are never chosen by the interface.
 
-### Lines
+### Neutral
 
-- **`hairline`**: the 1px rule that separates — between rows, under a tab row,
-  beside the sidebar, around a raised surface.
-- **`hairline-strong`**: the same where it must show on `ground-raised`, and the
-  scrollbar thumb.
-- **`outline`**: the 1px border of anything you type into or tick. At 3:1 on
-  both surfaces in both themes, so a control is findable by its border alone.
+- **Warm Charcoal** (`page`), **Sidebar Charcoal** (`sidebar`), **Raised Charcoal** (`raised`): the page, the sidebar a step lighter, and the one surface for cards, menus, dialogs and the palette. Light: pure white page, `light-sidebar` a breath of warm grey.
+- **Warm Ink** (`text`), **Stone** (`muted`), **Faint Stone** (`faint`): primary ink; secondary text, captions, the date line and quiet actions; the quietest ink, for group labels, keyboard hints, time gutters and placeholders.
+- **Translucent fills** (`field`, `hover`, `selected`, `fill-strong`): white (dark) or warm brown-black (light) at low alpha, so a hovered row, a selected row and a field read the same on page, sidebar or raised surface.
+- **Translucent lines** (`line-soft`, `line`, `line-strong`, `outline`, `outline-strong`): hairlines mixed from a warm tint, from row dividers (`line-soft`) through panel edges (`line`) and field borders (`line-strong`) to the outlined button (`outline`) and the empty checkbox (`outline-strong`).
 
-`hairline` and `hairline-strong` are decorative and carry no meaning on their
-own: never let a rule be the only sign that something is a control.
+### Status
 
-### Accent
+- **Today Red** (`today`, the same in both themes): the disc behind today's date, the now line and its dot, the now-time tab, and today's dot on the week board.
+- **Late / Danger Red** (`danger`, `danger-fill`; `--c-late` shares the value): an overdue date or count and a destructive action. Overdue items keep their original date and say so in red; red is never the only signal.
+- **Amber** (`warning`): the project-warning band, on a `warning-fill` wash.
+- **Scrim** (`scrim`) dims the page under dialogs and the palette; **Selection** (`selection`) is the blue text-selection wash.
 
-**`accent`** is the one green, and it means *you can act here* or *you are
-here*: a link's underline, the hover colour of a word, the 2px marker under the
-current section or tab, the `// ` before a heading, the focus ring, the tick in
-a checkbox, and **now** — the 2px rule across the current day's column and the
-current-time line in the calendar. Lines and words only.
+### Named Rules
 
-**The One Green Rule.** `accent` is never a fill, never a background, never a
-status, never a badge, and never decoration. Nothing is "highlighted in green"
-because it is important; it is green because you are there or you can act
-there. An icon takes `accent` only when its word does.
+**The One Blue Rule.** Blue is the interface's one voice, and it is never decoration. A page or section shows one filled blue button, its main act; every other button is outlined or ghost. Tasks own the blue on Home; "add event" is outlined.
 
-### Trouble
+**The Data Owns Colour Rule.** Tag tints and calendar colours belong to the person's data. The interface never uses a tag tint for decoration, emphasis or its own state.
 
-- **`danger`**: errors and destructive actions — the sentence under a field,
-  that field's border, the word "delete". A warm brick, not a signal red.
-- **`warning`**: attention without failure — unsaved changes, a degraded
-  provider, and **late**: the words "past due wed, sep 16" or "12 days late"
-  inside an otherwise `muted` line. The rest of the line stays `muted`.
-
-**There is no success colour.** Success is said in `text`, in words, and then
-gets out of the way. A finished task is `muted` with a line through it; its
-tick is `accent` because ticking it was the action, not because finishing is
-green.
-
-### Selection and scrim
-
-`selection` backs selected text and the highlighted row of a menu or list under
-the pointer or keyboard. `scrim` sits behind a modal dialog and nowhere else.
-
-### Calendar colours
-
-Google calendars are colour-coded upstream, and losing that loses information
-the person put there. **An event is raised off the ruled grid, and the 2px rule
-at its left carries the calendar's own colour.** This is the recorded exception
-to the one-hue rule, and the only one.
-
-- The rule is 2px and at the event's left edge. The event is opaque
-  `ground-raised` inside a 1px `hairline`, so the hour rules stop at its edge.
-  The fill is neutral by default. **Appearance** offers the other choice,
-  `tinted`: the calendar's colour mixed 16% into `ground`, still opaque, with
-  no hairline because the tint is its own edge. It is a preference, not the
-  default, because seven tints across a warm page fight the one-hue rule.
-- `calendarColors.ts` keeps preserving valid Google colours and supplying stable
-  fallbacks. Its luminance-based text choice is not needed on a neutral fill —
-  every event's name is `text` at 600, a shift included, and its time and place
-  are `muted`.
-- Calendar fallback colours are data, not a brand palette. They appear on
-  calendar event rules and nowhere else.
-
-### Themes
-
-Set the theme with `data-theme` on the root element. apraxia carries the
-preset name there rather than the system's bare `dark|light`, because classic
-is a third value: `classic`, `paper` (dark) and `paper-light`. A Paper rule
-scopes itself with `[data-theme^="paper"]`, which matches both and never
-matches classic. Every colour decision is made
-in both themes; a value that only works in one is not finished.
-
-Light `accent` (`#2e7d4f`) measures about 4.48:1 on light `ground` when it
-colours a hovered word — a hair under 4.5:1, kept exact from the source. It is
-the one documented exception and is not licence to add others.
+**The Reading Contrast Rule.** Secondary text stays at 4.5:1 or better on the page it sits on. `faint` was raised in review to meet it, and measures about 5.1:1 on the dark page (4.7:1 on the dark sidebar); a new use of `faint` or `muted` is checked against its actual surface, not the page. The finishing pass closed the last measured gaps: light `faint` reads at about 5:1 on white and 4.7:1 on the light sidebar, light `danger` and late text at about 5.1:1, white labels on `accent-fill` at about 5:1 (6.2:1 on hover), and the white numeral on `today-fill`, the today disc, at about 4.6:1.
 
 ## Typography
 
-**Literata throughout**, self-hosted in `frontend/public/fonts/` beside the
-sign-in faces and falling back through Iowan Old Style, Palatino and Georgia. One family: no sans
-for the interface, no mono for data, no second face for dense screens.
+**Display Font:** Inter (self-hosted variable woff2, weight 100 to 900, optical sizing automatic; falls back to the platform UI face)
+**Body Font:** Inter
+**Label/Mono Font:** JetBrains Mono, for code only
 
-Seven styles, weights 400 and 600 only:
+**Character:** One neutral, precise face does all the work. Inter picks its display cut on its own at the larger sizes, and the `cv11` alternate (the single-storey a) is on everywhere; tabular figures are on for `time`, `kbd`, `td` and `th` and on the date line.
 
-| style | size | use |
-| --- | --- | --- |
-| `display` | 24px/1.3, 600 | once per screen: the page's name |
-| `title` | 20px/1.3, 600 | a dialog's title, the product name in the sidebar, a major region |
-| `heading` | 17px/1.3, 600 | a section heading, with its `// ` — body size, set apart by weight and the green alone |
-| `body` | 17px/1.6, 400 | the default for everything: prose, row names, field values, tabs, action words |
-| `small` | 15px/1.6, 400 | supporting lines: dates, metadata, help and error text, footers, quiet actions |
-| `fine` | 13px/1.5, 400 | the floor, dense screens only: table headers, row metadata, timestamps, shortcut keys |
-| `caption` | 15px/1.6, 400 italic | a line under a figure or an aside. The only italic |
+### Hierarchy
 
-**The Floor Rule.** `fine` is the smallest type in apraxia. Nothing goes below
-13px, and nothing that must be read to use a screen is set in it. A screen that
-needs a smaller step needs less on it.
+- **Title** (700, 40px, 1.2, -0.022em; 30px on a phone): one per page, the page's name, balanced.
+- **H2** (600, 24px, 1.3, -0.012em): a section on a page (Tasks on Home) and a dialog's heading.
+- **H3** (600, 18px, 1.35, -0.012em): a sub-section or panel heading.
+- **Body** (400, 16px, 1.5): the document base and reading text.
+- **UI** (400, 14px/20px): interface text, list rows, the date line; page paragraphs use 14px at 1.55 in `muted`.
+- **Control** (500, 14px/20px): every button, nav row and tab label.
+- **Input** (400, 15px/22px): text in fields and dialogs; the palette's field is 17px/24px.
+- **Small** (400, 13px/18px) and **Fine** (400, 12px/16px): captions, chips, the account email. Card and gutter text goes to 11px only for event details, time labels and the phone tab bar.
 
-Turn on kerning and ligatures. Use tabular figures wherever numbers line up —
-due dates, times, counts, the week range, a table's date column.
-`text-wrap: balance` on headings, `pretty` on paragraphs.
+### Named Rules
 
-**Hierarchy comes from weight, `muted`, and the space before a thing.** Size is
-the last lever, not the first: a section heading is body size, and it reads as a
-heading because of its weight and its green `// `.
+**The Type Is The Box Rule.** Hierarchy is made with size and weight. A section is a heading and space, not a panel with a border.
 
-The sign-in screens keep their Space Grotesk and JetBrains Mono treatment for
-now; they are outside the workspace shell and are the last surface to convert.
-They are recorded in the frontmatter so the bundled faces stay accounted for.
+**The Sentence Case Rule.** Crisp prints interface words in sentence case; nav labels are capitalised. No all-caps labels, no tracked-out small caps.
 
 ## Layout
 
-The scale is **4 · 8 · 12 · 16 · 24 · 40**, with 56 and 64 for the bottom and
-top of a screen. Closer means related: 4 within a pair, 12 to 16 within a
-group, 24 between groups, 40 between regions.
+A left sidebar and a centred page. The sidebar is 240px (224px at 1200px and under) in `sidebar` charcoal; it collapses to a 56px icon rail on request above 620px, and becomes a 56px rail on its own under 980px. On a phone (620px and under) it becomes a slim sticky top bar (mark, search, add, account) and the sections move to a fixed tab bar along the bottom, on a 90% `sidebar` backdrop with blur, clear of the safe-area inset.
 
-- Reading columns and forms sit in `measure` (600px); paragraphs cap at 62ch
-  inside it.
-- Working screens widen to `measure-wide` (960px), and prose inside them still
-  obeys `measure`.
-- Every screen keeps at least `gutter` (20px) at its sides.
-- At 560px and below, `space-lg` becomes 32px and the top and bottom padding
-  become 40px. At 760px and below the sidebar becomes a block above the content.
+The page sits inside a fluid inset (`page-inset`) with a 44px top (24px on a phone) and a 1040px measure for text pages; Home and the week board run wider. A page header is the title and its actions on one line with a 16px gap and 28px under it. Home's header adds the date line under the title: the date and what is owed today, joined by a spaced middle dot, with late counts in red.
 
-### The app shell
+Rows are 30px, controls 32px, fields 36px; row padding is 8px across, button padding 12px, dialogs 24px. On coarse pointers header actions grow to 40px.
 
-apraxia has several sections, so it uses the system's `AppShell`: a `sidebar`
-(208px) of words on the left, divided from a fluid main area by a `hairline`.
-Both sit on `ground`; panes are never told apart by different backgrounds.
-
-Top to bottom: the product name in `title` with its mark; **search**, set apart
-with `space-lg` above and below and its shortcut in `fine` at the right; the
-sections, `space-8` of padding each; then, above a `hairline`, the actions that
-belong to the person rather than a section — add and account.
-
-Every row is an icon and a word, `muted` until hovered. The current section is
-`text` with a 2px `accent` line under its **word**, not under its row and not
-behind it.
-
-The main area takes `space-lg` of padding and keeps to `measure-wide`, except
-for a grid that genuinely needs the room — the seven-day week, a wide table —
-which may run its full width.
+The week board keeps each day at a readable width and scrolls sideways inside the page margins, snapping to a day, with a 48px fade at the right edge whenever seven days do not fit (under 1840px). The calendar week keeps a floor where each day still has about 90px.
 
 ## Elevation & Depth
 
-There is no elevation. **No shadows and no gradients**: a thing that floats is
-`ground-raised` with a 1px border, `radius` corners and `space-md` to
-`space-24` of padding, and that is the whole vocabulary. 1px lines only.
-`radius` (6px) for images, fields and raised surfaces; `radius-sm` (2px) for
-focus outlines and checkboxes. Nothing is rounder — **no pills**, and no circle
-except a radio.
+Pages are flat: the page, the sidebar a step lighter, and type. Depth appears only where something sits over the page: menus, notices and the event preview float on `--c-shadow-menu`; dialogs and the palette on `--c-shadow-dialog`; task cards and hovered event cards lift on `--c-shadow-lift`. Every shadow opens with a 1px hairline ring (white at 7% dark, black at 5% light), so edges stay crisp without a border, then soft layered blur. Dark shadows are deep and black; light ones are low-alpha near-black.
 
-## Density
+### Shadow Vocabulary
 
-What a control looks like and what a finger can hit are separate numbers.
-Everything typed into or pressed is `size-control` (36px) tall, so a field and
-a button on one row line up; on coarse pointers each gets an invisible
-`size-hit` (44px) area and the drawing does not change. A menu row is
-`size-menu-row` (34px), a table row `size-table-row` (48px) under a 36px header
-in `fine`. Widths are tokens too: `width-menu` (260px), `width-toast` (360px),
-`width-alert` (440px), `width-dialog` (512px), `width-command` (560px).
+- **Menu** (dark `0 0 0 1px rgba(255,255,255,.07), 0 4px 12px rgba(0,0,0,.32), 0 14px 36px rgba(0,0,0,.42)`): menus, toasts, the undo bar, the event preview.
+- **Dialog** (dark `0 0 0 1px rgba(255,255,255,.07), 0 20px 56px -10px rgba(0,0,0,.7)`): dialogs, the command palette.
+- **Lift** (dark `0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.28)`): a card under the pointer.
+- **Primary press line** (`inset 0 -1px 0 rgba(0,0,0,.12)`): the faint lower edge on a filled blue button.
 
-## Motion
+### Named Rules
 
-Quiet and short. Motion says where something came from or that something
-changed; it never performs. The foundations dropped their Still principle in
-draft 3 (20 September 2026) and this section took its place.
+**The Flat Page Rule.** Nothing that lives on the page casts a shadow at rest except a task card's hairline and 1px shadow. Shadows are for surfaces over the page and for hover.
 
-- Arriving takes `duration-fast` (250ms); leaving takes `duration-quick`
-  (150ms); a toast leaving by itself takes `duration-medium` (350ms). One
-  curve, `ease-smooth-out`, `cubic-bezier(0.22, 1, 0.36, 1)`.
-- Animate opacity and position only, listed by name. Never `transition: all`.
-  Layout does not animate: the rail changes width at once, and a row never
-  grows under the pointer.
-- A surface anchored to a trigger arrives from that trigger, `distance-micro`
-  (4px): a menu under its control from above, the account menu over its
-  trigger from below, the notice from the top edge. A centred one (a dialog,
-  search) arrives from just below centre, `distance-base` (8px), while its
-  `scrim` fades in. Surfaces fade and shift; they do not scale.
-- Hover, focus and selection change colour over `duration-quick` and move
-  nothing. The 2px `accent` line under a tab or the current sidebar word draws
-  in over `duration-fast`. It does not slide between words and it does not
-  follow the pointer: the green line only ever sits where you are.
-- No bounce, stagger, blur, shimmer or parallax. Loading is still the word
-  "loading…", and the cold-load rule across the top stays still.
-- Every duration is multiplied by `motion-scale`. It is 1, and 0 under
-  `prefers-reduced-motion`, so all motion stops from one place. Never write a
-  duration as a bare number.
+## Shapes
 
-In `frontend/src/paper.css` the duration tokens already carry the multiplier,
-so a sheet writes `var(--duration-quick)` and nothing else. Reach for
-`var(--transition-state)` for colour and `var(--arrive-below)`,
-`var(--arrive-above)`, `var(--arrive-centre)` and `var(--arrive-scrim)` for a
-surface; the keyframes move `translate`, so a surface that centres itself with
-`transform` keeps its place. Surfaces do not yet animate on leaving: they
-unmount at once, which `duration-quick` will replace when a surface is next
-rebuilt.
-
-## States
-
-- **Hover:** the word turns `accent` over `duration-quick`. In a table, the
-  row's name turns `accent`; the row takes no background. Nothing moves, grows
-  or lifts.
-- **Highlighted:** the row of a menu or command list under the pointer or the
-  keyboard takes `selection` (`data-highlighted`).
-- **Focus:** a solid 2px `accent` outline, offset 3px, `radius-sm` corners. At
-  least 3:1 on both surfaces in both themes. Never removed.
-- **Selected / current:** `text`, with a 2px `accent` line under it. A
-  selected table row takes `selection` (`aria-selected`).
-- **Now:** the current day or time takes a 2px `accent` rule across its whole
-  column or row, and its label is `text` at 600. **No "today" tag beside it.**
-- **Done:** the name is `muted` with a line through it; the tick in its checkbox
-  is `accent`. Nothing turns green.
-- **Late:** the words that say so are `warning`; the rest of the line stays
-  `muted`.
-- **Disabled:** `faint`, no underline, no hover.
-- **Busy:** the button's word becomes "saving…" in `muted` inside the width of
-  its resting word (`aria-busy`); the border rests at `hairline-strong`.
-  Nothing resizes.
-- **Error:** the field's border and the sentence under it in `danger`; the
-  value the person typed stays in `text`.
-- **Loading and empty:** a `muted` sentence where the content will be
-  ("loading…", "nothing here yet."). **No spinners, no skeletons, no
-  illustrations.**
-
-## Iconography and imagery
-
-Words come first, and an icon never stands alone. Any control may carry an icon
-beside its word: an 18px line drawing on a 24px grid, 1.5px stroke, round caps
-and joins, no fill, drawn in `currentColor` so it takes the ink of its word and
-turns `accent` with it on hover. Icon and word sit `space-sm` apart, and the
-icon is hidden from assistive technology because the word already says it.
-
-The one icon allowed alone is a chevron that steps backward or forward —
-previous and next week — and it carries an `aria-label`. Icons never replace a
-word, never carry a status, never take a colour of their own, and are never
-filled. No icon fonts, no emoji.
-
-The favicon is one lowercase serif letter on `ground`. There is no imagery: the
-Home cover was removed, and the page is type on a ruled ground throughout.
+Gently rounded, never pill-shaped except for true circles. Controls, rows, fields, tabs and task cards take 6px (`md`); checkboxes, chips, tags and event cards 4px (`sm`); menus and notices 10px (`lg`); dialogs and the palette 12px (`xl`); the hidden "Just one thing" card 16px (`2xl`). Today's date is a full circle, and scrollbar thumbs are fully round. Borders are rare: the outlined button, fields and the empty checkbox carry a 1 to 1.5px translucent line; everything else is defined by fill, space, or a shadow's hairline ring. The one coloured edge is an event's 3px calendar bar.
 
 ## Components
 
-### Actions
+### Buttons
 
-**An action is an underlined word, like a link — and one action per group may
-carry a border.** Hierarchy comes from how many things are boxed, so a group
-never has two.
+Plain and confident: three weights of one control.
 
-- An ordinary action is `body` or `small` in `text`, underlined 1px in `accent`
-  with a 0.2em underline offset; it turns `accent` on hover.
-- A quiet action is the same word in `muted` with no underline: "open",
-  "cancel", "edit class".
-- **The one action that completes a screen or a dialog** — "add assignment",
-  "save task", "add project" — is a `Button`: `size-control` tall, a 1px
-  `accent` border, `radius` corners, the word at 600. One per screen region or
-  dialog. Nothing is ever filled with `accent`. In practice that is the "add"
-  in a page header or a section header: "add project", "add event", "add task",
-  "add assignment". A header's "edit" beside it stays quiet, and an "add" that
-  repeats down a list or across columns ("add task" under each day, "add step")
-  stays a word, because a row of borders is a toolbar. An "add" `Button` carries
-  a plus at `icon` size, `space-sm` before its word.
-- A standalone action with no companions — "new task" in a header — may take
-  the same box with an `outline` border.
-- A destructive action is its word in `danger`: "delete", "remove". It takes a
-  border only as the confirm of an alert dialog.
-- Hover turns the word `accent` over `duration-quick`; the border does not
-  change. Busy swaps the word for "saving…" without changing the width.
+- **Shape:** 6px corners, 32px tall, 12px across, 14px Inter 500, icons at 16px with a 6px gap.
+- **Primary:** filled Action Blue with white text and the press line; one per page or section (Add task, a page's add, a dialog's submit).
+- **Outline:** transparent with a 1px `outline` border; the page's other actions and a header's secondary action.
+- **Ghost:** no border, 28px tall, 8px across; inline and quiet actions. The quiet variant is `muted` and turns `text` on hover; the danger variant is red and fills `danger-fill` on hover.
+- **Hover / Focus / Active:** hover fills `hover` (primary deepens to `accent-fill-hover`); focus is a 2px blue outline 2px out (2px inset in the sidebar); pressing scales to 0.97. Colour and fill change over 120ms.
 
-Sizes, pills, filled backgrounds, icon-only buttons and toolbars of bordered
-rectangles all leave with the classic theme.
+### Chips and tags
 
-### Fields
+- **Tag:** a 4px-cornered tint from the nine, `tag-ink` text, 13px 500; a career stage is a select drawn as a tag and brightens on hover.
+- **Source chip:** a task's source, grey `selected` fill with `muted` 12px 500 text on one line, ending in an ellipsis past 28ch.
 
-A field is `size-control` tall, `ground-raised` inside, a 1px `outline` border,
-`radius` corners, `body` type, `space-8`/`space-sm` padding, and the standard
-focus ring. Its
-label sits above it in `small` `muted`, `space-xs` away. Help and error text sit
-below it in `small`. An invalid field takes a `danger` border and a `danger`
-sentence; the value stays in `text`. Errors appear when the field is left and
-clear as soon as the value is valid. Required is the default; the exception is
-marked "· optional" in `faint` after the label, never with an asterisk. A
-select is a field-shaped button with a `muted` chevron whose list is a menu.
-There is no switch: a checkbox says the same thing without a pill.
+### Checkbox
 
-A checkbox is 18px, `ground-raised`, a 1px `outline` border, `radius-sm`
-corners, and an `accent` tick. A radio is the same at 999px with an `accent`
-dot — the one circle in the system.
+One 16px square everywhere: a 1.5px `outline-strong` border and 4px corners, filling blue as its white tick draws left to right (the tick is a masked path revealed with a clip, 200ms). On the Today list the box pops to 1.18 while the row's text strikes through in `faint`; then the row leaves as a view transition, fading 16px aside in 220ms while the rows below close the gap over 300ms. Undo rises in beneath as a small raised bar.
 
-### Rows and lists
+### Cards and containers
 
-A list is a stack of ruled lines, opened by a `hairline` above the first row
-and closed by one under the last. A row is `space-sm` of vertical padding, its
-name in `body`, its supporting line in `fine` or `small` `muted` with tabular
-figures, and its actions as words at the row's end, `space-md` apart. No hover
-raise, no card, no border on three sides.
+- **Task card** (week board): `raised`, 6px, a hairline ring and 1px shadow at rest; under the pointer the ring strengthens and it lifts. The two piles under the week are the same cards laid flat as a list.
+- **Event card** (calendar): `raised`, 4px, a 3px bar of the calendar's colour inset at the left and a hairline ring; hover washes it 12% with its colour and lifts. It shows whole lines only: the title ends in an ellipsis and a line that does not fit is clipped, never half-shown. "More" is a dashed outline.
+- **Sections** on a page are not containers: a heading, space, and rows divided by `line-soft`.
 
-Everything that was a badge or a pill becomes language in that muted line:
-"someday · A small trip, with room to wander.", "added sep 15 · pdf · 2.1 MB",
-"homework". A status is a word people read, not chrome they decode.
+### Inputs / Fields
 
-### Tables
+- **Style:** 36px, `field` fill, 1px `line-strong` border, 6px, 15px text, blue caret.
+- **Focus:** the border turns blue and a 3px `accent-soft` halo appears; no outline.
+- **Palette field:** borderless, 56px, 17px, a line beneath and a drawn search glass at the left.
 
-A table stays a list of ruled lines: headers in `fine` `muted` at weight 400
-over a `hairline`, cells with `space-sm` vertical padding and a `hairline`
-under each row, no vertical cell borders, no zebra striping, and the last
-column right-aligned. A row's delete is the word "delete" in `danger`, not a
-trash icon.
+### Navigation
 
-A sortable header is a button; the sorted column sets `aria-sort` and its word
-turns `text` over the 2px `accent` line with a small chevron for direction.
-Hover turns the row's name `accent` and gives the row no background, because
-hover must be weaker than selected; a selected row (`aria-selected`) takes
-`selection`, and the actions on the selection are words above the table.
+- **Sidebar:** the mark and wordmark (15px 600) head it; the mark turns -8deg on hover. Search sits first with its shortcut in `faint`, then a plain "Workspace" group label (12px 500 `faint`), then sections as 30px rows with 18px line icons in `muted`. Hover fills `hover` and inks `text`.
+- **Gliding highlight:** the current section is marked by one `selected` fill that glides (320ms) to the new row on navigation instead of each row lighting on its own; it lands without travel on first paint.
+- **Account:** a 20px blue initial square; its menu rises above it as a raised surface.
+- **Tabs** (page sub-navigation and the board's source filter): ghost rows in `muted`; the current one inks `text` and sits on a 2px rule that scales in from the centre.
+- **Phone:** the bottom tab bar, 46px targets, 11px labels in `faint`, the current one in `accent-text`.
 
-### A row of words you choose one of
+### Dialogs, menus and notices
 
-Filters, tabs and segmented choices are all the same thing: a `small` `muted`
-row of words with `space-md` between them, the chosen one in `text` over a 2px
-`accent` line. The group is labelled by a plain word beside it — "status".
+Dialogs arrive over a fading scrim, rising 6px from 98.5% scale over 200ms, on `raised` with 12px corners and the dialog shadow; the heading is H2, submit is the one blue button. Menus and the event preview are 10px raised surfaces on the menu shadow. Notices float at the bottom like toasts; the global add notice drops in from above.
 
-Each word is a `<button aria-pressed>` and exactly one is pressed. Two to five
-options, the unfiltered one first; more than five, or options that change with
-the data, is a select. A filter narrows one list and sits in a line of facts
-with no rule under it; tabs swap whole sections and sit on a `hairline`. Either
-way the line under the chosen word draws in (see **Motion**) and never slides.
+### Command palette
 
-### Dialogs
+A 640px raised panel in the upper third of the screen (12vh down), up to 72vh tall. Its head is the large borderless field; results are rows that fill under the pointer or the arrow keys.
 
-A dialog is `ground-raised`, a 1px `hairline-strong` border, `radius` corners,
-`space-24` of padding, `width-dialog` (512px) wide, over a `scrim`. No shadow.
+### Calendar week
 
-- Three parts: a header (the title in `title`, an optional sentence in `small`
-  `muted`), a panel, and a footer above a `hairline-strong` rule. Only the
-  panel scrolls. Fields are `space-24` apart.
-- The footer holds the one `Button` at the right and words to its left. There
-  is no close icon: "cancel" is the close, and so are esc and the scrim.
-- An **alert dialog** (`width-alert`, `role="alertdialog"`) asks a question: a
-  title, one sentence of consequence, two actions. The scrim does not dismiss
-  it, focus starts on the safe word, and its confirm is the only bordered
-  `danger` button in the system.
-- At 560px and below it attaches to the bottom at full width and the footer
-  stacks with the primary on top.
-- It arrives from just below centre while the scrim fades. One dialog at a
-  time; a dialog never opens a dialog, except to confirm with an alert. Focus
-  is trapped inside and returns to the trigger on close.
+Today is a 28px red disc behind the date numeral and nothing else, with the weekday in red and a 3.5% red wash on today's column. Hours are `line-soft` hairlines. Now is a red line with a dot that breathes every 2.4s (held still under reduced motion) and the time in a small red tab.
 
-### Menus
+### Motion
 
-A menu floats from its trigger: `ground-raised`, a 1px `hairline-strong`
-border, `radius` corners, at least `width-menu` wide. Rows are words,
-`size-menu-row` tall, with a shortcut at the right in `fine` `muted`. The row
-under the pointer or keyboard takes `selection`; the current choice carries an
-`accent` tick, and if any row can be ticked every row reserves the column.
-Groups get a `fine` `muted` label; a destructive row goes last, after a rule.
-Arrows move, enter chooses, esc closes and returns focus.
+- **Scale:** `quick` 120ms (colour, fill, opacity, leaving), `fast` 200ms (arriving surfaces, the tick, the page tab rule), `slow` 320ms (the gliding highlight, the mark's turn, the check pop), all on `cubic-bezier(0.22, 1, 0.36, 1)`, each multiplied by `--c-motion`, which is 0 under reduced motion.
+- **Page arrival:** on navigation the page content rises 8px into place over 240ms (not on first load, not under reduced motion).
+- **Theme reveal:** switching theme in Appearance paints the new theme outward as a circle from the click, 560ms. It and the completion transition run only where view transitions exist and reduced motion is off.
 
-### The command palette
+### Just one thing (hidden)
 
-Search and do, from the keyboard: `width-command`, `ground-raised`, over a
-`scrim`, in the upper third of the screen, opened from the sidebar's search row
-and by ctrl/cmd + K.
-
-- Rows come in groups with a `fine` `muted` label: **go to** lists the pages,
-  all of them before anything is typed and the matching ones after;
-  **records** lists what the workspace search finds. The left column says what
-  a row is — "page", "task", "note" — in `fine` `muted`.
-- **The first row is highlighted, so enter always does something.** Arrows move
-  the highlight and wrap; focus never leaves the input; the pointer moves the
-  same highlight rather than a second one.
-- The footer says the keys in words, in `fine`: "enter to open · arrows to move
-  · esc to close". No key glyphs standing alone.
-- Nothing found is a sentence. It arrives from just below centre and returns
-  focus on close.
-- A page's name is an interface word and is lowercase; a record's title keeps
-  its own case.
-
-### Toasts
-
-One sentence that reports what just happened, bottom right, and then leaves:
-`ground-raised`, a 1px `hairline-strong` border, `width-toast`, `space-24` from
-the edges, at most one action word ("undo"). Success leaves after 5 seconds; a
-warning or an error starts with its words in `warning` or `danger` and stays
-until dismissed. The same event updates its toast in place; at most three show.
-`role="status"` for what passes, `role="alert"` for trouble, and never the only
-place a field's error is shown.
-
-### Calendar
-
-The time grid stays neutral. An event is a name in `text` at 600 with its time
-and place in `muted` on the line below, both in `fine` with tabular figures, on
-opaque `ground-raised` inside a `hairline`, with a 2px rule at its left carrying
-its calendar's colour (see **Calendar colours**). The current-time line is a 2px
-`accent` rule. The fill is neutral, so nothing needs to choose black or white
-text to survive its own background, and a dense day stops being a wall of
-colour.
-
-The system's own `CalendarEvent` (draft 3) draws the rule in `outline` on
-`ground` with no colour per calendar. apraxia keeps its recorded exception
-above — raised, with the calendar's colour on the rule — and takes the rest:
-**selected** (`aria-pressed`) turns the rule `accent` and the name 600,
-**past** is a `muted` name with no line through it, **tentative** is a dashed
-rule, and an event shorter than 50 minutes puts name and time on one line
-joined with ` · `.
-
-### The week
-
-The Tasks week is a grid that needs the room, so it runs the full width of the
-main area. Each day is a column of ruled rows under its date; the current day's
-column carries a 2px `accent` rule across its head and its date is `text` at
-600. There is no "today" tag, no count badge, no border around a column, no
-background behind one, and no horizontal scroll.
-
-The ruled ground stays: a column keeps ruling through the space it has not
-filled yet, so an empty day is a ruled column rather than a blank one, and the
-row that has not been written yet is a rule with a `muted` label on it, not a
-button.
-
-### Appearance
-
-Appearance is a page of its own, reached from the account menu between
-settings and sign out. Each group is a list of choices — a radio, its name in
-`body` and its description in `small` `muted`, ruled like any other list and
-capped at `measure` — with "These choices are saved on this device only." in
-`muted` under the page's name.
-
-- **theme**: **classic**, **paper**, **paper light** and **match device**.
-  Classic is the default. Match device is not a fourth look: it is Paper,
-  following the device between the dark page and the light one, so `data-theme`
-  still only carries a real preset.
-- **sidebar**: **words** or **icons only**, the same preference the sidebar's
-  own chevron sets.
-
-There is no text-size choice. Scaling the root overflows the grids that size
-against the viewport, and browser zoom already does the job properly.
+A hidden room for delight. Nothing in the interface points to it: the Konami code, or five quick taps on the sidebar mark within two seconds, dims the workspace and shows the day's first task alone on a centred 460px card (16px corners, deep shadow) with its title at 26px 700, a short muted hint, and a 132px ring that counts down two minutes in blue, breathing slowly before it starts. Finishing draws a tick and throws confetti in the tag hues and the blue. It only reads data; it opens over any theme, reading Crisp's tokens with dark fallbacks, and its motion stops under reduced motion.
 
 ## Do's and Don'ts
 
-### Do
+### Do:
 
-- Do take the foundations whole: the tokens, both themes, Literata, the seven
-  styles, the spacing scale, the `sizing` and `timing` tokens, the two radii
-  and the states are fixed.
-- Do let state live in the markup (`aria-pressed`, `aria-selected`,
-  `aria-busy`, `data-highlighted`) and style from it.
-- Do reserve room before content arrives, so nothing jumps when it does.
-- Do make every colour decision in both themes before calling a surface done.
-- Do say it with type, space and a rule first. Most cards become a ruled row;
-  most badges become a `muted` word; most icons become the word they stood for.
-- Do keep `accent` to lines and words that mean "here" or "you can act here".
-- Do keep interface words lowercase and let user content keep its own case.
-- Do give every control a word, and let an icon sit beside it rather than
-  instead of it.
-- Do use tabular figures wherever numbers line up.
-- Do convert a surface whole, and record a new value as a token in the design
-  system before using it here.
+- **Do** read colour, type, radius and duration through the `--c-*` tokens, and scope Crisp rules `[data-theme^="crisp"]` in a `*Crisp.css` sheet beside the classic one.
+- **Do** give each page or section exactly one filled blue primary, always visible; make the rest outlined or ghost.
+- **Do** hide a row's secondary controls until hover or focus under `(hover: hover) and (pointer: fine)`, and keep them in view on touch.
+- **Do** make hierarchy with the type roles (Title 40, H2 24, H3 18, UI 14) and space before reaching for a border or a panel.
+- **Do** check secondary text at 4.5:1 or better against the surface it actually sits on, in both themes.
+- **Do** put new motion on `quick`, `fast` or `slow` with the one curve, so reduced motion stops it from one line.
+- **Do** decide every colour in both themes; a value that only works in one is not finished.
 
-### Don't
+### Don't:
 
-- Don't add a hue. apraxia does not get its own accent, and there is no success
-  colour.
-- Don't fill anything with `accent`, and don't use it for a status or a badge.
-- Don't put a card, a shadow, a gradient or a pill on the page. If it floats it
-  is `ground-raised` with a 1px border; if it doesn't float it sits on `ground`
-  between rules.
-- Don't perform. No bounce, stagger, blur, shimmer, parallax, hover raise or
-  scale, no `transition: all`, and no duration written as a bare number. The
-  green line never slides or follows the pointer.
-- Don't put two borders in one group.
-- Don't give a hovered row a background; `selection` means chosen or
-  highlighted.
-- Don't go below `fine`, and don't invent a step between the seven.
-- Don't mix the classic vocabulary with Paper on one surface, and don't extend
-  the frozen `classic-` tokens.
-- Don't leave an icon standing alone, except a stepping chevron with its label.
-- Don't reach for a spinner, a skeleton or an empty-state illustration; a muted
-  sentence does the job.
-- Don't mark today with a tag, a badge or a count — the 2px rule and the
-  weight say it.
+- **Don't** use a tag tint or a calendar colour for interface decoration or state.
+- **Don't** add a second accent, a second face, or a second blue button to a page.
+- **Don't** fill whole calendar events with colour by default; the calendar's colour is the bar, and the wash is the person's choice in Appearance.
+- **Don't** put a box, band or border round a section to make it look important.
+- **Don't** mix Crisp with Paper's or classic's vocabulary on one surface: no Literata, no green, no `// ` headings, no Georgia or Segoe literals in Crisp rules.
+- **Don't** use motion that does not explain a change, and don't let any motion run under reduced motion.

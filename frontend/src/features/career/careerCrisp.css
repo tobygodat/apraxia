@@ -1,0 +1,213 @@
+/* Career in Crisp: the applications table, one application's page and the
+ * plan handoff. The primitives they are built from (actions, buttons, tabs,
+ * fields) are drawn in `crisp.css`; this sheet sets the table and the tags.
+ *
+ * Sibling of the classic career sheets. Scoped `[data-theme^="crisp"]`.
+ */
+
+[data-theme^="crisp"] .career-page,
+[data-theme^="crisp"] .career-app {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .career-summary,
+[data-theme^="crisp"] .career-app__role,
+[data-theme^="crisp"] .career-app__summary {
+  margin-top: 6px;
+  color: var(--c-muted);
+  font: var(--c-text-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="crisp"] .career-controls {
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+[data-theme^="crisp"] .career-controls__label,
+[data-theme^="crisp"] .career-order {
+  color: var(--c-faint);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .career-filter {
+  align-items: center;
+  gap: 2px;
+}
+
+/* ------------------------------------------------------------- the table */
+
+[data-theme^="crisp"] .career-scroll {
+  margin-top: 16px;
+}
+
+[data-theme^="crisp"] .career-column {
+  border-bottom-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .career-sort {
+  padding: 6px 12px 6px 0;
+  color: var(--c-faint);
+  font: 500 12px / 16px var(--c-font-ui);
+  transition: color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .career-sort:hover,
+[data-theme^="crisp"] .career-sort--current {
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .career-sort .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+
+[data-theme^="crisp"] .career-row {
+  transition: background-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .career-row:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .career-cell {
+  padding: 8px 12px 8px 0;
+  border-bottom-color: var(--c-line-soft);
+  font: 400 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .career-cell--applied,
+[data-theme^="crisp"] .career-cell--next {
+  font: var(--c-text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="crisp"] .career-open {
+  font: 500 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .career-open:hover {
+  text-decoration: none;
+  color: var(--c-accent-text);
+}
+
+[data-theme^="crisp"] .career-next__when--late {
+  color: var(--c-late);
+  font-weight: 500;
+}
+
+/* A stage is a tag you can change: a select drawn as a tinted chip, its
+   colour following the stage. */
+[data-theme^="crisp"] .career-stage {
+  width: auto;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0 22px 0 8px;
+  border: 0;
+  border-radius: var(--c-radius-sm);
+  background-color: var(--tag);
+  background-position: right 6px center;
+  background-size: 10px;
+  color: var(--c-tag-ink);
+  font: 500 13px / 24px var(--c-font-ui);
+  cursor: pointer;
+  transition: filter var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .career-stage:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="applied"] {
+  --tag: var(--c-tag-blue);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="screen"] {
+  --tag: var(--c-tag-purple);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="interview"] {
+  --tag: var(--c-tag-orange);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="offer"] {
+  --tag: var(--c-tag-green);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="rejected"] {
+  --tag: var(--c-tag-red);
+}
+
+[data-theme^="crisp"] .career-stage[data-stage="withdrawn"] {
+  --tag: var(--c-tag-brown);
+}
+
+[data-theme^="crisp"] .career-row--closed .career-cell {
+  color: var(--c-faint);
+}
+
+[data-theme^="crisp"] .career-empty {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .career-add {
+  border-bottom-color: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .career-add__open,
+[data-theme^="crisp"] .career-add--open button {
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  text-decoration: none;
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .career-add__open .workspace-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme^="crisp"] .career-add__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-theme^="crisp"] .career-add__open:hover,
+[data-theme^="crisp"] .career-add--open button:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .career-add__field {
+  min-height: 32px;
+  border-color: var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background: var(--c-field);
+  font: var(--c-text-ui);
+}
+
+/* ------------------------------------------------ one application's page */
+
+[data-theme^="crisp"] .career-app__tabs {
+  align-items: center;
+  gap: 2px;
+  margin-top: 28px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--c-line);
+}
+
+[data-theme^="crisp"] .career-tab__heading {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .career-plan__receipt,
+[data-theme^="crisp"] .career-plan__description {
+  font: var(--c-text-ui);
+}

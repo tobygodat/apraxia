@@ -1,0 +1,541 @@
+/* The app shell in Crisp: the sidebar, the page header's action and the shared
+ * error strip.
+ *
+ * Sibling of `CloudAppShell.css`, imported after it. Colours already arrive
+ * through the `--c-*` properties classic reads; this sheet changes size,
+ * weight, spacing and motion. Every rule is scoped `[data-theme^="crisp"]`.
+ */
+
+/* ---------------------------------------------------------------- the frame */
+
+[data-theme^="crisp"] .cloud-shell {
+  --cloud-shell-sidebar-width: var(--c-sidebar-width);
+  --cloud-shell-focus: var(--c-accent);
+  --cloud-shell-ease: var(--c-ease);
+  --cloud-shell-duration: var(--c-fast);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .cloud-shell__sidebar {
+  --cloud-shell-sidebar-pad-x: 8px;
+  padding: 10px var(--cloud-shell-sidebar-pad-x) 10px;
+}
+
+/* A cold load is a thin blue rule travelling across the top. */
+[data-theme^="crisp"] .cloud-shell__loading-bar::after {
+  background: var(--c-accent);
+}
+
+[data-theme^="crisp"] .cloud-shell__skip-link {
+  border-color: var(--c-accent);
+  border-radius: var(--c-radius);
+  background: var(--c-raised);
+  font: var(--c-text-ui);
+}
+
+/* Parked above the top edge, a shadow would still bleed into view, so the
+   link casts one only once it is shown. */
+[data-theme^="crisp"] .cloud-shell__skip-link:focus {
+  box-shadow: var(--c-shadow-menu);
+}
+
+/* ---------------------------------------------------------------- the brand */
+
+[data-theme^="crisp"] .cloud-shell__brand-row {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+[data-theme^="crisp"] .cloud-shell__wordmark {
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: var(--c-radius);
+  font: 600 15px / 20px var(--c-font-ui);
+  letter-spacing: -0.01em;
+  transition:
+    background-color var(--c-quick) var(--c-ease),
+    padding var(--c-fast) var(--c-ease);
+}
+
+[data-theme^="crisp"] .cloud-shell__wordmark:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .cloud-shell__mark {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--c-radius-sm);
+  transition: rotate var(--c-slow) var(--c-ease);
+}
+
+/* The brain turns a few degrees when you reach for it. */
+[data-theme^="crisp"] .cloud-shell__wordmark:hover .cloud-shell__mark {
+  rotate: -8deg;
+}
+
+/* ---------------------------------------------------------- search and nav */
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__search,
+[data-theme^="crisp"] .cloud-shell__nav-link,
+[data-theme^="crisp"] .cloud-shell .cloud-shell__add,
+[data-theme^="crisp"] .cloud-shell .cloud-shell__account-trigger {
+  gap: 10px;
+  min-height: var(--c-row);
+  padding: 0 8px;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  text-transform: capitalize;
+  transition:
+    var(--c-state),
+    padding var(--c-fast) var(--c-ease);
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__search {
+  margin-bottom: 10px;
+}
+
+[data-theme^="crisp"] .cloud-shell__search kbd {
+  color: var(--c-faint);
+  font: 500 11px / 16px var(--c-font-ui);
+  letter-spacing: 0.02em;
+  opacity: 1;
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-icon {
+  width: 18px;
+  height: 18px;
+}
+
+[data-theme^="crisp"] .cloud-shell__nav {
+  position: relative;
+  gap: 1px;
+}
+
+/* A plain label over the sections, the way a sidebar names its groups. */
+[data-theme^="crisp"] .cloud-shell__nav::before {
+  content: "Workspace";
+  padding: 4px 8px 6px;
+  color: var(--c-faint);
+  font: 500 12px / 16px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .cloud-shell__nav-link {
+  position: relative;
+  z-index: 1;
+  text-transform: capitalize;
+}
+
+[data-theme^="crisp"] .cloud-shell__nav-link:hover,
+[data-theme^="crisp"] .cloud-shell .cloud-shell__search:hover,
+[data-theme^="crisp"] .cloud-shell .cloud-shell__add:hover:not(:disabled),
+[data-theme^="crisp"] .cloud-shell .cloud-shell__account-trigger:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .cloud-shell__nav-link--active,
+[data-theme^="crisp"] .cloud-shell__nav-link--active:hover {
+  background: var(--c-selected);
+  color: var(--c-text);
+}
+
+/* With the gliding highlight mounted, the highlight is what fills the current
+   row; the row itself stays clear so the two never double up. */
+[data-theme^="crisp"] .cloud-shell__nav[data-pill] .cloud-shell__nav-link--active {
+  background: transparent;
+}
+
+[data-theme^="crisp"] .cloud-shell__nav[data-pill] .cloud-shell__nav-link--active:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .cloud-shell__nav-pill {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  border-radius: var(--c-radius);
+  background: var(--c-selected);
+  pointer-events: none;
+}
+
+[data-theme^="crisp"] .cloud-shell__nav-pill[data-ready] {
+  transition:
+    translate var(--c-slow) var(--c-ease),
+    width var(--c-slow) var(--c-ease),
+    height var(--c-slow) var(--c-ease);
+}
+
+/* ------------------------------------------------------- add and the account */
+
+[data-theme^="crisp"] .cloud-shell__actions {
+  padding-top: 8px;
+  border-top-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__add {
+  margin-bottom: 1px;
+}
+
+[data-theme^="crisp"] .cloud-shell__avatar {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--c-radius-sm);
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+  font: 600 11px / 1 var(--c-font-ui);
+  text-transform: uppercase;
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__account-trigger {
+  gap: 10px;
+}
+
+[data-theme^="crisp"] .cloud-shell__account-trigger .workspace-icon {
+  width: 14px;
+  height: 14px;
+}
+
+[data-theme^="crisp"] .cloud-shell__account-menu {
+  bottom: calc(100% + 6px);
+  width: 240px;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  transform-origin: bottom left;
+  animation: crisp-arrive var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .cloud-shell__account-email {
+  margin: 0 0 4px;
+  padding: 6px 8px 10px;
+  border-bottom-color: var(--c-line);
+  font: var(--c-text-fine);
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__menu-item {
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: var(--c-radius-sm);
+  color: var(--c-text);
+  font: var(--c-text-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__menu-item:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__sign-out {
+  color: var(--c-danger);
+}
+
+[data-theme^="crisp"] .cloud-shell__sign-out-error {
+  border-radius: var(--c-radius);
+  background: var(--c-danger-fill);
+  font: var(--c-text-small);
+}
+
+/* ------------------------------------------------------ the collapse toggle */
+
+/* The chevron waits in the brand row's corner and shows itself when the
+   sidebar is under the pointer or holds focus, the way a quiet sidebar does. */
+[data-theme^="crisp"] .cloud-shell .cloud-shell__collapse-toggle {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--c-radius);
+  background: transparent;
+  color: var(--c-faint);
+  opacity: 0;
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .cloud-shell__sidebar:hover .cloud-shell__collapse-toggle,
+[data-theme^="crisp"] .cloud-shell .cloud-shell__collapse-toggle:focus-visible {
+  opacity: 1;
+}
+
+[data-theme^="crisp"] .cloud-shell .cloud-shell__collapse-toggle:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .cloud-shell__collapse-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ------------------------------------------------------- the page header */
+
+[data-theme^="crisp"] .workspace-page-header {
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+/* A header's action is an outlined control; the page's primary one (an "add")
+   is the filled blue button, the one on the page. */
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action {
+  gap: 6px;
+  min-height: var(--c-control);
+  margin-top: 0;
+  padding: 0 12px;
+  border: 1px solid var(--c-outline);
+  border-radius: var(--c-radius);
+  background: transparent;
+  color: var(--c-text);
+  font: 500 14px / 20px var(--c-font-ui);
+  text-decoration: none;
+  transition:
+    var(--c-state),
+    scale var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action.paper-button--primary {
+  border-color: transparent;
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action.paper-action--quiet {
+  border-color: transparent;
+  color: var(--c-muted);
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action .workspace-icon {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action:hover:not(:disabled) {
+  background: var(--c-hover);
+  border-color: var(--c-outline);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"]
+  .cloud-shell
+  .workspace-page-header__action.paper-button--primary:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--c-accent-fill-hover);
+  color: var(--c-on-accent);
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action:active:not(:disabled) {
+  scale: 0.97;
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-page-header__action:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* An error is a soft red band with its retry beside it. */
+[data-theme^="crisp"] .workspace-error {
+  border-radius: var(--c-radius);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .cloud-shell .workspace-error button {
+  min-height: 28px;
+  border-radius: var(--c-radius);
+  font: 500 13px / 18px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .cloud-shell__wordmark:focus-visible,
+[data-theme^="crisp"] .cloud-shell__nav-link:focus-visible,
+[data-theme^="crisp"] .cloud-shell__search:focus-visible,
+[data-theme^="crisp"] .cloud-shell__add:focus-visible,
+[data-theme^="crisp"] .cloud-shell__account-trigger:focus-visible,
+[data-theme^="crisp"] .cloud-shell__menu-item:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+
+/* ------------------------------------------------------------- the widths */
+
+@media (min-width: 621px) {
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] {
+    --cloud-shell-sidebar-width: 56px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__sidebar {
+    --cloud-shell-sidebar-pad-x: 8px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav::before {
+    visibility: hidden;
+  }
+
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__nav-link,
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__add,
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__search {
+    padding: 0 11px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__account-trigger {
+    padding: 0 10px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__wordmark {
+    padding: 0 9px;
+  }
+
+  /* Collapsed, the chevron has to stay findable, so it sits under the mark. */
+  [data-theme^="crisp"] .cloud-shell[data-sidebar-collapsed="true"] .cloud-shell__collapse-toggle {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 4px auto 6px;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1200px) {
+  [data-theme^="crisp"] .cloud-shell:not([data-sidebar-collapsed="true"]) {
+    --cloud-shell-sidebar-width: 224px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__search kbd {
+    display: inline;
+  }
+}
+
+/* Under 980px classic drops to its icon rail; Crisp keeps the same rail but
+   draws its rows at Crisp's sizes. */
+@media (max-width: 980px) {
+  [data-theme^="crisp"] .cloud-shell {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  [data-theme^="crisp"] .cloud-shell__sidebar {
+    padding: 10px 8px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav::before,
+  [data-theme^="crisp"] .cloud-shell__search kbd {
+    display: none;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__wordmark,
+  [data-theme^="crisp"] .cloud-shell__nav-link,
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__search,
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__add,
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__account-trigger {
+    justify-content: center;
+    padding: 0;
+    min-height: 36px;
+  }
+}
+
+/* A phone gets a slim top bar and the sections as a tab bar along the bottom,
+   within reach of a thumb. */
+@media (max-width: 620px) {
+  [data-theme^="crisp"] .cloud-shell {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  [data-theme^="crisp"] .cloud-shell__sidebar {
+    position: sticky;
+    top: 0;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--c-line);
+    /* No backdrop filter here: it would make this bar the containing block
+       of the fixed tab bar inside it and pin that to the top. */
+    background: var(--c-bg);
+  }
+
+  [data-theme^="crisp"] .cloud-shell__wordmark {
+    width: auto;
+    padding: 0 6px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__search {
+    width: 36px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    justify-content: center;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__search span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__add,
+  [data-theme^="crisp"] .cloud-shell .cloud-shell__account-trigger {
+    width: 36px;
+    min-height: 36px;
+    padding: 0;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__account-trigger > span:not(.cloud-shell__avatar),
+  [data-theme^="crisp"] .cloud-shell__account-trigger > .workspace-icon {
+    display: none;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav::before {
+    display: none;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav {
+    position: fixed;
+    z-index: 40;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--c-line);
+    background: color-mix(in srgb, var(--c-sidebar) 90%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px);
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav-link {
+    min-height: 46px;
+    gap: 3px;
+    padding: 4px 0;
+    color: var(--c-faint);
+    font: 500 11px / 14px var(--c-font-ui);
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav-link--active,
+  [data-theme^="crisp"] .cloud-shell__nav-link--active:hover {
+    background: transparent;
+    color: var(--c-accent-text);
+  }
+
+  [data-theme^="crisp"] .cloud-shell__nav-pill {
+    display: none;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__account-menu {
+    top: calc(100% + 6px);
+    bottom: auto;
+    transform-origin: top right;
+  }
+}
+
+@media (pointer: coarse) {
+  [data-theme^="crisp"] .cloud-shell .workspace-page-header__action {
+    min-height: 40px;
+  }
+}

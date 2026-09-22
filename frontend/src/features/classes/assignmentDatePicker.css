@@ -8,13 +8,10 @@
   box-sizing: border-box;
   padding: 12px;
   border-radius: 8px;
-  background: #242424;
-  color: #f0efed;
+  background: var(--c-raised, #242424);
+  color: var(--c-text, #f0efed);
   box-shadow: 0 12px 32px #0008;
-  font:
-    14px/1.4 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 14px/1.4 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   color-scheme: dark;
 }
 .assignment-calendar button {
@@ -32,10 +29,10 @@
   cursor: pointer;
 }
 .assignment-calendar button:hover {
-  background: #333;
+  background: var(--c-selected, #333);
 }
 .assignment-calendar button:focus-visible {
-  outline: 2px solid #f0efed;
+  outline: 2px solid var(--c-outline-strong, #f0efed);
   outline-offset: -2px;
 }
 .assignment-calendar button:disabled {
@@ -59,7 +56,7 @@
 }
 .assignment-calendar-heading button {
   width: 32px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .assignment-calendar-heading .assignment-calendar-today {
   width: auto;
@@ -77,7 +74,7 @@
   gap: 2px;
 }
 .assignment-calendar-weekdays {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   text-align: center;
   margin-bottom: 5px;
@@ -90,7 +87,7 @@
   font-variant-numeric: tabular-nums;
 }
 .assignment-calendar-days button[data-outside-month] {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .assignment-calendar-days button[aria-current="date"] {
   text-decoration: underline;
@@ -98,24 +95,24 @@
   text-decoration-thickness: 1px;
 }
 .assignment-calendar-days button[aria-pressed="true"] {
-  background: #f0efed;
-  color: #181818;
+  background: var(--c-inverse, #f0efed);
+  color: var(--c-inverse-text, #181818);
 }
 .assignment-calendar-days button[aria-pressed="true"]:hover {
-  background: #fff;
+  background: var(--c-inverse, #fff);
 }
 .assignment-calendar-days button[aria-pressed="true"]:focus-visible {
-  outline-color: #181818;
+  outline-color: var(--c-line-soft, #181818);
   outline-offset: -3px;
 }
 .assignment-calendar-footer {
   margin-top: 8px;
-  border-top: 1px solid #3c3c3c;
+  border-top: 1px solid var(--c-line-strong, #3c3c3c);
   padding-top: 6px;
 }
 .assignment-calendar-footer button {
   padding-inline: 8px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
 }
 @media (pointer: coarse) {
@@ -143,9 +140,9 @@
 }
 .assignment-calendar-time input {
   color-scheme: dark;
-  background: var(--cloud-field, #111111);
+  background: var(--cloud-field, var(--c-field, #111111));
   color: inherit;
-  border: 1px solid var(--cloud-line, #303030);
+  border: 1px solid var(--cloud-line, var(--c-line, #303030));
   border-radius: 4px;
   padding: 6px;
   font: inherit;

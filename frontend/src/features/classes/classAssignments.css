@@ -19,13 +19,13 @@
   min-height: 38px;
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid #555;
+  border: 1px solid var(--c-outline, #555);
   color: inherit;
   font-size: 12px;
 }
 .class-assignments > header > button:hover {
-  background: #292929;
-  border-color: #8b8b8b;
+  background: var(--c-hover, #292929);
+  border-color: var(--c-outline, #8b8b8b);
 }
 .assignment-table-wrap {
   position: relative;
@@ -74,7 +74,7 @@
   vertical-align: middle;
 }
 .class-assignments input[type="checkbox"] {
-  accent-color: #c3c0b8;
+  accent-color: var(--c-accent, #c3c0b8);
   cursor: pointer;
 }
 /* min-height: 0 releases workspace.css's 40px generic button height so the
@@ -97,12 +97,12 @@
   height: 14px;
 }
 .class-assignments .assignment-delete:hover:not(:disabled) {
-  background: #2c2c2c;
-  color: #f0c1c1;
+  background: var(--c-selected, #2c2c2c);
+  color: var(--c-danger, #f0c1c1);
 }
 .assignment-draft-marker {
   display: inline-block;
-  border: 1px dashed #666;
+  border: 1px dashed var(--c-outline, #666);
   border-radius: 3px;
 }
 .class-assignments td input:not([type="checkbox"]) {
@@ -115,7 +115,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  caret-color: #f0efed;
+  caret-color: var(--c-text, #f0efed);
 }
 .assignment-editor-cell {
   display: flex;
@@ -124,9 +124,9 @@
   min-width: 0;
 }
 .class-assignments td input:focus {
-  outline: 1px solid #99958f;
+  outline: 1px solid var(--c-outline-strong, #99958f);
   outline-offset: 0;
-  background: #242424;
+  background: var(--c-raised, #242424);
 }
 .class-assignments input::placeholder {
   color: var(--cloud-shell-muted);
@@ -152,17 +152,17 @@
   font-weight: 400;
 }
 .class-assignments .assignment-cell:hover {
-  background: #262626;
+  background: var(--c-raised, #262626);
 }
 .class-assignments tr:focus-within {
-  background: #202020;
+  background: var(--c-sidebar, #202020);
 }
 .class-assignments .assignment-done .assignment-title {
   text-decoration: line-through;
   color: var(--cloud-shell-muted);
 }
 .class-assignments .assignment-overdue {
-  color: #ddb1a4;
+  color: var(--c-late, #ddb1a4);
 }
 .class-assignments .assignment-type-cell {
   display: flex;
@@ -174,7 +174,7 @@
   display: inline-block;
   max-width: 100%;
   padding: 1px 6px;
-  border: 1px solid #444;
+  border: 1px solid var(--c-line-strong, #444);
   border-radius: 4px;
   color: var(--cloud-shell-muted);
   font-size: 11px;
@@ -186,7 +186,7 @@
   cursor: default;
 }
 .class-assignments .assignment-editing {
-  background: #202020;
+  background: var(--c-sidebar, #202020);
 }
 .class-assignments .assignment-edit-hint {
   position: absolute;
@@ -200,10 +200,10 @@
   display: block;
   margin: 4px 4px 6px;
   font-size: 12px;
-  color: #ffb4b4;
+  color: var(--c-danger, #ffb4b4);
 }
 .class-assignments input[aria-invalid="true"] {
-  outline-color: #ffb4b4;
+  outline-color: var(--c-danger-line, #ffb4b4);
 }
 .class-assignments .assignment-empty {
   padding: 20px 12px;

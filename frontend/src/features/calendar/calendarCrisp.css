@@ -1,0 +1,842 @@
+/* Home, the week, the event dialogs, Settings and Appearance in Crisp.
+ *
+ * Sibling of `calendar.css`, imported after it by every page that imports it.
+ * Colours arrive through the `--c-*` properties classic reads; this sheet
+ * sets type, spacing, the header's date line, the week's marks and motion.
+ */
+
+/* ---------------------------------------------------------------- the page */
+
+[data-theme^="crisp"] .home-page {
+  padding: 40px var(--workspace-page-inset) 28px;
+  font: var(--c-text-body);
+}
+
+[data-theme^="crisp"] .home-header__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 16px;
+  margin-bottom: 28px;
+}
+
+[data-theme^="crisp"] .home-header h1:not(.cloud-shell__sr-only) {
+  grid-area: 1 / 1;
+  margin: 0;
+  font: var(--c-text-title);
+  letter-spacing: var(--c-tracking-title);
+  text-wrap: balance;
+}
+
+/* The date, then what is owed today, on one quiet line under the title. */
+[data-theme^="crisp"] .home-header__date {
+  grid-area: 2 / 1;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 8px 0 0;
+  color: var(--c-muted);
+  font: var(--c-text-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="crisp"] .home-header__date > span + span::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--c-faint);
+}
+
+[data-theme^="crisp"] .home-header__late {
+  color: var(--c-late);
+  font-weight: 500;
+}
+
+[data-theme^="crisp"] .home-header__actions {
+  grid-area: 1 / 2 / span 2 / 3;
+  align-self: center;
+}
+
+[data-theme^="crisp"] .home-header__customize {
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: var(--c-radius);
+  font: var(--c-text-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .home-header__customize:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .home-workspace {
+  border-top: 0;
+}
+
+/* ---------------------------------------------------- Today on the home page */
+
+[data-theme^="crisp"] .home-workspace .today-panel {
+  padding-left: 20px;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list__header {
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--c-line);
+}
+
+[data-theme^="crisp"] .calendar-header h2,
+[data-theme^="crisp"] .home-workspace .today-list__header h2 {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .today-list__day-switch {
+  gap: 2px;
+}
+
+[data-theme^="crisp"] .today-list__day-switch button {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .today-list__day-switch button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .today-list__day-switch button[aria-pressed="true"] {
+  background: var(--c-selected);
+}
+
+[data-theme^="crisp"] .home-workspace .today-list__add {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .home-workspace .today-list__add svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item article {
+  grid-template-columns: 16px 22px minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 10px 4px 10px 0;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__content > p {
+  font: 400 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__meta {
+  margin-top: 2px;
+  gap: 2px 8px;
+  font: var(--c-text-small);
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__drag {
+  width: 16px;
+  opacity: 1;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__check {
+  width: 22px;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__actions button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+
+[data-theme^="crisp"] .home-workspace .today-list-item__actions svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme^="crisp"] .today-list__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 0 6px;
+  min-height: 28px;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  text-decoration: none;
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .today-list__all::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  transition: translate var(--c-fast) var(--c-ease);
+}
+
+[data-theme^="crisp"] .today-list__all:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .today-list__all:hover::after {
+  translate: 3px 0;
+}
+
+/* ------------------------------------------------------------- the toolbar */
+
+[data-theme^="crisp"] .calendar-panel {
+  border-right-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .calendar-toolbar {
+  padding: 0 0 12px;
+}
+
+[data-theme^="crisp"] .calendar-toolbar .calendar-toolbar-title {
+  margin: 0 6px 0 0;
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .calendar-toolbar-year {
+  color: var(--c-faint);
+  font-weight: 500;
+}
+
+[data-theme^="crisp"] .calendar-panel button,
+[data-theme^="crisp"] .calendar-settings button {
+  gap: 6px;
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .calendar-toolbar button {
+  min-height: 28px;
+  padding: 0 8px;
+  color: var(--c-muted);
+}
+
+[data-theme^="crisp"] .calendar-toolbar button:hover:not(:disabled) {
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .calendar-toolbar .calendar-icon-button {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  padding: 0;
+}
+
+[data-theme^="crisp"] .calendar-toolbar-month .calendar-icon-button {
+  background-color: transparent;
+}
+
+/* Tasks own the page's one blue button; adding an event is the outlined one. */
+[data-theme^="crisp"] .calendar-toolbar .calendar-add {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border: 1px solid var(--c-outline);
+  background: transparent;
+  box-shadow: none;
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .calendar-toolbar .calendar-add:hover:not(:disabled) {
+  border-color: var(--c-outline);
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+[data-theme^="crisp"] .calendar-toolbar .calendar-add .workspace-icon {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme^="crisp"] .calendar-footer {
+  font: var(--c-text-fine);
+}
+
+/* ------------------------------------------------------------- the week */
+
+[data-theme^="crisp"] .week-head,
+[data-theme^="crisp"] .week-all-day {
+  border-bottom-color: var(--c-line);
+}
+
+/* Crisp's wider sidebar leaves the week less room than classic's did, and
+   classic's 756px floor would push Saturday past the grid's clipping edge. A
+   day still gets about 90px at this floor. */
+[data-theme^="crisp"] .week-head,
+[data-theme^="crisp"] .week-all-day,
+[data-theme^="crisp"] .week-scroll {
+  min-width: 620px;
+}
+
+[data-theme^="crisp"] .week-head .week-days > div {
+  padding: 6px 4px 10px;
+}
+
+[data-theme^="crisp"] .week-head span {
+  color: var(--c-muted);
+  font: 500 12px / 16px var(--c-font-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+[data-theme^="crisp"] .week-head strong {
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+  border-radius: 50%;
+  font: 500 15px / 1 var(--c-font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Today is a red disc behind the date, and nothing else. */
+[data-theme^="crisp"] .week-head .is-today strong {
+  background: var(--c-today-fill);
+  color: var(--c-on-today);
+  font-weight: 600;
+}
+
+[data-theme^="crisp"] .week-head .is-today span {
+  color: var(--c-today);
+}
+
+[data-theme^="crisp"] .week-all-day > span,
+[data-theme^="crisp"] .week-time-labels > span {
+  color: var(--c-faint);
+  font: 500 11px / 1 var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .week-all-day > span {
+  padding: 9px 0;
+  line-height: 1.4;
+}
+
+[data-theme^="crisp"] .week-day-column {
+  border-left-color: var(--c-line-soft);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--c-line-soft) 0px,
+    var(--c-line-soft) 1px,
+    transparent 1px,
+    transparent var(--calendar-hour-height)
+  );
+}
+
+[data-theme^="crisp"] .week-day-column--today {
+  background-color: rgba(235, 87, 87, 0.035);
+}
+
+/* Now is a red line with a dot at its start and the time in a red tab. */
+[data-theme^="crisp"] .week-now,
+[data-theme^="crisp"] .week-now::before {
+  background: var(--c-today);
+}
+
+[data-theme^="crisp"] .week-now::before {
+  width: 8px;
+  height: 8px;
+  top: -3px;
+  left: -4px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-today) 25%, transparent);
+  animation: crisp-now-pulse 2.4s var(--c-ease) infinite;
+}
+
+@keyframes crisp-now-pulse {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--c-today) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="crisp"] .week-now::before {
+    animation: none;
+  }
+}
+
+[data-theme^="crisp"] .week-time-labels .week-current-time {
+  padding: 2px 5px;
+  border-radius: var(--c-radius-sm);
+  background: var(--c-today-fill);
+  color: var(--c-on-today);
+  font: 600 10px / 1.2 var(--c-font-ui);
+}
+
+/* An event is a card with its calendar's colour in a bar at its left. Raised
+   cards share one neutral surface; tinted ones take a wash of their colour. */
+[data-theme^="crisp"] .calendar-panel button.calendar-event {
+  --event-ink: var(--calendar-event-color, var(--c-outline));
+  position: relative;
+  border-radius: var(--c-radius-sm);
+  background: var(--c-raised);
+  color: var(--c-text);
+  box-shadow:
+    inset 3px 0 0 var(--event-ink),
+    inset 0 0 0 1px var(--c-line);
+  transition:
+    box-shadow var(--c-quick) var(--c-ease),
+    background-color var(--c-quick) var(--c-ease),
+    translate var(--c-fast) var(--c-ease);
+}
+
+[data-theme^="crisp"][data-calendar-events="tinted"] .calendar-panel button.calendar-event {
+  background: color-mix(in srgb, var(--event-ink) 20%, var(--c-bg));
+  box-shadow: inset 3px 0 0 var(--event-ink);
+}
+
+[data-theme^="crisp"] .calendar-panel button.calendar-event:hover {
+  background: color-mix(in srgb, var(--event-ink) 12%, var(--c-raised));
+  box-shadow:
+    inset 3px 0 0 var(--event-ink),
+    inset 0 0 0 1px var(--c-line-strong),
+    var(--c-shadow-lift);
+}
+
+[data-theme^="crisp"][data-calendar-events="tinted"] .calendar-panel button.calendar-event:hover {
+  background: color-mix(in srgb, var(--event-ink) 30%, var(--c-bg));
+}
+
+/* A card shows whole lines only: the title ends in an ellipsis, and a line of
+   time or place that will not fit wraps into a second column the card clips,
+   rather than showing its top half. */
+[data-theme^="crisp"] .calendar-panel button.calendar-event--timed {
+  flex-flow: column wrap;
+  align-content: flex-start;
+  padding: 3px 6px 3px 8px;
+  /* The wide column gap puts any wrapped line well past the card's clip, so
+     not a letter of it shows in the padding. */
+  gap: 1px 48px;
+}
+
+[data-theme^="crisp"] .calendar-panel button.calendar-event--timed > * {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+[data-theme^="crisp"] .calendar-panel button.calendar-event--all-day {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme^="crisp"] .calendar-panel button.calendar-event--all-day {
+  padding: 3px 8px;
+  font: 500 12px / 16px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .calendar-event--timed {
+  outline: 0;
+}
+
+[data-theme^="crisp"] .calendar-event--timed strong,
+[data-theme^="crisp"] .calendar-event--timed .calendar-event__inline {
+  font: 600 12px / 15px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .calendar-event--timed span {
+  color: var(--c-muted);
+  font: 400 11px / 14px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .calendar-event--timed .calendar-event__inline-rest {
+  color: var(--c-muted);
+  font-weight: 400;
+}
+
+[data-theme^="crisp"] .calendar-panel .calendar-event--more {
+  border: 1px dashed var(--c-outline);
+  border-radius: var(--c-radius-sm);
+  background: var(--c-bg);
+  color: var(--c-muted);
+  font: 500 11px / 14px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .calendar-selection {
+  border: 1px solid var(--c-accent);
+  border-radius: var(--c-radius-sm);
+  background: var(--c-accent-soft);
+  color: var(--c-text);
+  font: 500 12px / 16px var(--c-font-ui);
+}
+
+/* ---------------------------------------------------------- event preview */
+
+[data-theme^="crisp"] .event-preview {
+  padding: 14px;
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  font: var(--c-text-ui);
+  animation: crisp-arrive var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .event-preview-heading h2 {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .event-preview-swatch {
+  border-radius: var(--c-radius-sm);
+}
+
+[data-theme^="crisp"] .event-preview button {
+  min-height: 28px;
+  border-color: var(--c-outline);
+  border-radius: var(--c-radius);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .event-preview button:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .event-preview-actions button {
+  width: 28px;
+  border-color: transparent;
+  color: var(--c-muted);
+}
+
+[data-theme^="crisp"] .event-preview-secondary {
+  font: var(--c-text-small);
+}
+
+/* ----------------------------------------------------------- event editor */
+
+[data-theme^="crisp"] .event-editor {
+  color-scheme: inherit;
+  padding: 24px;
+  border: 0;
+  border-radius: var(--c-radius-xl);
+  background: var(--c-dialog);
+  box-shadow: var(--c-shadow-dialog);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .event-editor[open] {
+  animation: crisp-arrive var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .event-editor[open]::backdrop {
+  animation: crisp-fade var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .event-editor h2 {
+  font: var(--c-text-h2);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .event-editor label {
+  gap: 6px;
+  color: var(--c-muted);
+  font: 500 13px / 18px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .event-editor input,
+[data-theme^="crisp"] .event-editor select {
+  min-height: var(--c-control);
+  padding: 0 10px;
+  border-color: var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background-color: var(--c-field);
+  color: var(--c-text);
+  font: var(--c-text-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .event-editor input:focus-visible,
+[data-theme^="crisp"] .event-editor select:focus-visible {
+  outline: 0;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .event-editor button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-color: var(--c-outline);
+  border-radius: var(--c-radius);
+  background-color: transparent;
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .event-editor button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .event-editor .event-save {
+  border-color: transparent;
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+}
+
+[data-theme^="crisp"] .event-editor .event-save:hover:not(:disabled) {
+  background: var(--c-accent-fill-hover);
+}
+
+[data-theme^="crisp"] .event-editor .event-delete {
+  border-color: transparent;
+  color: var(--c-danger);
+}
+
+[data-theme^="crisp"] .event-editor .event-note {
+  font: var(--c-text-small);
+}
+
+/* ------------------------------------------------- Settings and Appearance */
+
+[data-theme^="crisp"] .calendar-settings {
+  max-width: 720px;
+  padding: 48px var(--workspace-page-inset) 64px;
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .cloud-shell .calendar-settings h1 {
+  margin: 0 0 32px;
+  font: var(--c-text-title);
+  letter-spacing: var(--c-tracking-title);
+}
+
+/* A page with a sentence under its title keeps them together. */
+[data-theme^="crisp"] .cloud-shell .calendar-settings h1:has(+ p) {
+  margin-bottom: 6px;
+}
+
+[data-theme^="crisp"] .calendar-settings h1 + p {
+  margin: 0 0 32px;
+}
+
+[data-theme^="crisp"] .calendar-settings section {
+  padding: 0 0 28px;
+  margin: 0 0 28px;
+  border-bottom-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .calendar-settings section:last-of-type {
+  border-bottom: 0;
+}
+
+[data-theme^="crisp"] .calendar-settings h2 {
+  margin: 0 0 6px;
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .calendar-settings p {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .calendar-settings fieldset {
+  margin-top: 12px;
+}
+
+[data-theme^="crisp"] .calendar-settings .settings-list {
+  display: grid;
+  gap: 2px;
+}
+
+/* A choice is a row you can press anywhere on: its radio, its name, and the
+   sentence that says what it does under the name. */
+[data-theme^="crisp"] .calendar-settings label.settings-choice,
+[data-theme^="crisp"] .calendar-settings label.settings-calendar {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--c-radius);
+  cursor: pointer;
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .calendar-settings label.settings-calendar {
+  grid-template-columns: 18px auto minmax(0, 1fr);
+}
+
+[data-theme^="crisp"] .calendar-settings label.settings-choice:hover,
+[data-theme^="crisp"] .calendar-settings label.settings-calendar:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .calendar-settings label.settings-choice:has(input:checked) {
+  background: var(--c-selected);
+}
+
+[data-theme^="crisp"] .settings-choice__name {
+  grid-column: 2;
+  color: var(--c-text);
+  font: 500 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .settings-choice__note {
+  grid-column: 2;
+  color: var(--c-muted);
+  font: var(--c-text-small);
+}
+
+[data-theme^="crisp"] .calendar-settings label.settings-choice input {
+  grid-row: 1 / span 2;
+}
+
+[data-theme^="crisp"] .calendar-settings input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--c-accent);
+}
+
+/* Each theme shows what it looks like: a small page in its own two colours. */
+[data-theme^="crisp"]
+  .calendar-settings
+  label.settings-choice:has(input[name="appearance-theme"])::after {
+  content: "";
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  width: 44px;
+  height: 30px;
+  border-radius: var(--c-radius-sm);
+  box-shadow: inset 0 0 0 1px var(--c-line-strong);
+  background:
+    linear-gradient(var(--swatch-ink), var(--swatch-ink)) 14px 9px / 22px 3px no-repeat,
+    linear-gradient(var(--swatch-ink), var(--swatch-ink)) 14px 16px / 16px 3px no-repeat,
+    linear-gradient(var(--swatch-side), var(--swatch-side)) 0 0 / 9px 100% no-repeat,
+    var(--swatch-page);
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="crisp"]) {
+  --swatch-page: #191919;
+  --swatch-side: #202020;
+  --swatch-ink: #2783de;
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="crisp-light"]) {
+  --swatch-page: #ffffff;
+  --swatch-side: #f1f1ef;
+  --swatch-ink: #2383e2;
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="classic"]) {
+  --swatch-page: #191919;
+  --swatch-side: #242424;
+  --swatch-ink: #8fc981;
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="paper"]) {
+  --swatch-page: #1b1a19;
+  --swatch-side: #1b1a19;
+  --swatch-ink: #8fd18a;
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="paper-light"]) {
+  --swatch-page: #f4f1eb;
+  --swatch-side: #f4f1eb;
+  --swatch-ink: #2e7d4f;
+}
+
+[data-theme^="crisp"] .settings-choice:has(input[value="device"]) {
+  --swatch-page: linear-gradient(135deg, #ffffff 50%, #191919 50%);
+  --swatch-side: transparent;
+  --swatch-ink: #2783de;
+}
+
+[data-theme^="crisp"] .calendar-settings select,
+[data-theme^="crisp"] .calendar-settings .paper-field {
+  min-height: var(--c-control);
+  padding: 0 10px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background-color: var(--c-field);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .calendar-settings button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-color: var(--c-outline);
+}
+
+[data-theme^="crisp"] .calendar-settings button.paper-button--primary {
+  border-color: transparent;
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+}
+
+[data-theme^="crisp"] .calendar-settings button.paper-button--primary:hover:not(:disabled) {
+  background: var(--c-accent-fill-hover);
+}
+
+[data-theme^="crisp"] .calendar-settings .paper-action--danger {
+  color: var(--c-danger);
+}
+
+[data-theme^="crisp"] .calendar-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--c-radius-sm);
+}
+
+/* ------------------------------------------------------------ the phone */
+
+@media (max-width: 1400px) {
+  [data-theme^="crisp"] .home-workspace {
+    gap: 36px;
+  }
+
+  [data-theme^="crisp"] .home-workspace--stacked .calendar-panel {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  [data-theme^="crisp"] .home-workspace .today-panel {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  [data-theme^="crisp"] .home-page {
+    padding: 20px 16px 24px;
+  }
+
+  [data-theme^="crisp"] .home-header h1:not(.cloud-shell__sr-only) {
+    font-size: var(--c-title-phone);
+  }
+
+  [data-theme^="crisp"] .home-header__line {
+    margin-bottom: 20px;
+  }
+
+  [data-theme^="crisp"] .home-header__actions {
+    grid-area: 1 / 2;
+    align-self: start;
+  }
+
+  /* On a phone the date takes its own line and the counts follow under it,
+     so no line ever opens with a separator. */
+  [data-theme^="crisp"] .home-header__date {
+    grid-column: 1 / -1;
+    row-gap: 2px;
+  }
+
+  [data-theme^="crisp"] .home-header__date > span:first-child {
+    flex-basis: 100%;
+  }
+
+  [data-theme^="crisp"] .home-header__date > span:nth-child(2)::before {
+    content: none;
+  }
+
+  [data-theme^="crisp"] .home-workspace--phone .calendar-panel {
+    margin-top: 32px;
+    border-top: 0;
+  }
+}

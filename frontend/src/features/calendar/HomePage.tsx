@@ -43,6 +43,7 @@ import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
 import "./homePaper.css";
 import "./weekPaper.css";
+import "./calendarCrisp.css";
 
 /**
  * A shift rather than something to read: the week prints it in the quiet colour

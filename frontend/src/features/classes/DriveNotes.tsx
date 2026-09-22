@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import type { DriveService, DriveFile } from "./driveService";
 import "./drivePicker.css";
+import "./classesCrisp.css";
 import { hasServiceErrorCode, serviceErrorMessage } from "../../lib/serviceError";
 import { readDriveFolder, rememberDriveFolder } from "./driveFolderMemory";
 export function DriveNotes({

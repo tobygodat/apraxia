@@ -31,7 +31,7 @@ it("saves the chosen theme preset, so Paper is reachable from classic", () => {
   expect(document.documentElement.getAttribute("data-theme")).toBe("paper");
 });
 
-it("paints Match device with the Paper preset the device asks for", () => {
+it("paints Match device with the Crisp preset the device asks for", () => {
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: query === "(prefers-color-scheme: light)",
     addEventListener: () => {},
@@ -40,8 +40,8 @@ it("paints Match device with the Paper preset the device asks for", () => {
   const store = renderPage();
   fireEvent.click(screen.getByRole("radio", { name: "Match device" }));
   expect(store.read().theme).toBe("device");
-  // `data-theme` only ever carries a real preset, so Paper's selectors match.
-  expect(document.documentElement.getAttribute("data-theme")).toBe("paper-light");
+  // `data-theme` only ever carries a real preset, so Crisp's selectors match.
+  expect(document.documentElement.getAttribute("data-theme")).toBe("crisp-light");
 });
 
 it("saves the calendar event style and puts it where the week's sheet reads it", () => {
@@ -58,9 +58,9 @@ it("collapses the sidebar from the page", () => {
   expect(store.read().sidebarCollapsed).toBe(true);
 });
 
-it("falls back to classic for a theme this build does not know", () => {
+it("falls back to Crisp for a theme this build does not know", () => {
   expect(normalizeWorkspacePreferences({ theme: "sepia", sidebarCollapsed: true })).toEqual({
-    theme: "classic",
+    theme: "crisp",
     calendarEvents: "raised",
     sidebarCollapsed: true,
   });

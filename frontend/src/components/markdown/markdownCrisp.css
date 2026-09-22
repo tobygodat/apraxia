@@ -1,0 +1,112 @@
+/* A markdown field and the note it renders, in Crisp: a page of reading text
+ * with Notion's rhythm, a task list of the app's checkboxes, and a source
+ * editor that is a plain field.
+ *
+ * Sibling of `markdown.css`. Scoped `[data-theme^="crisp"]`.
+ */
+
+[data-theme^="crisp"] .markdown {
+  color: var(--c-text);
+  font: var(--c-text-body);
+}
+
+[data-theme^="crisp"] .markdown__p,
+[data-theme^="crisp"] .markdown__item {
+  line-height: 1.6;
+}
+
+[data-theme^="crisp"] .markdown__h {
+  margin-top: 20px;
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .markdown__list--tasks {
+  display: grid;
+  gap: 2px;
+}
+
+[data-theme^="crisp"] .markdown__item--task {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+[data-theme^="crisp"] .markdown__box {
+  margin-top: 4px;
+}
+
+[data-theme^="crisp"] .markdown__item--task:has(.markdown__box:checked) {
+  color: var(--c-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--c-faint);
+}
+
+[data-theme^="crisp"] .markdown__quote {
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid var(--c-text);
+  font-size: 17px;
+}
+
+[data-theme^="crisp"] .markdown__pre {
+  padding: 16px 18px;
+  border-radius: var(--c-radius);
+  background: var(--c-hover);
+  font: 400 13px / 1.6 var(--c-font-mono);
+}
+
+[data-theme^="crisp"] .markdown :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: var(--c-radius-sm);
+  background: var(--c-selected);
+  color: var(--c-danger);
+  font: 400 0.86em / 1 var(--c-font-mono);
+}
+
+[data-theme^="crisp"] .markdown a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--c-outline-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .markdown a:hover {
+  text-decoration-color: currentColor;
+}
+
+[data-theme^="crisp"] .markdown__rule {
+  border-top-color: var(--c-line);
+  opacity: 1;
+}
+
+[data-theme^="crisp"] .markdown-field__rendered {
+  margin: 0 -8px;
+  padding: 4px 8px;
+  border-radius: var(--c-radius);
+  transition: background-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .markdown-field__rendered:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .markdown-field__source {
+  min-height: 160px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background: var(--c-field);
+  color: var(--c-text);
+  caret-color: var(--c-accent);
+  font: 400 14px / 1.6 var(--c-font-mono);
+}
+
+[data-theme^="crisp"] .markdown-field__source:focus-visible {
+  outline: 0;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .markdown-field__foot {
+  gap: 4px;
+}

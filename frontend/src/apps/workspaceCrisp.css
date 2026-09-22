@@ -1,0 +1,193 @@
+/* The shared page frame in Crisp: every page's title, the page's own buttons,
+ * the notice, the small workspace dialog and the global add notice.
+ *
+ * Sibling of `workspace.css`. Scoped `[data-theme^="crisp"]`; colours arrive
+ * through the `--c-*` properties classic reads.
+ */
+
+[data-theme^="crisp"] .cloud-shell {
+  --workspace-page-inset: clamp(20px, 5vw, 64px);
+  --workspace-page-top: 44px;
+  --workspace-page-max: 1040px;
+}
+
+/* One title per page, set the same everywhere. */
+[data-theme^="crisp"] .cloud-shell__content h1:not(.cloud-shell__sr-only) {
+  font: var(--c-text-title);
+  letter-spacing: var(--c-tracking-title);
+  text-wrap: balance;
+}
+
+[data-theme^="crisp"] .workspace-page p {
+  color: var(--c-muted);
+}
+
+[data-theme^="crisp"] .workspace-page :where(p) {
+  font-size: var(--c-size-ui);
+  line-height: 1.55;
+}
+
+[data-theme^="crisp"] .workspace-page a {
+  text-decoration-color: var(--c-outline-strong);
+  text-underline-offset: 3px;
+}
+
+/* A page's plain button: an outlined control at the one control height. */
+[data-theme^="crisp"] .workspace-page button,
+[data-theme^="crisp"] .workspace-notice button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-color: var(--c-outline);
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .workspace-page button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+/* The notice floats at the bottom like a toast. */
+[data-theme^="crisp"] .workspace-notice {
+  padding: 8px 8px 8px 16px;
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  font: var(--c-text-ui);
+  animation: crisp-arrive var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .workspace-notice button {
+  border: 0;
+  color: var(--c-accent-text);
+}
+
+/* The small dialog: customise the page, and choose what to add. */
+[data-theme^="crisp"] .workspace-dialog-backdrop {
+  animation: crisp-fade var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .workspace-dialog {
+  padding: 24px;
+  border: 0;
+  border-radius: var(--c-radius-xl);
+  background: var(--c-dialog);
+  box-shadow: var(--c-shadow-dialog);
+  font: var(--c-text-ui);
+  animation: crisp-arrive var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .workspace-dialog h2 {
+  font: var(--c-text-h2);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .workspace-dialog button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-color: var(--c-outline);
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .workspace-dialog button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .workspace-dialog button[type="submit"] {
+  border-color: transparent;
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+}
+
+[data-theme^="crisp"] .workspace-dialog button[type="submit"]:hover:not(:disabled) {
+  background: var(--c-accent-fill-hover);
+}
+
+[data-theme^="crisp"] .workspace-dialog input {
+  min-height: 36px;
+  border-color: var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background: var(--c-field);
+  font: 400 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .workspace-dialog input:focus-visible {
+  outline: 0;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .workspace-add-choices {
+  gap: 4px;
+}
+
+[data-theme^="crisp"] .workspace-add-choices button,
+[data-theme^="crisp"] .workspace-add-choices a {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--c-radius);
+  font: 500 15px / 22px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .workspace-add-choices button:hover,
+[data-theme^="crisp"] .workspace-add-choices a:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .workspace-dialog :focus-visible,
+[data-theme^="crisp"] .workspace-notice :focus-visible,
+[data-theme^="crisp"] .workspace-page :focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+[data-theme^="crisp"] .workspace-project-warning {
+  background: var(--c-warning-fill);
+  color: var(--c-warning);
+  font: var(--c-text-small);
+}
+
+[data-theme^="crisp"] .global-add-notice {
+  padding: 10px 10px 10px 16px;
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  animation: crisp-arrive-down var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .global-add-notice p {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .global-add-notice button {
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--c-radius);
+  color: var(--c-accent-text);
+  font: 500 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .global-add-notice button:hover {
+  background: var(--c-hover);
+}
+
+/* Shared tags. A class's type, a project's status and an application's
+   stage all read as tinted chips from one nine-colour set. */
+[data-theme^="crisp"] :is(.collection-status, .assignment-type-tag, .career-stage) {
+  --tag: var(--c-tag-gray);
+}
+
+@media (max-width: 620px) {
+  [data-theme^="crisp"] .cloud-shell {
+    --workspace-page-top: 24px;
+  }
+
+  [data-theme^="crisp"] .cloud-shell__content h1:not(.cloud-shell__sr-only) {
+    font-size: var(--c-title-phone);
+  }
+}

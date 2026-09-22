@@ -10,8 +10,13 @@ const dialogCss = readFileSync(
 
 type Rgb = readonly [number, number, number];
 
+// Classic's colours are the fallbacks of the `--c-*` properties Crisp defines,
+// as in `var(--c-field, #111111)` and `rgba(var(--c-ovl, 255, 255, 255), 0.5)`.
+// Classic renders the fallback, so the fallback is what this contract checks.
+const FALLBACK = String.raw`(?:var\(--[\w-]+,\s*)?`;
+
 function parseHexVariable(name: string): Rgb {
-  const match = dialogCss.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, "i"));
+  const match = dialogCss.match(new RegExp(`--${name}:\\s*${FALLBACK}(#[0-9a-f]{6})`, "i"));
   if (!match?.[1]) throw new Error(`Missing ${name} color token.`);
   return [
     Number.parseInt(match[1].slice(1, 3), 16),
@@ -21,7 +26,11 @@ function parseHexVariable(name: string): Rgb {
 }
 
 function parseRgba(value: string): readonly [...Rgb, number] {
-  const channels = value.split(",").map((channel) => Number(channel.trim()));
+  const channels = value
+    .replace(/var\(--[\w-]+,\s*/, "")
+    .replace(")", "")
+    .split(",")
+    .map((channel) => Number(channel.trim()));
   if (channels.length !== 4 || channels.some((channel) => !Number.isFinite(channel))) {
     throw new Error("Invalid RGBA color token.");
   }
@@ -29,7 +38,7 @@ function parseRgba(value: string): readonly [...Rgb, number] {
 }
 
 function parseRgbaVariable(name: string): readonly [...Rgb, number] {
-  const match = dialogCss.match(new RegExp(`--${name}:\\s*rgba\\(([^)]+)\\)`));
+  const match = dialogCss.match(new RegExp(`--${name}:\\s*rgba\\((${FALLBACK}[^)]+\\)?[^)]*)\\)`));
   if (!match?.[1]) throw new Error(`Missing ${name} color token.`);
   return parseRgba(match[1]);
 }
@@ -71,7 +80,7 @@ describe("Todo composer contrast contract", () => {
 
   it("keeps placeholder copy above 4.5:1", () => {
     const placeholderMatch = dialogCss.match(
-      /\.todo-dialog__field input::placeholder\s*\{[^}]*color:\s*rgba\(([^)]+)\)/,
+      /\.todo-dialog__field input::placeholder\s*\{[^}]*color:\s*rgba\(((?:var\(--[\w-]+,\s*)?[^)]+\)?[^)]*)\)/,
     );
     if (!placeholderMatch?.[1]) {
       throw new Error("Missing Todo placeholder color.");

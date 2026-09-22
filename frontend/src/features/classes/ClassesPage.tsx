@@ -7,6 +7,7 @@ import "./classes.css";
 // One Paper sheet covers the whole Classes feature: this page, the class
 // detail, assignments, the Drive source, the saved notes and the PDF reader.
 import "./classesPaper.css";
+import "./classesCrisp.css";
 
 import { ClassDetail } from "./ClassDetail";
 import { ClassSummary } from "./ClassSummary";

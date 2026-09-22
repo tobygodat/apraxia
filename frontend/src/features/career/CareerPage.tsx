@@ -18,6 +18,7 @@ import {
 } from "./careerPresentation";
 import "./career.css";
 import "./careerPaper.css";
+import "./careerCrisp.css";
 
 interface Props {
   service: CareerService;
@@ -253,6 +254,7 @@ export function CareerPage({ service, userId, today, onOpenApplication }: Props)
                       className="career-stage"
                       aria-label={`Stage for ${row.company}`}
                       value={row.stage}
+                      data-stage={row.stage}
                       disabled={busy}
                       onChange={(event) => void changeStage(row, event.target.value as CareerStage)}
                     >

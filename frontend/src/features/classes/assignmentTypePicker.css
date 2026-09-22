@@ -8,13 +8,10 @@
   box-sizing: border-box;
   padding: 6px;
   border-radius: 8px;
-  background: #242424;
-  color: #f0efed;
+  background: var(--c-raised, #242424);
+  color: var(--c-text, #f0efed);
   box-shadow: 0 12px 32px #0008;
-  font:
-    13px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 13px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   color-scheme: dark;
 }
 .assignment-type-menu [role="option"] {
@@ -34,22 +31,22 @@
   margin-top: 2px;
 }
 .assignment-type-menu [role="option"][aria-selected="true"] {
-  background: #393836;
+  background: var(--c-fill-strong, #393836);
 }
 .assignment-type-menu [role="option"]:hover {
-  background: #333;
+  background: var(--c-selected, #333);
 }
 .assignment-type-menu [role="option"]:focus-visible {
-  outline: 1px solid #ada9a3;
+  outline: 1px solid var(--c-outline-strong, #ada9a3);
   outline-offset: -1px;
-  background: #333;
+  background: var(--c-selected, #333);
 }
 .assignment-type-menu .assignment-type-none {
   margin-top: 6px;
-  border-top: 1px solid #3c3c3c;
+  border-top: 1px solid var(--c-line-strong, #3c3c3c);
   border-radius: 0 0 4px 4px;
   padding-top: 9px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 @media (pointer: coarse) {
   .assignment-type-menu [role="option"] {
