@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import type { Project, ProjectSummary } from "../../types/domain";
 import { hasServiceErrorCode } from "../../lib/serviceError";
 import { useLocalToday } from "../todos/useLocalToday";
 import { CareerPrepTab } from "./CareerPrepTab";
@@ -37,6 +38,10 @@ export function CareerApplicationPage({
   onOpenTab,
   onBack,
   onDeleted,
+  projects,
+  loadProject,
+  onTasksChanged,
+  onOpenToday,
 }: {
   userId: string;
   applicationId: string;
@@ -46,6 +51,10 @@ export function CareerApplicationPage({
   onOpenTab(next: CareerTab): void;
   onBack(): void;
   onDeleted?(): void;
+  projects?: readonly ProjectSummary[];
+  loadProject?(id: string): Promise<Project>;
+  onTasksChanged?(): void;
+  onOpenToday?(): void;
 }) {
   const today = useLocalToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [application, setApplication] = useState<CareerApplication | null>(null);
@@ -166,9 +175,14 @@ export function CareerApplicationPage({
           {tab === "prep" && (
             <CareerPrepTab
               userId={userId}
-              applicationId={applicationId}
+              application={application}
+              steps={steps}
               service={service}
               today={today}
+              projects={projects}
+              loadProject={loadProject}
+              onTasksChanged={onTasksChanged}
+              onOpenToday={onOpenToday}
             />
           )}
           {tab === "resources" && (

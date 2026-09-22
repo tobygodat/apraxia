@@ -109,6 +109,29 @@ Projects and ideas are what the UI calls **collections**: one
 because they share the same policy shape, soft-delete contract, and search
 projection.
 
+### Career preparation actions
+
+`career_prep` keeps an action's application link and order. Since
+`20260922062559_canonical_career_prep_todos.sql`, every prep row has exactly one
+same-owner todo, and that todo owns the action text, due date, completion state,
+and soft-delete revision. The corresponding prep columns are a trigger-maintained
+projection for the Career page; direct browser inserts, updates, and deletes on
+`career_prep` are revoked.
+
+The browser writes through three atomic RPCs. `import_career_prep_items` creates
+up to 50 reviewed actions with client-generated IDs; replaying an ID in the same
+application returns its current task state without applying the stale request.
+`save_career_prep_item` writes an existing Career edit through to its todo, and
+`remove_career_prep_item` soft-deletes that todo. Task edits, completion, delete,
+and restore are mirrored back to Career. Deleting an application soft-deletes
+its active prep todos with the application's exact undo token; restoring the
+application restores only those rows, so a task deleted independently stays
+deleted.
+
+The migration projects any existing linked prep row from its already-canonical
+todo and creates a todo for every previously unlinked prep row before making the
+link required and one-to-one.
+
 ### `public.home_appearance`
 
 Added by `supabase/migrations/20260907000100_home_appearance.sql` and

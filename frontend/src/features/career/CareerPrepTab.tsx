@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
+import { useWorkspaceRevision } from "../../apps/workspaceStore";
+import type { Project, ProjectSummary } from "../../types/domain";
 import { CareerStories } from "./CareerStories";
+import { CareerPlanHandoff } from "./CareerPlanHandoff";
 import { MarkdownField } from "../../components/markdown/MarkdownField";
 import { dateTiming, orderPrep, tagsOf, type Timing } from "./careerPresentation";
-import type { CareerPrepItem, CareerQuestion, CareerService } from "./careerService";
+import {
+  isDefiniteRejection,
+  type CareerApplication,
+  type CareerPrepItem,
+  type CareerQuestion,
+  type CareerService,
+  type CareerStep,
+} from "./careerService";
 import { useCareerRun } from "./useCareerRun";
 
 /**
@@ -13,58 +23,119 @@ import { useCareerRun } from "./useCareerRun";
  */
 export function CareerPrepTab({
   userId,
-  applicationId,
+  application,
+  steps,
   service,
   today,
+  projects,
+  loadProject,
+  onTasksChanged,
+  onOpenToday,
 }: {
   userId: string;
-  applicationId: string;
+  application: CareerApplication;
+  steps: readonly CareerStep[];
   service: CareerService;
   today: string;
+  projects?: readonly ProjectSummary[];
+  loadProject?(id: string): Promise<Project>;
+  onTasksChanged?(): void;
+  onOpenToday?(): void;
 }) {
   return (
     <div className="career-tab">
-      <PrepList userId={userId} applicationId={applicationId} service={service} today={today} />
-      <Questions userId={userId} applicationId={applicationId} service={service} />
-      <CareerStories userId={userId} applicationId={applicationId} service={service} />
+      <PrepList
+        userId={userId}
+        application={application}
+        steps={steps}
+        service={service}
+        today={today}
+        projects={projects}
+        loadProject={loadProject}
+        onTasksChanged={onTasksChanged}
+        onOpenToday={onOpenToday}
+      />
+      <Questions userId={userId} applicationId={application.id} service={service} />
+      <CareerStories userId={userId} applicationId={application.id} service={service} />
     </div>
   );
 }
 
 function PrepList({
   userId,
-  applicationId,
+  application,
+  steps,
   service,
   today,
+  projects,
+  loadProject,
+  onTasksChanged,
+  onOpenToday,
 }: {
   userId: string;
-  applicationId: string;
+  application: CareerApplication;
+  steps: readonly CareerStep[];
   service: CareerService;
   today: string;
+  projects?: readonly ProjectSummary[];
+  loadProject?(id: string): Promise<Project>;
+  onTasksChanged?(): void;
+  onOpenToday?(): void;
 }) {
+  const applicationId = application.id;
+  const revision = useWorkspaceRevision();
   const [items, setItems] = useState<CareerPrepItem[]>([]);
   const [body, setBody] = useState("");
   const [dueOn, setDueOn] = useState("");
   const [adding, setAdding] = useState(false);
-  const { busy, error, run } = useCareerRun("Couldn’t save this prep item. Try again.");
+  const [draftId, setDraftId] = useState(() => crypto.randomUUID());
+  const [submittedDraft, setSubmittedDraft] = useState<{
+    body: string;
+    dueOn: string | null;
+  } | null>(null);
+  const { busy, error, setError, run } = useCareerRun("Couldn’t save this prep item. Try again.");
   useEffect(() => {
     void run("Loading prep…", async (signal) => {
       const rows = await service.listPrep(userId, applicationId, signal);
       if (!signal.aborted) setItems(rows);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service, userId, applicationId]);
+  }, [service, userId, applicationId, revision]);
   const replace = (item: CareerPrepItem) =>
     setItems((rows) => [...rows.filter((row) => row.id !== item.id), item]);
-  const save = (item: Partial<CareerPrepItem> & { body: string }, label: string) =>
+  const save = (item: Partial<CareerPrepItem>, label: string) =>
     run(label, async (signal) => {
       const row = await service.savePrep(userId, applicationId, item, signal);
-      if (!signal.aborted) replace(row);
+      if (!signal.aborted) {
+        replace(row);
+        onTasksChanged?.();
+      }
     });
 
   return (
     <>
       <h2 className="paper-heading career-tab__heading">prep</h2>
+      <p className="career-tab__aside">
+        Preparation is shared with tasks. Due items appear on Home; undated items go to Inbox.
+      </p>
+      <CareerPlanHandoff
+        userId={userId}
+        application={application}
+        steps={steps}
+        items={items}
+        service={service}
+        today={today}
+        projects={projects}
+        loadProject={loadProject}
+        onOpenToday={onOpenToday}
+        onImported={(rows) => {
+          setItems((current) => [
+            ...current.filter((item) => !rows.some((row) => row.id === item.id)),
+            ...rows,
+          ]);
+          onTasksChanged?.();
+        }}
+      />
       <div className="career-app-rows">
         {orderPrep(items).map((item) => {
           const timing = dateTiming(item.dueOn, today, "");
@@ -84,7 +155,6 @@ function PrepList({
                     void save(
                       {
                         id: item.id,
-                        body: item.body,
                         doneAt: event.target.checked ? new Date().toISOString() : null,
                       },
                       event.target.checked ? "Ticking off…" : "Reopening…",
@@ -97,9 +167,7 @@ function PrepList({
                   value={item.dueOn}
                   timing={timing}
                   done={!!item.doneAt}
-                  onChange={(next) =>
-                    void save({ id: item.id, body: item.body, dueOn: next }, "Saving the date…")
-                  }
+                  onChange={(next) => void save({ id: item.id, dueOn: next }, "Saving the date…")}
                 />
                 <button
                   type="button"
@@ -108,8 +176,10 @@ function PrepList({
                   onClick={() =>
                     void run("Removing…", async (signal) => {
                       await service.removePrep(userId, item.id, signal);
-                      if (!signal.aborted)
+                      if (!signal.aborted) {
                         setItems((rows) => rows.filter((row) => row.id !== item.id));
+                        onTasksChanged?.();
+                      }
                     })
                   }
                 >
@@ -126,16 +196,40 @@ function PrepList({
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!body.trim()) return;
-                void save(
-                  {
-                    body,
-                    dueOn: dueOn || null,
-                    position: items.length ? Math.max(...items.map((i) => i.position)) + 1 : 0,
-                  },
-                  "Adding…",
-                ).then(() => {
+                const draft = submittedDraft ?? { body, dueOn: dueOn || null };
+                if ([...draft.body.trim()].length > 2000) {
+                  setError("Use a prep item of up to 2,000 characters.");
+                  return;
+                }
+                setSubmittedDraft(draft);
+                void run("Adding…", async (signal) => {
+                  let rows: CareerPrepItem[];
+                  try {
+                    rows = await service.importPrep(
+                      userId,
+                      applicationId,
+                      [{ id: draftId, ...draft }],
+                      signal,
+                    );
+                  } catch (cause) {
+                    // A definite rejection saved nothing, so the draft is
+                    // editable again, under a fresh ID if the old one clashed.
+                    if (!signal.aborted && isDefiniteRejection(cause)) {
+                      setSubmittedDraft(null);
+                      setDraftId(crypto.randomUUID());
+                    }
+                    throw cause;
+                  }
+                  if (signal.aborted) return;
+                  // An empty replay means the first attempt saved the item and
+                  // it has been removed since, so the draft is finished either way.
+                  const [row] = rows;
+                  if (row) replace(row);
                   setBody("");
                   setDueOn("");
+                  setSubmittedDraft(null);
+                  setDraftId(crypto.randomUUID());
+                  onTasksChanged?.();
                 });
               }}
             >
@@ -144,6 +238,8 @@ function PrepList({
                 value={body}
                 autoFocus
                 required
+                maxLength={4000}
+                disabled={!!submittedDraft}
                 placeholder="re-read the payments primer"
                 aria-label="prep item"
                 onChange={(event) => setBody(event.target.value)}
@@ -151,12 +247,15 @@ function PrepList({
               <input
                 className="paper-field"
                 type="date"
+                min="0001-01-01"
+                max="9999-12-31"
                 value={dueOn}
+                disabled={!!submittedDraft}
                 aria-label="prep item due"
                 onChange={(event) => setDueOn(event.target.value)}
               />
               <button type="submit" className="paper-action" disabled={!!busy}>
-                add
+                {submittedDraft ? "try adding again" : "add"}
               </button>
               <button
                 type="button"

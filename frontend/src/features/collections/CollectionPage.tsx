@@ -7,7 +7,7 @@ import { peekRead } from "../../apps/navigationCache";
 import { TodoComposerDialog, TodoEditDialog } from "../todos/TodoFormDialog";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { formatTaskDate, formatTaskTime } from "../todos/taskFormatting";
-import { ideaPreview } from "./collectionPresentation";
+import { groupIdeasByProject, ideaPreview } from "./collectionPresentation";
 import type { TodoService } from "../todos/todoService";
 import { CollectionEditor, PROJECT_STATUS_LABELS } from "./CollectionEditor";
 import {
@@ -288,11 +288,11 @@ export function CollectionPage(props: Props) {
       prefetchTimer.current = null;
     }
   }
-  function renderRow(k: CollectionKind, r: CollectionRecord) {
+  function renderRow(k: CollectionKind, r: CollectionRecord, showProject = true) {
     const p = k === "idea" ? projects.find((p) => p.id === (r as Idea).projectId) : null;
     const preview =
       k === "idea" ? ideaPreview(r as Idea) : k === "project" ? (r as Project).description : null;
-    const metadata = k === "idea" && !detail ? p?.title : null;
+    const metadata = k === "idea" && !detail && showProject ? p?.title : null;
     // Active is the ordinary state, so only the other three are worth a badge.
     const status =
       k === "project" && (r as Project).status !== "active" ? (r as Project).status : null;
@@ -400,6 +400,8 @@ export function CollectionPage(props: Props) {
   }
   const completedTasks = tasks.filter((t) => t.completed);
   const openTasks = tasks.filter((t) => !t.completed);
+  const ideaGroups =
+    kind === "idea" && !detail ? groupIdeasByProject(rows as Idea[], projects) : [];
   const coldDetail = detail && loading && !project;
   const coldList = !detail && loading && !rows.length;
   // The project detail page stays quiet about routine notices, but a deletion
@@ -409,7 +411,7 @@ export function CollectionPage(props: Props) {
   useColdLoad(!error && (detail ? coldDetail : coldList));
   return (
     <section
-      className={`collection-page${detail && kind === "project" ? " collection-page--project" : ""}`}
+      className={`collection-page${detail && kind === "project" ? " collection-page--project" : ""}${!detail && kind === "idea" ? " collection-page--ideas" : ""}`}
     >
       {detail && (
         <button className="collection-back paper-action paper-action--quiet" onClick={onBack}>
@@ -617,7 +619,48 @@ export function CollectionPage(props: Props) {
                 </select>
               </div>
             ))}
-          <ul className="collection-list">{rows.map((r) => renderRow(kind, r))}</ul>
+          {kind === "idea" ? (
+            <div className="collection-idea-groups">
+              {ideaGroups.map((group, index) => {
+                const headingId = `collection-idea-group-${index}`;
+                return (
+                  <section
+                    className="collection-idea-group"
+                    aria-labelledby={headingId}
+                    key={group.key}
+                  >
+                    <header className="collection-idea-group__header">
+                      <div className="collection-idea-group__heading">
+                        <h2 className="collection-idea-group__title" id={headingId}>
+                          {group.title}
+                        </h2>
+                        <span className="collection-idea-group__count">
+                          {group.ideas.length} {group.ideas.length === 1 ? "idea" : "ideas"}
+                        </span>
+                      </div>
+                      {group.projectAvailable && group.projectId && onOpenProject && (
+                        <button
+                          className="collection-idea-group__project-link paper-action paper-action--quiet"
+                          onPointerEnter={() => scheduleProjectPrefetch(group.projectId!)}
+                          onPointerLeave={cancelProjectPrefetch}
+                          onFocus={() => scheduleProjectPrefetch(group.projectId!)}
+                          onBlur={cancelProjectPrefetch}
+                          onClick={() => onOpenProject(group.projectId!)}
+                        >
+                          Open project
+                        </button>
+                      )}
+                    </header>
+                    <ul className="collection-list collection-idea-group__list">
+                      {group.ideas.map((idea) => renderRow("idea", idea, false))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <ul className="collection-list">{rows.map((r) => renderRow(kind, r))}</ul>
+          )}
           {!loading && !error && !rows.length && (
             <div className="collection-empty">
               <p>

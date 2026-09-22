@@ -1,7 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
-import { createCareerService, prepareFile } from "../../frontend/src/features/career/careerService";
+import {
+  createCareerService,
+  isDefiniteRejection,
+  prepareFile,
+} from "../../frontend/src/features/career/careerService";
 import type { Database } from "../../frontend/src/types/database";
 
 const OWNER = "11111111-1111-4111-8111-111111111111";
@@ -21,6 +25,20 @@ const application = {
 };
 
 const signal = () => new AbortController().signal;
+
+const prep = {
+  id: "c1111111-1111-4111-8111-111111111111",
+  user_id: OWNER,
+  application_id: APPLICATION,
+  body: "Practice the project story",
+  due_on: "2026-09-24",
+  done_at: null,
+  todo_id: "c1111111-1111-4111-8111-111111111111",
+  position: 0,
+  deleted_at: null,
+  created_at: "2026-09-18T00:00:00+00:00",
+  updated_at: "2026-09-18T00:00:00+00:00",
+};
 
 function setup(responses: unknown[]) {
   const fetch = vi.fn(
@@ -154,6 +172,92 @@ describe("career service", () => {
 
     await service.listQuestionsByTag(OWNER, "  System Design ", signal());
     expect(new URL(calls(fetch)[1]![0]).searchParams.get("tags")).toBe('cs.{"system design"}');
+  });
+
+  it("imports one atomic client-identified batch and preserves stable IDs in the RPC", async () => {
+    const second = {
+      ...prep,
+      id: "c2222222-2222-4222-8222-222222222222",
+      todo_id: "c2222222-2222-4222-8222-222222222222",
+      body: "Research the team",
+      due_on: null,
+      position: 1,
+    };
+    const { service, fetch } = setup([[prep, second]]);
+    const rows = await service.importPrep(
+      OWNER,
+      APPLICATION,
+      [
+        { id: prep.id, body: prep.body, dueOn: prep.due_on },
+        { id: second.id, body: second.body, dueOn: null },
+      ],
+      signal(),
+    );
+
+    expect(rows.map((row) => [row.id, row.todoId])).toEqual([
+      [prep.id, prep.id],
+      [second.id, second.id],
+    ]);
+    const [call] = calls(fetch);
+    expect(call![0]).toContain("/rpc/import_career_prep_items");
+    expect(JSON.parse(String(call![1].body))).toEqual({
+      p_application_id: APPLICATION,
+      p_items: [
+        { id: prep.id, body: prep.body, due_on: prep.due_on },
+        { id: second.id, body: second.body, due_on: null },
+      ],
+    });
+  });
+
+  it.each([
+    ["P0002", "not_found"],
+    ["23505", "conflict"],
+    ["22023", "invalid_input"],
+    ["08006", "unavailable"],
+  ])("reports a %s import rejection as %s", async (code, expected) => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ code, message: "rejected", details: null, hint: null }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
+    const service = createCareerService(
+      createClient<Database>("https://career.example.test", "test-key", {
+        global: { fetch },
+        auth: { persistSession: false, autoRefreshToken: false },
+      }),
+    );
+    const failure = await service
+      .importPrep(OWNER, APPLICATION, [{ id: prep.id, body: prep.body, dueOn: null }], signal())
+      .catch((cause: unknown) => cause);
+    expect(failure).toMatchObject({ name: "ServiceError", code: expected });
+    // Only an outcome that could have hidden a commit keeps the draft locked.
+    expect(isDefiniteRejection(failure)).toBe(expected !== "unavailable");
+  });
+
+  it("updates and removes prep through atomic RPCs without clearing omitted task fields", async () => {
+    const completed = { ...prep, done_at: "2026-09-22T12:00:00+00:00" };
+    const { service, fetch } = setup([completed, true]);
+    const saved = await service.savePrep(
+      OWNER,
+      APPLICATION,
+      { id: prep.id, doneAt: completed.done_at },
+      signal(),
+    );
+    expect(saved.doneAt).toBe(completed.done_at);
+
+    const [saveCall] = calls(fetch);
+    expect(saveCall![0]).toContain("/rpc/save_career_prep_item");
+    expect(JSON.parse(String(saveCall![1].body))).toEqual({
+      p_application_id: APPLICATION,
+      p_item: { id: prep.id, completed: true },
+    });
+
+    await service.removePrep(OWNER, prep.id, signal());
+    const removeCall = calls(fetch)[1]!;
+    expect(removeCall[0]).toContain("/rpc/remove_career_prep_item");
+    expect(JSON.parse(String(removeCall[1].body))).toEqual({ p_item_id: prep.id });
   });
 
   it("measures a file before reserving anything, and refuses one it cannot store", async () => {

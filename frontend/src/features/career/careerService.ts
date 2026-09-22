@@ -8,8 +8,9 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { ServiceError } from "../../lib/serviceError";
-import type { Database } from "../../types/database";
+import { isSqlDate } from "../todos/dateDomain";
+import { hasServiceErrorCode, ServiceError } from "../../lib/serviceError";
+import type { Database, Json } from "../../types/database";
 import { nextStepOf, orderApplications } from "./careerOrdering";
 import type { CareerStage } from "./careerOrdering";
 
@@ -62,6 +63,21 @@ export interface CareerPrepItem {
   doneAt: string | null;
   todoId: string | null;
   position: number;
+}
+
+/** One reviewed, client-identified action in an atomic plan import. */
+export interface CareerPrepImportItem {
+  id: string;
+  body: string;
+  dueOn: string | null;
+}
+
+/**
+ * True when an import was rejected outright. The import is one transaction, so
+ * nothing from it was saved and the draft may change before the next attempt.
+ */
+export function isDefiniteRejection(cause: unknown): boolean {
+  return hasServiceErrorCode(cause, "not_found", "conflict", "invalid_input");
 }
 
 /**
@@ -174,10 +190,20 @@ export interface CareerService {
   removeQuestion(userId: string, questionId: string, signal: AbortSignal): Promise<void>;
 
   listPrep(userId: string, applicationId: string, signal: AbortSignal): Promise<CareerPrepItem[]>;
+  /**
+   * Create a reviewed batch atomically. Reusing the same IDs is a read-only
+   * replay, so an uncertain retry cannot overwrite later task edits.
+   */
+  importPrep(
+    userId: string,
+    applicationId: string,
+    items: readonly CareerPrepImportItem[],
+    signal: AbortSignal,
+  ): Promise<CareerPrepItem[]>;
   savePrep(
     userId: string,
     applicationId: string,
-    item: Partial<CareerPrepItem> & { body: string },
+    item: Partial<CareerPrepItem>,
     signal: AbortSignal,
   ): Promise<CareerPrepItem>;
   removePrep(userId: string, itemId: string, signal: AbortSignal): Promise<void>;
@@ -756,22 +782,40 @@ export function createCareerService(client: SupabaseClient<Database>): CareerSer
     },
 
     async savePrep(userId, applicationId, item, signal) {
+      // New rows use the create-only import path so a generated ID is the
+      // idempotency key. Existing rows have a separate edit RPC: conflating the
+      // two would let a retry overwrite a task changed from Today meanwhile.
+      if (!item.id) {
+        if (item.body === undefined)
+          throw new ServiceError("invalid_input", "Add prep text before saving.");
+        const [created] = await this.importPrep(
+          userId,
+          applicationId,
+          [{ id: crypto.randomUUID(), body: item.body, dueOn: item.dueOn ?? null }],
+          signal,
+        );
+        if (!created)
+          throw new ServiceError("unavailable", "Couldn’t save this prep note. Try again.");
+        return created;
+      }
+
+      const body = item.body?.trim();
+      if (item.body !== undefined && !body)
+        throw new ServiceError("invalid_input", "Add prep text before saving.");
+      if (item.dueOn !== undefined && item.dueOn !== null && !isSqlDate(item.dueOn))
+        throw new ServiceError("invalid_input", "Use a valid date for this prep item.");
+
+      const payload: Record<string, Json | undefined> = { id: item.id };
+      if (body !== undefined) payload.body = body;
+      if (item.dueOn !== undefined) payload.due_on = item.dueOn;
+      if (item.doneAt !== undefined) payload.completed = item.doneAt !== null;
+      if (item.position !== undefined) payload.position = item.position;
+
       const { data, error } = await client
-        .from("career_prep")
-        .upsert(
-          {
-            id: item.id,
-            user_id: userId,
-            application_id: applicationId,
-            body: bounds(item.body, 2000, "Use a prep note of 1–2000 characters."),
-            due_on: item.dueOn ?? null,
-            done_at: item.doneAt ?? null,
-            todo_id: item.todoId ?? null,
-            position: item.position ?? 0,
-          },
-          { onConflict: "id" },
-        )
-        .select(PREP_COLUMNS)
+        .rpc("save_career_prep_item", {
+          p_application_id: applicationId,
+          p_item: payload,
+        })
         .abortSignal(bounded(signal))
         .single();
       if (error || !data)
@@ -779,12 +823,51 @@ export function createCareerService(client: SupabaseClient<Database>): CareerSer
       return toPrepItem(owned(data as Tables["career_prep"]["Row"], userId));
     },
 
+    async importPrep(userId, applicationId, items, signal) {
+      if (items.length < 1 || items.length > 50)
+        throw new ServiceError("invalid_input", "Import 1–50 prep items at a time.");
+      if (new Set(items.map((item) => item.id)).size !== items.length)
+        throw new ServiceError("invalid_input", "Each prep item needs a unique ID.");
+
+      const payload = items.map((item) => {
+        if (!item.id) throw new ServiceError("invalid_input", "Each prep item needs a stable ID.");
+        if (item.dueOn !== null && !isSqlDate(item.dueOn))
+          throw new ServiceError("invalid_input", "Use a valid date for each prep item.");
+        return {
+          id: item.id,
+          body: bounds(item.body, 2000, "Use a prep note of 1–2000 characters."),
+          due_on: item.dueOn,
+        };
+      });
+
+      const { data, error } = await client
+        .rpc("import_career_prep_items", {
+          p_application_id: applicationId,
+          p_items: payload,
+        })
+        .abortSignal(bounded(signal));
+      // The import is one transaction, so a rejection saved nothing. Only a
+      // failure that could have hidden a commit is worth retrying unchanged.
+      if (error?.code === "P0002")
+        throw new ServiceError("not_found", "This application is no longer available.");
+      if (error?.code === "23505")
+        throw new ServiceError("conflict", "These tasks clash with saved ones. Save them again.");
+      if (error?.code === "22023" || error?.code === "22007" || error?.code === "22008")
+        throw new ServiceError(
+          "invalid_input",
+          "Check each task’s text and date, then save again.",
+        );
+      if (error || !data)
+        throw new ServiceError("unavailable", "Couldn’t import this prep plan. Try again.");
+      return (data as Tables["career_prep"]["Row"][]).map((row) => toPrepItem(owned(row, userId)));
+    },
+
     async removePrep(userId, itemId, signal) {
+      // userId stays in the browser-facing interface for parity with the other
+      // career children. Ownership itself is derived from the authenticated RPC.
+      void userId;
       const { error } = await client
-        .from("career_prep")
-        .delete()
-        .eq("id", itemId)
-        .eq("user_id", userId)
+        .rpc("remove_career_prep_item", { p_item_id: itemId })
         .abortSignal(bounded(signal));
       if (error)
         throw new ServiceError("unavailable", "Couldn’t remove this prep note. Try again.");

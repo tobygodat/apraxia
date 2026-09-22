@@ -95,6 +95,59 @@ describe("Collection pages", () => {
     view.rerender(<Page {...props} projects={[{ id: "project", title: "Garden" }]} />);
     expect(screen.getByText("Garden")).toBeTruthy();
   });
+  it("organizes ideas into project sections and leaves unassigned ideas at the end", async () => {
+    const listIdeas = vi.fn().mockResolvedValue([
+      {
+        id: "unassigned",
+        title: "A loose thought",
+        body: "Keep it nearby.",
+        projectId: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "studio-idea",
+        title: "Move the lamp",
+        body: "Try it beside the chair.",
+        projectId: "studio",
+        createdAt: "",
+        updatedAt: "",
+      },
+      {
+        id: "garden-idea",
+        title: "Plant thyme",
+        body: "Along the sunny edge.",
+        projectId: "garden",
+        createdAt: "",
+        updatedAt: "",
+      },
+    ]);
+    render(
+      <Page
+        kind="idea"
+        service={{ listIdeas } as unknown as CollectionService}
+        todoService={{} as TodoService}
+        projects={[
+          { id: "studio", title: "Studio" },
+          { id: "garden", title: "Garden" },
+        ]}
+        onOpenProject={vi.fn()}
+      />,
+    );
+
+    const garden = await screen.findByRole("region", { name: "Garden" });
+    const studio = screen.getByRole("region", { name: "Studio" });
+    const unassigned = screen.getByRole("region", { name: "Unassigned" });
+    expect(within(garden).getByText("Plant thyme")).toBeTruthy();
+    expect(within(studio).getByText("Move the lamp")).toBeTruthy();
+    expect(within(unassigned).getByText("A loose thought")).toBeTruthy();
+    expect(
+      screen
+        .getAllByRole("region")
+        .filter((region) => region.classList.contains("collection-idea-group"))
+        .map((region) => within(region).getByRole("heading").textContent),
+    ).toEqual(["Garden", "Studio", "Unassigned"]);
+  });
   it("loads another 50-record page without dropping the first page or duplicating rows", async () => {
     const records = Array.from({ length: 51 }, (_, index) => ({
       id: `idea-${index}`,

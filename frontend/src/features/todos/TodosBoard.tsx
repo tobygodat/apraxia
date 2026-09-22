@@ -11,6 +11,7 @@ import { useColdLoad } from "../../apps/coldLoad";
 import type { ProjectSummary, Todo } from "../../types/domain";
 import { ArrowIcon, CloseIcon, PlusIcon } from "../../components/icons";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
+import { usePhoneLayout } from "../../lib/usePhoneLayout";
 import { addSqlDateDays, sqlDateDifferenceInDays } from "./dateDomain";
 import { formatTaskDate, formatTaskTime } from "./taskFormatting";
 import type { TodoBoardColumn, TodoBoardModel } from "./todoBoardModel";
@@ -275,6 +276,7 @@ export function TodosBoard({
   onDeleteTodo,
   onRescheduleTodo,
 }: TodosBoardProps) {
+  const phoneLayout = usePhoneLayout();
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
   const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
   const [dropColumnKey, setDropColumnKey] = useState<string | null>(null);
@@ -778,6 +780,17 @@ export function TodosBoard({
   };
 
   const dateColumns = model.columns.filter((column) => column.kind === "date");
+  const phoneAgenda = phoneLayout && model.isCurrentWeek;
+  // A phone is a quick daily agenda. Start with today, continue into the
+  // upcoming days, then keep the earlier dates at the end so the full week
+  // remains available without putting Sunday above the current work.
+  const visibleDateColumns = phoneAgenda
+    ? [
+        ...dateColumns.filter((column) => column.date === model.today),
+        ...dateColumns.filter((column) => column.date !== null && column.date > model.today),
+        ...dateColumns.filter((column) => column.date !== null && column.date < model.today),
+      ]
+    : dateColumns;
   // Counted from the week on screen, so stepping to another week describes that
   // week rather than repeating this one's figures.
   const dueTodayCount = dateColumns
@@ -789,6 +802,7 @@ export function TodosBoard({
   );
   const overdueColumn = model.columns.find((column) => column.kind === "overdue");
   const inboxColumn = model.columns.find((column) => column.kind === "inbox");
+  const overdueHeadingId = overdueColumn ? columnHeadingId(overdueColumn.key) : null;
 
   return (
     <section className="todos-board-page" aria-labelledby="todos-board-heading">
@@ -800,8 +814,10 @@ export function TodosBoard({
             {/* Outside the live region: the controller already announces each
                 reschedule, and the counts would repeat it on every write. */}
             {dueTodayCount ? <span>{dueTodayCount} due today</span> : null}
-            {model.overdue.length > 0 ? (
-              <span className="todos-board-overdue">{model.overdue.length} overdue</span>
+            {model.overdue.length > 0 && overdueHeadingId ? (
+              <a className="todos-board-overdue" href={`#${overdueHeadingId}`}>
+                {model.overdue.length} overdue
+              </a>
             ) : null}
             {doneCount > 0 ? <span>{doneCount} done</span> : null}
           </p>
@@ -884,10 +900,10 @@ export function TodosBoard({
         ref={boardRegionRef}
         id={boardRegionId}
         role="region"
-        aria-label="Tasks by date"
+        aria-label={phoneAgenda ? "Tasks by date, today first" : "Tasks by date"}
         tabIndex={0}
       >
-        <div className="todos-board-columns">{dateColumns.map(renderColumn)}</div>
+        <div className="todos-board-columns">{visibleDateColumns.map(renderColumn)}</div>
       </div>
 
       {/* Overdue appears only when something is overdue, because an empty pile

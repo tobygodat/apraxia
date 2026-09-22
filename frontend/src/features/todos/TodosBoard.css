@@ -55,9 +55,10 @@
 .todos-board-overdue {
   color: var(--todos-board-overdue);
   font-variant-numeric: tabular-nums;
+  text-underline-offset: 0.2em;
 }
 
-.todos-board-week > span + span::before {
+.todos-board-week > :is(span, a) + :is(span, a)::before {
   margin: 0 6px;
   color: var(--todos-board-faint);
   content: "·";

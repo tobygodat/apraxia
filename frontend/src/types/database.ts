@@ -81,11 +81,12 @@ export type Database = {
           application_id: string;
           body: string;
           created_at: string;
+          deleted_at: string | null;
           done_at: string | null;
           due_on: string | null;
           id: string;
           position: number;
-          todo_id: string | null;
+          todo_id: string;
           updated_at: string;
           user_id: string;
         };
@@ -93,11 +94,12 @@ export type Database = {
           application_id: string;
           body: string;
           created_at?: string;
+          deleted_at?: string | null;
           done_at?: string | null;
           due_on?: string | null;
           id?: string;
           position?: number;
-          todo_id?: string | null;
+          todo_id: string;
           updated_at?: string;
           user_id?: string;
         };
@@ -105,11 +107,12 @@ export type Database = {
           application_id?: string;
           body?: string;
           created_at?: string;
+          deleted_at?: string | null;
           done_at?: string | null;
           due_on?: string | null;
           id?: string;
           position?: number;
-          todo_id?: string | null;
+          todo_id?: string;
           updated_at?: string;
           user_id?: string;
         };
@@ -876,22 +879,42 @@ export type Database = {
         };
         Returns: Json;
       };
-      clear_calendar_credentials: {
-        Args: {
-          p_expected_updated_at?: string;
-          p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
-          p_verified_user_id: string;
-        };
-        Returns: boolean;
-      };
-      clear_drive_credentials: {
-        Args: {
-          p_expected_updated_at?: string;
-          p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
-          p_verified_user_id: string;
-        };
-        Returns: boolean;
-      };
+      clear_calendar_credentials:
+        | {
+            Args: {
+              p_expected_updated_at?: string;
+              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          }
+        | {
+            Args: {
+              p_delete_credentials: boolean;
+              p_expected_updated_at: string;
+              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          };
+      clear_drive_credentials:
+        | {
+            Args: {
+              p_expected_updated_at?: string;
+              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          }
+        | {
+            Args: {
+              p_delete_credentials: boolean;
+              p_expected_updated_at: string;
+              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
+              p_verified_user_id: string;
+            };
+            Returns: boolean;
+          };
       consume_calendar_oauth_attempt: {
         Args: {
           p_redirect_uri: string;
@@ -924,7 +947,10 @@ export type Database = {
         };
         Returns: Json;
       };
-      finish_career_resource: { Args: { p_resource_id: string }; Returns: undefined };
+      finish_career_resource: {
+        Args: { p_resource_id: string };
+        Returns: undefined;
+      };
       finish_class_pdf: { Args: { p_note_id: string }; Returns: undefined };
       get_today_todos_page: {
         Args: {
@@ -935,6 +961,28 @@ export type Database = {
         };
         Returns: Json;
       };
+      import_career_prep_items: {
+        Args: { p_application_id: string; p_items: Json };
+        Returns: {
+          application_id: string;
+          body: string;
+          created_at: string;
+          deleted_at: string | null;
+          done_at: string | null;
+          due_on: string | null;
+          id: string;
+          position: number;
+          todo_id: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "career_prep";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       import_classes: { Args: { p_classes: Json }; Returns: undefined };
       read_calendar_credentials: {
         Args: { p_verified_user_id: string };
@@ -944,6 +992,7 @@ export type Database = {
         Args: { p_verified_user_id: string };
         Returns: Json;
       };
+      remove_career_prep_item: { Args: { p_item_id: string }; Returns: boolean };
       reorder_today_todos: {
         Args: { p_local_date: string; p_todo_ids: string[] };
         Returns: Json;
@@ -981,6 +1030,28 @@ export type Database = {
             };
             Returns: boolean;
           };
+      save_career_prep_item: {
+        Args: { p_application_id: string; p_item: Json };
+        Returns: {
+          application_id: string;
+          body: string;
+          created_at: string;
+          deleted_at: string | null;
+          done_at: string | null;
+          due_on: string | null;
+          id: string;
+          position: number;
+          todo_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "career_prep";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       save_drive_credentials:
         | {
             Args: {
@@ -1189,6 +1260,7 @@ export const Constants = {
         "class_note",
         "application",
       ],
+      todo_recurrence_freq: ["daily", "weekly", "monthly"],
     },
   },
 } as const;

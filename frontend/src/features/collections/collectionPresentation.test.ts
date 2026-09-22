@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ideaPreview } from "./collectionPresentation";
+import { groupIdeasByProject, ideaPreview } from "./collectionPresentation";
 import { formatTaskDate, formatTaskTime } from "../todos/taskFormatting";
 
 describe("collection presentation", () => {
@@ -15,6 +15,32 @@ describe("collection presentation", () => {
       "Take the river path.",
     );
     expect(ideaPreview({ title: "A walk", body: "A walk\nDetails" })).toBe("Details");
+  });
+
+  it("groups ideas by project while preserving each project's idea order", () => {
+    const idea = (id: string, projectId: string | null) => ({
+      id,
+      title: id,
+      body: id,
+      projectId,
+      createdAt: "",
+      updatedAt: "",
+    });
+    const groups = groupIdeasByProject(
+      [idea("loose", null), idea("second", "b"), idea("first", "b"), idea("missing", "gone")],
+      [
+        { id: "b", title: "Studio" },
+        { id: "a", title: "Garden" },
+      ],
+    );
+
+    expect(groups.map(({ title }) => title)).toEqual([
+      "Studio",
+      "Unavailable project",
+      "Unassigned",
+    ]);
+    expect(groups[0].ideas.map(({ id }) => id)).toEqual(["second", "first"]);
+    expect(groups[1].projectAvailable).toBe(false);
   });
 
   it("formats date-only schedules without shifting the day and keeps minute precision", () => {
