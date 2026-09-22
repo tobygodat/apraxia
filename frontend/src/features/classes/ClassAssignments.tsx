@@ -5,6 +5,7 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { localToday } from "../todos/dateDomain";
 import { emptyClassOverview, summarizeClasses, type ClassOverview } from "./classOverview";
 import "./classAssignments.css";
+import "./classesCrisp.css";
 
 import type { DeleteUndoToken } from "../../types/domain";
 import type { Assignment, AssignmentPatch, AssignmentService } from "./assignmentService";

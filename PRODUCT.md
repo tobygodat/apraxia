@@ -42,7 +42,7 @@ AGENTS.md.
   remain server-only.
 - Preserve date-only due dates, unchanged overdue dates, atomic Today ordering,
   and recoverable actions.
-- Visual theme is a device-local preference, not an account setting; classic is
+- Visual theme is a device-local preference, not an account setting; Crisp is
   the default. Changing it never changes what a screen can do.
 - Preserve legacy source and data. Hosted schema changes are forward-only.
 - New modules and broader access require scoped implementation decisions;
@@ -50,24 +50,30 @@ AGENTS.md.
 
 ## Brand Commitments
 
-The product name is apraxia, lowercase. It is one of several things built on
-the Toby Godat design system, and it takes that system whole rather than
-keeping a look of its own: warm paper in two themes, Literata throughout, one
-green that only ever means "here", rules instead of boxes, and a word wherever
-another product would put a button. DESIGN.md records how apraxia applies it
-and is binding for every new surface and every change to an existing one.
+The product name is apraxia, lowercase.
 
-Voice follows from the same place. Interface words are lowercase; user content
-and proper nouns keep their own case. Items on a line are joined with a spaced
-middle dot. Facts are stated with their numbers rather than with adjectives.
-Errors say what happened and what to do, in a sentence, without blame. Section
-headings carry a green `// ` prefix, the only nod to code. No emoji.
+Since 22 September 2026 its default look is **Crisp**, in a dark and a light
+theme: the owner asked for a redesign in the manner of Notion, "very crisp",
+after research into what makes Notion's interface effective. Crisp takes that
+system's discipline rather than its brand: content is the interface; hierarchy
+comes from type, not boxes; neutrals are warm and translucent; one blue means
+"act here"; and colour belongs to the person's data, as tag tints on stages,
+statuses and types. It fixes the weaknesses people report in Notion: primary
+actions stay visible, secondary text keeps reading contrast, a row's controls
+stay in view on touch, and Home is an opinionated day rather than a blank
+page. Motion is short and explains a change. DESIGN.md records the system and
+is binding for Crisp.
 
-The workspace still ships the classic charcoal theme as its default while the
-Paper theme is built beside it; the two vocabularies are never mixed on one
-surface. The redesign study under frontend/qa/redesign/ and the apraxia
-redesign reference pages are where the system's application-facing patterns
-came from, not an experiment set aside.
+The Toby Godat design system (warm paper, Literata, one green that means
+"here", rules instead of boxes, words instead of buttons) continues as the
+Paper theme, and the charcoal classic theme stays selectable. Each theme keeps
+its own vocabulary, and the three are never mixed on one surface.
+
+Voice: facts are stated with their numbers rather than with adjectives. Items
+on a line are joined with a spaced middle dot. Errors say what happened and
+what to do, in a sentence, without blame. No emoji. Crisp and classic print
+interface words in sentence case; Paper lowercases them and prefixes section
+headings with a green `// `.
 
 ## Evidence on Hand
 

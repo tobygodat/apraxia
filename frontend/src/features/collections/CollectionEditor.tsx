@@ -3,8 +3,10 @@ import { Dialog } from "../../components/dialog/Dialog";
 import type { Idea, Project, ProjectStatus, ProjectSummary } from "../../types/domain";
 import type { CollectionKind, CollectionRecord, CollectionService } from "./collectionService";
 import "../todos/TodoFormDialog.css";
+import "../todos/todosCrisp.css";
 import "./collections.css";
 import "./collectionsPaper.css";
+import "./collectionsCrisp.css";
 /** The saved project states, in the order a project usually moves through. */
 export const PROJECT_STATUS_LABELS: Readonly<Record<ProjectStatus, string>> = {
   active: "Active",

@@ -3,6 +3,7 @@ import { MarkdownView } from "./MarkdownView";
 import { copyMarkdown } from "./markdownClipboard";
 import "./markdown.css";
 import "./markdownPaper.css";
+import "./markdownCrisp.css";
 
 /**
  * A markdown field that shows its result rather than its source. At rest it is

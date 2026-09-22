@@ -1,8 +1,8 @@
 .classes-page {
   max-width: var(--workspace-page-max, 1120px);
   /* Overdue Clay from DESIGN.md, and the ledger's faint separator dot. */
-  --classes-overdue: #ddb1a4;
-  --classes-faint: #858585;
+  --classes-overdue: var(--c-late, #ddb1a4);
+  --classes-faint: var(--c-faint, #858585);
 }
 .classes-page button {
   display: inline-flex;
@@ -15,8 +15,8 @@
   cursor: pointer;
 }
 .classes-page button:hover {
-  background: #292929;
-  border-color: #8b8b8b;
+  background: var(--c-hover, #292929);
+  border-color: var(--c-outline, #8b8b8b);
 }
 /* Same quiet treatment as the project detail's back control. Scoped under
    .classes-page so it outranks workspace.css's `.workspace-page a` color. */
@@ -123,7 +123,7 @@
 }
 .classes-reader {
   min-width: 0;
-  background: #1d1d1d;
+  background: var(--c-sidebar, #1d1d1d);
 }
 .classes-reader > header {
   min-height: 56px;
@@ -172,8 +172,8 @@
   width: 100%;
   height: 100%;
   border: 0;
-  background: #1d1d1d;
-  color: #f0efed;
+  background: var(--c-sidebar, #1d1d1d);
+  color: var(--c-text, #f0efed);
 }
 .classes-reader [role="alert"] {
   padding: 8px 16px;
@@ -190,7 +190,7 @@
 }
 .classes-form label span,
 .classes-form p {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   margin: 0;
 }
@@ -200,10 +200,10 @@
 .classes-form input {
   width: 100%;
   min-height: 40px;
-  border: 1px solid #5b5b5b;
+  border: 1px solid var(--c-outline, #5b5b5b);
   border-radius: 4px;
-  background: #242424;
-  color: #f0efed;
+  background: var(--c-raised, #242424);
+  color: var(--c-text, #f0efed);
   padding: 8px 10px;
   font: inherit;
 }

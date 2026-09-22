@@ -2,7 +2,7 @@
   max-width: var(--workspace-page-max, 1120px);
   margin: 0;
   padding: var(--workspace-page-top, 36px) var(--workspace-page-inset, 32px) 64px;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
 }
 .collection-heading h1 {
   margin: 0;
@@ -13,7 +13,7 @@
 }
 .collection-heading p,
 .collection-empty {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   line-height: 1.6;
 }
 .collection-heading p {
@@ -22,7 +22,7 @@
 }
 .collection-heading--detail {
   padding-bottom: 24px;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
 }
 @media (max-width: 620px) {
   .collection-page .collection-heading--detail {
@@ -46,21 +46,21 @@
 }
 .collection-button {
   min-height: 38px;
-  border: 1px solid #575757;
+  border: 1px solid var(--c-outline, #575757);
   border-radius: var(--radius-control, 5px);
   background: transparent;
   padding: 8px 13px;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
   font-size: 12px;
 }
 .collection-button:hover:not(:disabled) {
-  background: #252525;
-  border-color: #868686;
+  background: var(--c-raised, #252525);
+  border-color: var(--c-outline, #868686);
 }
 .collection-page button:focus-visible,
 .collection-page select:focus-visible,
 .collection-field :focus-visible {
-  outline: 2px solid #eee;
+  outline: 2px solid var(--c-outline-strong, #eee);
   outline-offset: 3px;
 }
 .collection-page button:disabled {
@@ -71,7 +71,7 @@
   list-style: none;
   padding: 0;
   margin: 0 0 22px;
-  border-top: 1px solid #383838;
+  border-top: 1px solid var(--c-line, #383838);
 }
 .collection-idea-groups {
   display: grid;
@@ -89,7 +89,7 @@
   justify-content: space-between;
   gap: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
 }
 .collection-idea-group__heading {
   min-width: 0;
@@ -97,8 +97,8 @@
 }
 .collection-idea-group__title {
   margin: 0;
-  color: #f0efed;
-  font-family: Georgia, "Times New Roman", serif;
+  color: var(--c-text, #f0efed);
+  font-family: var(--c-font-display, Georgia, "Times New Roman", serif);
   font-size: 21px;
   font-weight: 400;
   letter-spacing: -0.2px;
@@ -107,8 +107,8 @@
 }
 .collection-idea-group__count {
   flex: none;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--c-muted, #ada9a3);
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -118,14 +118,14 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .collection-page .collection-idea-group__project-link:hover:not(:disabled) {
   background: transparent;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
 }
 .collection-idea-group__list {
   margin: 0;
@@ -166,7 +166,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
   padding: 10px 0;
   min-width: 0;
 }
@@ -191,7 +191,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   line-height: 1.55;
   margin-top: 3px;
@@ -199,9 +199,9 @@
 }
 .collection-meta {
   display: block;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 11px;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   margin-top: 4px;
   line-height: 1.6;
 }
@@ -209,10 +209,10 @@
   display: inline-block;
   margin-top: 5px;
   padding: 2px 7px;
-  border: 1px solid #4a4a4a;
+  border: 1px solid var(--c-line-strong, #4a4a4a);
   border-radius: 999px;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--c-muted, #ada9a3);
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -222,23 +222,23 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 12px;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--c-muted, #ada9a3);
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
 }
 .collection-filter select {
   padding: 6px 9px;
-  border: 1px solid #444;
+  border: 1px solid var(--c-line-strong, #444);
   border-radius: var(--radius-control, 5px);
-  background-color: #111111;
-  color: #f0efed;
+  background-color: var(--c-field, #111111);
+  color: var(--c-text, #f0efed);
   font-family: inherit;
   font-size: 12px;
 }
 .collection-editor__hint {
   margin: 0;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--c-muted, #ada9a3);
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
   line-height: 1.6;
 }
@@ -252,7 +252,7 @@
   border: 0;
   border-radius: 4px;
   background: none;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   padding: 4px;
 }
 .collection-delete .workspace-icon,
@@ -262,7 +262,7 @@
 }
 .collection-row-action:hover,
 .collection-delete:hover {
-  background: #2c2c2c;
+  background: var(--c-selected, #2c2c2c);
 }
 .collection-back {
   display: inline-flex;
@@ -273,7 +273,7 @@
   min-height: 24px;
   border: 0;
   background: none;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 /* The size sits on its own rule, prefixed with the page class, so it meets the
    `font: inherit` reset above on equal specificity and wins on source order. As
@@ -288,10 +288,10 @@
   height: 14px;
 }
 .collection-back:hover {
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
 }
 .collection-delete:hover {
-  color: #f0c1c1;
+  color: var(--c-danger, #f0c1c1);
 }
 .collection-empty {
   padding: 32px 0;
@@ -303,13 +303,13 @@
   flex-wrap: wrap;
   gap: 16px;
   padding: 12px 0;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 14px;
 }
 .collection-heading .collection-description {
   margin: 8px 0 0;
   max-width: 72ch;
-  color: var(--cloud-shell-muted, #ada9a3);
+  color: var(--cloud-shell-muted, var(--c-muted, #ada9a3));
   white-space: pre-wrap;
   line-height: 1.6;
   font-size: 14px;
@@ -325,16 +325,16 @@
   padding: 10px 0;
   border: 0;
   background: none;
-  color: var(--cloud-shell-muted, #ada9a3);
+  color: var(--cloud-shell-muted, var(--c-muted, #ada9a3));
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
 }
 .collection-page .collection-completed__toggle:hover {
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
 }
 .collection-completed__list {
-  border-top: 1px solid #383838;
+  border-top: 1px solid var(--c-line, #383838);
 }
 .collection-section {
   margin-top: 24px;
@@ -356,7 +356,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 10px 0;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
 }
 .collection-task-check {
   display: grid;
@@ -370,10 +370,10 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #c3c0b8;
+  accent-color: var(--c-accent, #c3c0b8);
 }
 .collection-task input:focus-visible {
-  outline: 2px solid #eee;
+  outline: 2px solid var(--c-outline-strong, #eee);
   outline-offset: 3px;
 }
 .collection-task-text {
@@ -383,7 +383,7 @@
   text-align: left;
   border: 0;
   background: none;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
   overflow-wrap: anywhere;
   line-height: 1.5;
 }
@@ -392,14 +392,14 @@
   font-size: 13px;
 }
 .collection-task-text[data-completed="true"] {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   text-decoration: line-through;
 }
 .collection-field {
   display: grid;
   gap: 8px;
-  color: #ada9a3;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--c-muted, #ada9a3);
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
 }
 .collection-field input,
@@ -410,10 +410,10 @@
   box-sizing: border-box;
   min-height: 44px;
   padding: 10px 12px;
-  color: #f0efed;
-  border: 1px solid #747474;
+  color: var(--c-text, #f0efed);
+  border: 1px solid var(--c-outline, #747474);
   border-radius: 8px;
-  background-color: #111111;
+  background-color: var(--c-field, #111111);
   font-family: inherit;
   font-size: 15px;
   line-height: 1.55;
@@ -421,18 +421,18 @@
 }
 .collection-field textarea {
   resize: vertical;
-  font-family: system-ui, sans-serif;
+  font-family: var(--c-font-ui, system-ui, sans-serif);
 }
 .collection-field :disabled {
   opacity: 0.6;
 }
 .collection-field input::placeholder,
 .collection-field textarea::placeholder {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .collection-page ::selection,
 .collection-editor ::selection {
-  background: #515151;
+  background: var(--c-fill-stronger, #515151);
   color: white;
 }
 
@@ -441,7 +441,7 @@
    all sit on the same rhythm. */
 .collection-section__count {
   margin-left: 8px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
@@ -456,7 +456,7 @@
   border: 0;
   border-radius: var(--radius-control, 5px);
   background: transparent;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -465,8 +465,8 @@
   height: 14px;
 }
 .collection-page .collection-section__add:hover:not(:disabled) {
-  background: #292929;
-  color: #f0efed;
+  background: var(--c-hover, #292929);
+  color: var(--c-text, #f0efed);
 }
 .collection-page--project .collection-section {
   margin-top: 32px;
@@ -479,13 +479,13 @@
   gap: 16px;
   margin-bottom: 0;
   padding-bottom: 10px;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
 }
 .collection-page--project .collection-section h2 {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--c-font-display, Georgia, "Times New Roman", serif);
   font-size: 22px;
   font-weight: 400;
   letter-spacing: -0.3px;
@@ -493,7 +493,7 @@
 }
 .collection-page--project .collection-section__count {
   margin-left: 0;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
 }
 .collection-page--project .collection-list {
   margin: 0;
@@ -502,7 +502,7 @@
 .collection-page--project .collection-empty {
   margin: 0;
   padding: 13px 0;
-  border-bottom: 1px solid #383838;
+  border-bottom: 1px solid var(--c-line, #383838);
   line-height: 1.5;
 }
 .collection-page--project .collection-button {
@@ -544,10 +544,10 @@
   padding: 3px 0;
 }
 .collection-page--project .collection-task-text:hover {
-  color: #fff;
+  color: var(--c-text, #fff);
 }
 .collection-page--project .collection-task-text[data-completed="true"]:hover {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .collection-page--project .collection-task-text .collection-meta {
   display: inline;
@@ -615,8 +615,8 @@
 .collection-page--project > .collection-meta[role="status"] {
   margin: 0;
   padding: 12px 0;
-  border-bottom: 1px solid #383838;
-  color: #ada9a3;
+  border-bottom: 1px solid var(--c-line, #383838);
+  color: var(--c-muted, #ada9a3);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -633,7 +633,7 @@
     color 280ms ease-out;
 }
 .collection-page--project .collection-task[data-settling] .collection-task-title {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   background-size: 100% 1px;
 }
 .collection-page--project .collection-task[data-settling] .collection-meta {
@@ -662,13 +662,13 @@
   min-height: 0;
   border: 0;
   background: none;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
   font-size: 13px;
   line-height: 1.5;
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: #575757;
+  text-decoration-color: var(--c-faint, #575757);
 }
 .collection-page .collection-notice__undo:hover:not(:disabled) {
-  text-decoration-color: #f0efed;
+  text-decoration-color: var(--c-text, #f0efed);
 }

@@ -2,11 +2,11 @@
   display: inline-block;
   max-width: 100%;
   padding: 1px 6px;
-  border: 1px solid var(--line, #444);
+  border: 1px solid var(--line, var(--c-line-strong, #444));
   border-radius: 4px;
   /* The classic muted grey. It used to read `--muted`, which only the legacy
      sign-in palette declares, so the chip rendered in that palette's blue-grey. */
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 11px;
   line-height: 1.5;
   overflow-wrap: anywhere;

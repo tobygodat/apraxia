@@ -19,6 +19,7 @@ import {
 } from "./careerService";
 import { useCareerRun } from "./useCareerRun";
 import "./careerPlan.css";
+import "./careerCrisp.css";
 
 interface HandoffProps {
   userId: string;

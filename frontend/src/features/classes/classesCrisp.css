@@ -1,0 +1,279 @@
+/* Classes in Crisp: the list of classes, a class's page, its assignments
+ * table, its notes and PDFs, and the small menus they open.
+ *
+ * Sibling of the classic class sheets. Scoped `[data-theme^="crisp"]`.
+ */
+
+[data-theme^="crisp"] .classes-page {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .classes-page button {
+  gap: 6px;
+  min-height: var(--c-control);
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .classes-page button:hover {
+  background: var(--c-hover);
+  border-color: var(--c-outline);
+}
+
+[data-theme^="crisp"] .classes-page .classes-back {
+  min-height: 28px;
+  margin-bottom: 12px;
+  padding: 0 6px 0 2px;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .classes-page .classes-back:hover {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+/* ---------------------------------------------------------- the list */
+
+[data-theme^="crisp"] .classes-list {
+  border-top-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .classes-row {
+  gap: 12px;
+  padding: 12px 10px;
+  border-bottom-color: var(--c-line-soft);
+  border-radius: var(--c-radius);
+  transition: background-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .classes-row:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .classes-row h2 {
+  margin-bottom: 2px;
+  font: 600 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .classes-row > .workspace-icon:last-child {
+  transition: translate var(--c-fast) var(--c-ease);
+}
+
+[data-theme^="crisp"] .classes-row:hover > .workspace-icon:last-child {
+  translate: 3px 0;
+}
+
+[data-theme^="crisp"] .classes-summary {
+  color: var(--c-muted);
+  font: var(--c-text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme^="crisp"] .classes-summary__due--overdue {
+  font-weight: 500;
+}
+
+[data-theme^="crisp"] .classes-summary--header {
+  margin-top: 8px;
+  font: var(--c-text-ui);
+}
+
+/* ----------------------------------------------------- a class's page */
+
+[data-theme^="crisp"] .classes-page h2,
+[data-theme^="crisp"] .classes-section-heading,
+[data-theme^="crisp"] .class-assignments h2 {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .classes-row h2 {
+  font: 600 15px / 22px var(--c-font-ui);
+  letter-spacing: 0;
+}
+
+[data-theme^="crisp"] .class-assignments > header > button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border: 0;
+  background: var(--c-accent-fill);
+  color: var(--c-on-accent);
+}
+
+[data-theme^="crisp"] .class-assignments > header > button:hover {
+  background: var(--c-accent-fill-hover);
+  border-color: transparent;
+}
+
+[data-theme^="crisp"] .class-assignments {
+  --assignment-grid: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .class-assignments th {
+  padding: 6px 8px;
+  color: var(--c-faint);
+  font: 500 12px / 16px var(--c-font-ui);
+  border-bottom-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .class-assignments td {
+  height: 38px;
+  font: 400 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .class-assignments tbody tr {
+  transition: background-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .class-assignments tbody tr:hover,
+[data-theme^="crisp"] .class-assignments tr:focus-within {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .class-assignments .assignment-cell {
+  border-radius: var(--c-radius-sm);
+}
+
+[data-theme^="crisp"] .class-assignments .assignment-cell:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .class-assignments td input:not([type="checkbox"]) {
+  border-radius: var(--c-radius-sm);
+  caret-color: var(--c-accent);
+}
+
+[data-theme^="crisp"] .class-assignments td input:focus {
+  outline: 0;
+  border-color: var(--c-accent);
+  background: var(--c-field);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .class-assignments .assignment-done .assignment-title {
+  color: var(--c-faint);
+}
+
+[data-theme^="crisp"] .class-assignments .assignment-delete {
+  color: var(--c-faint);
+  border-radius: var(--c-radius);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-theme^="crisp"] .class-assignments .assignment-delete {
+    opacity: 0;
+    transition: var(--c-state);
+  }
+
+  [data-theme^="crisp"] .class-assignments tr:hover .assignment-delete,
+  [data-theme^="crisp"] .class-assignments tr:focus-within .assignment-delete {
+    opacity: 1;
+  }
+}
+
+/* An assignment's type is a tag in its own colour. */
+[data-theme^="crisp"] .assignment-type-tag {
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--c-radius-sm);
+  background: var(--tag);
+  color: var(--c-tag-ink);
+  font: 500 12px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .assignment-type-tag[data-type="homework"] {
+  --tag: var(--c-tag-blue);
+}
+
+[data-theme^="crisp"] .assignment-type-tag[data-type="quiz"] {
+  --tag: var(--c-tag-orange);
+}
+
+[data-theme^="crisp"] .assignment-type-tag[data-type="reading"] {
+  --tag: var(--c-tag-green);
+}
+
+[data-theme^="crisp"] .assignment-type-tag[data-type="exam"] {
+  --tag: var(--c-tag-red);
+}
+
+[data-theme^="crisp"] .assignment-type-menu,
+[data-theme^="crisp"] .assignment-calendar {
+  color-scheme: inherit;
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  font: var(--c-text-ui);
+  animation: crisp-arrive-down var(--c-fast) var(--c-ease) both;
+}
+
+[data-theme^="crisp"] .assignment-type-menu [role="option"] {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: var(--c-radius-sm);
+}
+
+[data-theme^="crisp"] .assignment-type-menu [role="option"]:hover,
+[data-theme^="crisp"] .assignment-type-menu [role="option"][aria-selected="true"] {
+  background: var(--c-hover);
+}
+
+/* ---------------------------------------------------- notes and the reader */
+
+[data-theme^="crisp"] .classes-notes-layout {
+  border-block-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .classes-reader {
+  background: var(--c-sidebar);
+}
+
+[data-theme^="crisp"] .classes-reader > header {
+  border-bottom-color: var(--c-line);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .classes-saved-notes {
+  border-top-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .classes-saved-notes li {
+  border-bottom-color: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .classes-note-hint,
+[data-theme^="crisp"] .classes-saved-notes small {
+  font: var(--c-text-small);
+}
+
+[data-theme^="crisp"] .classes-form input {
+  min-height: 36px;
+  border-color: var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background: var(--c-field);
+  font: 400 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .classes-form input:focus-visible {
+  outline: 0;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .drive-source {
+  border-color: var(--c-line);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .drive-menu > div {
+  border: 0;
+  border-radius: var(--c-radius-lg);
+  background: var(--c-raised);
+  box-shadow: var(--c-shadow-menu);
+  animation: crisp-arrive-down var(--c-fast) var(--c-ease) both;
+}

@@ -2,6 +2,7 @@ import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "re
 import { createPortal } from "react-dom";
 import { dialogKeyDown } from "../../components/dialog/Dialog";
 import "./assignmentTypePicker.css";
+import "./classesCrisp.css";
 
 const types = ["Homework", "Quiz", "Reading", "Exam", "Other", ""];
 
@@ -57,7 +58,13 @@ export function AssignmentTypePicker({
           } else onKeyDown?.(event);
         }}
       >
-        {value ? <span className="assignment-type-tag">{value}</span> : "—"}
+        {value ? (
+          <span className="assignment-type-tag" data-type={value.toLowerCase()}>
+            {value}
+          </span>
+        ) : (
+          "—"
+        )}
       </button>
       {open &&
         createPortal(

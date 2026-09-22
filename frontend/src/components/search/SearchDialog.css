@@ -7,17 +7,17 @@
   justify-items: center;
   overflow-y: auto;
   padding: 9vh 24px 24px;
-  background: rgba(5, 5, 7, 0.76);
+  background: var(--c-scrim, rgba(5, 5, 7, 0.76));
 }
 .search-dialog {
   width: min(680px, 100%);
   max-height: 82vh;
   overflow: auto;
   padding: 26px;
-  border: 1px solid #555555;
+  border: 1px solid var(--c-outline, #555555);
   border-radius: 14px;
-  color: #f0efed;
-  background: #181818;
+  color: var(--c-text, #f0efed);
+  background: var(--c-dialog, #181818);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
   scrollbar-color: #626262 #181818;
 }
@@ -30,7 +30,7 @@
 }
 .search-header h2 {
   margin: 0;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 21px;
   font-weight: 500;
   letter-spacing: -0.025em;
@@ -44,14 +44,14 @@
 .search-error button {
   min-height: 36px;
   padding: 7px 12px;
-  border: 1px solid #5b5b5b;
+  border: 1px solid var(--c-outline, #5b5b5b);
   border-radius: 7px;
   background: transparent;
-  color: #f0efed;
+  color: var(--c-text, #f0efed);
   font-size: 12px;
 }
 .search-dialog button:hover:not(:disabled) {
-  background: #262626;
+  background: var(--c-raised, #262626);
 }
 .search-dialog button:disabled,
 .search-dialog button[aria-disabled="true"] {
@@ -61,7 +61,7 @@
 .search-label {
   display: block;
   margin-bottom: 9px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
 }
 .search-input {
@@ -69,22 +69,22 @@
   width: 100%;
   min-height: 48px;
   padding: 11px 13px;
-  border: 1px solid #777777;
+  border: 1px solid var(--c-outline, #777777);
   border-radius: 8px;
-  background: #111111;
-  color: #f0efed;
+  background: var(--c-field, #111111);
+  color: var(--c-text, #f0efed);
   font: inherit;
-  caret-color: #fff;
+  caret-color: var(--c-text, #fff);
 }
 .search-input::placeholder {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .search-dialog :focus-visible {
-  outline: 2px solid #f0efed;
+  outline: 2px solid var(--c-outline-strong, #f0efed);
   outline-offset: 3px;
 }
 .search-status {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   font-size: 12px;
   line-height: 1.6;
   margin: 16px 0;
@@ -96,7 +96,7 @@
   margin: 0;
 }
 .search-results li {
-  border-top: 1px solid #383838;
+  border-top: 1px solid var(--c-line, #383838);
 }
 .search-results button {
   display: flex;
@@ -112,9 +112,9 @@
 }
 .search-result-type {
   flex: 0 0 72px;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .search-result-content {
   min-width: 0;
@@ -134,7 +134,7 @@
   margin-top: 5px;
   font-size: 12px;
   line-height: 1.6;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 .search-result-content > span {
   display: -webkit-box;
@@ -144,34 +144,34 @@
   overflow-wrap: anywhere;
   margin-top: 5px;
   font-size: 13px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   line-height: 1.6;
 }
 .search-more {
   margin-top: 18px;
 }
 .search-error {
-  color: #ffb4b4;
+  color: var(--c-danger, #ffb4b4);
   font-size: 13px;
   line-height: 1.6;
 }
 .search-dialog ::selection {
-  background: #515151;
-  color: #fff;
+  background: var(--c-fill-stronger, #515151);
+  color: var(--c-text, #fff);
 }
 .search-group {
   margin: 16px 0 6px;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   font-size: 11px;
   font-weight: 400;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }
 /* The row Enter will open. Declared after the hover rule so it holds while the pointer is elsewhere. */
 .search-results button[data-highlighted] {
-  background: #262626;
+  background: var(--c-raised, #262626);
 }
 .search-foot {
   margin: 18px 0 0;
   font-size: 12px;
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
 }

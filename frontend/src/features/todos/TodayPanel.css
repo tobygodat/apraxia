@@ -6,6 +6,6 @@
 }
 
 .today-panel:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 2px solid rgba(var(--c-ovl, 255, 255, 255), 0.9);
   outline-offset: -3px;
 }

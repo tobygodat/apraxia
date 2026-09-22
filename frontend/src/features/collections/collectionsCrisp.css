@@ -1,0 +1,274 @@
+/* Projects and ideas in Crisp: the lists, a project's page and its editor.
+ *
+ * Sibling of `collections.css`. Scoped `[data-theme^="crisp"]`.
+ */
+
+[data-theme^="crisp"] .collection-page {
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .collection-heading p,
+[data-theme^="crisp"] .collection-heading .collection-description {
+  margin-top: 6px;
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .collection-heading--detail {
+  padding-bottom: 20px;
+  border-bottom-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .collection-back,
+[data-theme^="crisp"] .collection-page .collection-back {
+  min-height: 28px;
+  margin-bottom: 12px;
+  padding: 0 6px 0 2px;
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .collection-back:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .collection-button {
+  min-height: var(--c-control);
+  padding: 0 12px;
+  border-color: var(--c-outline);
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .collection-page .collection-button {
+  font-size: var(--c-size-ui);
+}
+
+[data-theme^="crisp"] .collection-button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+/* ------------------------------------------------------------- the rows */
+
+[data-theme^="crisp"] .collection-row {
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom-color: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .collection-open {
+  padding: 10px 8px;
+  border-radius: var(--c-radius);
+  transition: background-color var(--c-quick) var(--c-ease);
+}
+
+[data-theme^="crisp"] .collection-open:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .collection-open strong {
+  font: 500 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .collection-preview,
+[data-theme^="crisp"] .collection-meta {
+  font: var(--c-text-small);
+}
+
+/* A project's status is a tag. */
+[data-theme^="crisp"] .collection-status {
+  margin-top: 6px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--c-radius-sm);
+  background: var(--tag);
+  color: var(--c-tag-ink);
+  font: 500 12px / 20px var(--c-font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-theme^="crisp"] .collection-status[data-status="active"] {
+  --tag: var(--c-tag-blue);
+}
+
+[data-theme^="crisp"] .collection-status[data-status="someday"] {
+  --tag: var(--c-tag-purple);
+}
+
+[data-theme^="crisp"] .collection-status[data-status="completed"] {
+  --tag: var(--c-tag-green);
+}
+
+[data-theme^="crisp"] .collection-delete,
+[data-theme^="crisp"] .collection-row-action {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  border-radius: var(--c-radius);
+  color: var(--c-faint);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .collection-row-action:hover,
+[data-theme^="crisp"] .collection-delete:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .collection-delete:hover {
+  color: var(--c-danger);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-theme^="crisp"] .collection-row .collection-delete {
+    opacity: 0;
+  }
+
+  [data-theme^="crisp"] .collection-row:hover .collection-delete,
+  [data-theme^="crisp"] .collection-row:focus-within .collection-delete {
+    opacity: 1;
+  }
+}
+
+/* The status filter is a row of tabs over the list. */
+[data-theme^="crisp"] .collection-filter {
+  gap: 2px;
+  margin-bottom: 12px;
+  color: var(--c-faint);
+  font: var(--c-text-ui);
+}
+
+[data-theme^="crisp"] .collection-filter select {
+  min-height: 28px;
+  padding: 0 28px 0 8px;
+  border-color: transparent;
+  border-radius: var(--c-radius);
+  background-color: var(--c-selected);
+  font: 500 14px / 20px var(--c-font-ui);
+}
+
+/* ---------------------------------------------------------- the ideas page */
+
+[data-theme^="crisp"] .collection-idea-group__title {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .collection-idea-group__count,
+[data-theme^="crisp"] .collection-section__count {
+  color: var(--c-faint);
+  font: 500 13px / 18px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .collection-page .collection-idea-group__project-link {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  text-decoration: none;
+}
+
+[data-theme^="crisp"] .collection-page .collection-idea-group__project-link:hover:not(:disabled) {
+  background: var(--c-hover);
+  color: var(--c-text);
+}
+
+/* ------------------------------------------------------ a project's page */
+
+[data-theme^="crisp"] .collection-page--project .collection-section header {
+  padding-bottom: 8px;
+  border-bottom-color: var(--c-line);
+}
+
+[data-theme^="crisp"] .collection-section h2,
+[data-theme^="crisp"] .collection-page--project .collection-section h2 {
+  font: var(--c-text-h3);
+  letter-spacing: var(--c-tracking-heading);
+}
+
+[data-theme^="crisp"] .collection-page .collection-section__add {
+  min-height: 28px;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: var(--c-radius);
+  color: var(--c-muted);
+  font: 500 14px / 20px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .collection-task {
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom-color: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .collection-page .collection-task-text {
+  font: 400 15px / 22px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .collection-task-text[data-completed="true"] {
+  color: var(--c-faint);
+}
+
+[data-theme^="crisp"] .collection-page .collection-completed__toggle {
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: var(--c-radius);
+  font: 500 14px / 20px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .collection-page .collection-completed__toggle:hover {
+  background: var(--c-hover);
+}
+
+[data-theme^="crisp"] .collection-page--project .collection-empty {
+  border-bottom-color: var(--c-line-soft);
+}
+
+[data-theme^="crisp"] .collection-empty {
+  color: var(--c-muted);
+  font: var(--c-text-ui);
+}
+
+/* -------------------------------------------------------------- the editor */
+
+[data-theme^="crisp"] .collection-field {
+  gap: 6px;
+  color: var(--c-muted);
+  font: 500 13px / 18px var(--c-font-ui);
+}
+
+[data-theme^="crisp"] .collection-field input,
+[data-theme^="crisp"] .collection-field select,
+[data-theme^="crisp"] .collection-field textarea {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-color: var(--c-line-strong);
+  border-radius: var(--c-radius);
+  background-color: var(--c-field);
+  caret-color: var(--c-accent);
+  font: 400 15px / 22px var(--c-font-ui);
+  transition: var(--c-state);
+}
+
+[data-theme^="crisp"] .collection-field input:focus-visible,
+[data-theme^="crisp"] .collection-field select:focus-visible,
+[data-theme^="crisp"] .collection-field textarea:focus-visible {
+  outline: 0;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+[data-theme^="crisp"] .collection-editor__hint {
+  color: var(--c-faint);
+  font: var(--c-text-small);
+}
+
+[data-theme^="crisp"] .collection-page ::selection,
+[data-theme^="crisp"] .collection-editor ::selection {
+  background: var(--c-selection-ink);
+  color: inherit;
+}

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { addSqlDateDays, localToday } from "../todos/dateDomain";
 import "./assignmentDatePicker.css";
+import "./classesCrisp.css";
 import { useDialogPresence } from "../../apps/workspaceStore";
 import { dialogKeyDown } from "../../components/dialog/Dialog";
 

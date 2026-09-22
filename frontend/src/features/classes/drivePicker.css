@@ -3,10 +3,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 0 18px;
-  font:
-    13px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 13px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
 }
 .drive-source > .workspace-icon {
   width: 20px;
@@ -53,15 +50,15 @@
   display: none;
 }
 .drive-menu summary:hover {
-  background: #303030;
+  background: var(--c-selected, #303030);
 }
 .drive-menu > div {
   position: absolute;
   top: 44px;
   right: 0;
   z-index: 5;
-  background: #242424;
-  border: 1px solid #555;
+  background: var(--c-raised, #242424);
+  border: 1px solid var(--c-outline, #555);
   padding: 6px;
   box-shadow: 0 8px 24px #0006;
   border-radius: 4px;

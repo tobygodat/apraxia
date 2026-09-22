@@ -1,10 +1,10 @@
 .cloud-shell {
-  --cloud-shell-bg: #191919;
-  --cloud-shell-surface: #202020;
-  --cloud-shell-line: #303030;
-  --cloud-shell-text: #f0efed;
-  --cloud-shell-muted: #ada9a3;
-  --cloud-shell-focus: #f0efed;
+  --cloud-shell-bg: var(--c-bg, #191919);
+  --cloud-shell-surface: var(--c-sidebar, #202020);
+  --cloud-shell-line: var(--c-line, #303030);
+  --cloud-shell-text: var(--c-text, #f0efed);
+  --cloud-shell-muted: var(--c-muted, #ada9a3);
+  --cloud-shell-focus: var(--c-inverse, #f0efed);
   --cloud-shell-sidebar-width: 200px;
   /* Drawer-style curve: even travel through the middle instead of dumping
      most of the motion into the first two frames. */
@@ -15,7 +15,7 @@
   grid-template-columns: var(--cloud-shell-sidebar-width) minmax(0, 1fr);
   background: var(--cloud-shell-bg);
   color: var(--cloud-shell-text);
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   transition: grid-template-columns var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .workspace-icon {
@@ -152,18 +152,12 @@
   background: transparent;
   color: var(--cloud-shell-muted);
   text-align: left;
-  font:
-    12px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 12px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell__search kbd {
   margin-left: auto;
-  font:
-    9px/1.4 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 9px/1.4 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   white-space: nowrap;
   opacity: 0.7;
 }
@@ -193,11 +187,11 @@
 }
 .cloud-shell__nav-link:hover,
 .cloud-shell .cloud-shell__search:hover {
-  background: #292929;
+  background: var(--c-hover, #292929);
   color: var(--cloud-shell-text);
 }
 .cloud-shell__nav-link--active {
-  background: #2c2c2c;
+  background: var(--c-selected, #2c2c2c);
   color: var(--cloud-shell-text);
 }
 .cloud-shell__actions {
@@ -222,10 +216,7 @@
   color: var(--cloud-shell-muted);
   border: 0;
   border-radius: 5px;
-  font:
-    12px/1.4 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 12px/1.4 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   text-align: left;
   transition: padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
@@ -235,10 +226,10 @@
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid #404040;
+  border: 1px solid var(--c-line-strong, #404040);
   border-radius: 50%;
-  background: #2c2c2c;
-  color: #d4d2ce;
+  background: var(--c-selected, #2c2c2c);
+  color: var(--c-text, #d4d2ce);
   font:
     15px/1 Georgia,
     serif;
@@ -249,7 +240,7 @@
   margin-left: auto;
 }
 .cloud-shell .cloud-shell__account-trigger:hover {
-  background: #292929;
+  background: var(--c-hover, #292929);
   color: var(--cloud-shell-text);
 }
 .cloud-shell__account-menu {
@@ -258,16 +249,16 @@
   left: 0;
   width: 236px;
   padding: 9px;
-  border: 1px solid #414141;
+  border: 1px solid var(--c-line-strong, #414141);
   border-radius: 7px;
-  background: #242424;
+  background: var(--c-raised, #242424);
   box-shadow: 0 12px 32px #0005;
 }
 .cloud-shell__account-email {
   overflow: hidden;
   margin: 0 0 6px;
   padding: 8px 9px 12px;
-  border-bottom: 1px solid #393939;
+  border-bottom: 1px solid var(--c-line-strong, #393939);
   color: var(--cloud-shell-muted);
   font-size: 11px;
   line-height: 1.5;
@@ -283,17 +274,14 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #d6d4d0;
-  font:
-    12px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  color: var(--c-text, #d6d4d0);
+  font: 12px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   text-transform: capitalize;
   text-align: left;
   text-decoration: none;
 }
 .cloud-shell .cloud-shell__menu-item:hover {
-  background: #303030;
+  background: var(--c-selected, #303030);
   color: var(--cloud-shell-text);
 }
 .cloud-shell .cloud-shell__menu-item:disabled {
@@ -302,10 +290,10 @@
 .cloud-shell__sign-out-error {
   margin: 10px 0 0;
   padding: 10px;
-  border: 1px solid #76504d;
+  border: 1px solid var(--c-danger-line, #76504d);
   border-radius: 4px;
-  background: #2d2221;
-  color: #efb6b0;
+  background: var(--c-raised, #2d2221);
+  color: var(--c-danger, #efb6b0);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -328,10 +316,7 @@
   border-radius: 5px;
   background: transparent;
   color: var(--cloud-shell-muted);
-  font:
-    13px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 13px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   text-align: left;
   text-transform: capitalize;
   cursor: pointer;
@@ -341,7 +326,7 @@
     padding var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell .cloud-shell__add:hover:not(:disabled) {
-  background: #292929;
+  background: var(--c-hover, #292929);
   color: var(--cloud-shell-text);
 }
 .cloud-shell .cloud-shell__add:disabled {
@@ -386,14 +371,11 @@
   margin-top: 4px;
   min-height: 38px;
   padding: 8px 13px;
-  border: 1px solid #575757;
+  border: 1px solid var(--c-outline, #575757);
   border-radius: var(--radius-control, 5px);
   background: transparent;
   color: var(--cloud-shell-text);
-  font:
-    12px/1.4 "Segoe UI",
-    system-ui,
-    sans-serif;
+  font: 12px/1.4 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   cursor: pointer;
 }
 .cloud-shell .workspace-page-header__action .workspace-icon {
@@ -401,8 +383,8 @@
   height: 15px;
 }
 .cloud-shell .workspace-page-header__action:hover:not(:disabled) {
-  background: #292929;
-  border-color: #868686;
+  background: var(--c-hover, #292929);
+  border-color: var(--c-outline, #868686);
 }
 .cloud-shell .workspace-page-header__action:disabled {
   opacity: 0.5;
@@ -421,14 +403,11 @@
   gap: 10px 14px;
   margin: 14px 0;
   padding: 11px 12px;
-  border: 1px solid rgba(255, 177, 177, 0.36);
+  border: 1px solid var(--c-danger-line, rgba(255, 177, 177, 0.36));
   border-radius: var(--radius-control, 5px);
-  background: rgba(135, 36, 36, 0.14);
-  color: #ffc1c1;
-  font:
-    12px/1.5 "Segoe UI",
-    system-ui,
-    sans-serif;
+  background: var(--c-danger-fill, rgba(135, 36, 36, 0.14));
+  color: var(--c-danger, #ffc1c1);
+  font: 12px/1.5 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
 }
 .cloud-shell .workspace-error p {
   margin: 0;
@@ -442,19 +421,16 @@
   flex: 0 0 auto;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 193, 193, 0.38);
+  border: 1px solid var(--c-danger-line, rgba(255, 193, 193, 0.38));
   border-radius: var(--radius-control, 5px);
   background: transparent;
-  color: #ffd4d4;
-  font:
-    500 11px/1.4 "Segoe UI",
-    system-ui,
-    sans-serif;
+  color: var(--c-danger, #ffd4d4);
+  font: 500 11px/1.4 var(--c-font-ui, "Segoe UI", system-ui, sans-serif);
   cursor: pointer;
 }
 .cloud-shell .workspace-error button:hover:not(:disabled) {
-  border-color: rgba(255, 193, 193, 0.7);
-  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--c-danger-line, rgba(255, 193, 193, 0.7));
+  background: rgba(var(--c-ovl, 255, 255, 255), 0.045);
 }
 .cloud-shell .workspace-error button:disabled {
   opacity: 0.5;
@@ -494,7 +470,7 @@
     margin var(--cloud-shell-duration) var(--cloud-shell-ease);
 }
 .cloud-shell .cloud-shell__collapse-toggle:hover {
-  background: #292929;
+  background: var(--c-hover, #292929);
   color: var(--cloud-shell-text);
 }
 .cloud-shell .cloud-shell__collapse-toggle:focus-visible {

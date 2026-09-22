@@ -1,14 +1,19 @@
+import { useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import {
   CALENDAR_EVENT_STYLES,
   WORKSPACE_THEME_CHOICES,
+  resolveWorkspaceTheme,
   useWorkspacePreferences,
   type CalendarEventStyle,
   type WorkspaceThemeChoice,
 } from "../../apps/workspacePreferences";
+import { canRunViewTransition } from "../../lib/viewTransition";
 // Appearance is a page of ruled choices like Settings, so it wears the same
 // sheets rather than a copy of them.
 import "../calendar/calendar.css";
 import "../calendar/settingsPaper.css";
+import "../calendar/calendarCrisp.css";
 
 interface ChoiceCopy {
   readonly name: string;
@@ -17,12 +22,20 @@ interface ChoiceCopy {
 
 /**
  * What each choice is called and what it does. The names are interface words,
- * so Paper lowercases them; classic prints them as written.
+ * so Paper lowercases them; Crisp and classic print them as written.
  */
 const THEME_COPY: Record<WorkspaceThemeChoice, ChoiceCopy> = {
+  crisp: {
+    name: "Crisp",
+    description: "A clean sans, warm greys and one blue, on a dark page.",
+  },
+  "crisp-light": {
+    name: "Crisp light",
+    description: "The same page in daylight.",
+  },
   classic: {
     name: "Classic",
-    description: "Charcoal surfaces, Georgia headings, the workspace as it is today.",
+    description: "Charcoal surfaces and Georgia headings, the workspace before Crisp.",
   },
   paper: {
     name: "Paper",
@@ -34,7 +47,7 @@ const THEME_COPY: Record<WorkspaceThemeChoice, ChoiceCopy> = {
   },
   device: {
     name: "Match device",
-    description: "Paper when this device is in dark mode, Paper light when it is in light mode.",
+    description: "Crisp when this device is in dark mode, Crisp light when it is in light mode.",
   },
 };
 
@@ -115,9 +128,47 @@ function ChoiceGroup<T extends string>({
   );
 }
 
+/**
+ * Changing theme paints the new one outward from where you clicked: a view
+ * transition whose new page opens as a circle over the old. Where a view
+ * transition cannot run the theme simply changes.
+ */
+function useThemeReveal(setTheme: (theme: WorkspaceThemeChoice) => void) {
+  const pointer = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const remember = (event: PointerEvent) => {
+      pointer.current = { x: event.clientX, y: event.clientY };
+    };
+    window.addEventListener("pointerdown", remember, true);
+    return () => window.removeEventListener("pointerdown", remember, true);
+  }, []);
+
+  return (next: WorkspaceThemeChoice) => {
+    if (!canRunViewTransition()) {
+      setTheme(next);
+      return;
+    }
+    const root = document.documentElement;
+    const origin = pointer.current;
+    pointer.current = null;
+    root.style.setProperty("--reveal-x", origin ? `${origin.x}px` : "50%");
+    root.style.setProperty("--reveal-y", origin ? `${origin.y}px` : "50%");
+    root.classList.add("theme-revealing");
+    const deviceIsLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+    const transition = document.startViewTransition(() => {
+      flushSync(() => setTheme(next));
+      // The provider sets this in an effect; set it here too so the new
+      // snapshot is taken in the new theme.
+      root.setAttribute("data-theme", resolveWorkspaceTheme(next, deviceIsLight));
+    });
+    void transition.finished.finally(() => root.classList.remove("theme-revealing"));
+  };
+}
+
 export function AppearancePage() {
   const { preferences, setTheme, setCalendarEvents, setSidebarCollapsed } =
     useWorkspacePreferences();
+  const revealTheme = useThemeReveal(setTheme);
   return (
     <section className="calendar-settings" aria-labelledby="appearance-title">
       <h1 id="appearance-title">Appearance</h1>
@@ -128,14 +179,14 @@ export function AppearancePage() {
         choices={WORKSPACE_THEME_CHOICES}
         copy={THEME_COPY}
         value={preferences.theme}
-        onChange={setTheme}
+        onChange={revealTheme}
       />
       <ChoiceGroup
         id="appearance-calendar-events"
         title="Calendar events"
         choices={CALENDAR_EVENT_STYLES}
         copy={CALENDAR_EVENT_COPY}
-        note="How Paper fills an event on the week. Classic keeps its own colours."
+        note="How Crisp and Paper fill an event on the week. Classic keeps its own colours."
         value={preferences.calendarEvents}
         onChange={setCalendarEvents}
       />

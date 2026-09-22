@@ -1,0 +1,240 @@
+/* "Just one thing": the hidden room. It opens over any theme, so it reads the
+ * crisp tokens where they exist and falls back to the dark workspace values
+ * where they do not.
+ */
+
+.one-thing {
+  --ot-surface: var(--c-dialog, #252525);
+  --ot-text: var(--c-text, #f0efed);
+  --ot-muted: var(--c-muted, #ada9a3);
+  --ot-line: var(--c-line, rgba(255, 255, 235, 0.1));
+  --ot-accent: var(--c-accent, #2783de);
+  --ot-accent-hover: var(--c-accent-fill-hover, #1a61ad);
+  --ot-hover: var(--c-hover, rgba(255, 255, 255, 0.055));
+  --ot-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-family: var(--c-font-ui, "Inter", system-ui, sans-serif);
+}
+
+.one-thing__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(10px) saturate(0.9);
+  animation: one-thing-fade 320ms var(--ot-ease) both;
+}
+
+.one-thing__confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.one-thing__card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(460px, 100%);
+  padding: 40px 32px 28px;
+  border-radius: var(--c-radius-2xl, 16px);
+  background: var(--ot-surface);
+  box-shadow:
+    0 0 0 1px var(--ot-line),
+    0 30px 80px -12px rgba(0, 0, 0, 0.6);
+  color: var(--ot-text);
+  text-align: center;
+  animation: one-thing-rise 520ms var(--ot-ease) both;
+}
+
+.one-thing__task {
+  margin: 0;
+  font: 700 26px / 1.25 var(--c-font-ui, "Inter", system-ui, sans-serif);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.one-thing__hint {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--ot-muted);
+  font-size: 15px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.one-thing__ring {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  margin: 18px 0 10px;
+}
+
+/* The ring starts at twelve o'clock; the tick inside it stays upright. */
+.one-thing__ring > svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+
+.one-thing__track,
+.one-thing__progress {
+  fill: none;
+  stroke-width: 6;
+}
+
+.one-thing__track {
+  stroke: var(--ot-hover);
+}
+
+.one-thing__progress {
+  stroke: var(--ot-accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 260ms linear;
+}
+
+/* Before it starts the ring breathes, slowly, like it is waiting for you. */
+.one-thing[data-stage="ready"] .one-thing__ring {
+  animation: one-thing-breathe 3.6s ease-in-out infinite;
+}
+
+.one-thing__time {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 600 24px / 1 var(--c-font-ui, "Inter", system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.one-thing__tick {
+  width: 44px;
+  height: 44px;
+  fill: none;
+  stroke: var(--ot-accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: one-thing-draw 420ms var(--ot-ease) 120ms forwards;
+}
+
+.one-thing[data-stage="started"] .one-thing__card {
+  animation: one-thing-pop 520ms var(--ot-ease);
+}
+
+.one-thing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.one-thing button {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  font: 500 14px / 20px var(--c-font-ui, "Inter", system-ui, sans-serif);
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ot-ease),
+    color 120ms var(--ot-ease),
+    scale 120ms var(--ot-ease);
+}
+
+.one-thing__primary {
+  background: var(--c-accent-fill, #1f6fc5);
+  color: var(--c-on-accent, #ffffff);
+}
+
+.one-thing__primary:hover:not(:disabled) {
+  background: var(--ot-accent-hover);
+}
+
+.one-thing__primary:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.one-thing__quiet {
+  background: transparent;
+  color: var(--ot-muted);
+}
+
+.one-thing__quiet:hover {
+  background: var(--ot-hover);
+  color: var(--ot-text);
+}
+
+.one-thing button:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.one-thing button:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 2px;
+}
+
+@keyframes one-thing-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes one-thing-rise {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+    scale: 0.96;
+  }
+}
+
+@keyframes one-thing-breathe {
+  50% {
+    scale: 1.045;
+  }
+}
+
+@keyframes one-thing-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes one-thing-pop {
+  35% {
+    scale: 1.025;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .one-thing__scrim,
+  .one-thing__card,
+  .one-thing[data-stage="ready"] .one-thing__ring,
+  .one-thing[data-stage="started"] .one-thing__card {
+    animation: none;
+  }
+
+  .one-thing__tick {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .one-thing__progress {
+    transition: none;
+  }
+}

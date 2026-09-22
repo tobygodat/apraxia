@@ -10,10 +10,10 @@
   align-items: center;
   gap: 20px;
   padding: 16px 20px;
-  border: 1px solid #666666;
+  border: 1px solid var(--c-outline, #666666);
   border-radius: 4px;
-  background: #202020;
-  color: #f0efed;
+  background: var(--c-sidebar, #202020);
+  color: var(--c-text, #f0efed);
   box-shadow: 0 8px 30px #0006;
 }
 
@@ -27,13 +27,13 @@
   flex-shrink: 0;
   min-height: 36px;
   padding: 6px 10px;
-  border: 1px solid #777777;
+  border: 1px solid var(--c-outline, #777777);
   border-radius: 3px;
   background: transparent;
   color: inherit;
 }
 
 .global-add-notice button:focus-visible {
-  outline: 2px solid #f0efed;
+  outline: 2px solid var(--c-outline-strong, #f0efed);
   outline-offset: 4px;
 }

@@ -1,6 +1,17 @@
-import { useCallback, useId, useLayoutEffect, useRef, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+} from "react";
+import { flushSync } from "react-dom";
 import { Link } from "react-router-dom";
 import { useColdLoad } from "../../apps/coldLoad";
+import { useWorkspacePreferences } from "../../apps/workspacePreferences";
+import { canRunViewTransition } from "../../lib/viewTransition";
 import type { TodayTodo, UUID } from "../../types/domain";
 import { isDocumentFocus } from "../../components/dialog/Dialog";
 import { DragIcon, PlusIcon } from "../../components/icons";
@@ -12,6 +23,7 @@ import { TodoSourceChip } from "./TodoSourceChip";
 import type { TodayListDay, TodayListViewState } from "./todoViews";
 import "./TodayList.css";
 import "./todosPaper.css";
+import "./todosCrisp.css";
 
 export interface TodayListProps {
   readonly heading?: string;
@@ -48,6 +60,15 @@ interface MutationFocusRecovery {
  * already the list's own heading. A past-due row says so in a word and then
  * gives the day it was actually due.
  */
+/**
+ * How long Crisp lets a ticked box draw its check before the row leaves. Crisp
+ * animates a completed row out as a view transition: the check draws, the row
+ * fades aside and the rows under it slide up into its place. Anything that
+ * cannot run one (another theme, reduced motion, an older browser, the test
+ * DOM) completes at once exactly as before.
+ */
+const COMPLETE_FLOURISH_MS = 240;
+
 function dueDateLabel(todo: TodayTodo, day: TodayListDay): string {
   if (todo.isOverdue) return `was due ${formatTaskDate(todo.dueDate)}`;
   return `Due ${day.toLowerCase()}`;
@@ -73,7 +94,30 @@ export function TodayList({
   const dragTargetRef = useRef<DragTarget | null>(null);
   const mutationFocusRef = useRef<MutationFocusRecovery | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget | null>(null);
+  const [completingId, setCompletingId] = useState<UUID | null>(null);
+  // Rows carry transition names only while a completion is animating, so no
+  // other transition (a theme change, say) captures them one by one.
+  const [namedRows, setNamedRows] = useState(false);
+  const crisp = useWorkspacePreferences().resolvedTheme.startsWith("crisp");
   const { model } = state;
+  const completeTodo = (todoId: UUID) => {
+    if (!crisp || !canRunViewTransition()) {
+      onCompleteTodo(todoId);
+      return;
+    }
+    if (completingId !== null) return;
+    setCompletingId(todoId);
+    setNamedRows(true);
+    window.setTimeout(() => {
+      const transition = document.startViewTransition(() => {
+        flushSync(() => {
+          setCompletingId(null);
+          onCompleteTodo(todoId);
+        });
+      });
+      void transition.finished.finally(() => setNamedRows(false));
+    }, COMPLETE_FLOURISH_MS);
+  };
   useColdLoad(state.loadStatus === "loading" && !state.loaded);
   const listLocked = state.loadStatus !== "ready" || state.pendingMutation !== null;
   const reorderLocked = listLocked || day === "Tomorrow";
@@ -320,6 +364,15 @@ export function TodayList({
                 <li
                   className={rowClassName}
                   key={todo.id}
+                  data-completing={completingId === todo.id || undefined}
+                  style={
+                    crisp && namedRows
+                      ? ({
+                          viewTransitionName: `today-${todo.id}`,
+                          viewTransitionClass: "today-row",
+                        } as CSSProperties)
+                      : undefined
+                  }
                   draggable={!reorderLocked}
                   onDragStart={(event) => {
                     if (reorderLocked) {
@@ -382,7 +435,7 @@ export function TodayList({
                                 (todoId): todoId is UUID => Boolean(todoId),
                               ),
                             );
-                            onCompleteTodo(todo.id);
+                            completeTodo(todo.id);
                           }
                         }}
                       />

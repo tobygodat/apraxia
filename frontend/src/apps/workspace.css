@@ -32,7 +32,7 @@
   letter-spacing: -0.035em;
 }
 .workspace-page p {
-  color: #ada9a3;
+  color: var(--c-muted, #ada9a3);
   line-height: 1.6;
 }
 /* Body copy for paragraphs no feature sheet sizes itself. `:where()` keeps
@@ -49,8 +49,8 @@
 .workspace-notice button {
   min-height: 40px;
   background: transparent;
-  color: #f0efed;
-  border: 1px solid #5b5b5b;
+  color: var(--c-text, #f0efed);
+  border: 1px solid var(--c-outline, #5b5b5b);
   border-radius: var(--radius-control, 5px);
   padding: 8px 14px;
 }
@@ -68,9 +68,9 @@
   align-items: center;
   max-width: calc(100vw - 32px);
   padding: 10px 16px;
-  border: 1px solid #535353;
-  background: #242424;
-  color: #f0efed;
+  border: 1px solid var(--c-outline, #535353);
+  background: var(--c-raised, #242424);
+  color: var(--c-text, #f0efed);
   box-shadow: 0 8px 24px #0006;
 }
 .workspace-notice p {
@@ -84,15 +84,15 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #0009;
+  background: var(--c-scrim, #0009);
 }
 .workspace-dialog {
   width: min(440px, 100%);
   max-height: calc(100dvh - 48px);
   overflow: auto;
-  background: #1d1d1d;
-  color: #f0efed;
-  border: 1px solid #535353;
+  background: var(--c-sidebar, #1d1d1d);
+  color: var(--c-text, #f0efed);
+  border: 1px solid var(--c-outline, #535353);
   padding: 24px;
   box-shadow: 0 20px 60px #0008;
 }
@@ -110,8 +110,8 @@
 }
 .workspace-dialog button {
   background: transparent;
-  color: #f0efed;
-  border: 1px solid #515151;
+  color: var(--c-text, #f0efed);
+  border: 1px solid var(--c-outline, #515151);
   border-radius: var(--radius-control, 5px);
   min-height: 40px;
   padding: 8px 12px;
@@ -126,27 +126,27 @@
   padding: 14px;
   text-align: left;
   background: transparent;
-  border: 1px solid #454545;
-  color: #f0efed;
+  border: 1px solid var(--c-line-strong, #454545);
+  color: var(--c-text, #f0efed);
   text-decoration: none;
   font: inherit;
 }
 .workspace-add-choices button:hover,
 .workspace-add-choices a:hover {
-  background: #292929;
-  border-color: #8b8b8b;
+  background: var(--c-hover, #292929);
+  border-color: var(--c-outline, #8b8b8b);
 }
 .workspace-dialog :focus-visible,
 .workspace-notice :focus-visible,
 .workspace-page :focus-visible {
-  outline: 2px solid #f0efed;
+  outline: 2px solid var(--c-outline-strong, #f0efed);
   outline-offset: 3px;
 }
 .workspace-project-warning {
   margin: 0;
   padding: 10px 24px;
-  color: #ada9a3;
-  background: #242424;
+  color: var(--c-muted, #ada9a3);
+  background: var(--c-raised, #242424);
   font-size: 13px;
 }
 .workspace-project-warning button {
@@ -161,7 +161,7 @@
 .cloud-shell .collection-heading h1,
 .cloud-shell .todos-board-toolbar h1,
 .cloud-shell .calendar-settings h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--c-font-display, Georgia, "Times New Roman", serif);
   font-size: 38px;
   font-weight: 400;
   line-height: 1.15;

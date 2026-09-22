@@ -93,7 +93,7 @@
   min-height: 0;
   overflow: auto;
   overflow-anchor: none;
-  background: #303030;
+  background: var(--c-selected, #303030);
   scrollbar-color: #777 #303030;
 }
 .pdf-pages {
@@ -131,8 +131,8 @@
   gap: 6px;
   flex-wrap: wrap;
   padding: 8px 12px;
-  background: #242424;
-  border-bottom: 1px solid #454545;
+  background: var(--c-raised, #242424);
+  border-bottom: 1px solid var(--c-line-strong, #454545);
   box-shadow: 0 4px 10px #0003;
   font-size: 12px;
 }
@@ -145,9 +145,9 @@
   width: 58px;
   min-height: 32px;
   padding: 4px;
-  background: #191919;
-  color: #f0efed;
-  border: 1px solid #555;
+  background: var(--c-bg, #191919);
+  color: var(--c-text, #f0efed);
+  border: 1px solid var(--c-outline, #555);
   font: inherit;
 }
 .classes-page .pdf-toolbar button {
@@ -169,7 +169,7 @@
   left: 20px;
   right: 20px;
   background: white;
-  color: #8b2828 !important;
+  color: var(--c-danger, #8b2828) !important;
   font-size: 14px;
 }
 .classes-reader:fullscreen .pdf-reader {

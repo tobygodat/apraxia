@@ -6,6 +6,7 @@ import { useDialogPresence, useWorkspaceRevision } from "../../apps/workspaceSto
 import { matchPages, stepHighlight } from "./searchPages";
 import "./SearchDialog.css";
 import "./searchPaper.css";
+import "./searchCrisp.css";
 
 export interface SearchDialogProps {
   open: boolean;

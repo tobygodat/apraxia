@@ -19,6 +19,7 @@ import {
 } from "./collectionService";
 import "./collections.css";
 import "./collectionsPaper.css";
+import "./collectionsCrisp.css";
 interface Props {
   kind: CollectionKind;
   service: CollectionService;
@@ -299,7 +300,11 @@ export function CollectionPage(props: Props) {
     const body = (
       <>
         <strong>{titleOf(k, r)}</strong>
-        {status && <span className="collection-status">{PROJECT_STATUS_LABELS[status]}</span>}
+        {status && (
+          <span className="collection-status" data-status={status}>
+            {PROJECT_STATUS_LABELS[status]}
+          </span>
+        )}
         {preview && <span className="collection-preview">{preview}</span>}
         {metadata && <span className="collection-meta">{metadata}</span>}
       </>

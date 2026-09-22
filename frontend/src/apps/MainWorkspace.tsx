@@ -47,8 +47,10 @@ import type { WorkspaceData } from "./workspaceData";
 import { WorkspaceDialog } from "./WorkspaceDialog";
 import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
+import { OneThing } from "../components/one-thing/OneThing";
 import "./workspace.css";
 import "./workspacePaper.css";
+import "./workspaceCrisp.css";
 
 /**
  * Wraps a route chunk loader so a route whose chunk was already resolved by
@@ -268,6 +270,7 @@ function WorkspaceCapture(props: MainWorkspaceProps) {
       }}
     >
       <HomeDataPreload todoService={props.todoService} calendarService={props.calendarService} />
+      <OneThing service={props.todoService} />
       <Routes>
         <Route element={<WorkspaceLayout {...props} notice={notice} setNotice={setNotice} />}>
           <Route element={<WorkspaceContent />}>
