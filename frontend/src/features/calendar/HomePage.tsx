@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
 } from "react";
 import { Temporal } from "@js-temporal/polyfill";
@@ -58,6 +59,28 @@ const MIN_HOUR_HEIGHT = 32;
 const DAY_START_MINUTE = 0;
 const MAX_EVENT_LANES = 3;
 const HOUR_LABEL_HIDE_MINUTES = 25;
+const HOME_STACKED_LAYOUT_QUERY = "(max-width: 1400px)";
+
+function homeStackedMediaQuery(): MediaQueryList | null {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
+  return window.matchMedia(HOME_STACKED_LAYOUT_QUERY);
+}
+
+function subscribeHomeStackedLayout(onChange: () => void): () => void {
+  const query = homeStackedMediaQuery();
+  if (!query || typeof query.addEventListener !== "function") return () => {};
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/** Match the breakpoint where Home stops being a two-column workspace. */
+function useHomeStackedLayout(): boolean {
+  return useSyncExternalStore(
+    subscribeHomeStackedLayout,
+    () => homeStackedMediaQuery()?.matches ?? false,
+    () => false,
+  );
+}
 
 // Fit VISIBLE_HOURS to the panel, but never squeeze the rows past legibility:
 // a short panel shows fewer hours and scrolls within itself for the rest.
@@ -87,6 +110,7 @@ export function HomePage({
   // page opening a second read of the same slice.
   const [summary, setSummary] = useState<TodaySummary | null>(null);
   const phoneLayout = usePhoneLayout();
+  const stackedLayout = useHomeStackedLayout();
   const localDate = useLocalToday(profile.timezone);
   const calendar = (
     <CalendarPanel key="calendar" service={calendarService} timezone={profile.timezone} />
@@ -104,9 +128,9 @@ export function HomePage({
       onSummary={setSummary}
     />
   );
-  // Side by side the calendar is the left column and reads first. Stacked on a
-  // phone it would push what is due today two screens down, so the order swaps
-  // in the markup rather than in CSS: the reading and tab order swap with it.
+  // Side by side the calendar is the left column and reads first. Once the
+  // workspace stacks, Today leads in the markup as well as on screen so both
+  // the reading order and the tab order begin with the next action.
   return (
     <div className="home-page">
       <HomeHeader
@@ -115,8 +139,12 @@ export function HomePage({
         date={localDate}
         summary={summary}
       />
-      <div className={`home-workspace${phoneLayout ? " home-workspace--phone" : ""}`}>
-        {phoneLayout ? [today, calendar] : [calendar, today]}
+      <div
+        className={`home-workspace${stackedLayout ? " home-workspace--stacked" : ""}${
+          phoneLayout ? " home-workspace--phone" : ""
+        }`}
+      >
+        {stackedLayout ? [today, calendar] : [calendar, today]}
       </div>
     </div>
   );

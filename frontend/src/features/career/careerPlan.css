@@ -1,0 +1,124 @@
+.career-plan-tools {
+  margin-block: var(--space-sm, 12px) var(--space-md, 16px);
+}
+
+.career-plan {
+  margin-block: var(--space-24, 24px);
+  padding-block: var(--space-md, 16px);
+  border-block: 1px solid var(--hairline, var(--border));
+}
+
+.career-plan__heading,
+.career-plan__receipt p {
+  margin: 0;
+}
+
+.career-plan__description {
+  max-width: 70ch;
+  margin-block: var(--space-sm, 12px);
+}
+
+.career-plan__actions,
+.career-plan__receipt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-sm, 12px) var(--space-24, 24px);
+}
+
+.career-plan__actions {
+  margin-block: var(--space-sm, 12px);
+}
+
+.career-plan__choices {
+  display: grid;
+  gap: var(--space-sm, 12px);
+  margin-block: var(--space-md, 16px);
+}
+
+.career-plan__choices label,
+.career-plan__include {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm, 12px);
+  overflow-wrap: anywhere;
+}
+
+.career-plan__choices input[type="checkbox"],
+.career-plan__include input[type="checkbox"] {
+  flex: none;
+}
+
+.career-plan__context {
+  margin-block: var(--space-sm, 12px);
+}
+
+.career-plan__context summary {
+  cursor: pointer;
+}
+
+.career-plan__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs, 4px);
+  min-width: 0;
+}
+
+.career-plan__field input,
+.career-plan__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.career-plan__field textarea {
+  resize: vertical;
+  font: inherit;
+}
+
+.career-plan__review {
+  padding: 0;
+  list-style: none;
+}
+
+.career-plan__task {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11rem;
+  gap: var(--space-sm, 12px) var(--space-md, 16px);
+  padding-block: var(--space-md, 16px);
+  border-top: 1px solid var(--hairline, var(--border));
+}
+
+.career-plan__include,
+.career-plan__duplicate {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+[data-theme^="paper"] .career-plan__heading {
+  font: var(--body);
+  color: var(--text);
+}
+
+[data-theme^="paper"] .career-plan__description,
+[data-theme^="paper"] .career-plan__field > span,
+[data-theme^="paper"] .career-plan__include,
+[data-theme^="paper"] .career-plan__duplicate {
+  font: var(--fine);
+  color: var(--muted);
+}
+
+[data-theme^="paper"] .career-plan__receipt {
+  font: var(--small);
+  color: var(--text);
+}
+
+@media (max-width: 600px) {
+  .career-plan__task {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .career-plan__task-date {
+    max-width: 15rem;
+  }
+}

@@ -15,7 +15,7 @@ import {
   WORKSPACE_THEME_CHOICES,
 } from "../apps/workspacePreferences";
 import { createFixtureCalendar } from "./workspaceFixtureCalendar";
-import { createFixtureCareer } from "./careerFixture";
+import { createFixtureCareer, type CareerFixtureTodoBridge } from "./careerFixture";
 import { loadPersonalSnapshot, snapshotTimezone } from "./personalSnapshot";
 import { createFixtureAppearance, delayedFixtureService } from "./workspaceFixtureSupport";
 import "./workspaceFixture.css";
@@ -317,6 +317,32 @@ const todoService: TodoService = {
     });
   },
 };
+const careerTodoBridge: CareerFixtureTodoBridge = {
+  get(rowId) {
+    return todos.find((todo) => todo.id === rowId);
+  },
+  create(input) {
+    const existing = todos.find((todo) => todo.id === input.id);
+    if (existing) return existing;
+    const row = task(input.text, null, {
+      id: input.id,
+      dueDate: input.dueDate,
+      completed: input.completed,
+      completedAt: input.completedAt,
+    });
+    todos.push(row);
+    return row;
+  },
+  update(rowId, changes) {
+    return save(todos, { ...find(todos, rowId), ...changes });
+  },
+  remove(rowId) {
+    const row = todos.find((todo) => todo.id === rowId);
+    if (!row) return;
+    deleted.set(rowId, row);
+    todos = todos.filter((todo) => todo.id !== rowId);
+  },
+};
 const rowsFor = (kind: CollectionKind) => (kind === "project" ? projects : ideas);
 const collectionService: CollectionService = {
   async listProjects(o = {}) {
@@ -516,7 +542,10 @@ const workspaceData = {
     return profile;
   },
 };
-const careerService = delayedFixtureService(createFixtureCareer({ scenario, today }), delay);
+const careerService = delayedFixtureService(
+  createFixtureCareer({ scenario, today, todoBridge: careerTodoBridge }),
+  delay,
+);
 const runtimeTodos = delayedFixtureService(todoService, delay);
 const runtimeCollections = delayedFixtureService(collectionService, delay);
 const runtimeData = delayedFixtureService(workspaceData, delay);

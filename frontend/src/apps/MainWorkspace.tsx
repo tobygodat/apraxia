@@ -449,7 +449,7 @@ function ClassesRoute(props: MainWorkspaceProps) {
 
 /** One application, on whichever of its three tabs the path names. */
 function CareerApplicationRoute({ tab, ...props }: MainWorkspaceProps & { tab: CareerTab }) {
-  const { profile } = useWorkspace();
+  const { profile, projects, invalidate } = useWorkspace();
   const { id } = useParams();
   const navigate = useNavigate();
   // The list page owns `/career`; an application with no id in the path is a
@@ -463,6 +463,10 @@ function CareerApplicationRoute({ tab, ...props }: MainWorkspaceProps & { tab: C
       tab={tab}
       service={props.careerService}
       timezone={profile?.timezone}
+      projects={projects}
+      loadProject={props.collectionService.getProject}
+      onTasksChanged={invalidate}
+      onOpenToday={() => navigate("/")}
       onOpenTab={(next) =>
         navigate(
           next === "structure"
@@ -472,7 +476,10 @@ function CareerApplicationRoute({ tab, ...props }: MainWorkspaceProps & { tab: C
         )
       }
       onBack={() => navigate("/career")}
-      onDeleted={() => navigate("/career", { replace: true })}
+      onDeleted={() => {
+        invalidate();
+        navigate("/career", { replace: true });
+      }}
     />
   );
 }

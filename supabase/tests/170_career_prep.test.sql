@@ -5,7 +5,7 @@ set local search_path = public, extensions;
 grant usage on schema extensions to anon, authenticated;
 grant execute on all functions in schema extensions to anon, authenticated;
 
-select plan(14);
+select plan(15);
 
 insert into auth.users (id, email)
 values
@@ -67,6 +67,22 @@ select ok(
   and has_column_privilege('orbitos_rpc', 'public.career_applications', 'deleted_at', 'UPDATE')
   and not has_column_privilege('orbitos_rpc', 'public.career_applications', 'stage', 'UPDATE'),
   'deleted_at is writable only by the soft-delete RPC owner'
+);
+
+select ok(
+  not has_column_privilege('authenticated', 'public.career_prep', 'body', 'INSERT')
+  and not has_column_privilege('authenticated', 'public.career_prep', 'body', 'UPDATE')
+  and not has_table_privilege('authenticated', 'public.career_prep', 'DELETE')
+  and has_function_privilege(
+    'authenticated', 'public.import_career_prep_items(uuid,jsonb)', 'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated', 'public.save_career_prep_item(uuid,jsonb)', 'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated', 'public.remove_career_prep_item(uuid)', 'EXECUTE'
+  ),
+  'career prep writes are restricted to the atomic task-link RPCs'
 );
 
 select ok(

@@ -730,12 +730,18 @@
   }
 }
 
-/* Stacked: the hairline moves from the column's side to above the tasks. */
+/* Stacked: Today becomes the first region, so the hairline introduces the
+ * calendar beneath it rather than preceding the next actions. */
 @media (max-width: 1400px) {
-  [data-theme^="paper"] .home-workspace .today-panel {
+  [data-theme^="paper"] .home-workspace--stacked .today-panel {
     padding-left: 0;
-    padding-top: var(--space-24);
+    padding-top: 0;
     border-left: 0;
+    border-top: 0;
+  }
+
+  [data-theme^="paper"] .home-workspace--stacked .calendar-panel {
+    padding-top: var(--space-24);
     border-top: 1px solid var(--hairline);
   }
 }

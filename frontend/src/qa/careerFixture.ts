@@ -13,6 +13,7 @@
 import { addSqlDateDays } from "../features/todos/dateDomain";
 import { nextStepOf } from "../features/career/careerOrdering";
 import { ServiceError } from "../lib/serviceError";
+import type { Todo } from "../types/domain";
 import type {
   CareerApplication,
   CareerApplicationRow,
@@ -25,6 +26,16 @@ import type {
   CareerStory,
   CareerStoryUse,
 } from "../features/career/careerService";
+
+type CareerFixtureTodo = Pick<Todo, "id" | "text" | "dueDate" | "completed" | "completedAt">;
+
+/** The QA workspace supplies this bridge so Career and Today share one action. */
+export interface CareerFixtureTodoBridge {
+  get(id: string): CareerFixtureTodo | undefined;
+  create(todo: CareerFixtureTodo): CareerFixtureTodo;
+  update(id: string, changes: Partial<Omit<CareerFixtureTodo, "id">>): CareerFixtureTodo;
+  remove(id: string): void;
+}
 
 interface Seed {
   company: string;
@@ -169,9 +180,11 @@ const id = (prefix: string) => `${prefix}-${(sequence += 1)}`;
 export function createFixtureCareer({
   scenario,
   today,
+  todoBridge: providedTodoBridge,
 }: {
   scenario: string;
   today: string;
+  todoBridge?: CareerFixtureTodoBridge;
 }): CareerService {
   const applications: CareerApplication[] = [];
   const steps: CareerStep[] = [];
@@ -182,6 +195,69 @@ export function createFixtureCareer({
   const resources: CareerResource[] = [];
   const files = new Map<string, File>();
   const now = new Date().toISOString();
+  const fixtureTodos = new Map<string, CareerFixtureTodo>();
+  const todoBridge: CareerFixtureTodoBridge = providedTodoBridge ?? {
+    get: (todoId) => fixtureTodos.get(todoId),
+    create: (todo) => {
+      fixtureTodos.set(todo.id, { ...todo });
+      return { ...todo };
+    },
+    update: (todoId, changes) => {
+      const todo = fixtureTodos.get(todoId);
+      if (!todo) throw new ServiceError("not_found", "Couldn’t load this prep task.");
+      const changed = { ...todo, ...changes };
+      fixtureTodos.set(todoId, changed);
+      return { ...changed };
+    },
+    remove: (todoId) => {
+      fixtureTodos.delete(todoId);
+    },
+  };
+
+  const projectedPrep = (item: CareerPrepItem): CareerPrepItem | null => {
+    const todo = item.todoId ? todoBridge.get(item.todoId) : undefined;
+    if (!todo) return null;
+    return {
+      ...item,
+      body: todo.text,
+      dueOn: todo.dueDate,
+      doneAt: todo.completedAt,
+    };
+  };
+
+  const prepFor = (applicationId: string): CareerPrepItem[] =>
+    prep
+      .filter((item) => item.applicationId === applicationId)
+      .map(projectedPrep)
+      .filter((item): item is CareerPrepItem => item !== null);
+
+  const addPrep = (
+    applicationId: string,
+    body: string,
+    dueOn: string | null,
+    completedAt: string | null,
+    position: number,
+    prepId: string = crypto.randomUUID(),
+  ): CareerPrepItem => {
+    todoBridge.create({
+      id: prepId,
+      text: body,
+      dueDate: dueOn,
+      completed: completedAt !== null,
+      completedAt,
+    });
+    const item: CareerPrepItem = {
+      id: prepId,
+      applicationId,
+      body,
+      dueOn,
+      doneAt: completedAt,
+      todoId: prepId,
+      position,
+    };
+    prep.push(item);
+    return item;
+  };
 
   if (scenario !== "empty") {
     const seeds = scenario === "dense" || scenario === "long" ? [...SEEDS, ...DENSE] : SEEDS;
@@ -280,44 +356,32 @@ export function createFixtureCareer({
         createdAt: now,
       },
     );
-    prep.push(
-      {
-        id: id("prep"),
+    // Prep is a task, so it would appear on Home and Tasks. The personal
+    // scenario reproduces the real account there and must not gain demo tasks.
+    if (scenario !== "personal") {
+      addPrep(applicationId, "Re-read the payments primer", addSqlDateDays(today, 1), now, 0);
+      addPrep(
         applicationId,
-        body: "Re-read the payments primer",
-        dueOn: addSqlDateDays(today, 1),
-        doneAt: now,
-        todoId: null,
-        position: 0,
-      },
-      {
-        id: id("prep"),
+        "Idempotency keys, retries, webhook ordering",
+        addSqlDateDays(today, -3),
+        null,
+        1,
+      );
+      addPrep(
         applicationId,
-        body: "Idempotency keys, retries, webhook ordering",
-        dueOn: addSqlDateDays(today, -3),
-        doneAt: null,
-        todoId: null,
-        position: 1,
-      },
-      {
-        id: id("prep"),
+        "Two questions to ask them about the payments team",
+        addSqlDateDays(today, 3),
+        null,
+        2,
+      );
+      addPrep(
         applicationId,
-        body: "Two questions to ask them about the payments team",
-        dueOn: addSqlDateDays(today, 3),
-        doneAt: null,
-        todoId: null,
-        position: 2,
-      },
-      {
-        id: id("prep"),
-        applicationId,
-        body: "Set up the shared editor and run one test before the call",
-        dueOn: null,
-        doneAt: null,
-        todoId: null,
-        position: 3,
-      },
-    );
+        "Set up the shared editor and run one test before the call",
+        null,
+        null,
+        3,
+      );
+    }
     storyUses.push({ storyId: stories[0].id, applicationId, usedOn: null });
     resources.push(
       {
@@ -418,6 +482,9 @@ export function createFixtureCareer({
     },
     async deleteApplication(applicationId) {
       const index = applications.findIndex((row) => row.id === applicationId);
+      prepFor(applicationId).forEach((item) => {
+        if (item.todoId) todoBridge.remove(item.todoId);
+      });
       if (index >= 0) applications.splice(index, 1);
       return { id: applicationId, deletedAt: new Date().toISOString() };
     },
@@ -485,29 +552,81 @@ export function createFixtureCareer({
     },
 
     async listPrep(_userId, applicationId) {
-      return prep.filter((row) => row.applicationId === applicationId).map((row) => ({ ...row }));
+      return prepFor(applicationId).map((row) => ({ ...row }));
+    },
+    async importPrep(_userId, applicationId, items) {
+      if (items.length < 1 || items.length > 50)
+        throw new ServiceError("invalid_input", "Import 1–50 prep items at a time.");
+      if (new Set(items.map((item) => item.id)).size !== items.length)
+        throw new ServiceError("invalid_input", "Each prep item needs a unique ID.");
+      find(applicationId);
+
+      // Validate the whole request before changing either array, matching the
+      // transaction boundary of the real RPC.
+      for (const item of items) {
+        if (!item.id || !item.body.trim() || [...item.body.trim()].length > 2000)
+          throw new ServiceError("invalid_input", "Use a prep note of 1–2000 characters.");
+        const existing = prep.find((row) => row.id === item.id);
+        if (existing && existing.applicationId !== applicationId)
+          throw new ServiceError("conflict", "Prep item ID is already in use.");
+      }
+
+      const basePosition = prep.reduce(
+        (largest, item) =>
+          item.applicationId === applicationId ? Math.max(largest, item.position + 1) : largest,
+        0,
+      );
+      // A replayed item deleted since the first save stays deleted and is omitted.
+      return items.flatMap((item, index) => {
+        const existing = prep.find((row) => row.id === item.id);
+        if (existing) {
+          const projected = projectedPrep(existing);
+          return projected ? [projected] : [];
+        }
+        return addPrep(
+          applicationId,
+          item.body.trim(),
+          item.dueOn,
+          null,
+          basePosition + index,
+          item.id,
+        );
+      });
     },
     async savePrep(_userId, applicationId, item) {
       const existing = item.id && prep.find((row) => row.id === item.id);
       if (existing) {
-        Object.assign(existing, item);
-        return { ...existing };
+        const todo = projectedPrep(existing);
+        if (!todo) throw new ServiceError("not_found", "Couldn’t load this prep task.");
+        if (item.body !== undefined && !item.body.trim())
+          throw new ServiceError("invalid_input", "Add prep text before saving.");
+        todoBridge.update(existing.todoId!, {
+          ...(item.body !== undefined ? { text: item.body.trim() } : {}),
+          ...(item.dueOn !== undefined ? { dueDate: item.dueOn } : {}),
+          ...(item.doneAt !== undefined
+            ? {
+                completed: item.doneAt !== null,
+                completedAt: item.doneAt !== null ? new Date().toISOString() : null,
+              }
+            : {}),
+        });
+        if (item.position !== undefined) existing.position = item.position;
+        return projectedPrep(existing)!;
       }
-      const created: CareerPrepItem = {
-        id: id("prep"),
+      find(applicationId);
+      if (item.body === undefined)
+        throw new ServiceError("invalid_input", "Add prep text before saving.");
+      return addPrep(
         applicationId,
-        body: item.body,
-        dueOn: item.dueOn ?? null,
-        doneAt: item.doneAt ?? null,
-        todoId: item.todoId ?? null,
-        position: item.position ?? prep.filter((r) => r.applicationId === applicationId).length,
-      };
-      prep.push(created);
-      return { ...created };
+        item.body.trim(),
+        item.dueOn ?? null,
+        item.doneAt ?? null,
+        item.position ?? prep.filter((row) => row.applicationId === applicationId).length,
+      );
     },
     async removePrep(_userId, itemId) {
-      const index = prep.findIndex((row) => row.id === itemId);
-      if (index >= 0) prep.splice(index, 1);
+      const item = prep.find((row) => row.id === itemId);
+      if (item?.todoId) todoBridge.remove(item.todoId);
     },
 
     async listStories() {

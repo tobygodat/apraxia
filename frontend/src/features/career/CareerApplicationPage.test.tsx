@@ -117,6 +117,23 @@ describe("One application's page", () => {
 });
 
 describe("The prep tab", () => {
+  it("keeps invalid new prep editable and creates it after correction", async () => {
+    const { service } = await openApplication("prep");
+    await screen.findByLabelText("Re-read the payments primer done");
+    const importPrep = vi.spyOn(service, "importPrep");
+    fireEvent.click(screen.getByRole("button", { name: "add prep item" }));
+    const input = screen.getByLabelText("prep item") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "a".repeat(2001) } });
+    fireEvent.click(screen.getByRole("button", { name: "add" }));
+    expect(screen.getByRole("alert").textContent).toContain("2,000");
+    expect(input.disabled).toBe(false);
+    expect(importPrep).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: "Practice the project introduction" } });
+    fireEvent.click(screen.getByRole("button", { name: "add" }));
+    await screen.findByLabelText("Practice the project introduction done");
+    expect(importPrep).toHaveBeenCalledTimes(1);
+  });
+
   it("lists what is left to do before what is already done", async () => {
     await openApplication("prep");
     // The tab's own rows arrive after the header does, so the list is waited

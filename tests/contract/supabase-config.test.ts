@@ -43,6 +43,9 @@ describe("migration security contract", () => {
       "soft_delete_record",
       "restore_record",
       "search_records",
+      "import_career_prep_items",
+      "save_career_prep_item",
+      "remove_career_prep_item",
     ];
 
     for (const name of publicRpcNames) {
@@ -64,8 +67,8 @@ describe("migration security contract", () => {
     expect(sql).toMatch(/alter table public\.todos enable row level security/i);
     // Browser roles never hard-delete a soft-deleted record type. Rows that are
     // not soft-deleted carry their own owner-scoped DELETE policies instead:
-    // classes and their notes, and everything hanging off a career application,
-    // which is removed outright because undo is for the application itself. The
+    // classes and their notes, and non-action children hanging off a career
+    // application. Career prep now follows its canonical todo's soft delete. The
     // legacy class_assignments backup is read-only, and career_applications is
     // deliberately absent: it goes through soft_delete_record like every other
     // record.
@@ -79,6 +82,9 @@ describe("migration security contract", () => {
 
     expect(new Set(browserDeleteGrants)).toEqual(
       new Set([
+        // Historical grants remain visible in migration text; the canonical
+        // prep migration explicitly revokes this one and pgTAP checks the
+        // effective privilege after all migrations.
         "public.career_prep",
         "public.career_questions",
         "public.career_resources",

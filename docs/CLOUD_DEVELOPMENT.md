@@ -180,31 +180,54 @@ dispatch from the repository's **Actions → CI → Run workflow** page.
   concurrency and the authenticated Data API, then generates database types and
   typechecks the app against them. It stops the temporary instance afterward.
 
-The **Database checks** job always reports a status. Its scope step skips database
-execution only when every changed path is one of:
+Every job reports a status. **Contract tests**, **Frontend tests**, and
+**Database checks** each open with a scope step that skips the job's work when no
+changed path can reach it. The scope step runs on the runner's own Node before
+`setup-node`, so a skipped job restores no npm cache, installs nothing, and
+still reports success, so branch protection keeps working. **Lint and types** has no scope
+step, because `npm run lint` checks the formatting of every tracked file. The
+scope steps live inside their own jobs rather than in a gate in front of them: a
+gating job would add its own setup to the critical path of every run, which costs
+more than the skips save.
+
+These paths are inert for every scoped job:
 
 - root `AGENTS.md`, `README.md`, `PRODUCT.md`, or `DESIGN.md`, a Markdown file
-  under `docs/`, anything under `.impeccable/`, or CSS under `frontend/src/`;
+  under `docs/`, anything under `.impeccable/`, or CSS under `frontend/src/`.
+
+**Database checks** also skips:
+
 - a test or fixture the job never executes: `tests/contract/`, `frontend/qa/`,
   `frontend/src/qa/`, or a `*.test.ts(x)` file under `frontend/src/`;
 - a `.tsx` component under `frontend/src/` that does not name `supabase` or
   `types/database` on either side of the diff. Components reach the database
   through `.ts` service modules, and those always run the suite.
 
-It records the decision in the run summary. Everything else, including mixed
-changes, every non-test `.ts` module, `tests/local`, `frontend/tests/local`,
-server code, dependencies, CI/configuration, and unknown paths, runs the full
-suite. Manual dispatch always runs the suite. The job's one blind spot is
+**Contract tests** also skips a `*.test.ts(x)` file under `frontend/src/`,
+`frontend/src/qa/`, `frontend/qa/`, `tests/local/`, `frontend/tests/local/`, and
+`.sql` under `supabase/tests/`. It does not skip the remaining `.tsx`
+components: a `.ts` module can import one, so the suite can reach them.
+
+**Frontend tests** also skips `tests/`, `frontend/tests/local/`, `api/`, and
+`supabase/`. Nothing under `frontend/src/` imports those, which
+`tests/contract/ci-scope.test.ts` checks, and no test there reads the working
+tree. It does not skip `server/`: the QA calendar fixture imports server code.
+
+Everything else, including mixed changes, every non-test `.ts` module,
+dependencies, CI/configuration, and unknown paths, runs the job. Manual dispatch
+always runs every job. The database job's one blind spot is
 `frontend/tests/local/todos-ui.test.tsx`, which renders the whole app against
 local Supabase: a component-only change that breaks it is caught by the next
 run of the suite, so run `npm run verify:db` yourself when a component change
 alters how the todo flow reads or writes.
 
-`scripts/ci-database-scope.mjs` compares the PR merge base to the checked-out
-commit, or the complete before/after range for a push. Both paths of a rename
-count. Missing history, invalid event data, and empty diffs fall back to the full
-suite. Checkout fetches full history for this comparison. A skip
-does not install dependencies, start Supabase, or generate database types.
+`scripts/ci-scope.mjs <database|contract|frontend>` compares the PR merge base to
+the checked-out commit, or the complete before/after range for a push. Both paths
+of a rename count. Missing history, invalid event data, and empty diffs fall back
+to running the job. Every scoped job's checkout fetches full history for this
+comparison. Contract and frontend fetch it without past file contents
+(`filter: blob:none`), because they compare only path names; the database job
+reads component contents, so it fetches everything.
 
 The workflow needs no repository secrets, production credentials, or separate
 hosted Supabase project. The CLI version comes from the lockfile. CI performs no

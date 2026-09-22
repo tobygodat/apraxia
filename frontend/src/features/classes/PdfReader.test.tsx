@@ -58,6 +58,13 @@ const file = new File(["%PDF"], "Notes.pdf", { type: "application/pdf" });
 it("releases distant pages and preserves scroll when the toolbar opens", async () => {
   const view = render(<PdfReader file={file} showTools={false} />);
   await waitFor(() => expect(screen.getByRole("region", { name: "Page 1" })).toBeTruthy());
+  // The canvas is sized in the same step that starts its render. Releasing the
+  // page before then leaves no render to cancel, which a slow runner can do.
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Page 1" }).querySelector("canvas")?.width,
+    ).toBeGreaterThan(0),
+  );
   const scroll = screen.getByRole("region", { name: "PDF pages: Notes.pdf" });
   expect(view.container.querySelectorAll("canvas").length).toBeLessThanOrEqual(4);
   scroll.scrollTop = 40_000;

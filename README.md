@@ -1,11 +1,12 @@
 # apraxia
 
-A private, manual-entry workspace for Todos, Projects, and Ideas.
+A private workspace for tasks, projects, ideas, classes, and interview preparation.
 Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
 React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
 
-Tasks aggregates ordinary tasks, project tasks, and class assignments into Inbox
-and date columns, filtered by source. Incomplete past-due tasks join Today with
+Tasks aggregates ordinary tasks, project tasks, class assignments, and Career
+preparation into Inbox and date columns, filtered by source. Career preparation
+currently appears under personal tasks. Incomplete past-due tasks join Today with
 their original due dates shown in red; stored dates are never rewritten.
 
 Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The personal live app is
@@ -21,7 +22,13 @@ change.
 
 ## Status
 
-All planned feature slices are implemented and deployed. The hosted setup for
+The personal app is deployed. This checkout also includes the local consumer
+slice: Career prep linked to daily tasks, an editable assistant brief and plan
+import, and responsive daily views. See [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md).
+That slice requires its forward migration before deployment; it has not been
+applied to the hosted app as part of this work.
+
+The hosted setup for
 Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified
 on `https://apraxia.dev` on 2026-09-18: the Picker added a PDF to a class, and a
 disconnect and reconnect completed through the production redirect.
@@ -66,6 +73,8 @@ for the release commit.
   security.
 - [Agent API](docs/AGENT_API.md): the personal agent endpoints, permissions, and
   retry rules.
+- [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md): preparation shared with
+  daily tasks, selected context for an assistant, and reviewed plan imports.
 - [Decision records](docs/adr/): why access is RLS-only, why Today uses scalar
   envelopes, why hosted migrations are forward-only, why time arithmetic runs on
   the server.
@@ -88,5 +97,5 @@ The SQLite backup is `.local/backups/orbitos-legacy-20260904T212441Z.db`
 (ignored by Git; integrity check passed). Original `orbitos.db` is preserved.
 Off-device backup and hosted retention have not been verified.
 
-Export/account deletion UI and legacy import remain deferred, as do mobile,
-recurrence, AI, reminders, analytics, and rich text.
+Export/account deletion UI, legacy import, a native mobile app, hosted AI,
+per-account assistant connections, reminders, and analytics remain deferred.

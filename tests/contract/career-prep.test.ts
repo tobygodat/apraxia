@@ -12,7 +12,16 @@ const TAG_OWNER = "33333333-3333-4333-8333-333333333333";
 const UPLOAD_OWNER = "44444444-4444-4444-8444-444444444444";
 const SEARCH_OWNER = "55555555-5555-4555-8555-555555555555";
 const STEP_OWNER = "66666666-6666-4666-8666-666666666666";
-const OWNERS = [OWNER, ONLOOKER, TAG_OWNER, UPLOAD_OWNER, SEARCH_OWNER, STEP_OWNER];
+const INTEGRATION_OWNER = "77777777-7777-4777-8777-777777777777";
+const OWNERS = [
+  OWNER,
+  ONLOOKER,
+  TAG_OWNER,
+  UPLOAD_OWNER,
+  SEARCH_OWNER,
+  STEP_OWNER,
+  INTEGRATION_OWNER,
+];
 
 async function migrated(): Promise<PGlite> {
   const db = new PGlite();
@@ -71,10 +80,16 @@ describe("career prep", () => {
       "insert into career_questions(application_id,body,answer,tags) values ($1,'Design a rate limiter','Token bucket',array['system design'])",
       [application],
     );
-    await db.query(
-      "insert into career_prep(application_id,body) values ($1,'Re-read the posting')",
-      [application],
-    );
+    await db.query("select * from import_career_prep_items($1,$2::jsonb)", [
+      application,
+      JSON.stringify([
+        {
+          id: "11111111-aaaa-4aaa-8aaa-111111111111",
+          body: "Re-read the posting",
+          due_on: null,
+        },
+      ]),
+    ]);
     await db.query(
       "insert into career_resources(application_id,kind,title,content_type,byte_size,content_sha256) values ($1,'file','resume.pdf','application/pdf',1024,$2)",
       [application, "a".repeat(64)],
@@ -111,10 +126,17 @@ describe("career prep", () => {
     // A guessed application id cannot be adopted: the foreign key carries the
     // owner, so the row the onlooker names does not exist for them.
     await expect(
-      db.query("insert into career_prep(application_id,body) values ($1,'Borrowed')", [
+      db.query("select * from import_career_prep_items($1,$2::jsonb)", [
         application,
+        JSON.stringify([
+          {
+            id: "22222222-aaaa-4aaa-8aaa-222222222222",
+            body: "Borrowed",
+            due_on: null,
+          },
+        ]),
       ]),
-    ).rejects.toThrow(/foreign key|23503/i);
+    ).rejects.toThrow(/Application unavailable|P0002/i);
   });
 
   it("refuses browser writes to the columns the database owns", async () => {
@@ -199,6 +221,286 @@ describe("career prep", () => {
         )
       ).rows,
     ).toEqual([{ stage: "interested" }]);
+  });
+
+  it("keeps Career and its canonical todo in one state across edits, retries and deletes", async () => {
+    await signIn(INTEGRATION_OWNER);
+    const application = await addApplication("Canonical", "Systems engineer");
+    const first = "77777777-aaaa-4aaa-8aaa-777777777771";
+    const independent = "77777777-aaaa-4aaa-8aaa-777777777772";
+    const imported = JSON.stringify([
+      { id: first, body: "Draft the project story", due_on: "2026-10-02" },
+      { id: independent, body: "Research the team", due_on: "2026-10-03" },
+    ]);
+
+    expect(
+      (
+        await db.query<{ id: string; todo_id: string }>(
+          "select id::text,todo_id::text from import_career_prep_items($1,$2::jsonb)",
+          [application, imported],
+        )
+      ).rows,
+    ).toEqual([
+      { id: first, todo_id: first },
+      { id: independent, todo_id: independent },
+    ]);
+
+    // Task edits are canonical and the trigger projects all three shared fields
+    // into Career in the same transaction.
+    await db.query(
+      "update todos set text='Practice the project story aloud',due_date='2026-10-05',completed=true where id=$1",
+      [first],
+    );
+    expect(
+      (
+        await db.query<{ body: string; due_on: string; done: boolean }>(
+          "select body,due_on::text,done_at is not null as done from career_prep where id=$1",
+          [first],
+        )
+      ).rows,
+    ).toEqual([{ body: "Practice the project story aloud", due_on: "2026-10-05", done: true }]);
+
+    // Replaying the stale plan is a read-only receipt. It neither duplicates
+    // the rows nor overwrites the task changes made after the first commit.
+    await db.query("select * from import_career_prep_items($1,$2::jsonb)", [application, imported]);
+    expect(
+      (
+        await db.query<{ count: number; text: string; due_date: string; completed: boolean }>(
+          `select count(*)::int as count,min(text) as text,min(due_date)::text as due_date,
+                  bool_and(completed) as completed
+           from todos where id=$1`,
+          [first],
+        )
+      ).rows,
+    ).toEqual([
+      {
+        count: 1,
+        text: "Practice the project story aloud",
+        due_date: "2026-10-05",
+        completed: true,
+      },
+    ]);
+
+    // A Career edit writes through the same todo and preserves fields omitted
+    // by that control. Here the date stays put while the checkbox reopens it.
+    await db.query("select save_career_prep_item($1,$2::jsonb)", [
+      application,
+      JSON.stringify({ id: first, completed: false }),
+    ]);
+    expect(
+      (
+        await db.query<{ text: string; due_date: string; completed: boolean }>(
+          "select text,due_date::text,completed from todos where id=$1",
+          [first],
+        )
+      ).rows,
+    ).toEqual([
+      {
+        text: "Practice the project story aloud",
+        due_date: "2026-10-05",
+        completed: false,
+      },
+    ]);
+
+    await db.query("select save_career_prep_item($1,$2::jsonb)", [
+      application,
+      JSON.stringify({ id: first, body: "Career-side wording" }),
+    ]);
+    expect(
+      (await db.query<{ text: string }>("select text from todos where id=$1", [first])).rows,
+    ).toEqual([{ text: "Career-side wording" }]);
+
+    const independentToken = (
+      await db.query<{ token: string }>("select soft_delete_record('todo',$1)::text as token", [
+        independent,
+      ])
+    ).rows[0]!.token;
+    expect((await db.query("select id from career_prep where id=$1", [independent])).rows).toEqual(
+      [],
+    );
+
+    // A replay after Tasks deleted one item returns what survives and leaves
+    // the deleted item deleted, so the retry can finish.
+    expect(
+      (
+        await db.query<{ id: string }>(
+          "select id::text from import_career_prep_items($1,$2::jsonb)",
+          [application, imported],
+        )
+      ).rows,
+    ).toEqual([{ id: first }]);
+    expect((await db.query("select id from todos where id=$1", [independent])).rows).toEqual([]);
+
+    // Application delete uses one revision token. Restore revives only the task
+    // deleted by that application; the independently deleted action stays gone.
+    const applicationToken = (
+      await db.query<{ token: string }>(
+        "select soft_delete_record('application',$1)::text as token",
+        [application],
+      )
+    ).rows[0]!.token;
+    expect((await db.query("select id from todos where id=$1", [first])).rows).toEqual([]);
+    // Undoing the earlier task delete cannot revive it under a deleted application.
+    expect(
+      (
+        await db.query<{ restored: boolean }>(
+          "select restore_record('todo',$1,$2::timestamptz) as restored",
+          [independent, independentToken],
+        )
+      ).rows,
+    ).toEqual([{ restored: false }]);
+    expect((await db.query("select id from todos where id=$1", [independent])).rows).toEqual([]);
+    expect(
+      (
+        await db.query<{ restored: boolean }>(
+          "select restore_record('application',$1,$2::timestamptz) as restored",
+          [application, applicationToken],
+        )
+      ).rows,
+    ).toEqual([{ restored: true }]);
+    expect((await db.query("select id from todos where id=$1", [first])).rows).toHaveLength(1);
+    expect((await db.query("select id from todos where id=$1", [independent])).rows).toEqual([]);
+    expect(
+      (
+        await db.query<{ restored: boolean }>(
+          "select restore_record('todo',$1,$2::timestamptz) as restored",
+          [independent, independentToken],
+        )
+      ).rows,
+    ).toEqual([{ restored: true }]);
+
+    expect(
+      (
+        await db.query<{ removed: boolean }>("select remove_career_prep_item($1) as removed", [
+          first,
+        ])
+      ).rows,
+    ).toEqual([{ removed: true }]);
+    expect((await db.query("select id from todos where id=$1", [first])).rows).toEqual([]);
+    expect((await db.query("select id from career_prep where id=$1", [first])).rows).toEqual([]);
+
+    await signIn(ONLOOKER);
+    await expect(
+      db.query("select * from import_career_prep_items($1,$2::jsonb)", [application, imported]),
+    ).rejects.toThrow(/Application unavailable|P0002/i);
+    await expect(
+      db.query("select save_career_prep_item($1,$2::jsonb)", [
+        application,
+        JSON.stringify({ id: independent, body: "Borrowed" }),
+      ]),
+    ).rejects.toThrow(/Prep item unavailable|P0002/i);
+  });
+
+  it("backfills isolated prep while preserving an existing todo as authority", async () => {
+    const isolated = new PGlite();
+    try {
+      await isolated.exec(`create role anon nologin noinherit; create role authenticated nologin noinherit;
+        create role service_role nologin noinherit bypassrls; create schema auth;
+        create table auth.users(id uuid primary key, email text);
+        create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+        grant usage on schema auth to anon, authenticated, service_role;
+        grant execute on function auth.uid() to anon, authenticated, service_role;`);
+      await isolated.exec(storageHarnessSql);
+      const names = (await readdir("supabase/migrations"))
+        .filter((name) => name.endsWith(".sql"))
+        .sort();
+      const boundary = names.indexOf("20260922062559_canonical_career_prep_todos.sql");
+      expect(boundary).toBeGreaterThan(0);
+      for (const name of names.slice(0, boundary))
+        await isolated.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
+
+      await isolated.exec(`
+        insert into auth.users(id) values ('88888888-8888-4888-8888-888888888888');
+        set request.jwt.claim.sub='88888888-8888-4888-8888-888888888888';
+        set role authenticated;
+      `);
+      const application = (
+        await isolated.query<{ id: string }>(
+          "insert into career_applications(company,role) values ('Existing','Engineer') returning id::text",
+        )
+      ).rows[0]!.id;
+      const linkedTodo = "88888888-aaaa-4aaa-8aaa-888888888881";
+      await isolated.query(
+        "insert into todos(id,text,due_date) values ($1,'Canonical task','2026-11-04')",
+        [linkedTodo],
+      );
+      await isolated.query("update todos set completed=true where id=$1", [linkedTodo]);
+      await isolated.query(
+        `insert into career_prep(application_id,body,due_on,todo_id,position)
+         values ($1,'Stale prep','2026-11-01',$2,0),($1,'Unlinked prep','2026-11-02',null,1)`,
+        [application, linkedTodo],
+      );
+      await isolated.exec("reset role");
+      await isolated.exec(
+        await readFile(
+          "supabase/migrations/20260922062559_canonical_career_prep_todos.sql",
+          "utf8",
+        ),
+      );
+      await isolated.exec(
+        "set request.jwt.claim.sub='88888888-8888-4888-8888-888888888888'; set role authenticated;",
+      );
+
+      const rows = await isolated.query<{
+        body: string;
+        due_on: string;
+        done: boolean;
+        todo_id: string;
+      }>(
+        `select body,due_on::text,done_at is not null as done,todo_id::text
+         from career_prep order by position`,
+      );
+      expect(rows.rows[0]).toEqual({
+        body: "Canonical task",
+        due_on: "2026-11-04",
+        done: true,
+        todo_id: linkedTodo,
+      });
+      expect(rows.rows[1]).toMatchObject({
+        body: "Unlinked prep",
+        due_on: "2026-11-02",
+        done: false,
+      });
+      expect(rows.rows[1]!.todo_id).toBeTruthy();
+      expect(
+        (
+          await isolated.query<{ text: string; due_date: string }>(
+            "select text,due_date::text from todos where id=$1",
+            [rows.rows[1]!.todo_id],
+          )
+        ).rows,
+      ).toEqual([{ text: "Unlinked prep", due_date: "2026-11-02" }]);
+    } finally {
+      await isolated.close();
+    }
+  }, 120_000);
+
+  it("keeps each occurrence of a repeating prep task with its application", async () => {
+    await signIn(INTEGRATION_OWNER);
+    const application = await addApplication("Repeating", "Platform engineer");
+    const practice = "77777777-bbbb-4bbb-8bbb-777777777771";
+    await db.query("select * from import_career_prep_items($1,$2::jsonb)", [
+      application,
+      JSON.stringify([{ id: practice, body: "Practice aloud", due_on: "2026-09-22" }]),
+    ]);
+    await db.query("update todos set recurrence_freq='daily' where id=$1", [practice]);
+    await db.query("update todos set completed=true where id=$1", [practice]);
+
+    const visible = () =>
+      db.query<{ body: string; done: boolean; linked: boolean }>(
+        `select prep.body,prep.done_at is not null as done,prep.todo_id=todo.id as linked
+         from career_prep prep join todos todo on todo.id=prep.todo_id
+         where prep.application_id=$1 order by prep.position`,
+        [application],
+      );
+    expect((await visible()).rows).toEqual([
+      { body: "Practice aloud", done: true, linked: true },
+      { body: "Practice aloud", done: false, linked: true },
+    ]);
+
+    // Undoing the completion withdraws the successor, and its prep row with it.
+    await db.query("update todos set completed=false where id=$1", [practice]);
+    expect((await visible()).rows).toEqual([{ body: "Practice aloud", done: false, linked: true }]);
   });
 
   it("reads the next step from the steps themselves rather than a stored column", async () => {

@@ -514,16 +514,17 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
-  .calendar-panel {
-    /* Keep fifteen hours legible when tasks move below the calendar. */
+  .home-workspace--stacked .calendar-panel {
+    /* Keep fifteen hours legible when the calendar follows today's tasks. */
     height: max(700px, calc(100dvh - 240px));
-    padding: 0;
+    padding: 24px 0 0;
     border-right: 0;
+    border-top: 1px solid #303030;
   }
-  .home-workspace .today-panel {
+  .home-workspace--stacked .today-panel {
     height: 560px;
     padding: 0;
-    border-top: 1px solid #303030;
+    border-top: 0;
   }
   .week-grid {
     min-width: 0;
@@ -556,6 +557,7 @@
   .home-workspace--phone .calendar-panel {
     height: min(62dvh, 520px);
     margin-top: 28px;
+    padding-top: 0;
     border-top: 1px solid #303030;
   }
   .home-workspace--phone .calendar-header {

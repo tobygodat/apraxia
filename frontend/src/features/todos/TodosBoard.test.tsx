@@ -30,7 +30,10 @@ const INBOX: Todo = {
   projectId: null,
 };
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 function model(todos: readonly Todo[] = [TODO, OVERDUE, INBOX]) {
   return buildTodoBoardModel(todos, "2026-08-30", "2026-09-02");
@@ -151,6 +154,40 @@ describe("TodosBoard", () => {
     expect(screen.getByRole("checkbox", { name: "Mark as complete Call the clinic" })).toBeTruthy();
     // Five of the seven days hold nothing, and each says so.
     expect(screen.getAllByText("Nothing due.")).toHaveLength(6);
+  });
+
+  it("starts the current phone agenda with today and keeps every week date", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((media: string) => ({
+        matches: media === "(max-width: 620px)",
+        media,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })),
+    );
+
+    render(<TodosBoard {...props()} />);
+
+    expect(screen.getByRole("region", { name: "Tasks by date, today first" })).toBeTruthy();
+    const overdue = screen.getByRole("region", { name: "Overdue" });
+    expect(screen.getByRole("link", { name: "1 overdue" }).getAttribute("href")).toBe(
+      `#${within(overdue).getByRole("heading", { name: "Overdue" }).id}`,
+    );
+    expect(
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .slice(1, 8)
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      "Wed 2Wednesday, September 2 · Today",
+      "Thu 3Thursday, September 3 · Tomorrow",
+      "Fri 4Friday, September 4",
+      "Sat 5Saturday, September 5",
+      "Sun 30Sunday, August 30",
+      "Mon 31Monday, August 31",
+      "Tue 1Tuesday, September 1",
+    ]);
   });
 
   it("routes week navigation, retry, and date-prefilled Add actions", () => {
