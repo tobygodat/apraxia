@@ -134,6 +134,28 @@ describe("The prep tab", () => {
     expect(importPrep).toHaveBeenCalledTimes(1);
   });
 
+  it("retries an uncertain add under the same ID without creating a duplicate", async () => {
+    const { service, applicationId } = await openApplication("prep");
+    await screen.findByLabelText("Re-read the payments primer done");
+    const originalImport = service.importPrep.bind(service);
+    const importPrep = vi.spyOn(service, "importPrep").mockImplementationOnce(async (...args) => {
+      await originalImport(...args);
+      throw new Error("lost response");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "add prep item" }));
+    const input = screen.getByLabelText("prep item") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "Practice the project introduction" } });
+    fireEvent.click(screen.getByRole("button", { name: "add" }));
+    await screen.findByRole("alert");
+    // The first attempt may have saved, so the draft stays exactly what was sent.
+    expect(input.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "try adding again" }));
+    await screen.findByLabelText("Practice the project introduction done");
+    expect(importPrep.mock.calls[1]?.[2]).toEqual(importPrep.mock.calls[0]?.[2]);
+    const rows = await service.listPrep("user-a", applicationId, new AbortController().signal);
+    expect(rows.filter((row) => row.body === "Practice the project introduction")).toHaveLength(1);
+  });
+
   it("lists what is left to do before what is already done", async () => {
     await openApplication("prep");
     // The tab's own rows arrive after the header does, so the list is waited

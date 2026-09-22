@@ -236,28 +236,52 @@ describe("career service", () => {
     expect(isDefiniteRejection(failure)).toBe(expected !== "unavailable");
   });
 
-  it("updates and removes prep through atomic RPCs without clearing omitted task fields", async () => {
-    const completed = { ...prep, done_at: "2026-09-22T12:00:00+00:00" };
-    const { service, fetch } = setup([completed, true]);
-    const saved = await service.savePrep(
-      OWNER,
-      APPLICATION,
-      { id: prep.id, doneAt: completed.done_at },
-      signal(),
-    );
-    expect(saved.doneAt).toBe(completed.done_at);
+  it("edits and removes prep through its todo, sending only the changed fields", async () => {
+    // A backfilled prep row keeps its own ID, so every write has to name the todo.
+    const item = {
+      id: prep.id,
+      applicationId: APPLICATION,
+      body: prep.body,
+      dueOn: prep.due_on,
+      doneAt: null,
+      todoId: "d1111111-1111-4111-8111-111111111111",
+      position: 0,
+    };
+    const doneAt = "2026-09-22T12:00:00+00:00";
+    const { service, fetch } = setup([
+      { user_id: OWNER, text: "Worded in Tasks", due_date: prep.due_on, completed_at: doneAt },
+      { user_id: OWNER, text: "Worded in Tasks", due_date: null, completed_at: doneAt },
+      "2026-09-22T12:05:00+00:00",
+    ]);
 
-    const [saveCall] = calls(fetch);
-    expect(saveCall![0]).toContain("/rpc/save_career_prep_item");
-    expect(JSON.parse(String(saveCall![1].body))).toEqual({
-      p_application_id: APPLICATION,
-      p_item: { id: prep.id, completed: true },
+    // The todo the database returns is the truth, wording from Tasks included.
+    const saved = await service.savePrep(OWNER, item, { doneAt }, signal());
+    expect(saved).toEqual({ ...item, body: "Worded in Tasks", doneAt });
+    const [complete] = calls(fetch);
+    const completeUrl = new URL(complete![0]);
+    expect(completeUrl.pathname).toBe("/rest/v1/todos");
+    expect(completeUrl.searchParams.get("id")).toBe(`eq.${item.todoId}`);
+    expect(completeUrl.searchParams.get("deleted_at")).toBe("is.null");
+    expect(complete![1].method).toBe("PATCH");
+    expect(JSON.parse(String(complete![1].body))).toEqual({ completed: true });
+
+    // Clearing the date clears the rule anchored on it, as it does in Tasks.
+    await service.savePrep(OWNER, saved, { dueOn: null }, signal());
+    expect(JSON.parse(String(calls(fetch)[1]![1].body))).toEqual({
+      due_date: null,
+      due_time: null,
+      recurrence_freq: null,
+      recurrence_interval: null,
+      recurrence_until: null,
     });
 
-    await service.removePrep(OWNER, prep.id, signal());
-    const removeCall = calls(fetch)[1]!;
-    expect(removeCall[0]).toContain("/rpc/remove_career_prep_item");
-    expect(JSON.parse(String(removeCall[1].body))).toEqual({ p_item_id: prep.id });
+    await service.removePrep(OWNER, item, signal());
+    const remove = calls(fetch)[2]!;
+    expect(remove[0]).toContain("/rpc/soft_delete_record");
+    expect(JSON.parse(String(remove[1].body))).toEqual({
+      p_record_type: "todo",
+      p_record_id: item.todoId,
+    });
   });
 
   it("measures a file before reserving anything, and refuses one it cannot store", async () => {

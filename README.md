@@ -22,11 +22,12 @@ change.
 
 ## Status
 
-The personal app is deployed. This checkout also includes the local consumer
-slice: Career prep linked to daily tasks, an editable assistant brief and plan
-import, and responsive daily views. See [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md).
-That slice requires its forward migration before deployment; it has not been
-applied to the hosted app as part of this work.
+The personal app is deployed, including the consumer slice: Career prep linked
+to daily tasks, an editable assistant brief and plan import, and responsive daily
+views. See [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md). Its migration is
+applied to the hosted app. The follow-up
+`20260922190408_retire_career_prep_edit_rpcs.sql` is not applied yet; apply it
+only after the frontend that no longer calls those RPCs is deployed.
 
 The hosted setup for
 Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified

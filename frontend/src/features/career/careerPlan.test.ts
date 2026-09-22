@@ -49,7 +49,7 @@ const prep: CareerPrepItem[] = [
     body: "Review the product",
     dueOn: null,
     doneAt: null,
-    todoId: null,
+    todoId: "todo-1",
     position: 0,
   },
 ];

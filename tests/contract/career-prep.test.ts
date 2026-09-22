@@ -281,34 +281,17 @@ describe("career prep", () => {
       },
     ]);
 
-    // A Career edit writes through the same todo and preserves fields omitted
-    // by that control. Here the date stays put while the checkbox reopens it.
-    await db.query("select save_career_prep_item($1,$2::jsonb)", [
-      application,
-      JSON.stringify({ id: first, completed: false }),
-    ]);
+    // Career edits the same todo Tasks does, sending only the field its control
+    // changed. Reopening from Career keeps the wording and date from Tasks.
+    await db.query("update todos set completed=false where id=$1", [first]);
     expect(
       (
-        await db.query<{ text: string; due_date: string; completed: boolean }>(
-          "select text,due_date::text,completed from todos where id=$1",
+        await db.query<{ body: string; due_on: string; done: boolean }>(
+          "select body,due_on::text,done_at is not null as done from career_prep where id=$1",
           [first],
         )
       ).rows,
-    ).toEqual([
-      {
-        text: "Practice the project story aloud",
-        due_date: "2026-10-05",
-        completed: false,
-      },
-    ]);
-
-    await db.query("select save_career_prep_item($1,$2::jsonb)", [
-      application,
-      JSON.stringify({ id: first, body: "Career-side wording" }),
-    ]);
-    expect(
-      (await db.query<{ text: string }>("select text from todos where id=$1", [first])).rows,
-    ).toEqual([{ text: "Career-side wording" }]);
+    ).toEqual([{ body: "Practice the project story aloud", due_on: "2026-10-05", done: false }]);
 
     const independentToken = (
       await db.query<{ token: string }>("select soft_delete_record('todo',$1)::text as token", [
@@ -369,13 +352,8 @@ describe("career prep", () => {
       ).rows,
     ).toEqual([{ restored: true }]);
 
-    expect(
-      (
-        await db.query<{ removed: boolean }>("select remove_career_prep_item($1) as removed", [
-          first,
-        ])
-      ).rows,
-    ).toEqual([{ removed: true }]);
+    // Removing from Career is the shared todo soft delete.
+    await db.query("select soft_delete_record('todo',$1)", [first]);
     expect((await db.query("select id from todos where id=$1", [first])).rows).toEqual([]);
     expect((await db.query("select id from career_prep where id=$1", [first])).rows).toEqual([]);
 
@@ -383,12 +361,9 @@ describe("career prep", () => {
     await expect(
       db.query("select * from import_career_prep_items($1,$2::jsonb)", [application, imported]),
     ).rejects.toThrow(/Application unavailable|P0002/i);
-    await expect(
-      db.query("select save_career_prep_item($1,$2::jsonb)", [
-        application,
-        JSON.stringify({ id: independent, body: "Borrowed" }),
-      ]),
-    ).rejects.toThrow(/Prep item unavailable|P0002/i);
+    expect(
+      (await db.query("update todos set text='Borrowed' where id=$1", [independent])).affectedRows,
+    ).toBe(0);
   });
 
   it("backfills isolated prep while preserving an existing todo as authority", async () => {

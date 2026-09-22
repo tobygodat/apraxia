@@ -8,6 +8,7 @@ import { dateTiming, orderPrep, tagsOf, type Timing } from "./careerPresentation
 import {
   isDefiniteRejection,
   type CareerApplication,
+  type CareerPrepChanges,
   type CareerPrepItem,
   type CareerQuestion,
   type CareerService,
@@ -103,9 +104,9 @@ function PrepList({
   }, [service, userId, applicationId, revision]);
   const replace = (item: CareerPrepItem) =>
     setItems((rows) => [...rows.filter((row) => row.id !== item.id), item]);
-  const save = (item: Partial<CareerPrepItem>, label: string) =>
+  const save = (item: CareerPrepItem, changes: CareerPrepChanges, label: string) =>
     run(label, async (signal) => {
-      const row = await service.savePrep(userId, applicationId, item, signal);
+      const row = await service.savePrep(userId, item, changes, signal);
       if (!signal.aborted) {
         replace(row);
         onTasksChanged?.();
@@ -153,10 +154,8 @@ function PrepList({
                   disabled={!!busy}
                   onChange={(event) =>
                     void save(
-                      {
-                        id: item.id,
-                        doneAt: event.target.checked ? new Date().toISOString() : null,
-                      },
+                      item,
+                      { doneAt: event.target.checked ? new Date().toISOString() : null },
                       event.target.checked ? "Ticking off…" : "Reopening…",
                     )
                   }
@@ -167,7 +166,7 @@ function PrepList({
                   value={item.dueOn}
                   timing={timing}
                   done={!!item.doneAt}
-                  onChange={(next) => void save({ id: item.id, dueOn: next }, "Saving the date…")}
+                  onChange={(next) => void save(item, { dueOn: next }, "Saving the date…")}
                 />
                 <button
                   type="button"
@@ -175,7 +174,7 @@ function PrepList({
                   disabled={!!busy}
                   onClick={() =>
                     void run("Removing…", async (signal) => {
-                      await service.removePrep(userId, item.id, signal);
+                      await service.removePrep(userId, item, signal);
                       if (!signal.aborted) {
                         setItems((rows) => rows.filter((row) => row.id !== item.id));
                         onTasksChanged?.();

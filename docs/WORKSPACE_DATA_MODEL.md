@@ -118,12 +118,14 @@ and soft-delete revision. The corresponding prep columns are a trigger-maintaine
 projection for the Career page; direct browser inserts, updates, and deletes on
 `career_prep` are revoked.
 
-The browser writes through three atomic RPCs. `import_career_prep_items` creates
-up to 50 reviewed actions with client-generated IDs; replaying an ID in the same
-application returns its current task state without applying the stale request.
-`save_career_prep_item` writes an existing Career edit through to its todo, and
-`remove_career_prep_item` soft-deletes that todo. Task edits, completion, delete,
-and restore are mirrored back to Career. Deleting an application soft-deletes
+`import_career_prep_items` creates up to 50 reviewed actions with
+client-generated IDs; replaying an ID in the same application returns its current
+task state without applying the stale request. After that, Career edits an action
+with the writes Tasks uses: an update of the todo's changed fields, or
+`soft_delete_record('todo', ...)`. The Career-only edit and remove RPCs the first
+migration added were dropped by `20260922190408_retire_career_prep_edit_rpcs.sql`.
+Every todo edit, completion, delete, and restore is mirrored back to Career.
+Deleting an application soft-deletes
 its active prep todos with the application's exact undo token; restoring the
 application restores only those rows, so a task deleted independently stays
 deleted.

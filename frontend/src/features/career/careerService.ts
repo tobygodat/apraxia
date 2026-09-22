@@ -10,7 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isSqlDate } from "../todos/dateDomain";
 import { hasServiceErrorCode, ServiceError } from "../../lib/serviceError";
-import type { Database, Json } from "../../types/database";
+import type { Database } from "../../types/database";
 import { nextStepOf, orderApplications } from "./careerOrdering";
 import type { CareerStage } from "./careerOrdering";
 
@@ -61,9 +61,12 @@ export interface CareerPrepItem {
   body: string;
   dueOn: string | null;
   doneAt: string | null;
-  todoId: string | null;
+  todoId: string;
   position: number;
 }
+
+/** A Career-side change to a prep action; an omitted field is left as it is. */
+export type CareerPrepChanges = Partial<Pick<CareerPrepItem, "body" | "dueOn" | "doneAt">>;
 
 /** One reviewed, client-identified action in an atomic plan import. */
 export interface CareerPrepImportItem {
@@ -200,13 +203,17 @@ export interface CareerService {
     items: readonly CareerPrepImportItem[],
     signal: AbortSignal,
   ): Promise<CareerPrepItem[]>;
+  /**
+   * Edit an action through its canonical todo, the same write Tasks makes. A
+   * database trigger mirrors the todo back into the prep row.
+   */
   savePrep(
     userId: string,
-    applicationId: string,
-    item: Partial<CareerPrepItem>,
+    item: CareerPrepItem,
+    changes: CareerPrepChanges,
     signal: AbortSignal,
   ): Promise<CareerPrepItem>;
-  removePrep(userId: string, itemId: string, signal: AbortSignal): Promise<void>;
+  removePrep(userId: string, item: CareerPrepItem, signal: AbortSignal): Promise<void>;
 
   listStories(userId: string, signal: AbortSignal): Promise<CareerStory[]>;
   saveStory(
@@ -781,46 +788,40 @@ export function createCareerService(client: SupabaseClient<Database>): CareerSer
         .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
     },
 
-    async savePrep(userId, applicationId, item, signal) {
-      // New rows use the create-only import path so a generated ID is the
-      // idempotency key. Existing rows have a separate edit RPC: conflating the
-      // two would let a retry overwrite a task changed from Today meanwhile.
-      if (!item.id) {
-        if (item.body === undefined)
-          throw new ServiceError("invalid_input", "Add prep text before saving.");
-        const [created] = await this.importPrep(
-          userId,
-          applicationId,
-          [{ id: crypto.randomUUID(), body: item.body, dueOn: item.dueOn ?? null }],
-          signal,
-        );
-        if (!created)
-          throw new ServiceError("unavailable", "Couldn’t save this prep note. Try again.");
-        return created;
-      }
-
-      const body = item.body?.trim();
-      if (item.body !== undefined && !body)
+    async savePrep(userId, item, changes, signal) {
+      const body = changes.body?.trim();
+      if (changes.body !== undefined && !body)
         throw new ServiceError("invalid_input", "Add prep text before saving.");
-      if (item.dueOn !== undefined && item.dueOn !== null && !isSqlDate(item.dueOn))
+      if (changes.dueOn !== undefined && changes.dueOn !== null && !isSqlDate(changes.dueOn))
         throw new ServiceError("invalid_input", "Use a valid date for this prep item.");
 
-      const payload: Record<string, Json | undefined> = { id: item.id };
-      if (body !== undefined) payload.body = body;
-      if (item.dueOn !== undefined) payload.due_on = item.dueOn;
-      if (item.doneAt !== undefined) payload.completed = item.doneAt !== null;
-      if (item.position !== undefined) payload.position = item.position;
+      // Only the changed fields are sent, so a checkbox or a date cannot
+      // overwrite wording changed from Tasks meanwhile.
+      const update: Tables["todos"]["Update"] = {};
+      if (body !== undefined) update.text = body;
+      if (changes.dueOn !== undefined) update.due_date = changes.dueOn;
+      if (changes.dueOn === null) {
+        // A rule is anchored on the date, so clearing one clears the other.
+        update.due_time = null;
+        update.recurrence_freq = null;
+        update.recurrence_interval = null;
+        update.recurrence_until = null;
+      }
+      // The database trigger owns completed_at, as it does for Tasks.
+      if (changes.doneAt !== undefined) update.completed = changes.doneAt !== null;
 
       const { data, error } = await client
-        .rpc("save_career_prep_item", {
-          p_application_id: applicationId,
-          p_item: payload,
-        })
+        .from("todos")
+        .update(update)
+        .eq("id", item.todoId)
+        .is("deleted_at", null)
+        .select("user_id,text,due_date,completed_at")
         .abortSignal(bounded(signal))
         .single();
       if (error || !data)
         throw new ServiceError("unavailable", "Couldn’t save this prep note. Try again.");
-      return toPrepItem(owned(data as Tables["career_prep"]["Row"], userId));
+      const todo = owned(data, userId);
+      return { ...item, body: todo.text, dueOn: todo.due_date, doneAt: todo.completed_at };
     },
 
     async importPrep(userId, applicationId, items, signal) {
@@ -862,12 +863,13 @@ export function createCareerService(client: SupabaseClient<Database>): CareerSer
       return (data as Tables["career_prep"]["Row"][]).map((row) => toPrepItem(owned(row, userId)));
     },
 
-    async removePrep(userId, itemId, signal) {
+    async removePrep(userId, item, signal) {
       // userId stays in the browser-facing interface for parity with the other
       // career children. Ownership itself is derived from the authenticated RPC.
       void userId;
+      // The same soft delete Tasks uses; the trigger hides the prep row with it.
       const { error } = await client
-        .rpc("remove_career_prep_item", { p_item_id: itemId })
+        .rpc("soft_delete_record", { p_record_type: "todo", p_record_id: item.todoId })
         .abortSignal(bounded(signal));
       if (error)
         throw new ServiceError("unavailable", "Couldn’t remove this prep note. Try again.");
