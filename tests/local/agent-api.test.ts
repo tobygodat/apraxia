@@ -3,7 +3,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import type { Database } from "../../frontend/src/types/database";
 import { createAgentHandler } from "../../server/agent/agentHandler";
-import { createNoteService, prepareUpload } from "../../frontend/src/features/classes/noteService";
 
 const url = process.env.APRAXIA_LOCAL_API;
 if (url !== "http://127.0.0.1:54321")
@@ -14,7 +13,6 @@ const options = {
 const admin = createClient<Database>(url, process.env.APRAXIA_LOCAL_SECRET_KEY!, options);
 const users: { id: string; client: SupabaseClient<Database> }[] = [];
 const token = randomBytes(32).toString("base64url");
-const paths: string[] = [];
 beforeAll(async () => {
   for (let i = 0; i < 2; i++) {
     const email = `agent-local-${randomUUID()}@example.test`;
@@ -28,7 +26,6 @@ beforeAll(async () => {
   }
 });
 afterAll(async () => {
-  if (paths.length) expect((await admin.storage.from("class-pdfs").remove(paths)).error).toBeNull();
   for (const user of users) {
     await user.client.auth.signOut({ scope: "local" });
     expect((await admin.auth.admin.deleteUser(user.id)).error).toBeNull();
@@ -41,7 +38,7 @@ function handle(user = users[0]!) {
     environment: {
       APRAXIA_AGENT_TOKEN: token,
       APRAXIA_AGENT_USER_ID: user.id,
-      APRAXIA_AGENT_SCOPES: "workspace:read,workspace:write,files:read",
+      APRAXIA_AGENT_SCOPES: "workspace:read,workspace:write",
       SUPABASE_URL: url,
       SUPABASE_SERVICE_ROLE_KEY: process.env.APRAXIA_LOCAL_SECRET_KEY!,
     },
@@ -170,36 +167,4 @@ it("creates projects, ideas, classes and assignments, searches and edits their r
       )
     ).status,
   ).toBe(400);
-});
-it("streams uploaded PDF bytes and edits saved note metadata without changing file identity", async () => {
-  const user = users[0]!;
-  const noteService = createNoteService(user.client);
-  const file = new File(["%PDF-1.7\n% Fictional agent verification\n%%EOF"], "Fictional.pdf");
-  const draft = await prepareUpload(file);
-  const note = await noteService.reserve(
-    user.id,
-    "fictional-math",
-    draft,
-    new AbortController().signal,
-  );
-  paths.push(note.object_path!);
-  await noteService.upload(note, file, new AbortController().signal);
-  const run = handle();
-  const bytes = await run(request(`note-content?id=${note.id}`));
-  expect(bytes.status).toBe(200);
-  expect(await bytes.text()).toBe(await file.text());
-  const current = await (await run(request(`notes?id=${note.id}`))).json();
-  const update = await run(
-    request(
-      `notes?id=${note.id}`,
-      "PATCH",
-      { data: { name: "Renamed lecture" }, expected_version: current.item.version },
-      "rename-upload",
-    ),
-  );
-  expect(update.status).toBe(200);
-  const updated = (await update.json()).item;
-  expect(updated.object_path).toBe(note.object_path);
-  expect(updated.content_sha256).toBe(draft.sha256);
-  expect((await handle(users[1]!)(request(`note-content?id=${note.id}`))).status).toBe(404);
 });

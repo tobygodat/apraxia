@@ -71,12 +71,6 @@ describe("Search dialog", () => {
       { ...row("i1", "Garden thought"), recordType: "idea", snippet: "" },
       { ...row("p1", "Kitchen"), recordType: "project", snippet: "" },
       { ...row("MATH3012", "Linear Algebra"), recordType: "class", snippet: "" },
-      {
-        ...row("n1", "Week 3 slides"),
-        recordType: "class_note",
-        parentId: "MATH3012",
-        snippet: "",
-      },
     ];
     const search = vi
       .fn()
@@ -90,7 +84,6 @@ describe("Search dialog", () => {
       "ideaGarden thought",
       "projectKitchen",
       "classLinear Algebra",
-      "noteWeek 3 slidesMATH3012",
     ]);
   });
   it("focuses search, traps Tab, closes with Escape, and restores the opener", async () => {
@@ -194,6 +187,24 @@ describe("Search dialog", () => {
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("thought");
     expect(screen.getByText("Final thought")).toBeTruthy();
     expect(search).toHaveBeenCalledTimes(2);
+  });
+  it("leaves out a kind it cannot open but still pages past it", async () => {
+    // A database not yet migrated can still return a retired kind.
+    const retired = { ...row("note-1", "Week 3 slides", 41), recordType: "class_note" };
+    const first = [
+      ...Array.from({ length: 39 }, (_, i) => row(`id-${i}`, `Thought ${i}`, 41)),
+      retired as unknown as SearchResult,
+    ];
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce([row("last", "Final thought", 41)]);
+    render(<SearchDialog open service={{ search }} onClose={vi.fn()} onSelect={vi.fn()} />);
+    enter("thought");
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+    await screen.findByText("Final thought");
+    expect(search).toHaveBeenLastCalledWith("thought", 40, expect.any(AbortSignal));
+    expect(screen.queryByText("Week 3 slides")).toBeNull();
   });
   it("keeps the failed query and previous results and recovers on retry", async () => {
     const search = vi

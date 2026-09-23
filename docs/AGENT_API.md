@@ -12,7 +12,7 @@ Set these **server-only** Vercel environment variables for the existing app:
 | --- | --- |
 | `APRAXIA_AGENT_TOKEN` | A dedicated random secret: 32 random bytes encoded as base64url (43 characters), or 64 random hexadecimal characters. Accepted characters are letters, digits, `_`, `-`; length 43–256. The current production value is stored under the pre-rename name `ORBITOS_AGENT_TOKEN`, which Vercel cannot rename; the server accepts either name. |
 | `APRAXIA_AGENT_USER_ID` | Your existing Supabase Auth user UUID. This fixes the account; requests cannot choose an owner. |
-| `APRAXIA_AGENT_SCOPES` | Comma-separated permissions. For the requested access: `workspace:read,workspace:write,calendar:read,calendar:write,files:read`. Omitted defaults to `workspace:read`. |
+| `APRAXIA_AGENT_SCOPES` | Comma-separated permissions. For the requested access: `workspace:read,workspace:write,calendar:read,calendar:write`. Omitted defaults to `workspace:read`. The retired `files:read` is still accepted so an older value keeps working, but it grants nothing. |
 
 Existing server Supabase and Google configuration is still required. Keep the
 agent token separate from the Supabase service-role key. Never give Muse the
@@ -24,7 +24,7 @@ The API is deployed on the existing app, with `20260916053826_agent_api.sql`
 applied. Rotate the token, or remove it and redeploy, to revoke access; also
 revoke obsolete deployment access if old Vercel deployments remain reachable.
 Missing configuration fails closed. Google features require the account's
-existing Calendar/Drive connection.
+existing Calendar connection.
 
 ## Discover and read
 
@@ -47,14 +47,12 @@ curl --fail-with-body -sS --get "$APRAXIA_BASE_URL/api/agent/v1/search" \
 
 | Endpoint under `/api/agent/v1` | Operations / permission |
 | --- | --- |
-| `todos`, `projects`, `ideas`, `classes`, `notes` | GET list or `?id=...` requires `workspace:read`; POST create and PATCH `?id=...` require `workspace:write`. |
+| `todos`, `projects`, `ideas`, `classes` | GET list or `?id=...` requires `workspace:read`; POST create and PATCH `?id=...` require `workspace:write`. |
 | `search?q=...&bucket=...` | GET; bucket optional; `workspace:read`. |
 | `changes` | GET agent write journal; `workspace:read`. |
 | `calendars` | GET connected calendars; `calendar:read`. |
 | `events?sunday=YYYY-MM-DD&q=...` | GET one Sunday-start week; optional case-insensitive title/location search within that week; `calendar:read`. |
 | `events` | POST detail (`calendar:read`), create/update (`calendar:write`); OpenAPI supplies command bodies. |
-| `drive-files?folder=root&page=...` | GET folders and PDFs; `files:read`; response `{files,nextPage}`. |
-| `note-content?id=...` | GET saved PDF bytes; both `workspace:read` and `files:read`. |
 
 List replies are `{items,next_offset}`; single-record reads and workspace writes
 return `{item}`. Every workspace item contains its opaque `version`. Default
@@ -63,13 +61,12 @@ Lists order by record ID; concurrent changes can shift pages, so reconcile by ID
 All-bucket search returns `{buckets:{todos:{items,next_offset},...}}` with
 independent pages. Continue each bucket using `bucket` and its `next_offset`.
 Search is case-insensitive literal substring search of saved text, title, body,
-description, or name; it does not search PDF contents or Google events.
+description, or name; it does not search Google events.
 
 Common list filters: `limit`, `offset`, `q` (1–500 characters), `updated_since`
 (exclusive RFC3339 timestamp). Todos also accept `completed=true|false`,
-`due_from`, `due_to`, `class_id`, `project_id`; ideas accept `project_id`; notes
-accept `class_id` (matching their `course_id`). Other bucket-specific filters
-are rejected. All-bucket search accepts only common filters. With `id`, no
+`due_from`, `due_to`, `class_id`, `project_id`; ideas accept `project_id`.
+Other bucket-specific filters are rejected. All-bucket search accepts only common filters. With `id`, no
 other query parameters are accepted. Repeated or unknown parameters are rejected.
 
 ## Create and edit
@@ -80,13 +77,8 @@ other query parameters are accepted. Repeated or unknown parameters are rejected
 | `projects` | `title`, `description`, `status` | `title`; status is `active`, `someday`, `completed`, or `archived` |
 | `ideas` | `title`, `body`, `project_id` | `body` |
 | `classes` | `name`; `id` only on create | `id`, `name`; IDs are stable strings, at most 120 characters |
-| `notes` | `name`, `course_id`; `source`, `drive_file_id` only on create | `name`, `course_id`, `source:"drive"`, `drive_file_id`; also requires `files:read` |
 
-Notes attach accessible Drive PDFs after provider verification. The API can
-rename or move a saved note association; it cannot replace its underlying file
-or upload PDF bytes. Upload files through the dashboard, then retrieve them
-through `note-content`. No text extraction is provided. A note's `course_id`
-references a class; assignment tasks instead use `class_id`. Tasks may have only
+Assignment tasks reference their class with `class_id`. Tasks may have only
 one parent (`class_id` or `project_id`). Assignment type is `""`, `Homework`,
 `Quiz`, `Reading`, `Exam`, or `Other`; a nonempty type requires a class.
 Relationships must belong to the configured account.
@@ -148,9 +140,9 @@ accepts the same bearer token; every tool call becomes an agent API request, so
 scopes, validation, versions and idempotency behave exactly as documented here.
 `tools/list` offers only tools the configured scopes allow: `guide`,
 `list_records`, `get_record`, `search`, `list_changes`, `create_record`,
-`update_record`, `list_calendars`, `get_week_events`, `get_event`, `write_event`
-and `list_drive_files`. Writes generate an `Idempotency-Key` when the caller
-omits `idempotency_key`. Saved PDF bytes are not exposed through MCP.
+`update_record`, `list_calendars`, `get_week_events`, `get_event` and
+`write_event`. Writes generate an `Idempotency-Key` when the caller omits
+`idempotency_key`.
 
 The token must arrive in the `Authorization` header. In Claude's **Add custom
 connector** dialog choose **No sign-in** and add a required `authorization`

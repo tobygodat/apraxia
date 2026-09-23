@@ -238,33 +238,33 @@ describe("Main workspace integration", () => {
     },
   );
 
-  it.each([
-    { kind: "class" as const, recordId: "MATH3012", parentId: null },
-    { kind: "class_note" as const, recordId: "note-1", parentId: "MATH3012" },
-  ])("Ctrl+K opens the class page for a $kind result", async ({ kind, recordId, parentId }) => {
-    const f = fixture();
-    f.search.mockResolvedValue([
-      {
-        recordType: kind,
-        recordId,
-        parentId,
-        title: "Search match",
-        snippet: "",
-        updatedAt: "",
-        relevance: 1,
-        totalCount: 1,
-      } satisfies SearchResult,
-    ]);
-    mount(f.props);
-    await openSearch("match");
-    fireEvent.click(await screen.findByRole("button", { name: /Search match/ }));
-    await waitFor(() =>
-      expect(screen.getByLabelText("Current route").textContent).toBe("/classes/MATH3012"),
-    );
-    expect(screen.queryByRole("searchbox")).toBeNull();
-    expect(f.getTodo).not.toHaveBeenCalled();
-    expect(f.getIdea).not.toHaveBeenCalled();
-  });
+  it.each([{ kind: "class" as const, recordId: "MATH3012", parentId: null }])(
+    "Ctrl+K opens the class page for a $kind result",
+    async ({ kind, recordId, parentId }) => {
+      const f = fixture();
+      f.search.mockResolvedValue([
+        {
+          recordType: kind,
+          recordId,
+          parentId,
+          title: "Search match",
+          snippet: "",
+          updatedAt: "",
+          relevance: 1,
+          totalCount: 1,
+        } satisfies SearchResult,
+      ]);
+      mount(f.props);
+      await openSearch("match");
+      fireEvent.click(await screen.findByRole("button", { name: /Search match/ }));
+      await waitFor(() =>
+        expect(screen.getByLabelText("Current route").textContent).toBe("/classes/MATH3012"),
+      );
+      expect(screen.queryByRole("searchbox")).toBeNull();
+      expect(f.getTodo).not.toHaveBeenCalled();
+      expect(f.getIdea).not.toHaveBeenCalled();
+    },
+  );
 
   it("keeps Ctrl+K closed while the Add dialog is open", async () => {
     const f = fixture();

@@ -76,7 +76,9 @@ describe("agent MCP connector", () => {
       "search",
       "list_changes",
     ]);
-    expect(await names(environment.APRAXIA_AGENT_SCOPES)).toContain("write_event");
+    const all = await names(environment.APRAXIA_AGENT_SCOPES);
+    expect(all).toContain("write_event");
+    expect(all).not.toContain("list_drive_files");
     const { call, fetcher } = setup({ ...environment, APRAXIA_AGENT_SCOPES: "workspace:read" });
     expect((await call("create_record", { bucket: "todos", data: { text: "x" } })).error.code).toBe(
       -32602,
@@ -96,6 +98,7 @@ describe("agent MCP connector", () => {
     });
     expect(JSON.stringify(fetcher.mock.calls[0]![1])).not.toContain(token);
     expect((await call("list_records", { bucket: "meta" })).error.code).toBe(-32602);
+    expect((await call("list_records", { bucket: "notes" })).error.code).toBe(-32602);
     expect((await call("list_records", { bucket: "todos", limit: [1] })).error.code).toBe(-32602);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });

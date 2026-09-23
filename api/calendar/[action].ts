@@ -3,9 +3,9 @@ import {
   type CalendarAction,
 } from "../../server/calendar/calendarHandlers.js";
 
-// One function for every calendar action, like api/drive/[action].ts: a warm
-// instance then serves status, calendars, and events in turn instead of each
-// path cold-starting its own lambda.
+// One function for every calendar action: a warm instance then serves status,
+// calendars, and events in turn instead of each path cold-starting its own
+// lambda.
 const actions = new Set<CalendarAction>([
   "connect",
   "callback",

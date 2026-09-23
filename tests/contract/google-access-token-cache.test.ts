@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createCalendarHandler } from "../../server/calendar/calendarHandlers";
 import { CALENDAR_SCOPES } from "../../server/calendar/oauthPolicy";
-import { createDriveHandler } from "../../server/drive/driveHandlers";
-import { DRIVE_SCOPES } from "../../server/drive/oauthPolicy";
 import {
   decryptAccessToken,
   encryptAccessToken,
@@ -26,16 +24,16 @@ const environment = {
 const key = environment.GOOGLE_TOKEN_ENCRYPTION_KEY;
 const context = { userId, connectionId, keyVersion: 1 };
 const updatedAt = "2026-09-04T12:00:00Z";
-type Provider = "calendar" | "drive";
+type Provider = "calendar";
 
 /** A connected credential row as the read RPC returns it, optionally with a cached access token. */
-const stored = (provider: Provider, cache?: { token: string; expiresInMs: number }) => ({
+const stored = (cache?: { token: string; expiresInMs: number }) => ({
   connection: {
     id: connectionId,
     connection_state: "connected",
     created_at: updatedAt,
     updated_at: updatedAt,
-    granted_scopes: [...(provider === "calendar" ? CALENDAR_SCOPES : DRIVE_SCOPES)],
+    granted_scopes: [...CALENDAR_SCOPES],
   },
   envelope: encryptRefreshToken("existing-refresh", context, key),
   key_version: 1,
@@ -91,23 +89,13 @@ const providers: {
         }),
       ),
   },
-  {
-    provider: "drive",
-    ok: () => Response.json({ files: [] }),
-    run: (fetcher) =>
-      createDriveHandler("files", { environment, fetch: fetcher })(
-        new Request(`${environment.APP_URL}/api/drive/files`, {
-          headers: { Authorization: "Bearer session-token" },
-        }),
-      ),
-  },
 ];
 
 describe.each(providers)("Google access token cache ($provider)", ({ provider, run, ok }) => {
   it("reuses a cached access token without contacting the token endpoint or storage", async () => {
     const fetcher = fetcherFor(
       provider,
-      stored(provider, { token: "cached-access", expiresInMs: 3_600_000 }),
+      stored({ token: "cached-access", expiresInMs: 3_600_000 }),
       ok,
     );
     const response = await run(fetcher);
@@ -122,7 +110,7 @@ describe.each(providers)("Google access token cache ($provider)", ({ provider, r
   it("refreshes near expiry and persists the replacement encrypted with its expiry", async () => {
     const fetcher = fetcherFor(
       provider,
-      stored(provider, { token: "cached-access", expiresInMs: 30_000 }),
+      stored({ token: "cached-access", expiresInMs: 30_000 }),
       ok,
     );
     const before = Date.now();
@@ -145,7 +133,7 @@ describe.each(providers)("Google access token cache ($provider)", ({ provider, r
   it("refreshes once after Google rejects a cached token, then retries with the new token", async () => {
     const fetcher = fetcherFor(
       provider,
-      stored(provider, { token: "cached-access", expiresInMs: 3_600_000 }),
+      stored({ token: "cached-access", expiresInMs: 3_600_000 }),
       (_url, init) =>
         bearer(init) === "Bearer cached-access"
           ? Response.json({ error: "private-detail" }, { status: 401 })
@@ -164,7 +152,7 @@ describe.each(providers)("Google access token cache ($provider)", ({ provider, r
   it("expires the grant when the freshly refreshed token is rejected as well, without a second refresh", async () => {
     const fetcher = fetcherFor(
       provider,
-      stored(provider, { token: "cached-access", expiresInMs: 3_600_000 }),
+      stored({ token: "cached-access", expiresInMs: 3_600_000 }),
       () => Response.json({ error: "private-detail" }, { status: 401 }),
     );
     const response = await run(fetcher);
@@ -179,11 +167,11 @@ describe.each(providers)("Google access token cache ($provider)", ({ provider, r
   });
 
   it("clears the cache instead of caching a token whose lifetime Google omitted", async () => {
-    const fetcher = fetcherFor(provider, stored(provider), ok);
+    const fetcher = fetcherFor(provider, stored(), ok);
     fetcher.mockImplementation(async (url, init) => {
       if (String(url).endsWith("/token"))
         return Response.json({ access_token: "fresh-access", token_type: "Bearer" });
-      return fetcherFor(provider, stored(provider), ok)(url, init);
+      return fetcherFor(provider, stored(), ok)(url, init);
     });
     expect((await run(fetcher)).status).toBe(200);
     const [save] = rpc(fetcher, `save_${provider}_credentials`);
@@ -277,11 +265,11 @@ describe("readCachedAccessToken", () => {
   });
 });
 
-describe("Drive disconnect", () => {
+describe("Google disconnect", () => {
   it("revokes the refresh token at Google and clears local credentials", async () => {
-    const fetcher = fetcherFor("drive", stored("drive"), () => Response.json({}));
-    const response = await createDriveHandler("disconnect", { environment, fetch: fetcher })(
-      new Request(`${environment.APP_URL}/api/drive/disconnect`, {
+    const fetcher = fetcherFor("calendar", stored(), () => Response.json({}));
+    const response = await createCalendarHandler("disconnect", { environment, fetch: fetcher })(
+      new Request(`${environment.APP_URL}/api/calendar/disconnect`, {
         method: "POST",
         body: "{}",
         headers: {
@@ -295,7 +283,7 @@ describe("Drive disconnect", () => {
     const [revoke] = calls(fetcher, (url) => url === "https://oauth2.googleapis.com/revoke");
     expect(new URLSearchParams(revoke![1]!.body as string).get("token")).toBe("existing-refresh");
     expect(
-      JSON.parse(rpc(fetcher, "clear_drive_credentials")[0]![1]!.body as string),
+      JSON.parse(rpc(fetcher, "clear_calendar_credentials")[0]![1]!.body as string),
     ).toMatchObject({ p_state: "disconnected" });
   });
 });

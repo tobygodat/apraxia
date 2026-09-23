@@ -116,35 +116,7 @@ it("isolates agent access, validates writes, detects conflicts and journals dura
       ),
     ).toEqual(done);
     await call("create", "classes", { id: "math", name: "Math" }, null, "class");
-    const note = await call(
-      "create",
-      "notes",
-      { course_id: "math", name: "Lecture", source: "drive", drive_file_id: "abc" },
-      null,
-      "note",
-    );
-    await expect(
-      call(
-        "update",
-        "notes",
-        { uploaded_at: "2026-01-01" },
-        note.item.id,
-        "upload",
-        note.item.version,
-      ),
-    ).rejects.toThrow(/Unsupported/);
-    const renamed = await call(
-      "update",
-      "notes",
-      { name: "New lecture" },
-      note.item.id,
-      "rename",
-      note.item.version,
-    );
-    expect(renamed.item.drive_file_id).toBe("abc");
-    expect(
-      (await call("search", "notes", {}, null, null, null, alice, { q: "New" })).items,
-    ).toHaveLength(1);
+    await expect(call("list", "notes")).rejects.toThrow(/Unknown bucket/);
     const changes = await call("changes", "all", {}, null, null, null, alice, { limit: 2 });
     expect(changes.items).toHaveLength(2);
     expect(changes.next_offset).toBe(2);

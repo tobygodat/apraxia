@@ -11,14 +11,6 @@ import { ColdLoadGate } from "../../apps/coldLoad";
 import { addSqlDateDays, localToday } from "../todos/dateDomain";
 
 const due = addSqlDateDays(localToday("America/New_York"), 1);
-vi.mock("./PdfReader", () => ({
-  default: ({ file, showTools }: { file: File; showTools: boolean }) => (
-    <div data-testid="reader">
-      {file.name}
-      {showTools && <span>PDF toolbar</span>}
-    </div>
-  ),
-}));
 afterEach(() => {
   cleanup();
   localStorage.clear();
@@ -27,12 +19,7 @@ afterEach(() => {
 const mount = (data = createClassPersistenceFixture(), courseId?: string, userId = "user-a") =>
   render(
     <MemoryRouter>
-      <ClassesPage
-        userId={userId}
-        courseId={courseId}
-        classService={data.classes}
-        noteService={data.notes}
-      />
+      <ClassesPage userId={userId} courseId={courseId} classService={data.classes} />
     </MemoryRouter>,
   );
 it("saves added classes through the service, survives remount, and isolates accounts without writing browser storage", async () => {
@@ -120,7 +107,7 @@ it("renders classes immediately from a warmed cache with no loading flash", asyn
   await classService.list("user-a", new AbortController().signal);
   render(
     <MemoryRouter>
-      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+      <ClassesPage userId="user-a" classService={classService} />
     </MemoryRouter>,
   );
   expect(screen.getByRole("heading", { name: "MATH3012" })).toBeTruthy();
@@ -139,7 +126,7 @@ it("renders an empty warmed cache immediately with no loading flash", async () =
   await classService.list("user-a", new AbortController().signal);
   render(
     <MemoryRouter>
-      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+      <ClassesPage userId="user-a" classService={classService} />
     </MemoryRouter>,
   );
   expect(
@@ -159,7 +146,7 @@ it("shows the loading placeholder with a cold cache", async () => {
   );
   render(
     <MemoryRouter>
-      <ClassesPage userId="user-a" classService={classService} noteService={data.notes} />
+      <ClassesPage userId="user-a" classService={classService} />
     </MemoryRouter>,
   );
   expect(screen.getByText("Loading classes…")).toBeTruthy();
@@ -176,7 +163,7 @@ it("holds the cold-load gate while classes load and releases it once resolved", 
   const { container } = render(
     <MemoryRouter>
       <ColdLoadGate>
-        <ClassesPage userId="user-a" classService={data.classes} noteService={data.notes} />
+        <ClassesPage userId="user-a" classService={data.classes} />
       </ColdLoadGate>
     </MemoryRouter>,
   );
@@ -194,7 +181,7 @@ it("releases the cold-load gate immediately when classes fail to load", async ()
   const { container } = render(
     <MemoryRouter>
       <ColdLoadGate>
-        <ClassesPage userId="user-a" classService={data.classes} noteService={data.notes} />
+        <ClassesPage userId="user-a" classService={data.classes} />
       </ColdLoadGate>
     </MemoryRouter>,
   );
@@ -211,7 +198,6 @@ it("uses todo-backed assignments in the class detail while retaining the inline 
         userId="user-a"
         courseId="math3012"
         classService={data.classes}
-        noteService={data.notes}
         assignmentService={assignments}
       />
     </MemoryRouter>,
@@ -228,11 +214,11 @@ it("uses todo-backed assignments in the class detail while retaining the inline 
     await screen.findByRole("button", { name: "Edit title for Updated assignment" }),
   ).toBeTruthy();
 });
-it("gives each class row its next due date, open count, and note count", async () => {
+it("gives each class row its next due date and open count", async () => {
   const data = createClassPersistenceFixture();
   const overviewService = {
     list: async () => ({
-      math3012: { assignments: 6, open: 4, notes: 2, nextDue: { title: "Problem set 4", due } },
+      math3012: { assignments: 6, open: 4, nextDue: { title: "Problem set 4", due } },
     }),
   };
   render(
@@ -240,16 +226,15 @@ it("gives each class row its next due date, open count, and note count", async (
       <ClassesPage
         userId="user-a"
         classService={data.classes}
-        noteService={data.notes}
         overviewService={overviewService}
         timezone="America/New_York"
       />
     </MemoryRouter>,
   );
   expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
-  expect(screen.getByText("4 open · 2 PDFs")).toBeTruthy();
+  expect(screen.getByText("4 open")).toBeTruthy();
   // A class the totals say nothing about is empty, not unknown.
-  expect(screen.getByText("Nothing saved yet")).toBeTruthy();
+  expect(screen.getByText("No assignments yet")).toBeTruthy();
   expect(screen.queryByText("Open class")).toBeNull();
 });
 /** The workspace store, stripped to the revision a write anywhere bumps. */
@@ -280,7 +265,7 @@ it("re-reads the totals when a task saved from the global Add dialog invalidates
   const data = createClassPersistenceFixture();
   let open = 4;
   const list = vi.fn(async () => ({
-    math3012: { assignments: 6, open, notes: 2, nextDue: { title: "Problem set 4", due } },
+    math3012: { assignments: 6, open, nextDue: { title: "Problem set 4", due } },
   }));
   render(
     <MemoryRouter>
@@ -288,17 +273,16 @@ it("re-reads the totals when a task saved from the global Add dialog invalidates
         <ClassesPage
           userId="user-a"
           classService={data.classes}
-          noteService={data.notes}
           overviewService={{ list }}
           timezone="America/New_York"
         />
       </RevisionHarness>
     </MemoryRouter>,
   );
-  expect(await screen.findByText("4 open · 2 PDFs")).toBeTruthy();
+  expect(await screen.findByText("4 open")).toBeTruthy();
   open = 5;
   fireEvent.click(screen.getByRole("button", { name: "Save an assignment elsewhere" }));
-  expect(await screen.findByText("5 open · 2 PDFs")).toBeTruthy();
+  expect(await screen.findByText("5 open")).toBeTruthy();
   expect(list).toHaveBeenCalledTimes(2);
 });
 it("keeps the class list readable when the totals cannot be read", async () => {
@@ -308,7 +292,6 @@ it("keeps the class list readable when the totals cannot be read", async () => {
       <ClassesPage
         userId="user-a"
         classService={data.classes}
-        noteService={data.notes}
         overviewService={{ list: () => Promise.reject(new Error("offline")) }}
       />
     </MemoryRouter>,
@@ -326,53 +309,17 @@ it("summarizes the open class in its header and follows the table when one is co
         userId="user-a"
         courseId="math3012"
         classService={data.classes}
-        noteService={data.notes}
         assignmentService={createFixtureAssignments()}
         timezone="America/New_York"
       />
     </MemoryRouter>,
   );
-  // Problem set 3 is two days past due, and none of the six is a saved note.
+  // Problem set 3 is two days past due.
   expect(await screen.findByText(/^Past due .* · Problem set 3$/)).toBeTruthy();
   expect(screen.getByText("5 open")).toBeTruthy();
   fireEvent.click(screen.getByRole("checkbox", { name: "Mark Problem set 3 done" }));
   expect(await screen.findByText("Due tomorrow · Problem set 4")).toBeTruthy();
   expect(screen.getByText("4 open")).toBeTruthy();
-});
-it("leaves an unfinished upload out of the class header's note count", async () => {
-  const { createFixtureAssignments } = await import("../../qa/ClassAssignmentsMock");
-  const { prepareUpload } = await import("./noteService");
-  const data = createClassPersistenceFixture();
-  const pdf = new File([new TextEncoder().encode("%PDF-1.4 fixture")], "lecture.pdf", {
-    type: "application/pdf",
-  });
-  const signal = new AbortController().signal;
-  const draft = await prepareUpload(pdf);
-  // Reserved, never uploaded: the list calls this one "Upload incomplete".
-  await data.notes.reserve("user-a", "math3012", draft, signal);
-  await data.notes.attachDrive(
-    "user-a",
-    "math3012",
-    { id: "lecture-one", name: "Lecture 1.pdf", folder: false, modifiedTime: null, size: null },
-    signal,
-  );
-  render(
-    <MemoryRouter>
-      <ClassesPage
-        userId="user-a"
-        courseId="math3012"
-        classService={data.classes}
-        noteService={data.notes}
-        assignmentService={createFixtureAssignments()}
-        timezone="America/New_York"
-      />
-    </MemoryRouter>,
-  );
-  expect(await screen.findByText("Upload incomplete")).toBeTruthy();
-  // The header count and the note list resolve from different promises, so the
-  // list arriving does not mean the count has. Awaiting the list and then
-  // reading the count has failed under a loaded parallel run.
-  expect(await screen.findByText("5 open · 1 PDF")).toBeTruthy();
 });
 it("re-dates the class list when local midnight passes with the page still open", async () => {
   const data = createClassPersistenceFixture();
@@ -381,7 +328,6 @@ it("re-dates the class list when local midnight passes with the page still open"
       math3012: {
         assignments: 1,
         open: 1,
-        notes: 0,
         nextDue: { title: "Problem set 4", due: "2026-09-18" },
       },
     }),
@@ -393,7 +339,6 @@ it("re-dates the class list when local midnight passes with the page still open"
       <ClassesPage
         userId="user-a"
         classService={data.classes}
-        noteService={data.notes}
         overviewService={overviewService}
         timezone="America/New_York"
       />

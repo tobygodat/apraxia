@@ -446,13 +446,6 @@
         "reason": "Agent: inspected shared 38px headings, 14px list titles, 18px section titles and contextual controls; preserve existing logo, metadata, field and dialog sizes described by DESIGN.md Typography. This value is a role variant, not a new type ramp."
       },
       {
-        "rule": "design-system-color",
-        "value": "#555",
-        "files": ["frontend/src/features/classes/drivePicker.css"],
-        "createdAt": "2026-09-15T02:44:55.007Z",
-        "reason": "Agent: inspected the incumbent charcoal, hover, field and error treatments; DESIGN.md Components preserves local variants. Keep this existing value during the requested layout/parity pass."
-      },
-      {
         "rule": "design-system-radius",
         "value": "5px)",
         "files": ["frontend/src/components/app-shell/CloudAppShell.css"],

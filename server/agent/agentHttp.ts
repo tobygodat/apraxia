@@ -8,6 +8,8 @@ export const agentScopes = [
   "workspace:write",
   "calendar:read",
   "calendar:write",
+  // Retired with the Drive PDF endpoints and grants nothing. Kept so a hosted
+  // APRAXIA_AGENT_SCOPES that still lists it parses instead of returning 503.
   "files:read",
 ] as const;
 export type AgentScope = (typeof agentScopes)[number];

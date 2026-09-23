@@ -1,5 +1,4 @@
 import { createClassService, type ClassService } from "../features/classes/classService";
-import { createNoteService, type NoteService } from "../features/classes/noteService";
 import {
   createClassOverviewService,
   type ClassOverviewService,
@@ -25,7 +24,6 @@ const UNKNOWN_TIMEZONE_COPY = "That timezone isn’t recognised. Pick another on
 
 export interface WorkspaceData {
   classes?: ClassService;
-  notes?: NoteService;
   classOverview?: ClassOverviewService;
   assignments?: AssignmentService;
   homeAppearance?: HomeAppearanceService;
@@ -38,7 +36,6 @@ export interface WorkspaceData {
 export function createWorkspaceData(client: SupabaseClient<Database>): WorkspaceData {
   return {
     classes: createClassService(client),
-    notes: createNoteService(client),
     classOverview: createClassOverviewService(client),
     assignments: createAssignmentService(client),
     homeAppearance: createHomeAppearanceService(client),

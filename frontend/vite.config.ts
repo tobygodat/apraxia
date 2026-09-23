@@ -1,6 +1,5 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import { pdfAssets } from "./pdfAssets.ts";
 
 import { resolveRuntimeMode } from "./src/config/runtime.ts";
 
@@ -18,7 +17,7 @@ export function createViteConfig(environment: ViteEnvironment) {
   const requestedPort = Number.parseInt(environment.PORT ?? "", 10);
 
   return {
-    plugins: [react(), pdfAssets()],
+    plugins: [react()],
     // A literal lets Rollup drop the legacy runtime branch in App.tsx.
     define: { "import.meta.env.VITE_APRAXIA_RUNTIME": JSON.stringify(runtimeMode) },
     server: {

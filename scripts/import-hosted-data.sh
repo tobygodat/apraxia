@@ -6,7 +6,7 @@
 # The dump is personal data. It is written to the ignored supabase/.temp folder
 # and must never be committed. Sign in locally once before running this, so the
 # local user exists. Google connection rows are left out: their encrypted
-# tokens belong to the hosted key, and Storage files are not part of a dump.
+# tokens belong to the hosted key.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DB=supabase_db_apraxia
@@ -15,7 +15,6 @@ mkdir -p supabase/.temp
 
 npx supabase db dump --linked --data-only --use-copy --schema public \
   -x public.google_calendar_connections \
-  -x public.google_drive_connections \
   -x public.google_calendar_preferences \
   -f "$DUMP"
 

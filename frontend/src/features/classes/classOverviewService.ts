@@ -2,10 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database";
 import { ServiceError } from "../../lib/serviceError";
 import { summarizeClasses, type ClassOverview, type OverviewAssignment } from "./classOverview";
-import { isNoteSaved } from "./noteService";
 
 export interface ClassOverviewService {
-  /** Every class's totals in two reads, so the Classes list stays one request pair. */
+  /** Every class's totals in one paged read of its assignments. */
   list(userId: string, signal: AbortSignal): Promise<Record<string, ClassOverview>>;
 }
 
@@ -35,34 +34,18 @@ async function collect<Row extends { id: string; user_id: string }>(
 export function createClassOverviewService(client: SupabaseClient<Database>): ClassOverviewService {
   return {
     async list(userId, signal) {
-      const [assignments, notes] = await Promise.all([
-        collect((after) => {
-          let query = client
-            .from("todos")
-            .select("id,user_id,text,due_date,class_id,completed")
-            .eq("user_id", userId)
-            .not("class_id", "is", null)
-            .is("deleted_at", null)
-            .order("id")
-            .limit(PAGE);
-          if (after) query = query.gt("id", after);
-          return query.abortSignal(bounded(signal));
-        }, userId),
-        collect((after) => {
-          let query = client
-            .from("class_notes")
-            .select("id,user_id,course_id,source,uploaded_at")
-            .eq("user_id", userId)
-            .order("id")
-            .limit(PAGE);
-          if (after) query = query.gt("id", after);
-          return query.abortSignal(bounded(signal));
-        }, userId),
-      ]);
-      const noteCounts: Record<string, number> = {};
-      // An upload still waiting on its PDF is not a saved note yet.
-      for (const note of notes.filter(isNoteSaved))
-        noteCounts[note.course_id] = (noteCounts[note.course_id] ?? 0) + 1;
+      const assignments = await collect((after) => {
+        let query = client
+          .from("todos")
+          .select("id,user_id,text,due_date,class_id,completed")
+          .eq("user_id", userId)
+          .not("class_id", "is", null)
+          .is("deleted_at", null)
+          .order("id")
+          .limit(PAGE);
+        if (after) query = query.gt("id", after);
+        return query.abortSignal(bounded(signal));
+      }, userId);
       const rows: OverviewAssignment[] = assignments.map((row) => ({
         id: row.id,
         classId: row.class_id!,
@@ -70,7 +53,7 @@ export function createClassOverviewService(client: SupabaseClient<Database>): Cl
         due: row.due_date,
         done: row.completed,
       }));
-      return summarizeClasses(rows, noteCounts);
+      return summarizeClasses(rows);
     },
   };
 }

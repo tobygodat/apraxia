@@ -1,8 +1,8 @@
 import { describeClassOverview, type ClassOverview } from "./classOverview";
 
 /**
- * One ruled line of class facts: what is due next, then how much is open and
- * saved. The list row pushes the counts to its right edge; the class header
+ * One ruled line of class facts: what is due next, then how much is open.
+ * The list row pushes the counts to its right edge; the class header
  * keeps them inline behind a middle dot.
  */
 export function ClassSummary({

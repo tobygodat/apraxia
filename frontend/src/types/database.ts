@@ -379,62 +379,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      class_notes: {
-        Row: {
-          byte_size: number | null;
-          content_sha256: string | null;
-          course_id: string;
-          created_at: string;
-          drive_file_id: string | null;
-          id: string;
-          name: string;
-          object_path: string | null;
-          search_vector: unknown;
-          source: string;
-          updated_at: string;
-          uploaded_at: string | null;
-          user_id: string;
-        };
-        Insert: {
-          byte_size?: number | null;
-          content_sha256?: string | null;
-          course_id: string;
-          created_at?: string;
-          drive_file_id?: string | null;
-          id?: string;
-          name: string;
-          object_path?: string | null;
-          search_vector?: unknown;
-          source: string;
-          updated_at?: string;
-          uploaded_at?: string | null;
-          user_id?: string;
-        };
-        Update: {
-          byte_size?: number | null;
-          content_sha256?: string | null;
-          course_id?: string;
-          created_at?: string;
-          drive_file_id?: string | null;
-          id?: string;
-          name?: string;
-          object_path?: string | null;
-          search_vector?: unknown;
-          source?: string;
-          updated_at?: string;
-          uploaded_at?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "class_notes_class_owner";
-            columns: ["user_id", "course_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["user_id", "id"];
-          },
-        ];
-      };
       classes: {
         Row: {
           created_at: string;
@@ -535,42 +479,6 @@ export type Database = {
           id?: string;
           is_visible?: boolean;
           last_seen_at?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
-      google_drive_connections: {
-        Row: {
-          connection_state: Database["public"]["Enums"]["google_calendar_connection_state"];
-          created_at: string;
-          display_email: string | null;
-          google_account_id: string | null;
-          granted_scopes: string[];
-          id: string;
-          last_successful_refresh_at: string | null;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          connection_state?: Database["public"]["Enums"]["google_calendar_connection_state"];
-          created_at?: string;
-          display_email?: string | null;
-          google_account_id?: string | null;
-          granted_scopes?: string[];
-          id?: string;
-          last_successful_refresh_at?: string | null;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          connection_state?: Database["public"]["Enums"]["google_calendar_connection_state"];
-          created_at?: string;
-          display_email?: string | null;
-          google_account_id?: string | null;
-          granted_scopes?: string[];
-          id?: string;
-          last_successful_refresh_at?: string | null;
           updated_at?: string;
           user_id?: string;
         };
@@ -860,44 +768,7 @@ export type Database = {
         };
         Returns: Json;
       };
-      begin_drive_oauth_attempt: {
-        Args: {
-          p_code_verifier: string;
-          p_expires_at: string;
-          p_redirect_uri: string;
-          p_state_hash: string;
-          p_verified_user_id: string;
-        };
-        Returns: Json;
-      };
-      begin_drive_oauth_transaction: {
-        Args: {
-          p_expires_at: string;
-          p_redirect_uri: string;
-          p_state_hash: string;
-          p_verified_user_id: string;
-        };
-        Returns: Json;
-      };
       clear_calendar_credentials:
-        | {
-            Args: {
-              p_expected_updated_at?: string;
-              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
-              p_verified_user_id: string;
-            };
-            Returns: boolean;
-          }
-        | {
-            Args: {
-              p_delete_credentials: boolean;
-              p_expected_updated_at: string;
-              p_state: Database["public"]["Enums"]["google_calendar_connection_state"];
-              p_verified_user_id: string;
-            };
-            Returns: boolean;
-          };
-      clear_drive_credentials:
         | {
             Args: {
               p_expected_updated_at?: string;
@@ -931,27 +802,10 @@ export type Database = {
         };
         Returns: Json;
       };
-      consume_drive_oauth_attempt: {
-        Args: {
-          p_redirect_uri: string;
-          p_state_hash: string;
-          p_verified_user_id: string;
-        };
-        Returns: Json;
-      };
-      consume_drive_oauth_transaction: {
-        Args: {
-          p_redirect_uri: string;
-          p_state_hash: string;
-          p_verified_user_id: string;
-        };
-        Returns: Json;
-      };
       finish_career_resource: {
         Args: { p_resource_id: string };
         Returns: undefined;
       };
-      finish_class_pdf: { Args: { p_note_id: string }; Returns: undefined };
       get_today_todos_page: {
         Args: {
           p_limit?: number;
@@ -988,10 +842,6 @@ export type Database = {
         Args: { p_verified_user_id: string };
         Returns: Json;
       };
-      read_drive_credentials: {
-        Args: { p_verified_user_id: string };
-        Returns: Json;
-      };
       reorder_today_todos: {
         Args: { p_local_date: string; p_todo_ids: string[] };
         Returns: Json;
@@ -1005,31 +855,6 @@ export type Database = {
         Returns: boolean;
       };
       save_calendar_credentials:
-        | {
-            Args: {
-              p_connection_id: string;
-              p_envelope: string;
-              p_expected_updated_at: string;
-              p_key_version: number;
-              p_scopes: string[];
-              p_verified_user_id: string;
-            };
-            Returns: boolean;
-          }
-        | {
-            Args: {
-              p_access_token_envelope: string;
-              p_access_token_expires_at: string;
-              p_connection_id: string;
-              p_envelope: string;
-              p_expected_updated_at: string;
-              p_key_version: number;
-              p_scopes: string[];
-              p_verified_user_id: string;
-            };
-            Returns: boolean;
-          };
-      save_drive_credentials:
         | {
             Args: {
               p_connection_id: string;
@@ -1087,8 +912,7 @@ export type Database = {
       orbitos_record_type: "todo" | "idea" | "project" | "application";
       project_status: "active" | "someday" | "completed" | "archived";
       record_source: "manual" | "migration";
-      search_record_type:
-        "todo" | "assignment" | "idea" | "project" | "class" | "class_note" | "application";
+      search_record_type: "todo" | "assignment" | "idea" | "project" | "class" | "application";
       todo_recurrence_freq: "daily" | "weekly" | "monthly";
     };
     CompositeTypes: {
@@ -1228,15 +1052,7 @@ export const Constants = {
       orbitos_record_type: ["todo", "idea", "project", "application"],
       project_status: ["active", "someday", "completed", "archived"],
       record_source: ["manual", "migration"],
-      search_record_type: [
-        "todo",
-        "assignment",
-        "idea",
-        "project",
-        "class",
-        "class_note",
-        "application",
-      ],
+      search_record_type: ["todo", "assignment", "idea", "project", "class", "application"],
       todo_recurrence_freq: ["daily", "weekly", "monthly"],
     },
   },

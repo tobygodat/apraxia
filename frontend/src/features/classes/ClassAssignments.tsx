@@ -391,7 +391,6 @@ function AssignmentSession({
         ? null
         : (summarizeClasses(
             items.map((item) => ({ ...item, classId: courseId, due: item.due || null })),
-            {},
           )[courseId] ?? emptyClassOverview),
     );
   }, [items, loading, loadError, courseId, onOverview]);

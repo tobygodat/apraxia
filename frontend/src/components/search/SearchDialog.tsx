@@ -17,14 +17,13 @@ export interface SearchDialogProps {
   onNavigate?: (to: string) => void;
 }
 
-/** The interface says "Tasks" where the database says todos, and "note" reads better than the column name. */
+/** The interface says "Tasks" where the database says todos. */
 const RESULT_KIND: Record<SearchRecordType, string> = {
   todo: "task",
   assignment: "assignment",
   idea: "idea",
   project: "project",
   class: "class",
-  class_note: "note",
   application: "application",
 };
 
@@ -124,10 +123,13 @@ export function SearchDialog({ open, service, onClose, onSelect, onNavigate }: S
     try {
       const page = await service.search(searchQuery, offset, controller.signal);
       if (!alive.current || generation !== requestGeneration.current) return;
+      // A kind this build cannot name or open (a database still carrying one the
+      // app has retired) is left out; paging still counts the rows as returned.
+      const known = page.filter((row) => row.recordType in RESULT_KIND);
       setResults((current) =>
         offset === 0
-          ? page
-          : [...current, ...page].filter(
+          ? known
+          : [...current, ...known].filter(
               (row, index, all) =>
                 all.findIndex(
                   (other) => other.recordId === row.recordId && other.recordType === row.recordType,

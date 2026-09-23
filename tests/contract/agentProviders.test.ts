@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { serveAgentProvider } from "../../server/agent/agentProviders";
 import { createCalendarHandler } from "../../server/calendar/calendarHandlers";
-import { createDriveHandler } from "../../server/drive/driveHandlers";
 import { CALENDAR_SCOPES } from "../../server/calendar/oauthPolicy";
-import { DRIVE_SCOPES } from "../../server/drive/oauthPolicy";
 import { encryptAccessToken, encryptRefreshToken } from "../../server/calendar/tokenEncryption";
 
 const userId = "11111111-1111-4111-8111-111111111111";
@@ -31,7 +29,7 @@ function setup(state: unknown = { state: "new" }, upstreamStatus = 200) {
           connection_state: "connected",
           created_at: updatedAt,
           updated_at: updatedAt,
-          granted_scopes: target.includes("calendar") ? CALENDAR_SCOPES : DRIVE_SCOPES,
+          granted_scopes: CALENDAR_SCOPES,
         },
         envelope: encryptRefreshToken(
           "refresh-secret",
@@ -55,7 +53,6 @@ function setup(state: unknown = { state: "new" }, upstreamStatus = 200) {
         ],
       });
     if (target.includes("sync_calendar_preferences")) return Response.json([]);
-    if (target.includes("drive/v3/files")) return Response.json({ files: [] });
     if (target.includes("/events"))
       return Response.json({ id: "event" }, { status: upstreamStatus });
     throw new Error(`Unexpected request ${target}`);
@@ -130,25 +127,28 @@ describe("agent provider boundary", () => {
         .every(([url]) => !new URL(String(url)).searchParams.has("q")),
     ).toBe(true);
   });
-  it.each(["calendars", "drive-files"])(
-    "dispatches %s without leaking agent credentials or calling Supabase Auth",
-    async (resource) => {
-      const context = setup();
-      const result = await serveAgentProvider(request(resource), context, resource);
-      expect(result.status).toBe(200);
-      expect(context.fetch.mock.calls.some(([url]) => String(url).includes("/auth/"))).toBe(false);
-      expect(JSON.stringify(context.fetch.mock.calls)).not.toContain("agent-secret");
-      expect(JSON.stringify(await result.json())).not.toContain("secret");
-      const googleCalls = context.fetch.mock.calls.filter(([url]) =>
-        String(url).includes("googleapis.com"),
-      );
-      expect(
-        googleCalls.every(
-          ([, init]) => new Headers(init?.headers).get("authorization") === "Bearer google-access",
-        ),
-      ).toBe(true);
-    },
-  );
+  it("dispatches calendars without leaking agent credentials or calling Supabase Auth", async () => {
+    const context = setup();
+    const result = await serveAgentProvider(request("calendars"), context, "calendars");
+    expect(result.status).toBe(200);
+    expect(context.fetch.mock.calls.some(([url]) => String(url).includes("/auth/"))).toBe(false);
+    expect(JSON.stringify(context.fetch.mock.calls)).not.toContain("agent-secret");
+    expect(JSON.stringify(await result.json())).not.toContain("secret");
+    const googleCalls = context.fetch.mock.calls.filter(([url]) =>
+      String(url).includes("googleapis.com"),
+    );
+    expect(
+      googleCalls.every(
+        ([, init]) => new Headers(init?.headers).get("authorization") === "Bearer google-access",
+      ),
+    ).toBe(true);
+  });
+  it("has no Drive provider resources", async () => {
+    const context = setup();
+    for (const resource of ["drive-files", "drive-pdf"])
+      expect((await serveAgentProvider(request(resource), context, resource)).status).toBe(404);
+    expect(context.fetch).not.toHaveBeenCalled();
+  });
 
   it("creates with deterministic event ID and records the replayable result", async () => {
     const context = setup();
@@ -239,7 +239,7 @@ describe("agent provider boundary", () => {
     expect(context.fetch).not.toHaveBeenCalled();
   });
 
-  it("keeps browser authentication and origin checks, and denies connection and picker injection", async () => {
+  it("keeps browser authentication and origin checks, and denies connection injection", async () => {
     const context = setup();
     const browser = await createCalendarHandler("calendars", context)(request("calendars"));
     expect(browser.status).toBe(503);
@@ -250,7 +250,6 @@ describe("agent provider boundary", () => {
     expect(
       (await createCalendarHandler("events", injected)(request("events", command))).status,
     ).toBe(400);
-    expect((await createDriveHandler("picker", injected)(request("picker", {}))).status).toBe(403);
     expect(
       (await createCalendarHandler("disconnect", injected)(request("disconnect", {}))).status,
     ).toBe(403);

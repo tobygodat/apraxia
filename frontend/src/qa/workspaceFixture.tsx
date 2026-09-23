@@ -1,10 +1,7 @@
 import { createClassPersistenceFixture } from "./classPersistenceFixture";
-import type { DriveService } from "../features/classes/driveService";
-import { createFixturePdf } from "./fixturePdf";
 import { fixtureAssignmentTodos } from "./ClassAssignmentsMock";
 import { createTodoAssignmentService } from "../features/classes/assignmentService";
 import { summarizeClasses } from "../features/classes/classOverview";
-import { isNoteSaved } from "../features/classes/noteService";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
@@ -54,50 +51,6 @@ if (theme && (WORKSPACE_THEME_CHOICES as readonly string[]).includes(theme)) {
 }
 const empty = scenario === "empty";
 const long = scenario === "long" || scenario === "dense";
-let driveConnected = params.get("drive") !== "disconnected";
-const driveService: DriveService = {
-  status: async () => ({ connectionState: driveConnected ? "connected" : "disconnected" }),
-  connect: async () => {
-    throw new Error("Google consent is unavailable in the fictional fixture.");
-  },
-  disconnect: async () => {
-    driveConnected = false;
-  },
-  files: async (folder) => {
-    if (params.get("drive") === "error") throw new Error("Google Drive could not load. Try again.");
-    return {
-      files:
-        folder === "root"
-          ? [
-              {
-                id: "math-notes",
-                name: "MATH3012 notes",
-                folder: true,
-                modifiedTime: null,
-                size: null,
-              },
-            ]
-          : [
-              {
-                id: "lecture-one",
-                name: "Lecture 1 - Counting.pdf",
-                folder: false,
-                modifiedTime: null,
-                size: "1024",
-              },
-            ],
-      nextPage: null,
-    };
-  },
-  pickPdf: async () => ({
-    id: "lecture-one",
-    name: "Lecture 1 - Counting.pdf",
-    folder: false,
-    modifiedTime: null,
-    size: null,
-  }),
-  pdf: async () => createFixturePdf(),
-};
 const now = new Date().toISOString();
 const timezone = (scenario === "personal" && snapshotTimezone()) || "America/New_York";
 const today = localToday(timezone);
@@ -242,7 +195,7 @@ function currentToday(date: string): TodayTodo[] {
 const classFixture = createClassPersistenceFixture(
   empty,
   scenario === "dense",
-  personal ? { owner: userId, classes: personal.classes, notes: personal.notes } : undefined,
+  personal ? { owner: userId, classes: personal.classes } : undefined,
 );
 async function withClassName<T extends Todo>(todo: T): Promise<T> {
   const classes = await classFixture.classes.list(userId, new AbortController().signal);
@@ -417,9 +370,6 @@ const collectionService: CollectionService = {
     check();
     const signal = new AbortController().signal;
     const courses = await classFixture.classes.list(userId, signal);
-    const notes = (
-      await Promise.all(courses.map((course) => classFixture.notes.list(userId, course.id, signal)))
-    ).flat();
     const rows: SearchResult[] = [
       ...projects.map((p) => ({
         recordType: "project" as const,
@@ -463,16 +413,6 @@ const collectionService: CollectionService = {
         relevance: 1,
         totalCount: 0,
       })),
-      ...notes.map((n) => ({
-        recordType: "class_note" as const,
-        recordId: n.id,
-        parentId: n.course_id,
-        title: n.name,
-        snippet: "",
-        updatedAt: now,
-        relevance: 1,
-        totalCount: 0,
-      })),
     ].filter((r) =>
       `${r.title} ${r.snippet} ${r.parentId ?? ""}`.toLowerCase().includes(query.toLowerCase()),
     );
@@ -506,14 +446,8 @@ const workspaceData = {
   assignments: delayedFixtureService(createTodoAssignmentService(todoService), delay),
   classOverview: delayedFixtureService(
     {
-      list: async (owner: string, signal: AbortSignal) => {
+      list: async () => {
         check();
-        const courses = await classFixture.classes.list(owner, signal);
-        const noteCounts: Record<string, number> = {};
-        for (const course of courses)
-          noteCounts[course.id] = (await classFixture.notes.list(owner, course.id, signal)).filter(
-            isNoteSaved,
-          ).length;
         return summarizeClasses(
           todos
             .filter((todo) => todo.classId)
@@ -524,7 +458,6 @@ const workspaceData = {
               due: todo.dueDate,
               done: todo.completed,
             })),
-          noteCounts,
         );
       },
     },
@@ -626,7 +559,6 @@ createRoot(document.getElementById("root")!).render(
         collectionService={runtimeCollections}
         calendarService={calendarService}
         careerService={careerService}
-        driveService={driveService}
         workspaceData={runtimeData}
       />
       <FixtureTools />

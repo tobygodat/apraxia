@@ -3,12 +3,11 @@ import { formatTaskDate } from "../todos/taskFormatting";
 
 /**
  * What the Classes list and a class header answer at a glance: what is due
- * next, how much is still open, and how many PDFs are saved.
+ * next and how much is still open.
  */
 export interface ClassOverview {
   readonly assignments: number;
   readonly open: number;
-  readonly notes: number;
   /** The soonest dated open assignment, or null when none is scheduled. */
   readonly nextDue: { readonly title: string; readonly due: string } | null;
 }
@@ -33,7 +32,6 @@ export interface ClassOverviewLine {
 export const emptyClassOverview: ClassOverview = {
   assignments: 0,
   open: 0,
-  notes: 0,
   nextDue: null,
 };
 
@@ -43,7 +41,6 @@ const UNDATED = "9999-99-99";
 /** Totals per class id. An assignment whose class is unknown is still tallied. */
 export function summarizeClasses(
   assignments: readonly OverviewAssignment[],
-  noteCounts: Readonly<Record<string, number>>,
 ): Record<string, ClassOverview> {
   const totals: Record<string, ClassOverview> = {};
   const at = (classId: string) => totals[classId] ?? emptyClassOverview;
@@ -67,24 +64,13 @@ export function summarizeClasses(
         (open && assignment.due ? { title: assignment.title, due: assignment.due } : null),
     };
   }
-  for (const [classId, notes] of Object.entries(noteCounts))
-    totals[classId] = { ...at(classId), notes };
   return totals;
-}
-
-// The saved files are PDFs, and the class's own page is what "notes" now
-// names, so the count says which of the two it is counting.
-function countsLabel({ open, notes }: ClassOverview) {
-  return [open && `${open} open`, notes && `${notes} ${notes === 1 ? "PDF" : "PDFs"}`]
-    .filter(Boolean)
-    .join(" · ");
 }
 
 /** The summary line's own copy, in the product's existing due-date language. */
 export function describeClassOverview(overview: ClassOverview, today: string): ClassOverviewLine {
-  const counts = countsLabel(overview);
+  const counts = overview.open ? `${overview.open} open` : "";
   const line = (due: string, overdue = false) => ({ due, overdue, counts });
-  if (!overview.assignments && !overview.notes) return line("Nothing saved yet");
   if (!overview.assignments) return line("No assignments yet");
   if (!overview.open) return line("All assignments done");
   if (!overview.nextDue) return line("Nothing scheduled");

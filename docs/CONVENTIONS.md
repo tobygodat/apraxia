@@ -23,7 +23,7 @@ where new code goes. Two rules matter everywhere:
 | --- | --- | --- |
 | Component file | `PascalCase.tsx`, one main export | `TodayPanel.tsx` |
 | Module of helpers or a service | `camelCase.ts` | `todoController.ts`, `collectionService.ts` |
-| Service factory | `create<Name>Service` returning an interface | `createNoteService` |
+| Service factory | `create<Name>Service` returning an interface | `createClassService` |
 | Test | sibling file, `<subject>.test.ts(x)` | `eventLayout.test.ts` |
 | CSS file | `<Component>.css` next to its component, or `<area>.css` for a sheet shared across a feature | `TodayList.css`, `calendar.css` |
 | Migration | `<UTC timestamp>_<snake_case>.sql` | `20260913000300_classes_and_notes.sql` |

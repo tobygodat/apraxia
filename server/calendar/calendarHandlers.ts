@@ -44,8 +44,8 @@ const adapter: GoogleHandlerAdapter<CalendarAction, PreparedCalendarRequest, Cal
   async prepare(action, request) {
     const parameters = new URL(request.url).searchParams;
     // Vercel includes the dynamic route segment (api/calendar/[action].ts) in
-    // the query string. Accept only one matching value, as Drive does; the
-    // strict parameter check below still rejects anything unrelated.
+    // the query string. Accept only one matching value; the strict parameter
+    // check below still rejects anything unrelated.
     const routeActions = parameters.getAll("action");
     if (routeActions.length > 1 || (routeActions.length === 1 && routeActions[0] !== action))
       throw new CalendarHttpError("invalid_request", 400);

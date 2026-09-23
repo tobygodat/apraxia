@@ -6,8 +6,7 @@ type Timestamp = string;
 export type ProjectStatus = "active" | "someday" | "completed" | "archived";
 export type TodoRecurrenceFreq = "daily" | "weekly" | "monthly";
 /** A class is identified by its course code, every other kind by a UUID. */
-export type SearchRecordType =
-  "todo" | "assignment" | "idea" | "project" | "class" | "class_note" | "application";
+export type SearchRecordType = "todo" | "assignment" | "idea" | "project" | "class" | "application";
 type GoogleCalendarConnectionState = "connected" | "reconnect_required" | "disconnected";
 
 /** Browser-safe calendar colors. No Google event body or credential data belongs here. */

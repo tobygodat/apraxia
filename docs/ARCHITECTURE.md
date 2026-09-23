@@ -12,7 +12,7 @@ flowchart LR
   ApiFn["/api/* Vercel functions (api/)"]
   ServerMod["server/ modules\nsession, OAuth, Google transport"]
   Private["private schema\ncredentials, OAuth state"]
-  Google["Google Calendar / Drive"]
+  Google["Google Calendar"]
 
   Browser -- "supabase-js, user JWT" --> Supabase
   Supabase -- "RLS: owner rows only" --> Browser
@@ -41,26 +41,25 @@ owned by the `orbitos_rpc` role. See
 
 ## Path 2: browser to /api to Google
 
-Calendar and Drive need a Google refresh token, a client secret, and an
-encryption key. Those never reach the browser. The browser calls `/api/...` with
-its Supabase JWT; the function verifies the session through Supabase Auth,
+Calendar needs a Google refresh token, a client secret, and an encryption key.
+Those never reach the browser. The browser calls `/api/...` with its Supabase
+JWT; the function verifies the session through Supabase Auth,
 reads the encrypted credential through `service_role` RPCs, talks to Google, and
 returns a sanitized projection. Provider bodies, attendees, descriptions, and
-tokens stay out of the response. See [Calendar](CALENDAR.md) and
-[Drive](DRIVE.md).
+tokens stay out of the response. See [Calendar](CALENDAR.md).
 
 ## Where code lives
 
 | Location | Contents |
 | --- | --- |
-| `frontend/src/apps/` | Application entry points and the workspace shell runtime: `CloudApp`, `MainWorkspace`, `WorkspaceRuntime`, the OAuth callback pages, and the navigation cache. |
+| `frontend/src/apps/` | Application entry points and the workspace shell runtime: `CloudApp`, `MainWorkspace`, `WorkspaceRuntime`, the Calendar OAuth callback page, and the navigation cache. |
 | `frontend/src/features/` | One folder per feature area (`todos`, `collections`, `calendar`, `classes`): components, their CSS, the Supabase-backed service, and pure domain/model helpers. |
 | `frontend/src/components/` | Cross-feature UI: the app shell, global add, search. Legacy-only components also still live here. |
 | `frontend/src/auth/` | Session restore, Google app sign-in, provider-safe storage, and the `RequireAuth` gate. |
 | `frontend/src/config/` | Browser environment parsing, runtime mode, and Vite config helpers. |
 | `frontend/src/qa/` | Development-only fixtures. See [QA fixtures](QA_FIXTURES.md). |
 | `frontend/src/types/` | Generated `database.ts` and hand-written `domain.ts` browser contracts. |
-| `api/` | Vercel function entry points only: one `[action].ts` per Google provider (`calendar/`, `drive/`) so a warm instance serves every action, the agent resource, and `health.ts`. Each parses the request and delegates. |
+| `api/` | Vercel function entry points only: `calendar/[action].ts`, one function so a warm instance serves every Calendar action, the agent resource, and `health.ts`. Each parses the request and delegates. |
 | `server/` | Server-only logic: session verification, OAuth policy, token encryption, Google transports, and environment validation. Never imported by browser code. |
 | `shared/` | Contracts used by both sides: calendar event shapes, Today RPC wire names, Supabase environment normalizers. Must stay dependency-free and runtime-neutral. |
 | `supabase/` | `migrations/` (forward-only schema) and `tests/` (pgTAP). |

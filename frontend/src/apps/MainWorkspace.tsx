@@ -40,7 +40,6 @@ import type {
 } from "../features/collections/collectionService";
 import type { CareerService } from "../features/career/careerService";
 import type { CareerTab } from "../features/career/CareerApplicationPage";
-import type { DriveService } from "../features/classes/driveService";
 import { ColdLoadGate, useColdLoad } from "./coldLoad";
 import type { NavigationCache } from "./navigationCache";
 import type { WorkspaceData } from "./workspaceData";
@@ -84,7 +83,7 @@ function preloadable<P extends object>(
   return { preload, Component };
 }
 
-// Route-level chunks: calendar (Temporal polyfill), classes (pdfjs), todos board,
+// Route-level chunks: calendar (Temporal polyfill), classes, todos board,
 // collections.
 // Each call names its prop type explicitly via a type-only dynamic import
 // query (erased at build time, no extra bundling): letting `preloadable`'s
@@ -196,7 +195,6 @@ export interface MainWorkspaceProps {
   collectionService: CollectionService;
   calendarService: CalendarService;
   careerService: CareerService;
-  driveService?: DriveService;
   workspaceData: WorkspaceData;
   /** Shared session read cache; the store creates a private one when omitted. */
   cache?: NavigationCache;
@@ -440,10 +438,8 @@ function ClassesRoute(props: MainWorkspaceProps) {
       onClassesChanged={invalidate}
       userId={props.identity.userId}
       courseId={id}
-      driveService={props.driveService}
       assignmentService={props.workspaceData.assignments}
       classService={props.workspaceData.classes}
-      noteService={props.workspaceData.notes}
       overviewService={props.workspaceData.classOverview}
       timezone={profile?.timezone}
     />
@@ -557,11 +553,9 @@ function WorkspaceLayout({
       setSearchOpen(false);
       return;
     }
-    if (result.recordType === "class" || result.recordType === "class_note") {
-      // A class is identified by its course code; a saved note is read on the
-      // class page it belongs to, which the result carries as its parent.
-      const course = result.recordType === "class" ? result.recordId : result.parentId;
-      navigate(course ? `/classes/${encodeURIComponent(course)}` : "/classes");
+    if (result.recordType === "class") {
+      // A class is identified by its course code.
+      navigate(`/classes/${encodeURIComponent(result.recordId)}`);
       setSearchOpen(false);
       return;
     }

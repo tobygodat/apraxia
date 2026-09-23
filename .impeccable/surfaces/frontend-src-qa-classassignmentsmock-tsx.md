@@ -61,10 +61,10 @@ and resets on reload; it does not establish cloud persistence.
 
 ## Notes
 
-Keep the source controls compact until a PDF opens. Offer Open from Drive and
-From device through existing controls, then show the existing reader and toolbar.
-Switching to the local source cancels a pending Drive selection. Mockup checks
-use fictional provider responses and do not establish real Google connectivity.
+Notes is one markdown document per class, below the assignments in the same
+centered column. It renders at rest and shows its source while being written. A
+failed save keeps the text in the field with the reason beneath it. A class has
+no file attachments, so there are no source controls or reader.
 
 ## Verification
 
@@ -72,8 +72,8 @@ The finalized prototype passed 1,952 tests, server/frontend type checks, the
 production build, and the browser bundle check. The test suite used four workers
 to avoid local filesystem-scan timeouts. Chrome checks covered desktop and touch
 layouts, stable label geometry, first-click pickers, keyboard interaction,
-validation, draft recovery, sorting/focus, and fixture PDF opening. The calendar
-was also checked after reload in dense, portrait-cover, and typical scenarios.
+validation, draft recovery, and sorting/focus. The calendar was also checked
+after reload in dense, portrait-cover, and typical scenarios.
 
 The historical critique remains closed as a record of the earlier design; its
 score describes that earlier version, not this accepted result.

@@ -31,7 +31,7 @@ values (
 
 select ok(
   (
-    select count(*) = 9 and bool_and(class.relrowsecurity)
+    select count(*) = 10 and bool_and(class.relrowsecurity)
     from pg_catalog.pg_class as class
     join pg_catalog.pg_namespace as namespace
       on namespace.oid = class.relnamespace
@@ -41,6 +41,7 @@ select ok(
       ('public', 'todos'),
       ('public', 'ideas'),
       ('private', 'retired_media'),
+      ('private', 'retired_class_notes'),
       ('public', 'google_calendar_connections'),
       ('public', 'google_calendar_preferences'),
       ('private', 'google_calendar_credentials'),

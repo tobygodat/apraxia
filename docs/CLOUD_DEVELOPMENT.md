@@ -50,13 +50,11 @@ workflow holds no secrets.
 | `SUPABASE_ANON_KEY` | required | required | no | Same key rule; must match `VITE_SUPABASE_ANON_KEY`. |
 | `SUPABASE_SERVICE_ROLE_KEY` | required for `/api` | required | **no, server only** | Non-empty, and distinct from the public key. |
 | `APP_URL` | required for `/api` | required | no | HTTPS origin, or a loopback HTTP origin. The canonical origin for OAuth redirects. |
-| `GOOGLE_CLIENT_ID` | Calendar/Drive only | required for Calendar/Drive | no | Non-empty. Validated as a group: leave all three blank to run without Google. |
-| `GOOGLE_CLIENT_SECRET` | Calendar/Drive only | required for Calendar/Drive | **no, server only** | Non-empty. |
-| `GOOGLE_TOKEN_ENCRYPTION_KEY` | Calendar/Drive only | required for Calendar/Drive | **no, server only** | Canonical padded standard Base64 of exactly 32 random bytes. Keep it in a secret store. |
-| `GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION` | Calendar/Drive only | optional (defaults to 1) | **no, server only** | The version stamped into new envelopes. Raise it by one per key rotation. |
-| `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS` | Calendar/Drive only | optional | **no, server only** | The key one version below the current one, set only while a rotation is in progress. See the rotation procedure in [calendar](CALENDAR.md#rotating-the-token-encryption-key). |
-| `GOOGLE_PICKER_API_KEY` | Drive Picker only | required for the Picker | server-held, released to the browser by `/api/drive/picker` | Not schema-validated. Restrict the key to the Picker API and the site referrers. |
-| `GOOGLE_PICKER_APP_ID` | Drive Picker only | required for the Picker | same | Not schema-validated. The Google Cloud project number. |
+| `GOOGLE_CLIENT_ID` | Calendar only | required for Calendar | no | Non-empty. Validated as a group: leave all three blank to run without Google. |
+| `GOOGLE_CLIENT_SECRET` | Calendar only | required for Calendar | **no, server only** | Non-empty. |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY` | Calendar only | required for Calendar | **no, server only** | Canonical padded standard Base64 of exactly 32 random bytes. Keep it in a secret store. |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY_VERSION` | Calendar only | optional (defaults to 1) | **no, server only** | The version stamped into new envelopes. Raise it by one per key rotation. |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS` | Calendar only | optional | **no, server only** | The key one version below the current one, set only while a rotation is in progress. See the rotation procedure in [calendar](CALENDAR.md#rotating-the-token-encryption-key). |
 | `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` | local sign-in only | never | no | Read by `supabase/config.toml`, not by the app. Hosted sign-in is configured in the Supabase dashboard. |
 | `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` | local sign-in only | never | **no, server only** | Same. Unset in CI, where the local stack starts without it and nothing signs in. |
 
@@ -313,14 +311,13 @@ the production one; Google shows a client secret once, at creation.
 | --- | --- |
 | `http://127.0.0.1:54321/auth/v1/callback` | Sign-in, through local Supabase |
 | `http://127.0.0.1:3000/api/calendar/callback` | Connecting Calendar |
-| `http://127.0.0.1:3000/api/drive/callback` | Connecting Drive |
 
 These are redirect URIs, not JavaScript origins, and `http`, not `https`. Put
 the client's id and secret in `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and
 `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`, then `npm run db:stop && npm run db:start`.
 The same pair in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, with a fresh
-`GOOGLE_TOKEN_ENCRYPTION_KEY` (`openssl rand -base64 32`), configures Calendar
-and Drive; restart `npm run dev` after changing them. An edited redirect URI can
+`GOOGLE_TOKEN_ENCRYPTION_KEY` (`openssl rand -base64 32`), configures
+Calendar; restart `npm run dev` after changing them. An edited redirect URI can
 take minutes to reach Google, and until it does the consent screen answers
 `redirect_uri_mismatch`. Connecting Calendar locally links the real Google
 calendar: only the apraxia records are local.
@@ -336,7 +333,7 @@ A new local database holds only `supabase/seed.sql`. After signing in once,
 to the local user, so persistence and the API can be exercised on real content
 without touching production. It only reads hosted, and it replaces the local
 `public` tables in one transaction. The Google connection rows and Storage files
-are not copied, so uploaded PDFs do not open locally. The dump lands in the
+are not copied, so uploaded Career resources do not open locally. The dump lands in the
 ignored `supabase/.temp/` and is personal data: never commit it. Rerun the
 command to refresh; `npm run db:reset` returns to the seed, and needs a new
 sign-in before the next import.
@@ -438,7 +435,7 @@ Start at `/qa/workspace.html?scenario=personal`, then repeat the affected flow i
 `dense`. `personal` shows how the change looks on the account it is for; `dense`
 tries to break it. Without a snapshot (`npm run qa:snapshot`), `personal` falls
 back to the fictional `realistic` seed, which is also the default. Scenarios,
-the `route`, `scenario`, and `drive` parameters, what persists across reload,
+the `route`, `scenario`, and `theme` parameters, what persists across reload,
 and which fixture service stands in for which real service are documented in
 [QA fixtures](QA_FIXTURES.md).
 
@@ -489,7 +486,7 @@ rename (`APRAXIA_AGENT_USER_ID`, `APRAXIA_AGENT_SCOPES`, `VITE_APRAXIA_RUNTIME`,
 Vercel Production because sensitive variables cannot be renamed; the server
 accepts `APRAXIA_AGENT_TOKEN` or that name. `APP_URL` must be
 `https://apraxia.dev`, and Google OAuth redirect URIs plus the Supabase Site URL
-must match it, or Calendar and Drive connections fail.
+must match it, or Calendar connections fail.
 
 There is no required Preview environment, and a main push may deploy immediately.
 Before applying a migration, inspect current hosted data and migration history and
