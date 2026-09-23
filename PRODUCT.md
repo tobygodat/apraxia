@@ -34,9 +34,8 @@ AGENTS.md.
 
 - Existing workspace areas are Todos, Projects, Ideas, Calendar, and Classes
   with assignments and course notes.
-- Classes supports saved notes, device PDF uploads, and Google Drive notes
-  through Google's native Picker, with a separate Drive consent. No background
-  Drive synchronization or Drive writes exist. See docs/DRIVE.md.
+- Each class has one written markdown notes document beside its assignments.
+  Classes hold no file attachments and have no Google Drive connection.
 - Keep each person's information private to their account. Browser data access
   uses authenticated sessions and row-level security; provider credentials
   remain server-only.

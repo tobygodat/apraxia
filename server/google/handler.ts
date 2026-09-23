@@ -113,7 +113,7 @@ export function createGoogleConnectionHandler<A extends string, P, S extends Goo
   const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
   return async (request: Request): Promise<Response> => {
     try {
-      if (dependencies.verifiedSession && !["calendars", "events", "files", "pdf"].includes(action))
+      if (dependencies.verifiedSession && !["calendars", "events"].includes(action))
         return json(
           { error: { code: "invalid_request", message: "This action is unavailable." } },
           403,

@@ -13,7 +13,7 @@ Start them with `npm run dev:web` and open
 
 | Page | Source | Parameters |
 | --- | --- | --- |
-| `/qa/workspace.html` | `frontend/src/qa/workspaceFixture.tsx` | `?route=`, `?scenario=`, `?drive=`, `?theme=` |
+| `/qa/workspace.html` | `frontend/src/qa/workspaceFixture.tsx` | `?route=`, `?scenario=`, `?theme=` |
 | `/qa/todos-workspace.html` | `frontend/src/qa/todosWorkspaceFixture.tsx` | `?scenario=` |
 | `/qa/today-panel.html` | same file, different stage | `?scenario=` |
 | `/qa/google-sign-in.html` | `frontend/src/qa/googleSignInFixture.tsx` | none |
@@ -34,7 +34,7 @@ fixture defaults to `realistic`; the QA menu switches between them by reloading.
 
 | Scenario | What it gives you |
 | --- | --- |
-| `personal` | A private reproduction of the real account: its tasks, projects, ideas, classes, note names, and the captured week's calendar events. Check this first, then `dense`. See [The personal snapshot](#the-personal-snapshot). Without a snapshot it shows the `realistic` seed and says so in the QA menu. |
+| `personal` | A private reproduction of the real account: its tasks, projects, ideas, class names, and the captured week's calendar events. Check this first, then `dense`. See [The personal snapshot](#the-personal-snapshot). Without a snapshot it shows the `realistic` seed and says so in the QA menu. |
 | `realistic` | Default. Event-specific colors on one calendar, three-way overlaps, adjacent 15-minute events, 5 to 120-minute events, long and untitled events, multiple all-day lanes, midnight crossings, hidden and read-only calendars. |
 | `calendar` | Calendar-focused week seed. |
 | `typical` | A quiet week. |
@@ -53,11 +53,6 @@ workspace mounts: `crisp` (the default), `crisp-light`, `classic`, `paper`,
 the same `apraxia:workspace-preferences` entry Settings writes, so the choice
 survives a reload until another `?theme=` replaces it.
 
-**`?drive=`** (workspace only) sets the Drive fixture state:
-`?drive=disconnected` reports no Drive connection, `?drive=error` makes file
-listing fail. Omit it for a connected Drive. Pair it with
-`?route=/classes/math3012`.
-
 ## The personal snapshot
 
 `npm run qa:snapshot` reads the account through the
@@ -68,8 +63,8 @@ whenever the fixture should catch up with the account.
 
 The folder is gitignored. The file is personal data: never commit it, and treat
 screenshots of the `personal` scenario the same way. It leaves out the token,
-owner id, Drive file ids, event locations, and Google event URLs. Note PDFs are
-not captured, so opening a note behaves as in the other scenarios.
+owner id, event locations, and Google event URLs. A class's written notes are
+not captured, so each class opens with nothing written.
 
 `qa/personalSnapshot.ts` loads the file through `import.meta.glob`, so a checkout
 without it still builds. On load every task date moves forward by whole weeks,
@@ -127,8 +122,7 @@ navigation cache, preload, and invalidation are the same code.
 | `todoService` | `features/todos/supabaseTodoService.ts` | inline object in `workspaceFixture.tsx` |
 | `collectionService` | `features/collections/collectionService.ts` | inline object in `workspaceFixture.tsx` |
 | `calendarService` | `features/calendar/calendarService.ts` (via `/api/calendar`) | `qa/workspaceFixtureCalendar.ts`, using the production event normalizer |
-| `driveService` | `features/classes/driveService.ts` (via `/api/drive`) | inline object, including a Picker stub |
-| `workspaceData.classes` / `.notes` | `features/classes/classService.ts`, `noteService.ts` | `qa/classPersistenceFixture.ts` |
+| `workspaceData.classes` | `features/classes/classService.ts` | `qa/classPersistenceFixture.ts` |
 | `workspaceData.assignments` | `features/classes/assignmentService.ts` | `qa/ClassAssignmentsMock.tsx` |
 | `workspaceData.homeAppearance` | `features/calendar/homeAppearance.ts` | `createFixtureAppearance` in `qa/workspaceFixtureSupport.ts` |
 | `workspaceData.profile` / `.projects` | `apps/workspaceData.ts` | inline fictional profile and project list |
@@ -164,9 +158,9 @@ trigger. What the database actually does is covered by
 Fixtures never touch Supabase, Google, or the network. They cannot establish:
 
 - database persistence, RLS, or that a migration was applied,
-- Google OAuth, consent, scopes, permissions, or the real Picker popup,
+- Google OAuth, consent, scopes, or permissions,
 - calendar recurrence expansion, notifications, or provider write behavior,
-- hosted environment configuration, CSP, API-key restrictions, or streaming,
+- hosted environment configuration, CSP, or streaming,
 - anything about the deployed bundle.
 
 For data-dependent or provider-dependent changes, also check the authenticated

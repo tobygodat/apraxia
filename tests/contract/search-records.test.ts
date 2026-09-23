@@ -72,8 +72,8 @@ beforeAll(async () => {
     insert into public.projects(id,user_id,title,description) values
       ('a4000000-0000-4000-8000-000000000009','${owner}','Reglaze the greenhouse',
        'Reglaze the greenhouse');
-    insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
-      ('a4000000-0000-4000-8000-000000000006','${owner}','MATH3012','Week 3 lecture slides','drive','drive-file-1');
+    insert into public.todos(id,user_id,text) values
+      ('a4000000-0000-4000-8000-000000000006','${owner}','Rewatch the week 3 lecture');
     -- One record of every kind, so a branch that goes missing is caught.
     insert into public.classes(user_id,id,name) values
       ('${owner}','BIO2200','Orchard ecology');
@@ -85,8 +85,6 @@ beforeAll(async () => {
       ('a4000000-0000-4000-8000-00000000000c','${owner}','Orchard planting','Rows of apple trees');
     insert into public.projects(id,user_id,title,description) values
       ('a4000000-0000-4000-8000-00000000000d','${owner}','Orchard fence','Replace the posts');
-    insert into public.class_notes(id,user_id,course_id,name,source,drive_file_id) values
-      ('a4000000-0000-4000-8000-00000000000e','${owner}','BIO2200','Orchard survey','drive','drive-file-2');
     insert into public.career_applications(id,user_id,company,role) values
       ('a4000000-0000-4000-8000-00000000000f','${owner}','Orchard Labs','Field engineer');
     update public.todos set deleted_at = statement_timestamp()
@@ -104,15 +102,14 @@ it("stems English words so a singular query finds a plural record and back", asy
   expect((await search("libraries")).map((r) => r.title)).toEqual(["Return the library books"]);
   expect((await search("builds")).map((r) => r.title)).toEqual(["Shelving"]);
   expect((await search("essay")).map((r) => r.title)).toEqual(["Bookmarks"]);
-  expect((await search("lectures")).map((r) => r.title)).toEqual(["Week 3 lecture slides"]);
+  expect((await search("lectures")).map((r) => r.title)).toEqual(["Rewatch the week 3 lecture"]);
 });
 
-it("finds a class, its assignments, and its saved notes from one course code", async () => {
+it("finds a class and its assignments from one course code", async () => {
   const rows = await search("MATH3012");
   expect(rows.map((r) => [r.record_type, r.record_id, r.parent_id]).sort()).toEqual([
     ["assignment", "a4000000-0000-4000-8000-000000000003", "MATH3012"],
     ["class", "MATH3012", null],
-    ["class_note", "a4000000-0000-4000-8000-000000000006", "MATH3012"],
   ]);
 });
 
@@ -163,7 +160,6 @@ it("keeps every search vector on a partial or plain GIN index", async () => {
   );
   expect(rows.map((r) => r.indexname)).toEqual([
     "career_applications_search_idx",
-    "class_notes_search_idx",
     "classes_search_idx",
     "ideas_search_idx",
     "projects_search_idx",
@@ -179,9 +175,7 @@ it("keeps the delete and restore contract on its own narrower record type", asyn
   const search = await database.query<{ kinds: string }>(
     `select enum_range(null::public.search_record_type)::text as kinds`,
   );
-  expect(search.rows).toEqual([
-    { kinds: "{todo,assignment,idea,project,class,class_note,application}" },
-  ]);
+  expect(search.rows).toEqual([{ kinds: "{todo,assignment,idea,project,class,application}" }]);
 });
 
 it("never prints a record's own text twice in one row", async () => {

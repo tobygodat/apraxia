@@ -12,7 +12,7 @@ import { agentOpenApi, workspaceBuckets } from "./agentSchema.js";
 
 const protocolVersions = ["2025-11-25", "2025-06-18", "2025-03-26"];
 const instructions =
-  "Live access to one apraxia account: tasks, projects, ideas, classes, saved notes, Google Calendar weeks and Drive PDFs. Call guide once for writable fields, filters and rules. due_date is a plain YYYY-MM-DD and due_time is local wall time: never convert them through UTC or move overdue dates. Before update_record, read the record and pass its version unchanged as expected_version; on a conflict read again and reconsider. Lists page with limit/offset: follow next_offset until null. Nothing can be deleted. A tool error never grants permission to overwrite or recreate data.";
+  "Live access to one apraxia account: tasks, projects, ideas, classes and Google Calendar weeks. Call guide once for writable fields, filters and rules. due_date is a plain YYYY-MM-DD and due_time is local wall time: never convert them through UTC or move overdue dates. Before update_record, read the record and pass its version unchanged as expected_version; on a conflict read again and reconsider. Lists page with limit/offset: follow next_offset until null. Nothing can be deleted. A tool error never grants permission to overwrite or recreate data.";
 
 type Schema = Record<string, unknown>;
 type Plan = {
@@ -60,7 +60,7 @@ const filters = {
   completed: { type: "boolean", description: "todos only" },
   due_from: { ...day, description: "todos only; inclusive" },
   due_to: { ...day, description: "todos only; inclusive" },
-  class_id: { ...text, description: "todos and notes" },
+  class_id: { ...text, description: "todos only" },
   project_id: { ...text, format: "uuid", description: "todos and ideas" },
 };
 const idempotencyKey = {
@@ -89,7 +89,7 @@ const tools: Tool[] = [
     name: "list_records",
     title: "List records",
     description:
-      "List active todos, projects, ideas, classes or notes, ordered by id. Returns {items,next_offset}. q is a case-insensitive substring match.",
+      "List active todos, projects, ideas or classes, ordered by id. Returns {items,next_offset}. q is a case-insensitive substring match.",
     scopes: ["workspace:read"],
     properties: { bucket, q: text, ...filters },
     required: ["bucket"],
@@ -108,7 +108,7 @@ const tools: Tool[] = [
     name: "search",
     title: "Search records",
     description:
-      "Case-insensitive substring search of saved text, titles, bodies, descriptions and names. Without bucket, returns one independent page per bucket and accepts only limit, offset and updated_since. Does not search PDF contents or calendar events.",
+      "Case-insensitive substring search of saved text, titles, bodies, descriptions and names. Without bucket, returns one independent page per bucket and accepts only limit, offset and updated_since. Does not search calendar events.",
     scopes: ["workspace:read"],
     properties: { q: text, bucket, ...filters },
     required: ["q"],
@@ -129,7 +129,7 @@ const tools: Tool[] = [
   {
     name: "create_record",
     title: "Create a record",
-    description: "Create a todo, project, idea, class or note. data holds the fields from guide.",
+    description: "Create a todo, project, idea or class. data holds the fields from guide.",
     scopes: ["workspace:write"],
     write: true,
     properties: { bucket, data: { type: "object" }, idempotency_key: idempotencyKey },
@@ -217,14 +217,6 @@ const tools: Tool[] = [
         key: args.idempotency_key,
       };
     },
-  },
-  {
-    name: "list_drive_files",
-    title: "Browse Drive",
-    description: "Folders and PDFs in the connected Google Drive. Returns {files,nextPage}.",
-    scopes: ["files:read"],
-    properties: { folder: { ...text, default: "root" }, page: text },
-    plan: (args) => ({ resource: "drive-files", query: args }),
   },
 ];
 

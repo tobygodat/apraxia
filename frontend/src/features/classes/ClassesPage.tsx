@@ -2,10 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
-import type { DriveService } from "./driveService";
 import "./classes.css";
 // One Paper sheet covers the whole Classes feature: this page, the class
-// detail, assignments, the Drive source, the saved notes and the PDF reader.
+// detail, its assignments and its notes.
 import "./classesPaper.css";
 import "./classesCrisp.css";
 
@@ -16,7 +15,6 @@ import type { ClassOverviewService } from "./classOverviewService";
 import type { AssignmentService } from "./assignmentService";
 
 import { readLegacyClasses, type Course, type ClassService } from "./classService";
-import type { NoteService } from "./noteService";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
 import { useWorkspaceRevision } from "../../apps/workspaceStore";
@@ -26,20 +24,16 @@ import { useLocalToday } from "../todos/useLocalToday";
 export function ClassesPage({
   userId,
   courseId,
-  driveService,
   assignmentService,
   classService,
-  noteService,
   overviewService,
   timezone,
   onClassesChanged,
 }: {
   userId: string;
   courseId?: string;
-  driveService?: DriveService;
   assignmentService?: AssignmentService;
   classService?: ClassService;
-  noteService?: NoteService;
   /** Totals behind every row of the class list. The page works without it. */
   overviewService?: ClassOverviewService;
   timezone?: string;
@@ -166,9 +160,7 @@ export function ClassesPage({
           userId={userId}
           course={course}
           classService={classService}
-          driveService={driveService}
           assignmentService={assignmentService}
-          noteService={noteService}
           timezone={timezone}
           onEdit={() => {
             setError("");
@@ -257,8 +249,8 @@ export function ClassesPage({
 }
 
 /**
- * Every class with its own standing: what is due next, what is still open, and
- * how many notes are saved. Totals arrive after the names, so the list is
+ * Every class with its own standing: what is due next and what is still open.
+ * Totals arrive after the names, so the list is
  * readable immediately and never shifts when they land.
  */
 function ClassList({

@@ -19,14 +19,6 @@ export interface PersonalSnapshotEvent {
   startMinute?: number;
   endMinute?: number;
 }
-export interface PersonalSnapshotNote {
-  id: string;
-  name: string;
-  courseId: string;
-  source: "drive" | "upload";
-  byteSize: number | null;
-  saved: boolean;
-}
 interface PersonalSnapshotFile {
   version: 1;
   capturedOn: SqlDate;
@@ -34,7 +26,6 @@ interface PersonalSnapshotFile {
   projects: Project[];
   ideas: Idea[];
   classes: { id: string; name: string | null }[];
-  notes: PersonalSnapshotNote[];
   todos: Todo[];
   events: PersonalSnapshotEvent[];
 }

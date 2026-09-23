@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { eventCommandSchema } from "../../shared/calendarEventContract.js";
 import { createCalendarHandler } from "../calendar/calendarHandlers.js";
-import { createDriveHandler } from "../drive/driveHandlers.js";
 
 interface AgentProviderContext {
   userId: string;
@@ -35,7 +34,7 @@ export async function serveAgentProvider(
   context: AgentProviderContext,
   resource: string,
 ): Promise<Response> {
-  if (!["calendars", "events", "drive-files", "drive-pdf"].includes(resource))
+  if (!["calendars", "events"].includes(resource))
     return error("not_found", "Unknown provider resource.", 404);
   if (request.method !== "GET" && !(resource === "events" && request.method === "POST"))
     return error("method_not_allowed", "This method is unavailable.", 405);
@@ -128,13 +127,10 @@ export async function serveAgentProvider(
     fetch: context.fetch,
     verifiedSession: { userId: context.userId },
   };
-  let response =
-    resource === "events" || resource === "calendars"
-      ? await createCalendarHandler(resource, dependencies)(internal)
-      : await createDriveHandler(
-          resource === "drive-pdf" ? "pdf" : "files",
-          dependencies,
-        )(internal);
+  let response = await createCalendarHandler(
+    resource as "calendars" | "events",
+    dependencies,
+  )(internal);
   if (requestId) {
     // A transport/server failure cannot prove that Google did not commit a write.
     if (response.status >= 500) response = unknownOutcome(createdEventId);

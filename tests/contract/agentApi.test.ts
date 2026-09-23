@@ -150,8 +150,8 @@ describe("agent API boundary", () => {
   it("fans out search into separately paginated buckets", async () => {
     const { handle, fetcher } = setup();
     const result = await (await handle(request("search?q=exam"))).json();
-    expect(Object.keys(result.buckets)).toEqual(["todos", "projects", "ideas", "classes", "notes"]);
-    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(Object.keys(result.buckets)).toEqual(["todos", "projects", "ideas", "classes"]);
+    expect(fetcher).toHaveBeenCalledTimes(4);
   });
   it("rejects unknown write-envelope fields, non-JSON and oversized bodies", async () => {
     const { handle, fetcher } = setup();
@@ -177,55 +177,11 @@ describe("agent API boundary", () => {
     expect((await handle(huge)).status).toBe(400);
     expect(fetcher).not.toHaveBeenCalled();
   });
-  it("downloads only the owned completed note's fixed storage path", async () => {
+  it("has no notes or Drive endpoints, and still parses the retired files:read scope", async () => {
+    // The environment lists files:read, as the hosted one still does; a 503 would mean it no longer parses.
     const { handle, fetcher } = setup();
-    fetcher
-      .mockReset()
-      .mockResolvedValueOnce(
-        Response.json({
-          item: {
-            id: owner,
-            source: "upload",
-            uploaded_at: "2026-09-16",
-            object_path: "../../untrusted",
-          },
-        }),
-      )
-      .mockResolvedValueOnce(new Response("%PDF-test"));
-    const response = await handle(request(`note-content?id=${owner}`));
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toBe("application/pdf");
-    expect(fetcher.mock.calls[1]![0]).toBe(
-      `https://database.example/storage/v1/object/authenticated/class-pdfs/${owner}/${owner}.pdf`,
-    );
-    expect(await response.text()).toBe("%PDF-test");
-  });
-  it("does not download pending uploads or allow unscoped file reads", async () => {
-    const pending = setup({ item: { id: owner, source: "upload", uploaded_at: null } });
-    expect((await pending.handle(request(`note-content?id=${owner}`))).status).toBe(409);
-    expect(pending.fetcher).toHaveBeenCalledTimes(1);
-    const limited = setup(undefined, 200, {
-      ...environment,
-      APRAXIA_AGENT_SCOPES: "workspace:read",
-    });
-    expect((await limited.handle(request(`note-content?id=${owner}`))).status).toBe(403);
-    expect(limited.fetcher).not.toHaveBeenCalled();
-  });
-  it("replays a committed note before consulting a disconnected Drive provider", async () => {
-    const original = { item: { id: owner, source: "drive", name: "Lecture", version: "v1" } };
-    const { handle, fetcher } = setup({ found: true, result: original });
-    const response = await handle(
-      request("notes", {
-        method: "POST",
-        key: "saved-note",
-        body: {
-          data: { source: "drive", drive_file_id: "file-123", course_id: "math", name: "Lecture" },
-        },
-      }),
-    );
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual(original);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body)).p_operation).toBe("replay");
+    for (const path of ["notes", `note-content?id=${owner}`, "drive-files?folder=root"])
+      expect((await handle(request(path))).status).toBe(404);
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });

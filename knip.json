@@ -19,12 +19,7 @@
       "ignoreDependencies": ["@supabase/supabase-js"]
     },
     "frontend": {
-      "entry": [
-        "src/qa/*.tsx",
-        "pdfAssets.ts",
-        "src/**/*.test.{ts,tsx}",
-        "tests/**/*.test.{ts,tsx}"
-      ],
+      "entry": ["src/qa/*.tsx", "src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "*.ts"],
       "ignore": ["src/types/database.ts", "src/api/**"]
     }

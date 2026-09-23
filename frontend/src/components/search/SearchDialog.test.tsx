@@ -71,12 +71,6 @@ describe("Search dialog", () => {
       { ...row("i1", "Garden thought"), recordType: "idea", snippet: "" },
       { ...row("p1", "Kitchen"), recordType: "project", snippet: "" },
       { ...row("MATH3012", "Linear Algebra"), recordType: "class", snippet: "" },
-      {
-        ...row("n1", "Week 3 slides"),
-        recordType: "class_note",
-        parentId: "MATH3012",
-        snippet: "",
-      },
     ];
     const search = vi
       .fn()
@@ -90,7 +84,6 @@ describe("Search dialog", () => {
       "ideaGarden thought",
       "projectKitchen",
       "classLinear Algebra",
-      "noteWeek 3 slidesMATH3012",
     ]);
   });
   it("focuses search, traps Tab, closes with Escape, and restores the opener", async () => {

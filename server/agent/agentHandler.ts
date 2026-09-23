@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { normalizeSecureHttpOrigin } from "../../shared/supabaseEnvironment.js";
 import { object } from "../google/http.js";
 import {
   AgentError,
@@ -8,7 +7,6 @@ import {
   createAgentRpc,
   idempotencyKey,
   invalid,
-  privateHeaders,
   requestJson,
   requireScope,
 } from "./agentHttp.js";
@@ -91,7 +89,7 @@ export function createAgentHandler(
           ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         });
 
-      if (["calendars", "events", "drive-files"].includes(resource)) {
+      if (["calendars", "events"].includes(resource)) {
         if (request.method === "PATCH" || (resource !== "events" && request.method !== "GET"))
           throw new AgentError(
             "method_not_allowed",
@@ -100,67 +98,9 @@ export function createAgentHandler(
           );
         const body = request.method === "POST" ? await requestJson(request) : undefined;
         const mutation = object(body) && ["create", "update"].includes(String(body.action));
-        requireScope(
-          session.scopes,
-          resource === "drive-files" ? "files:read" : mutation ? "calendar:write" : "calendar:read",
-        );
+        requireScope(session.scopes, mutation ? "calendar:write" : "calendar:read");
         if (mutation) idempotencyKey(request);
         return await serveAgentProvider(canonicalRequest(body), context, resource);
-      }
-
-      if (resource === "note-content") {
-        requireScope(session.scopes, "workspace:read");
-        requireScope(session.scopes, "files:read");
-        if (
-          request.method !== "GET" ||
-          url.searchParams.size !== 1 ||
-          !z.uuid().safeParse(url.searchParams.get("id")).success
-        )
-          invalid("Use GET with the saved note id.");
-        const result = await workspace("get", "notes", { p_id: url.searchParams.get("id") });
-        if (!object(result) || !object(result.item))
-          throw new AgentError("not_found", 404, "Note not found.");
-        const note = result.item;
-        if (note.source === "drive" && typeof note.drive_file_id === "string") {
-          const target = new URL(url);
-          target.search = new URLSearchParams({ id: note.drive_file_id }).toString();
-          return await serveAgentProvider(
-            new Request(target, { signal: request.signal }),
-            context,
-            "drive-pdf",
-          );
-        }
-        if (note.source !== "upload" || !note.uploaded_at || typeof note.id !== "string")
-          throw new AgentError("not_ready", 409, "This PDF has not finished uploading.");
-        // Build the path from the server-bound owner and saved id, never an arbitrary URL or object path.
-        const origin = normalizeSecureHttpOrigin(environment.SUPABASE_URL ?? "");
-        const key = environment.SUPABASE_SERVICE_ROLE_KEY!;
-        const response = await (dependencies.fetch ?? fetch)(
-          `${origin}/storage/v1/object/authenticated/class-pdfs/${session.userId}/${encodeURIComponent(note.id)}.pdf`,
-          {
-            headers: {
-              apikey: key,
-              ...(key.startsWith("sb_secret_") ? {} : { Authorization: `Bearer ${key}` }),
-            },
-            signal: AbortSignal.any([request.signal, AbortSignal.timeout(120_000)]),
-            redirect: "error",
-            cache: "no-store",
-            credentials: "omit",
-          },
-        );
-        if (!response.ok || !response.body) {
-          void response.body?.cancel();
-          throw new AgentError("file_unavailable", 502, "The saved PDF is currently unavailable.");
-        }
-        return new Response(response.body, {
-          headers: {
-            ...privateHeaders,
-            "Content-Type": "application/pdf",
-            "Content-Disposition": "attachment",
-            "Content-Security-Policy": "sandbox",
-            "X-Frame-Options": "DENY",
-          },
-        });
       }
 
       const isBucket = (workspaceBuckets as readonly string[]).includes(resource);
@@ -217,31 +157,6 @@ export function createAgentHandler(
             "Read the record, then send its version as expected_version.",
           );
       } else if (url.search || expectedVersion !== undefined) invalid();
-      if (resource === "notes" && request.method === "POST") {
-        requireScope(session.scopes, "files:read");
-        // Replay a committed attachment even if Google access has since changed.
-        const replay = await workspace("replay", resource, {
-          p_id: null,
-          p_data: data,
-          p_request_id: key,
-          p_expected_version: null,
-        });
-        if (object(replay) && replay.found === true) return agentJson(replay.result, 201);
-        if (
-          typeof data.drive_file_id !== "string" ||
-          !/^[A-Za-z0-9_-]{1,256}$/.test(data.drive_file_id)
-        )
-          invalid("New notes require a connected Drive PDF id.");
-        const target = new URL(url);
-        target.search = new URLSearchParams({ id: data.drive_file_id }).toString();
-        const checked = await serveAgentProvider(
-          new Request(target, { signal: request.signal }),
-          context,
-          "drive-pdf",
-        );
-        if (!checked.ok) return checked;
-        await checked.body?.cancel();
-      }
       return agentJson(
         await workspace(request.method === "POST" ? "create" : "update", resource, {
           p_id: id,

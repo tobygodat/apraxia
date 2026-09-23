@@ -1,5 +1,5 @@
 /** Static description of one Google integration; adapters bind it to routes, RPC names, and copy. */
-type GoogleProviderKey = "calendar" | "drive";
+type GoogleProviderKey = "calendar";
 
 export interface GoogleProviderDefinition {
   /** Prefixes RPC names (`read_<key>_credentials`) and the `<key>_unavailable` error code. */

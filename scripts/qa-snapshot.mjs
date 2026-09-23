@@ -1,7 +1,7 @@
 // Writes a private reproduction of the account's workspace for the QA fixture's
 // `personal` scenario. Read-only: every request is a GET against the personal
 // agent API. The output is gitignored and must never be committed; it holds no
-// token, owner id, Drive file id, or Google event URL.
+// token, owner id, or Google event URL.
 //
 //   npm run qa:snapshot
 //
@@ -70,8 +70,8 @@ function wallClock(instant, timeZone) {
 const dayOffset = (date, sunday) =>
   Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${sunday}T00:00:00Z`)) / DAY_MS);
 
-const [todos, projects, ideas, classes, notes] = await Promise.all(
-  ["todos", "projects", "ideas", "classes", "notes"].map(list),
+const [todos, projects, ideas, classes] = await Promise.all(
+  ["todos", "projects", "ideas", "classes"].map(list),
 );
 
 // The week on screen today, Sunday-first as the calendar API expects. The
@@ -138,14 +138,6 @@ const snapshot = {
     updatedAt: row.updated_at,
   })),
   classes: classes.map((row) => ({ id: row.id, name: row.name })),
-  notes: notes.map((row) => ({
-    id: row.id,
-    name: row.name,
-    courseId: row.course_id,
-    source: row.source,
-    byteSize: row.byte_size,
-    saved: row.source === "drive" || row.uploaded_at !== null,
-  })),
   todos: todos.map((row) => ({
     id: row.id,
     text: row.text,
@@ -174,6 +166,6 @@ mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, `${JSON.stringify(snapshot, null, 2)}\n`);
 console.log(
   `Wrote ${todos.length} tasks, ${projects.length} projects, ${ideas.length} ideas, ` +
-    `${classes.length} classes, ${notes.length} notes, ${events.length} events ` +
+    `${classes.length} classes, ${events.length} events ` +
     `(captured ${capturedOn}) to frontend/qa/local/workspace-snapshot.json`,
 );

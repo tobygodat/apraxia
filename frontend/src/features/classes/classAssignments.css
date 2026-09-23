@@ -215,14 +215,6 @@
   color: var(--cloud-shell-muted);
   font-size: 12px;
 }
-.classes-course-content:has(.class-assignments) .drive-source {
-  border-bottom: 1px solid var(--cloud-shell-line);
-}
-.classes-course-content:has(.class-assignments) .drive-local-button {
-  min-height: 38px;
-  white-space: nowrap;
-  border-color: transparent;
-}
 @media (max-width: 760px) {
   .class-assignments th:nth-child(3) {
     width: 166px;
@@ -242,21 +234,13 @@
   .class-assignments > header {
     flex-wrap: wrap;
   }
-  .classes-course-content:has(.class-assignments) .drive-open-button {
-    margin-inline-start: 0;
-    flex: 0 1 auto;
-  }
-  .classes-course-content:has(.class-assignments) .drive-menu {
-    margin-inline-start: auto;
-  }
 }
 @media (pointer: coarse) {
   .class-assignments td,
   .class-assignments .assignment-cell {
     min-height: 44px;
   }
-  .class-assignments > header > button,
-  .classes-course-content:has(.class-assignments) .drive-local-button {
+  .class-assignments > header > button {
     min-height: 44px;
   }
 }

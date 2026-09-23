@@ -18,8 +18,8 @@ export class TokenEncryptionError extends Error {
 const FORMAT_VERSION = 1;
 /**
  * Distinct AAD purposes keep the long-lived refresh token and the cached access
- * token from being swapped for one another; the refresh purpose predates Drive
- * and is shared by both providers' stores, so it keeps its historical name.
+ * token from being swapped for one another. Both names are bound into envelopes
+ * already stored, so they keep their historical spelling.
  */
 const PURPOSES = Object.freeze({
   refresh: "orbitos/google-calendar/refresh-token",

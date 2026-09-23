@@ -149,9 +149,7 @@ There is no public image bucket; the browser resizes before saving.
 hold browser-visible connection state and per-calendar visibility.
 `private.google_calendar_credentials` and `private.google_oauth_transactions`
 hold encrypted refresh tokens and one-use OAuth state; they are reachable only
-through `service_role` RPCs. `supabase/migrations/20260913000100_google_drive.sql`
-adds the same three-table shape for Drive. Details in [Calendar](CALENDAR.md)
-and [Drive](DRIVE.md).
+through `service_role` RPCs. Details in [Calendar](CALENDAR.md).
 
 ## Soft delete and the undo token
 
@@ -180,13 +178,14 @@ Covered by `supabase/tests/030_soft_delete_restore.test.sql`.
 ## Search
 
 `public.search_records(p_query, p_limit, p_offset)` is the only search the
-browser has. Since
-`supabase/migrations/20260918020000_search_classes_and_stemming.sql` it covers
-five tables and free text is stored and queried through the `english`
-configuration, so "book" matches "books" and "lectures" matches "lecture".
+browser has. It covers five tables: `todos`, `ideas`, `projects`, `classes`,
+and `career_applications`. Since
+`supabase/migrations/20260918020000_search_classes_and_stemming.sql` free text
+is stored and queried through the `english` configuration, so "book" matches
+"books" and "lectures" matches "lecture".
 
 Identifiers are not prose and are indexed literally as well as stemmed: course
-codes, class names, and note filenames all carry both an `english` and a
+codes and class names carry both an `english` and a
 `simple` vector, because a code can be an English stopword (`IT` stems to
 nothing) or a word whose stem is not itself (`STUDIES` stems to `studi`).
 `websearch_to_tsquery` drops stopwords the same way, so a query that English
@@ -206,13 +205,12 @@ accept:
 | `idea` | `ideas` | the idea UUID | null |
 | `project` | `projects` | the project UUID | null |
 | `class` | `classes` | the course code | null |
-| `class_note` | `class_notes` | the note UUID | the course code |
 | `application` | `career_applications` | the application UUID | null |
 
 Each row also reports a `title` and a `snippet`, and since
 `supabase/migrations/20260919010000_search_snippet.sql` the two never carry the
 same text. A record with a name of its own (an idea's title, a project's title,
-a class name, a note filename) is titled by it and shows its longer text as the
+a class name) is titled by it and shows its longer text as the
 snippet. A record without one (a task, an untitled idea) is titled by the
 opening of its own text, cut back to a word boundary at 160 characters, and the
 snippet is the remainder of that text, empty when the title already showed all
@@ -223,12 +221,14 @@ A migration that replaces `search_records` replaces every branch of it, which
 is how the applications branch went missing between
 `20260919000100_career_prep.sql` and the snippet rewrite;
 `20260919020000_search_applications.sql` restored it.
+`20260922210000_remove_class_pdfs_and_drive.sql` recreated both the function
+and `search_record_type` without the retired `class_note` kind.
 `tests/contract/search-records.test.ts` seeds one record of every kind and
 asserts the function still reaches all of them.
 
 `record_id` is therefore `text`, not `uuid`: a class is identified by the course
 code that is its primary key. Soft-deleted todos, ideas, and projects are
-excluded; classes and notes are hard-deleted and have nothing to exclude.
+excluded; classes are hard-deleted and have nothing to exclude.
 Relevance is `ts_rank_cd`, and every row carries the full unpaginated
 `total_count`.
 

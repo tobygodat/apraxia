@@ -29,13 +29,17 @@ applied to the hosted app. The follow-up
 `20260922190408_retire_career_prep_edit_rpcs.sql` is not applied yet; apply it
 only after the frontend that no longer calls those RPCs is deployed.
 
-The hosted setup for
-Drive notes described in [Drive](docs/DRIVE.md) is complete, and it was verified
-on `https://apraxia.dev` on 2026-09-18: the Picker added a PDF to a class, and a
-disconnect and reconnect completed through the production redirect.
-Real Calendar connection and reconnect were verified on the same day. An
-explicit Calendar disconnect is still unverified, so reinspect the current
-provider configuration before diagnosing an old failure as current.
+Class PDFs and the Google Drive connection are removed; a class keeps its
+assignments and written notes.
+`20260922210000_remove_class_pdfs_and_drive.sql` is not applied to the hosted app
+yet; apply it only after the frontend that no longer reads `class_notes` is
+deployed, because the current one reads it for every class's totals. It backs up the saved-PDF rows and leaves the uploaded files in the private
+`class-pdfs` bucket for removal through the Storage API; see
+[Classes data model](docs/CLASSES_DATA_MODEL.md#retired-pdf-notes).
+
+Real Calendar connection and reconnect were verified on `https://apraxia.dev` on
+2026-09-18. An explicit Calendar disconnect is still unverified, so reinspect the
+current provider configuration before diagnosing an old failure as current.
 
 ## Development
 
@@ -70,8 +74,7 @@ for the release commit.
 - [QA fixtures](docs/QA_FIXTURES.md): the local fictional workspace.
 - [Cloud development](docs/CLOUD_DEVELOPMENT.md): environment variables, CI,
   local setup, release.
-- [Calendar](docs/CALENDAR.md) and [Drive](docs/DRIVE.md): provider setup and
-  security.
+- [Calendar](docs/CALENDAR.md): provider setup and security.
 - [Agent API](docs/AGENT_API.md): the personal agent endpoints, permissions, and
   retry rules.
 - [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md): preparation shared with

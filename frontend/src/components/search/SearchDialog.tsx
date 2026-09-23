@@ -17,14 +17,13 @@ export interface SearchDialogProps {
   onNavigate?: (to: string) => void;
 }
 
-/** The interface says "Tasks" where the database says todos, and "note" reads better than the column name. */
+/** The interface says "Tasks" where the database says todos. */
 const RESULT_KIND: Record<SearchRecordType, string> = {
   todo: "task",
   assignment: "assignment",
   idea: "idea",
   project: "project",
   class: "class",
-  class_note: "note",
   application: "application",
 };
 

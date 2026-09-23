@@ -1,4 +1,4 @@
-export const workspaceBuckets = ["todos", "projects", "ideas", "classes", "notes"] as const;
+export const workspaceBuckets = ["todos", "projects", "ideas", "classes"] as const;
 
 type Schema = Record<string, unknown>;
 const text = { type: "string" };
@@ -24,21 +24,18 @@ const fields: Record<(typeof workspaceBuckets)[number], Record<string, Schema>> 
   },
   ideas: { title: nullableText, body: { type: "string", minLength: 1 }, project_id: nullableId },
   classes: { name: { type: "string", minLength: 1 } },
-  notes: { name: { type: "string", minLength: 1 }, course_id: text },
 };
 const requiredFields = {
   todos: ["text"],
   projects: ["title"],
   ideas: ["body"],
   classes: ["id", "name"],
-  notes: ["name", "course_id", "source", "drive_file_id"],
 };
 const filters = {
   todos: ["completed", "due_from", "due_to", "class_id", "project_id"],
   projects: [],
   ideas: ["project_id"],
   classes: [],
-  notes: ["class_id"],
 };
 const commonFilters = ["limit", "offset", "q", "updated_since"];
 const retry =
@@ -63,12 +60,7 @@ export function agentDiscovery(scopes: string[]) {
           edit: "PATCH ?id=<id> {data,expected_version}; workspace:write; Idempotency-Key required",
           writable_fields: fields[bucket],
           required_on_create: requiredFields[bucket],
-          create_only_fields:
-            bucket === "classes"
-              ? { id: text }
-              : bucket === "notes"
-                ? { source: { const: "drive" }, drive_file_id: text }
-                : {},
+          create_only_fields: bucket === "classes" ? { id: text } : {},
           filters: [...commonFilters, ...filters[bucket]],
         },
       ]),
@@ -83,7 +75,7 @@ export function agentDiscovery(scopes: string[]) {
     search: {
       endpoint: "/api/agent/v1/search?q=<text>&bucket=<optional bucket>",
       description:
-        "Case-insensitive substring of record text/title/description/body/name. Without bucket, returns {buckets:{<bucket>:{items,next_offset}}}; each bucket paginates separately. Only common filters in all-bucket search. No PDF contents or Google event search.",
+        "Case-insensitive substring of record text/title/description/body/name. Without bucket, returns {buckets:{<bucket>:{items,next_offset}}}; each bucket paginates separately. Only common filters in all-bucket search. No Google event search.",
     },
     changes: {
       endpoint: "/api/agent/v1/changes",
@@ -94,7 +86,7 @@ export function agentDiscovery(scopes: string[]) {
     dates:
       "due_date is YYYY-MM-DD, due_time is local wall time; overdue dates remain unchanged. updated_since is an exclusive RFC3339 timestamp. Due bounds are inclusive. Do not derive or rewrite due dates through UTC conversion.",
     relationships:
-      "Todos have at most one of project_id or class_id. Nonempty assignment_type requires class_id. Relationships must belong to the fixed account. Notes use course_id for the class; list filter is class_id.",
+      "Todos have at most one of project_id or class_id. Nonempty assignment_type requires class_id. Relationships must belong to the fixed account.",
     concurrency:
       "Every workspace item includes opaque version. Read it and send unchanged as expected_version for PATCH. On 409 read again and reconsider the edit. Never compute versions or set lifecycle/owner/order fields.",
     retries: retry,
@@ -102,13 +94,9 @@ export function agentDiscovery(scopes: string[]) {
       calendars: "GET /calendars; calendar:read; connected Google calendars.",
       events:
         "GET /events?sunday=YYYY-MM-DD&q=<optional title/location search>; calendar:read; search is limited to the Sunday-start week in configured calendar timezone. POST detail command uses calendar:read; POST create/update uses calendar:write and Idempotency-Key. Update requires current Google etag. See OpenAPI for command bodies.",
-      drive_files:
-        "GET /drive-files?folder=root&page=<optional nextPage>; files:read; folders and PDFs only.",
-      note_content:
-        "GET /note-content?id=<saved note UUID>; workspace:read and files:read; application/pdf stream. Includes saved uploaded and Drive PDFs. No extracted text endpoint.",
     },
     limits:
-      "Workspace JSON bodies <=64 KiB; event commands <=16 KiB. No deletion, raw database access, credential access, PDF byte upload, profile/settings writes, or legacy backup access. Creating notes supports Drive PDFs only and also requires files:read.",
+      "Workspace JSON bodies <=64 KiB; event commands <=16 KiB. No deletion, raw database access, credential access, profile/settings writes, or legacy backup access.",
   };
 }
 
@@ -245,11 +233,7 @@ export function agentOpenApi() {
   for (const bucket of workspaceBuckets) {
     const createFields = {
       ...fields[bucket],
-      ...(bucket === "classes"
-        ? { id: text }
-        : bucket === "notes"
-          ? { source: { const: "drive" }, drive_file_id: text }
-          : {}),
+      ...(bucket === "classes" ? { id: text } : {}),
     };
     schemas[`${bucket}Create`] = object(createFields, requiredFields[bucket]);
     schemas[`${bucket}Edit`] = { ...object(fields[bucket]), minProperties: 1 };
@@ -271,7 +255,7 @@ export function agentOpenApi() {
       post: operation(
         `create_${bucket}`,
         `Create ${bucket} record`,
-        bucket === "notes" ? ["workspace:write", "files:read"] : ["workspace:write"],
+        ["workspace:write"],
         ref("Item"),
         {
           parameters: [key],
@@ -320,7 +304,7 @@ export function agentOpenApi() {
       },
       {
         description:
-          "No bucket means one independent page per bucket. Use only common filters in that mode. Bucket-specific filters are identical to that bucket list endpoint. No PDF full-text or Google search.",
+          "No bucket means one independent page per bucket. Use only common filters in that mode. Bucket-specific filters are identical to that bucket list endpoint. No Google search.",
         parameters: [
           parameter("bucket", { type: "string", enum: workspaceBuckets }),
           ...Object.entries(parameters).map(([name, p]) =>
@@ -450,38 +434,6 @@ export function agentOpenApi() {
           },
         ],
         requestBody: body(ref("EventCommand")),
-      },
-    ),
-  };
-  paths["/drive-files"] = {
-    get: operation(
-      "drive_files",
-      "Browse connected Drive folders and PDFs",
-      ["files:read"],
-      { type: "object" },
-      {
-        parameters: [
-          parameter("folder", { type: "string", default: "root" }),
-          parameter("page", { type: "string", maxLength: 2048 }, "Prior nextPage"),
-        ],
-      },
-    ),
-  };
-  paths["/note-content"] = {
-    get: operation(
-      "note_content",
-      "Download a saved note PDF",
-      ["workspace:read", "files:read"],
-      {},
-      {
-        parameters: [parameter("id", { type: "string", format: "uuid" }, "Saved note id", true)],
-        responses: {
-          "200": {
-            description: "PDF bytes",
-            content: { "application/pdf": { schema: { type: "string", format: "binary" } } },
-          },
-          ...errors,
-        },
       },
     ),
   };

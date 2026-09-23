@@ -179,6 +179,52 @@ describe("cloud migration SQL behavior", () => {
     }
   }, 60_000);
 
+  it("retires class PDFs while preserving every note row in a private backup", async () => {
+    const db = await PGlite.create();
+    try {
+      await db.exec(supabaseHarnessSql);
+      await db.exec(storageHarnessSql);
+      const migrations = await readMigrations();
+      const retirementIndex = migrations.findIndex((sql) =>
+        sql.includes("lock table public.class_notes"),
+      );
+      expect(retirementIndex).toBeGreaterThan(0);
+      for (const migration of migrations.slice(0, retirementIndex)) await db.exec(migration);
+      await db.exec(`
+        insert into auth.users (id, email)
+        values ('77777777-7777-4777-8777-777777777777', 'pdfs@example.test');
+        insert into public.classes (user_id, id, name)
+        values ('77777777-7777-4777-8777-777777777777', 'math3012', 'MATH3012');
+        insert into public.class_notes (user_id, course_id, name, source, drive_file_id)
+        values ('77777777-7777-4777-8777-777777777777', 'math3012', 'Lecture.pdf', 'drive', 'file-1');
+        insert into public.class_notes (user_id, course_id, name, source, byte_size, content_sha256)
+        values ('77777777-7777-4777-8777-777777777777', 'math3012', 'Scan.pdf', 'upload', 10, repeat('a', 64));
+      `);
+      const before = await db.query(
+        `select to_jsonb(n) - 'search_vector' as row_data from public.class_notes n order by id`,
+      );
+      await db.query(migrations[retirementIndex]!);
+      const after = await db.query(`select row_data from private.retired_class_notes order by id`);
+      expect(after.rows).toEqual(before.rows);
+      expect(
+        (
+          await db.query(
+            `select to_regclass('public.class_notes') as notes, to_regclass('public.google_drive_connections') as drive`,
+          )
+        ).rows,
+      ).toEqual([{ notes: null, drive: null }]);
+      expect(
+        (await db.query(`select enum_range(null::public.search_record_type)::text as kinds`)).rows,
+      ).toEqual([{ kinds: "{todo,assignment,idea,project,class,application}" }]);
+      await db.exec(
+        `set request.jwt.claim.sub = '77777777-7777-4777-8777-777777777777'; set role authenticated;`,
+      );
+      expect((await db.query(`select * from public.search_records('Lecture')`)).rows).toEqual([]);
+    } finally {
+      await db.close();
+    }
+  }, 60_000);
+
   it("applies in order and exposes the expected tables and functions", async () => {
     const tables = await database.query<{ table_name: string }>(`
       select table_name

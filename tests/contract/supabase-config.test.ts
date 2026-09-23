@@ -65,8 +65,7 @@ describe("migration security contract", () => {
     expect(sql).toMatch(/alter table public\.todos enable row level security/i);
     // Browser roles never hard-delete a soft-deleted record type. Rows that are
     // not soft-deleted carry their own owner-scoped DELETE policies instead:
-    // classes and their notes, and non-action children hanging off a career
-    // application. Career prep now follows its canonical todo's soft delete. The
+    // classes, and non-action children hanging off a career application. Career prep now follows its canonical todo's soft delete. The
     // legacy class_assignments backup is read-only, and career_applications is
     // deliberately absent: it goes through soft_delete_record like every other
     // record.
@@ -89,6 +88,7 @@ describe("migration security contract", () => {
         "public.career_steps",
         "public.career_stories",
         "public.career_story_uses",
+        // Historical too: class_notes was dropped with the class PDF feature.
         "public.class_notes",
         "public.classes",
       ]),

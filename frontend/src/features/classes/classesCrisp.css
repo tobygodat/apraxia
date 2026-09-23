@@ -1,5 +1,5 @@
 /* Classes in Crisp: the list of classes, a class's page, its assignments
- * table, its notes and PDFs, and the small menus they open.
+ * table, its notes, and the small menus they open.
  *
  * Sibling of the classic class sheets. Scoped `[data-theme^="crisp"]`.
  */
@@ -223,33 +223,7 @@
   background: var(--c-hover);
 }
 
-/* ---------------------------------------------------- notes and the reader */
-
-[data-theme^="crisp"] .classes-notes-layout {
-  border-block-color: var(--c-line);
-}
-
-[data-theme^="crisp"] .classes-reader {
-  background: var(--c-sidebar);
-}
-
-[data-theme^="crisp"] .classes-reader > header {
-  border-bottom-color: var(--c-line);
-  font: var(--c-text-ui);
-}
-
-[data-theme^="crisp"] .classes-saved-notes {
-  border-top-color: var(--c-line);
-}
-
-[data-theme^="crisp"] .classes-saved-notes li {
-  border-bottom-color: var(--c-line-soft);
-}
-
-[data-theme^="crisp"] .classes-note-hint,
-[data-theme^="crisp"] .classes-saved-notes small {
-  font: var(--c-text-small);
-}
+/* --------------------------------------------------------- the class form */
 
 [data-theme^="crisp"] .classes-form input {
   min-height: 36px;
@@ -263,17 +237,4 @@
   outline: 0;
   border-color: var(--c-accent);
   box-shadow: 0 0 0 3px var(--c-accent-soft);
-}
-
-[data-theme^="crisp"] .drive-source {
-  border-color: var(--c-line);
-  font: var(--c-text-ui);
-}
-
-[data-theme^="crisp"] .drive-menu > div {
-  border: 0;
-  border-radius: var(--c-radius-lg);
-  background: var(--c-raised);
-  box-shadow: var(--c-shadow-menu);
-  animation: crisp-arrive-down var(--c-fast) var(--c-ease) both;
 }

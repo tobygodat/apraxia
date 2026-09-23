@@ -1,30 +1,23 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { ClassAssignments } from "./ClassAssignments";
 import { ClassNotes } from "./ClassNotes";
 import { ClassSummary } from "./ClassSummary";
-import { SavedClassNotes } from "./SavedClassNotes";
 import { useLocalToday } from "../todos/useLocalToday";
 import type { AssignmentService } from "./assignmentService";
 import type { ClassOverview } from "./classOverview";
 import type { ClassService, Course } from "./classService";
-import type { DriveService } from "./driveService";
-import type { NoteService } from "./noteService";
-
-const PdfReader = lazy(() => import("./PdfReader"));
 
 /**
- * One class. Its header totals come from the assignments and notes already on
- * this page, so ticking an assignment off moves the header with the table
- * instead of waiting for a reload. Mount it keyed by class id.
+ * One class. Its header totals come from the assignments already on this page,
+ * so ticking an assignment off moves the header with the table instead of
+ * waiting for a reload. Mount it keyed by class id.
  */
 export function ClassDetail({
   userId,
   course,
   classService,
-  driveService,
   assignmentService,
-  noteService,
   timezone,
   onEdit,
   onSaved,
@@ -32,9 +25,7 @@ export function ClassDetail({
   userId: string;
   course: Course;
   classService?: ClassService;
-  driveService?: DriveService;
   assignmentService?: AssignmentService;
-  noteService?: NoteService;
   timezone?: string;
   onEdit(): void;
   /** The class as saved, so the list behind this page holds the new text. */
@@ -43,12 +34,7 @@ export function ClassDetail({
   // Sampled so the header re-labels itself at local midnight; the assignment
   // table re-reads its own date on the render that follows.
   const today = useLocalToday(timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [assignments, setAssignments] = useState<ClassOverview | null>(null);
-  const [notes, setNotes] = useState<number | null>(null);
-  // Wait for both halves before writing the line, so a class with notes and no
-  // assignments never reads "Nothing saved yet" on its way to the real total.
-  const overview =
-    assignments && (notes !== null || !noteService) ? { ...assignments, notes: notes ?? 0 } : null;
+  const [overview, setOverview] = useState<ClassOverview | null>(null);
   return (
     <>
       <header className="classes-heading workspace-page-header">
@@ -74,7 +60,7 @@ export function ClassDetail({
             courseId={course.id}
             service={assignmentService}
             timezone={timezone}
-            onOverview={setAssignments}
+            onOverview={setOverview}
           />
         )}
         <h2 className="classes-section-heading">Notes</h2>
@@ -83,82 +69,7 @@ export function ClassDetail({
         ) : (
           <p role="alert">Class storage is unavailable. Reload to try again.</p>
         )}
-        <h2 className="classes-section-heading">PDFs</h2>
-        {noteService ? (
-          <SavedClassNotes
-            userId={userId}
-            course={course}
-            service={noteService}
-            driveService={driveService}
-            onCount={setNotes}
-            renderReader={(file) => <CourseNotes course={course} file={file} />}
-          />
-        ) : (
-          <p role="alert">Note storage is unavailable. Reload to try again.</p>
-        )}
       </div>
     </>
-  );
-}
-
-function CourseNotes({ course, file: preview }: { course: Course; file: File }) {
-  const [error, setError] = useState("");
-  const [fullscreen, setFullscreen] = useState(false);
-  const [showTools, setShowTools] = useState(false);
-  const reader = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const changed = () => setFullscreen(document.fullscreenElement === reader.current);
-    document.addEventListener("fullscreenchange", changed);
-    return () => document.removeEventListener("fullscreenchange", changed);
-  }, []);
-  async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement === reader.current) await document.exitFullscreen();
-      else await reader.current?.requestFullscreen();
-    } catch {
-      setError(
-        "Full screen isn’t available in this browser. Try opening the workspace in another browser.",
-      );
-    }
-  }
-  return (
-    <div className="classes-notes-layout classes-notes-layout--reading">
-      <section
-        ref={reader}
-        className="classes-reader"
-        aria-label={`${course.name ?? "Recovered class"} notes reader`}
-      >
-        {preview && (
-          <header>
-            <span title={preview.name}>{preview.name}</span>
-            <div>
-              <button
-                className="classes-reader-tools"
-                type="button"
-                onClick={() => setShowTools((value) => !value)}
-                aria-label={showTools ? "Hide PDF toolbar" : "Show PDF toolbar"}
-                aria-expanded={showTools}
-                title={`${showTools ? "Hide" : "Show"} PDF toolbar`}
-              >
-                <WorkspaceIcon name="down" />
-              </button>
-              <button
-                className="classes-reader-fullscreen"
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                aria-label={fullscreen ? "Exit full screen" : "Full screen"}
-                title={fullscreen ? "Exit full screen" : "Full screen"}
-              >
-                <WorkspaceIcon name={fullscreen ? "minimize" : "maximize"} />
-              </button>
-            </div>
-          </header>
-        )}
-        {error && <p role="alert">{error}</p>}
-        <Suspense fallback={<p role="status">Loading PDF reader…</p>}>
-          <PdfReader file={preview} showTools={showTools} />
-        </Suspense>
-      </section>
-    </div>
   );
 }

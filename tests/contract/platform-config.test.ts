@@ -23,10 +23,10 @@ describe("Vercel platform configuration", () => {
       devCommand: "npm run dev:web",
       outputDirectory: "frontend/dist",
     });
-    // Explicit budgets: both function groups outlive their internal timeouts
-    // (20 s calendar load, 120 s Drive PDF stream) instead of the plan default.
+    // An explicit budget that outlives the 20 s internal calendar load timeout
+    // instead of the plan default.
     expect(config.functions["api/calendar/**"]?.maxDuration).toBeGreaterThan(20);
-    expect(config.functions["api/drive/**"]?.maxDuration).toBeGreaterThan(120);
+    expect(config.functions["api/drive/**"]).toBeUndefined();
     expect(config.rewrites).toEqual([
       {
         source: "/((?!api(?:/|$)).*)",
@@ -103,7 +103,7 @@ describe("browser/server environment boundary", () => {
   });
 });
 
-it("allows restricted Google embeds to identify the app origin without revealing paths or queries", async () => {
+it("sends only the app origin as the referrer, never paths or queries", async () => {
   const config = JSON.parse(await readFile(path.join(repositoryRoot, "vercel.json"), "utf8"));
   const globalHeaders = config.headers.find(
     (entry: { source: string }) => entry.source === "/(.*)",
