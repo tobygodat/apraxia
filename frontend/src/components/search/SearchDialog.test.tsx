@@ -188,6 +188,24 @@ describe("Search dialog", () => {
     expect(screen.getByText("Final thought")).toBeTruthy();
     expect(search).toHaveBeenCalledTimes(2);
   });
+  it("leaves out a kind it cannot open but still pages past it", async () => {
+    // A database not yet migrated can still return a retired kind.
+    const retired = { ...row("note-1", "Week 3 slides", 41), recordType: "class_note" };
+    const first = [
+      ...Array.from({ length: 39 }, (_, i) => row(`id-${i}`, `Thought ${i}`, 41)),
+      retired as unknown as SearchResult,
+    ];
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce([row("last", "Final thought", 41)]);
+    render(<SearchDialog open service={{ search }} onClose={vi.fn()} onSelect={vi.fn()} />);
+    enter("thought");
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+    await screen.findByText("Final thought");
+    expect(search).toHaveBeenLastCalledWith("thought", 40, expect.any(AbortSignal));
+    expect(screen.queryByText("Week 3 slides")).toBeNull();
+  });
   it("keeps the failed query and previous results and recovers on retry", async () => {
     const search = vi
       .fn()
