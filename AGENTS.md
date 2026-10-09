@@ -27,6 +27,10 @@ it does not literally cover; a bare prohibition does not.
   handlers, backed by hosted Supabase. There is no Preview environment and no
   launch process to satisfy, so a change is finished when it works locally and
   passes CI.
+- Merging does not deploy: the Worker is not connected to Git. A release is
+  `npm run build` with the two `VITE_SUPABASE_*` values set, then
+  `npm run deploy:worker`, from Toby's checkout
+  ([cloud development](docs/CLOUD_DEVELOPMENT.md#cloudflare-worker)).
 - Server code runs in the Workers runtime (workerd with `nodejs_compat`), not
   Node. Node and Vitest accept options workerd rejects, such as fetch's
   `redirect: "error"`, which once broke every Google and Supabase call in
