@@ -14,6 +14,7 @@ export default tseslint.config(
       "frontend/public/**",
       "src/**",
       "supabase/.temp/**",
+      ".wrangler/**",
       "frontend/src/types/database.ts",
     ],
   },
