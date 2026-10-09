@@ -66,7 +66,20 @@ describe("agent API boundary", () => {
     });
     expect(new Headers(init?.headers).get("authorization")).toBeNull();
     expect(JSON.stringify(init)).not.toContain(token);
-    expect(init?.redirect).toBe("error");
+    expect(init?.redirect).toBe("manual");
+  });
+  it("fails closed on a storage redirect instead of reading or following it", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ items: [], next_offset: null }), {
+          status: 302,
+          headers: { Location: "https://elsewhere.example/", "Content-Type": "application/json" },
+        }),
+    );
+    const handle = createAgentHandler({ environment, fetch: fetcher });
+    const response = await handle(request("todos"));
+    expect(response.ok).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
   it("rejects ownership overrides, duplicate parameters and malformed pagination", async () => {
     const { handle, fetcher } = setup();

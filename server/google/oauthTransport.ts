@@ -100,7 +100,7 @@ export function createGoogleOAuthTransport(
           body: new URLSearchParams({ token: refreshToken }),
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
-          redirect: "error",
+          redirect: "manual",
           cache: "no-store",
           referrerPolicy: "no-referrer",
         });

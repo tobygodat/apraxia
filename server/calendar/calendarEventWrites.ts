@@ -38,7 +38,7 @@ export async function executeEventCommand(
       response = await fetcher(url, {
         method,
         signal,
-        redirect: "error",
+        redirect: "manual",
         cache: "no-store",
         credentials: "omit",
         referrerPolicy: "no-referrer",

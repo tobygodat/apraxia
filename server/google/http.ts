@@ -117,13 +117,16 @@ export function createGoogleHttp(
         fetcher(url, {
           ...init,
           signal,
-          redirect: "error",
+          // Workers reject redirect: "error"; a redirect is never followed and fails here instead.
+          redirect: "manual",
           cache: "no-store",
           credentials: "omit",
           referrerPolicy: "no-referrer",
         }),
         signal,
       );
+      if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400))
+        throw fail();
       const value = await readBoundedJson(response, maximum, signal);
       return { response, value };
     } catch {
