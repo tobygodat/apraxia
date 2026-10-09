@@ -248,7 +248,8 @@ export function requireCalendarEnvironment(
 }
 
 export function deploymentEnvironment(source: EnvironmentSource): string {
-  const environment = source.VERCEL_ENV;
+  // Vercel sets VERCEL_ENV; the Cloudflare Worker carries DEPLOY_ENV as a variable.
+  const environment = source.VERCEL_ENV ?? source.DEPLOY_ENV;
   return environment === "development" || environment === "preview" || environment === "production"
     ? environment
     : "local";
