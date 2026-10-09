@@ -121,7 +121,7 @@ describe("fixed read-only Google Calendar requests", () => {
     expect(init).toEqual({
       method: "GET",
       headers: { Accept: "application/json", Authorization: `Bearer ${TOKEN}` },
-      redirect: "error",
+      redirect: "manual",
       cache: "no-store",
       credentials: "omit",
       referrerPolicy: "no-referrer",

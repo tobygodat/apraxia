@@ -394,7 +394,7 @@ export function createGoogleCalendarReadTransport(options: {
           fetch(url, {
             method: "GET",
             headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
-            redirect: "error",
+            redirect: "manual",
             cache: "no-store",
             credentials: "omit",
             referrerPolicy: "no-referrer",

@@ -101,7 +101,7 @@ describe("server session provider authority", () => {
         Authorization: `Bearer ${TOKEN}`,
         Accept: "application/json",
       },
-      redirect: "error",
+      redirect: "manual",
       cache: "no-store",
       credentials: "omit",
       signal: expect.any(AbortSignal),

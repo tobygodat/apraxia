@@ -208,7 +208,7 @@ export async function verifySupabaseSession(
       return transport(endpoint, {
         method: "GET",
         headers: { apikey: publicKey, Authorization: credential, Accept: "application/json" },
-        redirect: "error",
+        redirect: "manual",
         cache: "no-store",
         credentials: "omit",
         signal: scope.signal,
