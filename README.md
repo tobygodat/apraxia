@@ -24,18 +24,15 @@ change.
 
 The personal app is deployed, including the consumer slice: Career prep linked
 to daily tasks, an editable assistant brief and plan import, and responsive daily
-views. See [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md). Its migration is
-applied to the hosted app. The follow-up
-`20260922190408_retire_career_prep_edit_rpcs.sql` is not applied yet; apply it
-only after the frontend that no longer calls those RPCs is deployed.
+views. See [Career plan handoff](docs/CAREER_PLAN_HANDOFF.md).
 
 Class PDFs and the Google Drive connection are removed; a class keeps its
-assignments and written notes.
-`20260922210000_remove_class_pdfs_and_drive.sql` is not applied to the hosted app
-yet; apply it only after the frontend that no longer reads `class_notes` is
-deployed, because the current one reads it for every class's totals. It backs up the saved-PDF rows and leaves the uploaded files in the private
+assignments and written notes. The uploaded files remain in the private
 `class-pdfs` bucket for removal through the Storage API; see
 [Classes data model](docs/CLASSES_DATA_MODEL.md#retired-pdf-notes).
+
+Every migration in `supabase/migrations/` is applied to the hosted app, checked
+against its migration history on 2026-10-09.
 
 Real Calendar connection and reconnect were verified on `https://apraxia.dev` on
 2026-09-18. An explicit Calendar disconnect is still unverified, so reinspect the
