@@ -24,6 +24,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:related": "vitest related --run",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy",
     "check:bundle": "node scripts/check-browser-bundle.mjs",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write",
@@ -68,6 +70,7 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "8.70.0",
     "vercel": "^59.11.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wrangler": "4.140.0"
   }
 }
