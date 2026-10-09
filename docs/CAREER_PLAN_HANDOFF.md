@@ -77,10 +77,9 @@ editing and removing one writes its todo, the same way Tasks does, under RLS.
 The forward migration
 `20260922062559_canonical_career_prep_todos.sql` links existing isolated prep to
 tasks and preserves existing linked todos as authoritative. It rejects an
-ambiguous legacy case where multiple prep rows link to one todo. It is applied to
-the hosted app. `20260922190408_retire_career_prep_edit_rpcs.sql` drops the two
-Career-only write RPCs that migration added; apply it only after the frontend
-that stops calling them is deployed.
+ambiguous legacy case where multiple prep rows link to one todo.
+`20260922190408_retire_career_prep_edit_rpcs.sql` drops the two Career-only
+write RPCs that migration added. Both are applied to the hosted app.
 
 Per-account assistant OAuth, direct Career MCP tools, hosted model inference,
 PDF extraction, and configurable page sections remain later stages from the
