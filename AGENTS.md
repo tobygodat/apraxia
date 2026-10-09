@@ -22,9 +22,16 @@ it does not literally cover; a bare prohibition does not.
 
 ## Repository constraints
 
-- Development is local and release goes to the existing personal
-  Vercel/Supabase app. There is no Preview environment and no launch process to
-  satisfy, so a change is finished when it works locally and passes CI.
+- Development is local and release goes to the existing personal app at
+  `apraxia.dev`: one Cloudflare Worker serving the frontend and the `api/`
+  handlers, backed by hosted Supabase. There is no Preview environment and no
+  launch process to satisfy, so a change is finished when it works locally and
+  passes CI.
+- Server code runs in the Workers runtime (workerd with `nodejs_compat`), not
+  Node. Node and Vitest accept options workerd rejects, such as fetch's
+  `redirect: "error"`, which once broke every Google and Supabase call in
+  production while all tests passed. Check a new runtime API against the
+  Workers docs or `npm run dev:worker`.
 - New work goes in the cloud implementation. The legacy Python source and its
   data stay where they are; removing them or importing their data needs an
   explicit request, because the backup named in `README.md` is the only copy.
