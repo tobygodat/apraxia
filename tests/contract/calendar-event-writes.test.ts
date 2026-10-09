@@ -131,6 +131,17 @@ describe("Google event writes", () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
+  it("reports a redirected write as an uncertain 502, never as the 3xx itself", async () => {
+    const fetcher = vi.fn<typeof fetch>(async (_url, init) =>
+      init?.method === "PATCH"
+        ? new Response(null, { status: 302, headers: { Location: "https://example.com/" } })
+        : Response.json(current),
+    );
+    await expect(run(update, fetcher)).rejects.toMatchObject({
+      code: "mutation_uncertain",
+      status: 502,
+    });
+  });
   it("uses the series master only when explicitly selected and preserves arbitrary recurrence", async () => {
     const fetcher = vi
       .fn<typeof fetch>()

@@ -1,5 +1,8 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CalendarHttpError, calendarHttp } from "../../server/calendar/calendarHttp.js";
 import worker from "../../worker/index.js";
 
 const assets = { fetch: vi.fn<(request: Request) => Promise<Response>>() };
@@ -53,5 +56,38 @@ describe("Cloudflare worker", () => {
 
     expect(await response.json()).toMatchObject({ environment: "production" });
     vi.unstubAllEnvs();
+  });
+});
+
+describe("Worker-compatible fetch", () => {
+  function sources(directory: string): string[] {
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return sources(path);
+      return path.endsWith(".ts") ? [path] : [];
+    });
+  }
+
+  it('never asks for redirect: "error", which workerd rejects before sending', () => {
+    const offenders = ["server", "shared", "api", "worker"].flatMap(sources).filter((path) =>
+      readFileSync(path, "utf8")
+        .split("\n")
+        .some((line) => !line.trim().startsWith("//") && /redirect:\s*["']error["']/.test(line)),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("refuses a redirect response as an upstream failure", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(null, { status: 302, headers: { Location: "https://example.com/" } }),
+      );
+
+    await expect(
+      calendarHttp.boundedFetchJson("https://www.googleapis.com/x", {}, fetcher),
+    ).rejects.toBeInstanceOf(CalendarHttpError);
+    expect(fetcher.mock.calls[0]?.[1]?.redirect).toBe("manual");
   });
 });

@@ -66,7 +66,8 @@ export async function executeEventCommand(
       };
       throw new CalendarHttpError(
         codes[response.status] ?? "mutation_uncertain",
-        response.status >= 500 ? 502 : response.status,
+        // A manual redirect (3xx) is an uncertain upstream outcome, never relayed as-is.
+        response.status >= 500 || response.status < 400 ? 502 : response.status,
       );
     }
     if (response.status === 204) return {};
