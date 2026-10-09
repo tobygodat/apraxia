@@ -477,19 +477,17 @@ one coordinated migration-and-UI release was sequenced.
 | Environment | Database | Configuration |
 |---|---|---|
 | Development | Local Supabase | Ignored `.env.local` |
-| Cloudflare Worker `apraxia` | `oidvvenjamgcezdptfjr` | Worker build variables and secrets |
-| Vercel Production (being retired) | `oidvvenjamgcezdptfjr` | Vercel Production variables |
+| Cloudflare Worker `apraxia` | `oidvvenjamgcezdptfjr` | Worker variables and secrets |
 
-The live app is `https://apraxia.dev`, linked to `tobygodat/apraxia`.
+The live app is `https://apraxia.dev`, served by the Cloudflare Worker.
 Server variables were renamed from `ORBITOS_*` to `APRAXIA_*` with the app
 rename (`APRAXIA_AGENT_USER_ID`, `APRAXIA_AGENT_SCOPES`, `VITE_APRAXIA_RUNTIME`,
-`APRAXIA_CLOUD_DEV`). The agent token stays stored as `ORBITOS_AGENT_TOKEN` in
-Vercel Production because sensitive variables cannot be renamed; the server
-accepts `APRAXIA_AGENT_TOKEN` or that name. `APP_URL` must be
+`APRAXIA_CLOUD_DEV`). The Worker stores the agent token as `APRAXIA_AGENT_TOKEN`; the server
+also accepts the old `ORBITOS_AGENT_TOKEN` name. `APP_URL` must be
 `https://apraxia.dev`, and Google OAuth redirect URIs plus the Supabase Site URL
 must match it, or Calendar connections fail.
 
-There is no required Preview environment, and a main push may deploy immediately.
+There is no required Preview environment, and a main push does not deploy.
 Before applying a migration, inspect current hosted data and migration history and
 preserve a backup or export when data exists; never infer an empty database from a
 historical smoke test. A schema change also means regenerating
@@ -505,23 +503,28 @@ See [Calendar](CALENDAR.md) for OAuth setup and credential troubleshooting.
 
 ### Cloudflare Worker
 
-`apraxia.dev` is moving from Vercel to one Cloudflare Worker. `wrangler.jsonc`
-serves `frontend/dist` as static assets, falls back to `index.html` for app
-routes, and runs `worker/index.ts` first on every request. The worker sends
-`/api/health`, `/api/mcp`, `/api/agent/v1/*` and `/api/calendar/*` to the same
-`api/` handlers Vercel ran, answers any other `/api/` path with 404, and adds the
-security headers `vercel.json` set. `nodejs_compat` supplies `node:crypto`,
-`node:buffer` and `process.env`. `keep_vars` stops a deploy from clearing the
-variables set on the Worker.
+`apraxia.dev` runs on one Cloudflare Worker; Vercel was shut down on 2026-10-09.
+`wrangler.jsonc` serves `frontend/dist` as static assets, falls back to
+`index.html` for app routes, and runs `worker/index.ts` first on every request.
+The worker sends `/api/health`, `/api/mcp`, `/api/agent/v1/*` and
+`/api/calendar/*` to the same `api/` handlers Vercel ran, answers any other
+`/api/` path with 404, and adds the security headers `vercel.json` set.
+`nodejs_compat` supplies `node:crypto`, `node:buffer` and `process.env`.
+`keep_vars` stops a deploy from clearing the variables set on the Worker.
 
-Configure the Worker's Git build with build command
-`npm run build && npm run check:bundle` and deploy command `npm run deploy:worker`.
-The `VITE_` values must be build variables, because Vite embeds them at build
-time; every server variable in the table above, Google's included, goes on the
-Worker as a variable or secret. To try it locally, put fictional values in an
-ignored `.dev.vars`, run `npm run build`, then `npm run dev:worker`.
+The Worker is not connected to Git, so merging does not deploy. Release from a
+checkout of `main`: `npm run build` with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` set in the shell, then `npm run deploy:worker`. The
+`VITE_` values must be present at build time, because Vite embeds them; every
+server variable in the table above, Google's included, goes on the Worker as a
+variable or secret. To try it locally, put fictional values in an ignored
+`.dev.vars`, run `npm run build`, then `npm run dev:worker`.
 
-`vercel.json` stays until Calendar and the agent API are confirmed on the Worker.
+Calendar and the agent API were confirmed on the Worker on 2026-10-09. Workers
+reject `fetch(..., { redirect: "error" })` before sending, so server code uses
+`redirect: "manual"` and treats a 3xx as a failure;
+`tests/contract/worker.test.ts` guards this. `vercel.json` remains in the
+repository, but nothing deploys it.
 
 ## Authentication and legacy recovery
 
