@@ -44,4 +44,14 @@ describe("Cloudflare worker", () => {
     expect(assets.fetch).not.toHaveBeenCalled();
     expect(response.status).toBe(404);
   });
+
+  it("reports the environment the Worker's DEPLOY_ENV names", async () => {
+    vi.stubEnv("DEPLOY_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", undefined);
+
+    const response = await get("/api/health");
+
+    expect(await response.json()).toMatchObject({ environment: "production" });
+    vi.unstubAllEnvs();
+  });
 });
