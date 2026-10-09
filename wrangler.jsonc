@@ -14,5 +14,7 @@
     // The worker adds the security headers, so it runs before every asset too.
     "run_worker_first": true,
   },
+  // Variables and secrets live on the Worker, so a deploy must not clear them.
+  "keep_vars": true,
   "observability": { "enabled": true },
 }

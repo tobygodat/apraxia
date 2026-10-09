@@ -511,7 +511,8 @@ routes, and runs `worker/index.ts` first on every request. The worker sends
 `/api/health`, `/api/mcp`, `/api/agent/v1/*` and `/api/calendar/*` to the same
 `api/` handlers Vercel ran, answers any other `/api/` path with 404, and adds the
 security headers `vercel.json` set. `nodejs_compat` supplies `node:crypto`,
-`node:buffer` and `process.env`.
+`node:buffer` and `process.env`. `keep_vars` stops a deploy from clearing the
+variables set on the Worker.
 
 Configure the Worker's Git build with build command
 `npm run build && npm run check:bundle` and deploy command `npm run deploy:worker`.

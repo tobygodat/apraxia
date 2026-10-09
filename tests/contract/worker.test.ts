@@ -35,6 +35,7 @@ describe("Cloudflare worker", () => {
     expect(assets.fetch).not.toHaveBeenCalled();
     expect(response.headers.get("Content-Type")).toContain("application/json");
     expect(response.headers.get("Referrer-Policy")).toBe("strict-origin");
+    expect(await response.json()).toMatchObject({ runtime: "cloudflare-worker" });
   });
 
   it("answers an unknown API path with 404 rather than the app shell", async () => {
