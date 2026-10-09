@@ -5,6 +5,7 @@ type EnvironmentSource = Record<string, string | undefined>;
 export function createHealthResponse(
   source: EnvironmentSource = process.env,
   now: Date = new Date(),
+  runtime: "vercel-function" | "cloudflare-worker" = "vercel-function",
 ): Response {
   const checks = inspectCloudEnvironment(source);
   const status = !checks.application.configured
@@ -16,7 +17,7 @@ export function createHealthResponse(
   return Response.json(
     {
       service: "apraxia-cloud",
-      runtime: "vercel-function",
+      runtime,
       status,
       environment: deploymentEnvironment(source),
       // This endpoint is unauthenticated. It reports whether each area is

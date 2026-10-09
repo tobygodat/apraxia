@@ -1,6 +1,6 @@
 import agent from "../api/agent/v1/[resource].js";
 import calendar from "../api/calendar/[action].js";
-import health from "../api/health.js";
+import { createHealthResponse } from "../api/health.js";
 import mcp from "../api/mcp.js";
 
 interface WorkerEnvironment {
@@ -20,7 +20,8 @@ const securityHeaders: Record<string, string> = {
 };
 
 function routeApi(pathname: string): Handler | null {
-  if (pathname === "/api/health") return () => health.fetch();
+  if (pathname === "/api/health")
+    return () => createHealthResponse(process.env, new Date(), "cloudflare-worker");
   if (pathname === "/api/mcp") return (request) => mcp.fetch(request);
   if (pathname.startsWith("/api/agent/v1/")) return (request) => agent.fetch(request);
   if (pathname.startsWith("/api/calendar/")) return (request) => calendar.fetch(request);
