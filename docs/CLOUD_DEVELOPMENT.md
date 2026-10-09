@@ -477,7 +477,8 @@ one coordinated migration-and-UI release was sequenced.
 | Environment | Database | Configuration |
 |---|---|---|
 | Development | Local Supabase | Ignored `.env.local` |
-| Vercel Production | `oidvvenjamgcezdptfjr` | Vercel Production variables |
+| Cloudflare Worker `apraxia` | `oidvvenjamgcezdptfjr` | Worker build variables and secrets |
+| Vercel Production (being retired) | `oidvvenjamgcezdptfjr` | Vercel Production variables |
 
 The live app is `https://apraxia.dev`, linked to `tobygodat/apraxia`.
 Server variables were renamed from `ORBITOS_*` to `APRAXIA_*` with the app
@@ -501,6 +502,25 @@ stay server-only. Redeploy after environment changes. Optional Preview builds
 should not receive live credentials by default. Verify changed flows on the
 live app after a release, including reload persistence and recovery from errors.
 See [Calendar](CALENDAR.md) for OAuth setup and credential troubleshooting.
+
+### Cloudflare Worker
+
+`apraxia.dev` is moving from Vercel to one Cloudflare Worker. `wrangler.jsonc`
+serves `frontend/dist` as static assets, falls back to `index.html` for app
+routes, and runs `worker/index.ts` first on every request. The worker sends
+`/api/health`, `/api/mcp`, `/api/agent/v1/*` and `/api/calendar/*` to the same
+`api/` handlers Vercel ran, answers any other `/api/` path with 404, and adds the
+security headers `vercel.json` set. `nodejs_compat` supplies `node:crypto`,
+`node:buffer` and `process.env`.
+
+Configure the Worker's Git build with build command
+`npm run build && npm run check:bundle` and deploy command `npm run deploy:worker`.
+The `VITE_` values must be build variables, because Vite embeds them at build
+time; every server variable in the table above, Google's included, goes on the
+Worker as a variable or secret. To try it locally, put fictional values in an
+ignored `.dev.vars`, run `npm run build`, then `npm run dev:worker`.
+
+`vercel.json` stays until Calendar and the agent API are confirmed on the Worker.
 
 ## Authentication and legacy recovery
 

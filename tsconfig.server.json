@@ -19,6 +19,7 @@
   "include": [
     "api/**/*.ts",
     "server/**/*.ts",
+    "worker/**/*.ts",
     "tests/contract/**/*.ts",
     "tests/local/**/*.ts",
     "vitest.config.ts",

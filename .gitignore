@@ -54,3 +54,5 @@ Thumbs.db
 
 # playwright-cli session output (npm run qa:capture). May show personal data.
 .playwright-cli/
+.wrangler/
+.dev.vars

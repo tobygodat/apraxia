@@ -12,6 +12,7 @@
       "project": [
         "api/**/*.ts",
         "server/**/*.ts",
+        "worker/**/*.ts",
         "shared/**/*.ts",
         "scripts/*.mjs",
         "tests/**/*.ts"
