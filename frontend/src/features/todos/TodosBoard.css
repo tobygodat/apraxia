@@ -576,9 +576,8 @@
 }
 
 /* Markup the redesign added: the source words that replaced a select, the two
-   piles under the week, and a day column's empty line. Classic carries plain
-   rules for them so it stays coherent while it lives; Paper shapes them in
-   `todosPaper.css`. */
+   piles under the week, and a day column's empty line. These are their plain
+   base rules; `todosCrisp.css` shapes them. */
 .todos-board-filter__word {
   min-height: 0;
   padding: 0 0 2px;

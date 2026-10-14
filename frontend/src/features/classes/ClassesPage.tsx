@@ -3,9 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { WorkspaceDialog } from "../../apps/WorkspaceDialog";
 import "./classes.css";
-// One Paper sheet covers the whole Classes feature: this page, the class
-// detail, its assignments and its notes.
-import "./classesPaper.css";
 import "./classesCrisp.css";
 
 import { ClassDetail } from "./ClassDetail";

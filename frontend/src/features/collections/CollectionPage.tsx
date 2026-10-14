@@ -17,7 +17,6 @@ import {
   type ProjectStatusFilter,
 } from "./collectionService";
 import "./collections.css";
-import "./collectionsPaper.css";
 import "./collectionsCrisp.css";
 interface Props {
   kind: CollectionKind;

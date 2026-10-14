@@ -26,7 +26,6 @@ import {
 } from "./todoInput";
 import type { UpdateTodoDetailsInput } from "./todoService";
 import "./TodoFormDialog.css";
-import "./todosPaper.css";
 import "./todosCrisp.css";
 
 type TodoFormMode = "create" | "edit" | "reschedule";

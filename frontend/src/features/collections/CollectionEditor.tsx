@@ -5,7 +5,6 @@ import type { CollectionKind, CollectionRecord, CollectionService } from "./coll
 import "../todos/TodoFormDialog.css";
 import "../todos/todosCrisp.css";
 import "./collections.css";
-import "./collectionsPaper.css";
 import "./collectionsCrisp.css";
 /** The saved project states, in the order a project usually moves through. */
 export const PROJECT_STATUS_LABELS: Readonly<Record<ProjectStatus, string>> = {

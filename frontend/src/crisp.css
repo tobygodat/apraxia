@@ -399,8 +399,8 @@
 
 /* ------------------------------------------------------------ primitives */
 
-/* Several pages are built from the Paper primitives. Crisp draws the same
-   markup in its own terms: an action is a ghost button, a Button is the
+/* Several pages carry the Paper theme's class names, kept from before it was
+   retired. Crisp draws that markup in its own terms: an action is a ghost button, a Button is the
    outlined or filled control, a nav item is a tab, a field is an input. */
 :root[data-theme^="crisp"] .paper-action {
   display: inline-flex;

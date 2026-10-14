@@ -25,7 +25,6 @@ import {
   type TodoMutationErrorKind,
 } from "./todoUiState";
 import "./TodosBoard.css";
-import "./todosPaper.css";
 import "./todosCrisp.css";
 
 export interface TodosBoardProps {

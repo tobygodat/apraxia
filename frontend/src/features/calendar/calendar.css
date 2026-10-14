@@ -850,6 +850,11 @@
   letter-spacing: -1px;
   overflow-wrap: anywhere;
 }
+/* Crisp shows the date line; the base sheet keeps it hidden. */
+.home-header__date {
+  display: none;
+}
+
 .home-header__customize {
   margin-left: auto;
   flex-shrink: 0;
@@ -1218,7 +1223,7 @@
   }
 }
 
-/* Paper prints this; classic keeps the time in the gutter. */
+/* The time stays in the hour gutter. */
 .week-now__label {
   display: none;
 }

@@ -21,7 +21,6 @@ import type { MoveDirection } from "./todayOrder";
 import { TodoSourceChip } from "./TodoSourceChip";
 import type { TodayListDay, TodayListViewState } from "./todoViews";
 import "./TodayList.css";
-import "./todosPaper.css";
 import "./todosCrisp.css";
 
 export interface TodayListProps {
@@ -412,7 +411,7 @@ export function TodayList({
                       </span>
                     ) : (
                       // Holds the handle's column open so both days' rows line
-                      // up. Paper takes the handle out of flow and drops this.
+                      // up.
                       <span className="today-list-item__drag-placeholder" aria-hidden="true" />
                     )}
 

@@ -5,7 +5,6 @@ import type { SearchRecordType, SearchResult } from "../../types/domain";
 import { useDialogPresence, useWorkspaceRevision } from "../../apps/workspaceStore";
 import { matchPages, stepHighlight } from "./searchPages";
 import "./SearchDialog.css";
-import "./searchPaper.css";
 import "./searchCrisp.css";
 
 export interface SearchDialogProps {

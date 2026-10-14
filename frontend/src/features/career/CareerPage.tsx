@@ -17,7 +17,6 @@ import {
   type CareerStageFilter,
 } from "./careerPresentation";
 import "./career.css";
-import "./careerPaper.css";
 import "./careerCrisp.css";
 
 interface Props {

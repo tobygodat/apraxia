@@ -1,12 +1,6 @@
 /* The layout of one application's page: where the header, the tabs and the rows
- * sit. This sheet holds geometry only — no colour, no type —
- * so the page is laid out under classic as well as Paper, and its sibling
- * `careerApplicationPaper.css` adds the Paper look on top.
- *
- * Paper is this page's real theme; classic renders it as a working fallback
- * until the classic sheets are retired. The spacing steps here are the same
- * numbers Paper's space tokens carry, so the Paper sheet restates almost none
- * of them.
+ * sit. This sheet holds geometry only — no colour, no type. `careerCrisp.css`
+ * adds the look.
  */
 
 .career-app {

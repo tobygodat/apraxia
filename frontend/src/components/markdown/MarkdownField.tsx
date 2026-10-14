@@ -2,7 +2,6 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { MarkdownView } from "./MarkdownView";
 import { copyMarkdown } from "./markdownClipboard";
 import "./markdown.css";
-import "./markdownPaper.css";
 import "./markdownCrisp.css";
 
 /**

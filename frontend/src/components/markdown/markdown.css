@@ -1,10 +1,9 @@
 /* A markdown field and the note it renders, wherever one appears: an
  * application's process notes, a class's written notes.
  *
- * This sheet holds geometry only — no colour, no type — so a note is laid out
- * under classic as well as Paper, and its sibling `markdownPaper.css` adds the
- * Paper look on top. Both are imported by `MarkdownField.tsx`, so a page that
- * uses the field gets them without saying so.
+ * This sheet holds geometry only — no colour, no type — and `markdownCrisp.css`
+ * adds the look. Both are imported by `MarkdownField.tsx`, so a page that uses
+ * the field gets them without saying so.
  */
 
 .markdown-field__foot {

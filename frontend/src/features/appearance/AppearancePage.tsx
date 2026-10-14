@@ -12,7 +12,6 @@ import { canRunViewTransition } from "../../lib/viewTransition";
 // Appearance is a page of ruled choices like Settings, so it wears the same
 // sheets rather than a copy of them.
 import "../calendar/calendar.css";
-import "../calendar/settingsPaper.css";
 import "../calendar/calendarCrisp.css";
 
 interface ChoiceCopy {
