@@ -15,7 +15,6 @@ import { useColdLoadState } from "../../apps/coldLoad";
 import { WorkspaceIcon } from "../WorkspaceIcon";
 import { useOneThingTaps } from "../one-thing/OneThing";
 import "./CloudAppShell.css";
-import "./CloudAppShellPaper.css";
 import "./CloudAppShellCrisp.css";
 
 /** Delay before showing the indeterminate bar, so fast loads never flash it. */
@@ -58,8 +57,7 @@ function prefersReducedMotion(): boolean {
 /**
  * Crisp's current-section highlight: one fill that glides from the section you
  * left to the one you chose, rather than each row lighting on its own. It
- * measures the active row after every navigation and resize, and it is only
- * mounted in Crisp, so classic and Paper keep exactly the markup they had.
+ * measures the active row after every navigation and resize.
  */
 function NavPill({ navRef }: { readonly navRef: RefObject<HTMLElement | null> }) {
   const { pathname } = useLocation();

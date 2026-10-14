@@ -14,7 +14,6 @@ import { TodoComposerDialog } from "../../features/todos/TodoFormDialog";
 import type { TodoService } from "../../features/todos/todoService";
 import "./GlobalAddTodoController.css";
 import "../../apps/workspaceCrisp.css";
-import "./globalAddPaper.css";
 
 export interface OpenTodoComposerOptions {
   readonly initialDueDate?: LocalDate | null;

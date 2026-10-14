@@ -41,8 +41,6 @@ import { WorkspaceIcon } from "../../components/WorkspaceIcon";
 import { calendarEventStyle } from "./calendarColors";
 import { formatEventTimeRange } from "./eventDisplay";
 import "./calendar.css";
-import "./homePaper.css";
-import "./weekPaper.css";
 import "./calendarCrisp.css";
 
 /**
@@ -767,8 +765,8 @@ export function WeekGrid({
                     }}
                     aria-label={`Current time: ${time(now.toISOString())}`}
                   >
-                    {/* Paper prints the time on the line itself; the classic
-                        sheet hides this and keeps it in the hour gutter. */}
+                    {/* `calendar.css` hides this label and keeps the time in
+                        the hour gutter. */}
                     <span className="week-now__label" aria-hidden="true">
                       now · {time(now.toISOString())}
                     </span>

@@ -95,24 +95,6 @@
   margin: 0;
 }
 
-[data-theme^="paper"] .career-plan__heading {
-  font: var(--body);
-  color: var(--text);
-}
-
-[data-theme^="paper"] .career-plan__description,
-[data-theme^="paper"] .career-plan__field > span,
-[data-theme^="paper"] .career-plan__include,
-[data-theme^="paper"] .career-plan__duplicate {
-  font: var(--fine);
-  color: var(--muted);
-}
-
-[data-theme^="paper"] .career-plan__receipt {
-  font: var(--small);
-  color: var(--text);
-}
-
 @media (max-width: 600px) {
   .career-plan__task {
     grid-template-columns: minmax(0, 1fr);

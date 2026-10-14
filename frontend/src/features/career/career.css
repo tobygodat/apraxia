@@ -1,9 +1,5 @@
-/* Classic for the career table.
- *
- * Paper is where this page was designed; this sheet is the fallback that keeps
- * `/career` readable under the classic preset, in the same palette and control
- * shapes the other classic pages use. `careerPaper.css` is its sibling and is
- * imported straight after it.
+/* The career table's base sheet, in the palette and control shapes the other
+ * base sheets use. `careerCrisp.css` restyles it.
  */
 
 .career-page {
@@ -208,7 +204,7 @@
   font-size: 14px;
   text-decoration: underline;
 }
-/* The plus belongs to Paper's Button; classic keeps the bare word it had. */
+/* The base sheet keeps the bare word; Crisp's Button shows the plus. */
 .career-add__open .workspace-icon {
   display: none;
 }

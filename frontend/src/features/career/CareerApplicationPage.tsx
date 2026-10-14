@@ -17,7 +17,6 @@ import {
 } from "./careerService";
 import { useCareerRun } from "./useCareerRun";
 import "./careerApplication.css";
-import "./careerApplicationPaper.css";
 import "./careerCrisp.css";
 
 export type CareerTab = "structure" | "prep" | "resources";

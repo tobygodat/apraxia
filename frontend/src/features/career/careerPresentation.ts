@@ -26,7 +26,7 @@ export const CLOSED_STAGES: readonly CareerStage[] = ["rejected", "withdrawn"];
 /** `""` is every application; `"closed"` is the two stages above, together. */
 export type CareerStageFilter = "" | CareerStage | "closed";
 
-/** The filter row, in the order it reads. Paper lowercases these in CSS. */
+/** The filter row, in the order it reads. */
 export const CAREER_FILTERS: readonly (readonly [CareerStageFilter, string])[] = [
   ["", "All"],
   ["interested", "Interested"],
@@ -128,7 +128,7 @@ export function careerSummary(counts: Record<CareerStage, number>): string {
   return parts.join(" · ");
 }
 
-/** A date as the table writes it: `Sep 04`, which Paper lowercases. */
+/** A date as the table writes it: `Sep 04`. */
 export function formatCareerDate(value: string): string {
   return formatTaskDate(value, { month: "short", day: "2-digit" });
 }

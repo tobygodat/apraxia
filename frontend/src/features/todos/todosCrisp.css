@@ -1,7 +1,7 @@
 /* Tasks in Crisp: the Today list, the week board, a task's chips and marks,
  * and the task dialog the collections borrow.
  *
- * Imported after the classic sheet and `todosPaper.css` wherever those are.
+ * Imported after the classic sheet wherever that is.
  * Colours arrive through the `--c-*` properties; this sheet sets sizes,
  * surfaces and motion. Scoped `[data-theme^="crisp"]`.
  */

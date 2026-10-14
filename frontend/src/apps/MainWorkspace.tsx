@@ -48,7 +48,6 @@ import { WorkspaceErrorBoundary } from "../components/WorkspaceErrorBoundary";
 import { useWorkspace, WorkspaceProvider } from "./workspaceStore";
 import { OneThing } from "../components/one-thing/OneThing";
 import "./workspace.css";
-import "./workspacePaper.css";
 import "./workspaceCrisp.css";
 
 /**

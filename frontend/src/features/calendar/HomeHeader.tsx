@@ -22,7 +22,7 @@ function longDate(date: string) {
 interface HomeHeaderProps {
   service?: HomeAppearanceService;
   userId: string;
-  /** Today in the profile's timezone. Paper prints it under the page name. */
+  /** Today in the profile's timezone, printed under the page name. */
   date?: string;
   /** Today's counts, printed after the date. Absent until the panel reports. */
   summary?: { readonly dueToday: number; readonly overdue: number } | null;

@@ -40,8 +40,8 @@ import "../index.css";
 if (!import.meta.env.DEV) throw new Error("The QA fixture is development-only.");
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "realistic";
-// `?theme=paper` (or `paper-light`, or `device`) seeds the device preference the workspace
-// reads, so a Paper surface can be inspected without opening Appearance.
+// `?theme=crisp-light` (or `crisp`, or `device`) seeds the device preference the
+// workspace reads, so a theme can be inspected without opening Appearance.
 const theme = params.get("theme");
 if (theme && (WORKSPACE_THEME_CHOICES as readonly string[]).includes(theme)) {
   window.localStorage.setItem(

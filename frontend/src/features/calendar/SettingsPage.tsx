@@ -6,7 +6,6 @@ import type {
 } from "../../types/domain";
 import type { CalendarService } from "./calendarService";
 import "./calendar.css";
-import "./settingsPaper.css";
 import "./calendarCrisp.css";
 import { serviceErrorMessage } from "../../lib/serviceError";
 import { peekRead } from "../../apps/navigationCache";
