@@ -23,7 +23,7 @@ import {
  * `data-theme` only ever carries a real preset.
  */
 
-export const WORKSPACE_THEME_PRESETS = [
+const WORKSPACE_THEME_PRESETS = [
   "crisp",
   "crisp-light",
   "classic",
@@ -110,7 +110,7 @@ export function normalizeWorkspacePreferences(value: unknown): WorkspacePreferen
 }
 
 /** Browser-local store. Safe when storage is unavailable: falls back to memory. */
-export function createLocalWorkspacePreferencesStore(
+function createLocalWorkspacePreferencesStore(
   storage: Pick<Storage, "getItem" | "setItem"> | null = safeLocalStorage(),
   key = STORAGE_KEY,
 ): WorkspacePreferencesStore {

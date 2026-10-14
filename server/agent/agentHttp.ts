@@ -3,7 +3,7 @@ import { z } from "zod";
 import { normalizeSecureHttpOrigin } from "../../shared/supabaseEnvironment.js";
 import { calendarHttp } from "../calendar/calendarHttp.js";
 
-export const agentScopes = [
+const agentScopes = [
   "workspace:read",
   "workspace:write",
   "calendar:read",
@@ -22,7 +22,7 @@ export class AgentError extends Error {
     super(message);
   }
 }
-export const privateHeaders = {
+const privateHeaders = {
   "Cache-Control": "private, no-store",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",

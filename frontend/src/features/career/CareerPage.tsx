@@ -360,5 +360,3 @@ export function CareerPage({ service, userId, today, onOpenApplication }: Props)
 function messageOf(cause: unknown, fallback: string): string {
   return cause instanceof Error && cause.message ? cause.message : fallback;
 }
-
-export default CareerPage;
