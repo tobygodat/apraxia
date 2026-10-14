@@ -1,5 +1,7 @@
 # Apraxia consumer product opportunities
 
+> Historical record, moved to `docs/history/` on 2026-10-14. It describes the product as of 2026-09-22, including class PDFs, which were removed later. File names and features are not maintained.
+
 Research date: September 22, 2026. Audience: students and early-career people who already use AI assistants. This is a recommendation, not an implementation commitment.
 
 **Recommendation: make Apraxia the place where an assistant's advice becomes work the user can see, change, and resume. Package interview preparation as the first focused entry flow, with Classes and Projects supplying reusable context.** Keep the broader workspace useful independently of AI. A candidate should be able to arrive with one upcoming interview, create an actionable preparation plan, and return tomorrow without reconstructing the conversation.
@@ -58,7 +60,7 @@ Measure the time to the first correct saved action, including setup and correcti
 | 2 | Global Add asks for a type before opening a detailed task form. Six destinations have equal prominence. | Add a one-line capture entry with editable date/context chips and expandable details. Prioritize Today, Capture, Search, and pinned active contexts; expose other sections as needed. Retain the existing full forms and command palette. |
 | 2 | Empty states describe storage categories, while Career's useful depth appears only after creating records. | Start Career with “Add a role or paste a posting,” then create one preparation action. Start Classes with one current assignment. Defer integration setup until its benefit is clear. |
 
-Source anchors: [Home ordering](../frontend/src/features/calendar/HomePage.tsx), [stacked calendar geometry](../frontend/src/features/calendar/calendar.css), [Paper week layout](../frontend/src/features/todos/todosPaper.css), [Career prep creation](../frontend/src/features/career/CareerPrepTab.tsx), [global capture chooser](../frontend/src/apps/MainWorkspace.tsx).
+Source anchors: [Home ordering](../../frontend/src/features/calendar/HomePage.tsx), [stacked calendar geometry](../../frontend/src/features/calendar/calendar.css), [Paper week layout](../../frontend/src/features/todos/todosPaper.css), [Career prep creation](../../frontend/src/features/career/CareerPrepTab.tsx), [global capture chooser](../../frontend/src/apps/MainWorkspace.tsx).
 
 Keep the Paper visual identity: editorial typography, restrained green, whitespace, and rules. The most important visual change is hierarchy. A useful first viewport contains the next action, its context, and the next time constraint. Avoid filling it with summary cards that merely count stored objects.
 
@@ -80,7 +82,7 @@ Introduce **reusable page sections on existing typed records**. Users can show, 
 
 Start with an Interview template and an optional Semester template. Existing Projects can supply shared context. Make the template useful immediately; choosing and configuring modules should not become an onboarding exercise.
 
-The first small feature could be **“Turn this checklist into tasks”** from a Markdown note. Preview the selection, choose its context, and create linked canonical tasks. The existing Markdown checkboxes are read-only renderings of note text, so this needs explicit conversion and visible links; silently maintaining two independently editable checklists would create confusion. [Markdown rendering](../frontend/src/components/markdown/MarkdownView.tsx)
+The first small feature could be **“Turn this checklist into tasks”** from a Markdown note. Preview the selection, choose its context, and create linked canonical tasks. The existing Markdown checkboxes are read-only renderings of note text, so this needs explicit conversion and visible links; silently maintaining two independently editable checklists would create confusion. [Markdown rendering](../../frontend/src/components/markdown/MarkdownView.tsx)
 
 Reuse presentation components and typed service contracts. A lightweight registry can describe section rendering, navigation, search results, and available agent actions. Do not begin by replacing domain tables with a universal block database. Capacities' custom object types include properties, layouts, and dashboards; that illustrates the size of the configuration product one would otherwise be taking on. [Capacities object types](https://docs.capacities.io/reference/content-types)
 
@@ -90,12 +92,12 @@ Add new section types only after repeated workflows need them. User-defined sche
 
 The consumer-facing connection should read like “Connect your assistant” and explain which contexts it can access. It should show connection status, recent activity, and revocation. Tokens and protocol setup belong behind that experience.
 
-The current bridge has useful safeguards already: explicit scopes, server-owned account identity, version checks, durable idempotency, and Google write reconciliation. Preserve them. However, its configured bearer token maps to one fixed owner; it is not a per-account consumer connection. [Existing API contract](../docs/AGENT_API.md)
+The current bridge has useful safeguards already: explicit scopes, server-owned account identity, version checks, durable idempotency, and Google write reconciliation. Preserve them. However, its configured bearer token maps to one fixed owner; it is not a per-account consumer connection. [Existing API contract](../AGENT_API.md)
 
 The work should proceed in this order:
 
 1. **One action, one state.** Use the existing Career prep-to-todo seam. The task owns completion and action dates; Career owns its interview context. Make linked mutations atomic and preserve existing ownership checks. Keep a planned work date separate from a true deadline if planning requires both. Rescheduling preparation must not silently change an interview or assignment deadline.
-2. **Close the capability gaps.** The agent schema exposes todos, projects, ideas, classes, and notes, but no Career domain. It also lacks writable recurrence fields and explicit class-note writes. Add only the operations required by the selected workflow, with the same rules as the browser. [Agent schema](../server/agent/agentSchema.ts)
+2. **Close the capability gaps.** The agent schema exposes todos, projects, ideas, classes, and notes, but no Career domain. It also lacks writable recurrence fields and explicit class-note writes. Add only the operations required by the selected workflow, with the same rules as the browser. [Agent schema](../../server/agent/agentSchema.ts)
 3. **Provide a bounded context handoff.** Assemble the selected application, its upcoming round, relevant actions, and user-selected evidence with source identifiers and freshness. Start with pasted text and existing Markdown. Add extracted PDF text with page references only when the pilot shows it is needed. The present API offers PDF bytes, not an extracted-text retrieval service. An embeddings platform is not a prerequisite for the first experiment.
 4. **Review meaningful batches.** Show proposed additions and edits with their sources, then save the accepted batch. Reuse version checks and idempotency so retrying cannot duplicate work or overwrite intervening edits. Return an understandable receipt. Offer undo only for changes that can actually be reversed safely; represent partial or uncertain provider outcomes honestly. Let authorization settings govern routine actions instead of adding a confirmation dialog to every harmless edit.
 5. **Add per-account access before external assistant pilots with real accounts.** Bind credentials to the authenticated user, support scoped grants and revocation, and test cross-account isolation. OpenAI's current authenticated MCP guidance expects OAuth 2.1. The owner's fixed bearer credential must not become a shared pilot credential. [OpenAI authentication guidance](https://developers.openai.com/plugins/build/auth)
