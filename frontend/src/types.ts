@@ -20,27 +20,3 @@ export interface Writing {
   created_at: string;
   updated_at: string;
 }
-
-export interface Book {
-  id: number;
-  title: string;
-  author: string | null;
-  status: string;
-  rating: number | null;
-  notes: string | null;
-  source: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Movie {
-  id: number;
-  title: string;
-  year: number | null;
-  status: string;
-  rating: number | null;
-  notes: string | null;
-  source: string;
-  created_at: string;
-  updated_at: string;
-}
