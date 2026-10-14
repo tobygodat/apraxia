@@ -83,4 +83,4 @@ write RPCs that migration added. Both are applied to the hosted app.
 
 Per-account assistant OAuth, direct Career MCP tools, hosted model inference,
 PDF extraction, and configurable page sections remain later stages from the
-[consumer research](CONSUMER_PRODUCT_RESEARCH_2026-09-22.md).
+[consumer research](history/CONSUMER_PRODUCT_RESEARCH_2026-09-22.md).

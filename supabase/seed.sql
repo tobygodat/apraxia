@@ -1,2 +1,2 @@
--- Intentionally empty during Phase 0.
--- Phase 1 tests create disposable Auth users rather than committing credentials.
+-- Intentionally empty. Tests create disposable Auth users rather than committing
+-- credentials.

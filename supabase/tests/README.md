@@ -8,8 +8,8 @@ cover the security contract (schema, role, function, and private-table ACL
 posture), two-account RLS isolation, Today ordering and pagination, soft delete
 and restore with exact undo tokens, search, schedule bounds, OAuth transactions,
 the calendar and home-appearance services, classes and notes, the
-assignment-to-todo aggregation, Classes deletion, browser-role posture, and the
-agent API.
+assignment-to-todo aggregation, Classes deletion, browser-role posture, the
+agent API, recurring todos, and Career preparation.
 
 Coverage is narrower than the whole schema: a new table or `SECURITY DEFINER`
 function needs the posture suites (`000` and `140`) widened deliberately, not

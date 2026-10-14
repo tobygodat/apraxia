@@ -110,7 +110,7 @@ port = 54324
 # sender_name = "Admin"
 
 [storage]
-# Required for private class PDF uploads and their Storage policies.
+# Required for the private career-resources bucket and its Storage policies.
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
