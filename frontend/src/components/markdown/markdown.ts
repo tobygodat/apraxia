@@ -211,7 +211,7 @@ function safeHref(raw: string): string | null {
 
 const AUTOLINK = /^(?:https?:\/\/|www\.)[^\s<>()]+[^\s<>().,;:!?'"]/i;
 
-export function parseInline(source: string): Inline[] {
+function parseInline(source: string): Inline[] {
   const out: Inline[] = [];
   let text = "";
   const flush = () => {

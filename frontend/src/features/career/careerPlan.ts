@@ -11,7 +11,7 @@ const PLAN_INPUT_MAX_CHARACTERS = 100_000;
 const PLAN_TASK_MAX_CHARACTERS = 2_000;
 const PLAN_TASK_MAX_COUNT = 50;
 
-export interface CareerPlanProject {
+interface CareerPlanProject {
   readonly id: string;
   readonly title: string;
   readonly description?: string | null;

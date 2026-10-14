@@ -15,12 +15,12 @@ import { nextStepOf, orderApplications } from "./careerOrdering";
 import type { CareerStage } from "./careerOrdering";
 
 export type { CareerStage } from "./careerOrdering";
-export { CAREER_STAGES, countByStage, nextStepOf, orderApplications } from "./careerOrdering";
+export { CAREER_STAGES, nextStepOf } from "./careerOrdering";
 
 type Tables = Database["public"]["Tables"];
 type Enums = Database["public"]["Enums"];
 
-export type CareerResourceKind = Enums["career_resource_kind"];
+type CareerResourceKind = Enums["career_resource_kind"];
 
 export interface CareerApplication {
   id: string;
@@ -69,7 +69,7 @@ export interface CareerPrepItem {
 export type CareerPrepChanges = Partial<Pick<CareerPrepItem, "body" | "dueOn" | "doneAt">>;
 
 /** One reviewed, client-identified action in an atomic plan import. */
-export interface CareerPrepImportItem {
+interface CareerPrepImportItem {
   id: string;
   body: string;
   dueOn: string | null;
@@ -131,7 +131,7 @@ export interface CareerUploadDraft {
   sha256: string;
 }
 
-export interface CareerApplicationDraft {
+interface CareerApplicationDraft {
   company: string;
   role: string;
   appliedOn?: string | null;

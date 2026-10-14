@@ -137,7 +137,7 @@ function keyArgsFor(args: unknown[]): unknown[] {
 }
 
 /** Symbol used by cacheNavigationService's Proxy to expose a synchronous peek for reads. */
-export const PEEK = Symbol("navigationCache.peek");
+const PEEK = Symbol("navigationCache.peek");
 
 /** Symbol used by cacheNavigationService's Proxy to expose the cache's invalidate. */
 const INVALIDATE = Symbol("navigationCache.invalidate");

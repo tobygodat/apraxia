@@ -7,7 +7,7 @@
  * This is the one place a string of HTML is built, and it never comes back into
  * this app: it is written to the clipboard and nothing here parses it.
  */
-import { inlineText, markdownToText, parseMarkdown, type Block, type Inline } from "./markdown";
+import { markdownToText, parseMarkdown, type Block, type Inline } from "./markdown";
 
 function escape(text: string): string {
   return text
@@ -106,5 +106,3 @@ export async function copyMarkdown(source: string): Promise<boolean> {
   }
   return false;
 }
-
-export { inlineText };
