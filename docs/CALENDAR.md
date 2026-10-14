@@ -6,7 +6,7 @@ or changing the week and explicit refresh, without a persisted event cache.
 
 ## Provider setup and recovery
 
-The live Supabase project is `oidvvenjamgcezdptfjr`. Vercel Production holds
+The live Supabase project is `oidvvenjamgcezdptfjr`. The `apraxia` Worker holds
 `APP_URL`, Supabase configuration, and these server-only Calendar settings:
 
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Web OAuth client.

@@ -2,7 +2,7 @@
 
 A private workspace for tasks, projects, ideas, classes, and interview preparation.
 Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
-React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
+React/Vite, Supabase Auth/Postgres/RLS, and a Cloudflare Worker.
 
 Tasks aggregates ordinary tasks, project tasks, class assignments, and Career
 preparation into Inbox and date columns, filtered by source. Career preparation
@@ -15,10 +15,10 @@ Product rules and repository workflow live in [AGENTS.md](AGENTS.md). The person
 The app was renamed from orbitOS to apraxia on 2026-09-17. Persisted and hosted
 identifiers keep the old name on purpose: the database roles and enum, names
 inside applied migrations, token-encryption purpose strings, the legacy
-`orbitos:classes:v1` browser payload, the preserved `src/orbitos` package with
-its `orbitos.db` data, and the Vercel variable `ORBITOS_AGENT_TOKEN`, which
-cannot be renamed in place. Renaming any of them is a separate, data-affecting
-change.
+`orbitos:classes:v1` browser payload, and the preserved `src/orbitos` package
+with its `orbitos.db` data. Renaming any of them is a separate, data-affecting
+change. The server still accepts the old agent token name `ORBITOS_AGENT_TOKEN`
+alongside `APRAXIA_AGENT_TOKEN`.
 
 ## Status
 

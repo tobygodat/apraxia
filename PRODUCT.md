@@ -25,7 +25,7 @@ The workspace favors manual capture and explicit user control. Home brings
 Google Calendar and Today together; other modules support organizing and
 retrieving information beyond the current day.
 
-Develop locally and release to the existing Vercel/Supabase app. The cloud
+Develop locally and release to the existing Cloudflare Worker and Supabase app. The cloud
 implementation uses React/Vite, Supabase authentication and database access,
 and server-side endpoints. Repository workflow and security rules live in
 AGENTS.md.

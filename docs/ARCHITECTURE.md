@@ -2,14 +2,14 @@
 
 apraxia has two data paths. Ordinary workspace records go from the browser
 straight to Supabase Postgres under row-level security. Anything that needs a
-Google credential goes through a Vercel function, which runs server-only code and
-never exposes the credential to the browser.
+Google credential goes through an `/api` handler on the Cloudflare Worker, which
+runs server-only code and never exposes the credential to the browser.
 
 ```mermaid
 flowchart LR
   Browser["Browser (frontend/src)"]
   Supabase["Supabase Postgres\npublic tables + RPCs"]
-  ApiFn["/api/* Vercel functions (api/)"]
+  ApiFn["/api/* handlers (api/, routed by worker/)"]
   ServerMod["server/ modules\nsession, OAuth, Google transport"]
   Private["private schema\ncredentials, OAuth state"]
   Google["Google Calendar"]
@@ -43,7 +43,7 @@ owned by the `orbitos_rpc` role. See
 
 Calendar needs a Google refresh token, a client secret, and an encryption key.
 Those never reach the browser. The browser calls `/api/...` with its Supabase
-JWT; the function verifies the session through Supabase Auth,
+JWT; the handler verifies the session through Supabase Auth,
 reads the encrypted credential through `service_role` RPCs, talks to Google, and
 returns a sanitized projection. Provider bodies, attendees, descriptions, and
 tokens stay out of the response. See [Calendar](CALENDAR.md).
@@ -59,13 +59,14 @@ tokens stay out of the response. See [Calendar](CALENDAR.md).
 | `frontend/src/config/` | Browser environment parsing, runtime mode, and Vite config helpers. |
 | `frontend/src/qa/` | Development-only fixtures. See [QA fixtures](QA_FIXTURES.md). |
 | `frontend/src/types/` | Generated `database.ts` and hand-written `domain.ts` browser contracts. |
-| `api/` | Vercel function entry points only: `calendar/[action].ts`, one function so a warm instance serves every Calendar action, the agent resource, and `health.ts`. Each parses the request and delegates. |
+| `worker/` | `index.ts`, the Cloudflare Worker entry point. It sends `/api/*` paths to the `api/` handlers, answers any other `/api/` path with 404, serves `frontend/dist` for everything else, and adds the security headers. |
+| `api/` | Request handlers only: `calendar/[action].ts` for every Calendar action, the agent resource, `mcp.ts`, and `health.ts`. Each parses the request and delegates. |
 | `server/` | Server-only logic: session verification, OAuth policy, token encryption, Google transports, and environment validation. Never imported by browser code. |
 | `shared/` | Contracts used by both sides: calendar event shapes, Today RPC wire names, Supabase environment normalizers. Must stay dependency-free and runtime-neutral. |
 | `supabase/` | `migrations/` (forward-only schema) and `tests/` (pgTAP). |
 | `tests/contract/` | Node/PGlite tests that run everywhere, including CI, with no Docker. |
 | `tests/local/` | Tests that require local Supabase. Run by `npm run verify:db`, not by `npm test`. |
-| `scripts/` | Node check scripts invoked by npm scripts: browser secret scan, local Todo HTTP suite, OAuth concurrency suite, migration rewind. Also the two local full-stack helpers: the `vercel dev` config generator and the hosted-data import. |
+| `scripts/` | Node check scripts invoked by npm scripts: browser secret scan, local Todo HTTP suite, OAuth concurrency suite, migration rewind. CI job scoping (`ci-scope.mjs`). The QA capture and personal snapshot (`qa-capture.mjs`, `qa-snapshot.mjs`). Also the two local full-stack helpers: the `vercel dev` config generator and the hosted-data import. |
 
 ## Where new code goes
 
@@ -103,7 +104,7 @@ Details and when each suite runs are in
 
 ## Personal agent API
 
-`/api/agent/v1/[resource]` is one Vercel function for scheduled agent clients.
+`/api/agent/v1/[resource]` is one handler for scheduled agent clients.
 `server/agent/` verifies a dedicated bearer token, configured scopes, and a fixed
 server-bound user UUID. Workspace requests use service-only wrappers around
 RLS-constrained `orbitos_agent` functions; explicit field allowlists, opaque
