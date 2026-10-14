@@ -288,18 +288,15 @@ Motion is calm and short, 120 to 320ms on one curve, and it always explains a ch
 
 ### How the system is applied
 
-Crisp is built over the classic theme's markup rather than beside it. Classic's stylesheets read every colour and face through a custom property with the classic literal as its fallback, `var(--c-*, <classic value>)`, so classic renders pixel-identical when nothing defines the property. `frontend/src/crisp.css` defines the `--c-*` properties for both Crisp themes, the type roles, radii, sizes, motion and shadows, the global primitives and the checkbox. Where structure has to change, a `*Crisp.css` sheet sits beside each classic sheet (`workspaceCrisp.css`, `CloudAppShellCrisp.css`, `calendarCrisp.css`, `todosCrisp.css`, `collectionsCrisp.css`, `classesCrisp.css`, `careerCrisp.css`, `searchCrisp.css`, `markdownCrisp.css`), imported after it, with every rule scoped `[data-theme^="crisp"]`, which matches both Crisp presets and nothing else. Behaviour that only Crisp shows (the gliding highlight, page arrival, completion as a view transition) is mounted only when the resolved theme starts with `crisp`, so classic and Paper keep exactly the markup they had.
+Crisp is built over the classic theme's markup rather than beside it. Classic's stylesheets read every colour and face through a custom property with the classic literal as its fallback, `var(--c-*, <classic value>)`, so a surface still renders with the classic values whenever nothing defines the property, as before the theme attribute is set. `frontend/src/crisp.css` defines the `--c-*` properties for both Crisp themes, the type roles, radii, sizes, motion and shadows, the global primitives and the checkbox. Where structure has to change, a `*Crisp.css` sheet sits beside each classic sheet (`workspaceCrisp.css`, `CloudAppShellCrisp.css`, `calendarCrisp.css`, `todosCrisp.css`, `collectionsCrisp.css`, `classesCrisp.css`, `careerCrisp.css`, `searchCrisp.css`, `markdownCrisp.css`), imported after it, with every rule scoped `[data-theme^="crisp"]`, which matches both Crisp presets and nothing else. Crisp's behaviour (the gliding highlight, page arrival, completion as a view transition) mounts on every page.
 
 New work in Crisp reads `--c-*` tokens; it never writes a literal colour, face or duration that a token already names.
 
-### The other themes
+### Retired themes
 
-Two older looks stay selectable in Appearance, each with its own vocabulary. They are never mixed with Crisp or with each other on one surface, and neither's rules are Crisp's rules.
+Crisp is the only theme Appearance offers. The Paper and classic themes were retired on 2026-10-14, and a stored choice of either opens in Crisp. Classic's literals remain as the fallbacks inside the `--c-*` reads; they are frozen, so do not extend them.
 
-- **Paper** (`paper`, `paper-light`): the Toby Godat system. Warm paper grounds, Literata throughout, one green that means "here", rules instead of boxes, words instead of buttons, lowercase interface words and a green `// ` before section headings. Its tokens and primitives live in `frontend/src/paper.css`, scoped `[data-theme^="paper"]`.
-- **Classic** (`classic`): the charcoal workspace Crisp replaced, with Georgia headings and Segoe UI controls. Its literals are the fallbacks inside the `--c-*` reads and are frozen; do not extend them.
-
-Some pages are built from Paper's primitives (`.paper-action`, `.paper-button`, `.paper-nav__item`, `.paper-field`, `.paper-heading`). Crisp redraws that markup in its own terms, listed under Components; the class names are shared, the vocabulary is not.
+Some markup still carries Paper's class names (`.paper-action`, `.paper-button`, `.paper-nav__item`, `.paper-field`, `.paper-heading`). Crisp styles them in its own terms, listed under Components; the names are historical.
 
 ## Colors
 
@@ -472,5 +469,5 @@ A hidden room for delight. Nothing in the interface points to it: the Konami cod
 - **Don't** add a second accent, a second face, or a second blue button to a page.
 - **Don't** fill whole calendar events with colour by default; the calendar's colour is the bar, and the wash is the person's choice in Appearance.
 - **Don't** put a box, band or border round a section to make it look important.
-- **Don't** mix Crisp with Paper's or classic's vocabulary on one surface: no Literata, no green, no `// ` headings, no Georgia or Segoe literals in Crisp rules.
+- **Don't** bring back the retired themes' vocabulary: no Literata, no green, no `// ` headings, no Georgia or Segoe literals in Crisp rules.
 - **Don't** use motion that does not explain a change, and don't let any motion run under reduced motion.

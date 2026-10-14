@@ -750,7 +750,7 @@ describe("Collection pages", () => {
     await waitFor(() => expect(gate?.getAttribute("data-cold")).toBeNull());
   });
 
-  it("states the status filter as a row of words under Paper, and keeps the select in classic", async () => {
+  it("filters projects by status with a select, and draws row actions as icons", async () => {
     const project = {
       id: "p",
       title: "Home",
@@ -760,42 +760,23 @@ describe("Collection pages", () => {
       updatedAt: "",
     };
     const listProjects = vi.fn().mockResolvedValue([project]);
-    const props = {
-      kind: "project" as const,
-      service: { listProjects } as unknown as CollectionService,
-      todoService: {} as TodoService,
-    };
-
     render(
-      <WorkspacePreferencesProvider
-        store={createMemoryWorkspacePreferencesStore({ theme: "paper" })}
-      >
-        <Page {...props} />
+      <WorkspacePreferencesProvider store={createMemoryWorkspacePreferencesStore()}>
+        <Page
+          kind="project"
+          service={{ listProjects } as unknown as CollectionService}
+          todoService={{} as TodoService}
+        />
       </WorkspacePreferencesProvider>,
     );
     await screen.findByText("Home");
-    expect(screen.queryByRole("combobox")).toBeNull();
-    const words = screen.getByRole("group", { name: "Status" });
-    expect(
-      within(words).getByRole("button", { name: "Current" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    fireEvent.click(within(words).getByRole("button", { name: "Archived" }));
+    expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
+    fireEvent.change(screen.getByRole("combobox", { name: "Status" }), {
+      target: { value: "archived" },
+    });
     await waitFor(() =>
       expect(listProjects).toHaveBeenCalledWith(expect.objectContaining({ status: "archived" })),
     );
-    // A row's actions are words in Paper, and the deletion keeps its own name.
-    expect(screen.getByRole("button", { name: "Delete Home" }).textContent).toBe("delete");
-
-    cleanup();
-    render(
-      <WorkspacePreferencesProvider
-        store={createMemoryWorkspacePreferencesStore({ theme: "classic" })}
-      >
-        <Page {...props} />
-      </WorkspacePreferencesProvider>,
-    );
-    await screen.findByText("Home");
-    expect(screen.getByRole("combobox", { name: "Status" })).toBeTruthy();
-    expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Delete Home" }).textContent).toBe("");
   });
 });

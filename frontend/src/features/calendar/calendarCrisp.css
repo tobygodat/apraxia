@@ -725,24 +725,6 @@
   --swatch-ink: #2383e2;
 }
 
-[data-theme^="crisp"] .settings-choice:has(input[value="classic"]) {
-  --swatch-page: #191919;
-  --swatch-side: #242424;
-  --swatch-ink: #8fc981;
-}
-
-[data-theme^="crisp"] .settings-choice:has(input[value="paper"]) {
-  --swatch-page: #1b1a19;
-  --swatch-side: #1b1a19;
-  --swatch-ink: #8fd18a;
-}
-
-[data-theme^="crisp"] .settings-choice:has(input[value="paper-light"]) {
-  --swatch-page: #f4f1eb;
-  --swatch-side: #f4f1eb;
-  --swatch-ink: #2e7d4f;
-}
-
 [data-theme^="crisp"] .settings-choice:has(input[value="device"]) {
   --swatch-page: linear-gradient(135deg, #ffffff 50%, #191919 50%);
   --swatch-side: transparent;

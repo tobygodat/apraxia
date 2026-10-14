@@ -63,16 +63,13 @@ stay in view on touch, and Home is an opinionated day rather than a blank
 page. Motion is short and explains a change. DESIGN.md records the system and
 is binding for Crisp.
 
-The Toby Godat design system (warm paper, Literata, one green that means
-"here", rules instead of boxes, words instead of buttons) continues as the
-Paper theme, and the charcoal classic theme stays selectable. Each theme keeps
-its own vocabulary, and the three are never mixed on one surface.
+Crisp is the only theme, in a dark and a light page. The earlier Paper and
+classic themes were retired on 2026-10-14.
 
 Voice: facts are stated with their numbers rather than with adjectives. Items
 on a line are joined with a spaced middle dot. Errors say what happened and
-what to do, in a sentence, without blame. No emoji. Crisp and classic print
-interface words in sentence case; Paper lowercases them and prefixes section
-headings with a green `// `.
+what to do, in a sentence, without blame. No emoji. Interface words are in
+sentence case.
 
 ## Evidence on Hand
 
