@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   WorkspacePreferencesProvider,
   createMemoryWorkspacePreferencesStore,
@@ -22,13 +22,17 @@ function renderPage(store = createMemoryWorkspacePreferencesStore()) {
   return store;
 }
 
-it("saves the chosen theme preset, so Paper is reachable from classic", () => {
-  const store = renderPage(createMemoryWorkspacePreferencesStore({ theme: "classic" }));
-  const paper = screen.getByRole("radio", { name: "Paper" });
-  expect((paper as HTMLInputElement).checked).toBe(false);
-  fireEvent.click(paper);
-  expect(store.read().theme).toBe("paper");
-  expect(document.documentElement.getAttribute("data-theme")).toBe("paper");
+it("offers Crisp, Crisp light and Match device, and saves the choice", () => {
+  const store = renderPage();
+  const themes = screen.getByRole("radiogroup", { name: "Theme" });
+  expect(
+    within(themes)
+      .getAllByRole("radio")
+      .map((radio) => radio.getAttribute("value")),
+  ).toEqual(["crisp", "crisp-light", "device"]);
+  fireEvent.click(screen.getByRole("radio", { name: "Crisp light" }));
+  expect(store.read().theme).toBe("crisp-light");
+  expect(document.documentElement.getAttribute("data-theme")).toBe("crisp-light");
 });
 
 it("paints Match device with the Crisp preset the device asks for", () => {
@@ -56,6 +60,10 @@ it("collapses the sidebar from the page", () => {
   const store = renderPage();
   fireEvent.click(screen.getByRole("radio", { name: "Icons only" }));
   expect(store.read().sidebarCollapsed).toBe(true);
+});
+
+it.each(["classic", "paper", "paper-light"])("opens a stored %s choice in Crisp", (theme) => {
+  expect(normalizeWorkspacePreferences({ theme }).theme).toBe("crisp");
 });
 
 it("falls back to Crisp for a theme this build does not know", () => {

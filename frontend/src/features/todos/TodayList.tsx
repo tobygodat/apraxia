@@ -10,7 +10,6 @@ import {
 import { flushSync } from "react-dom";
 import { Link } from "react-router-dom";
 import { useColdLoad } from "../../apps/coldLoad";
-import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { canRunViewTransition } from "../../lib/viewTransition";
 import type { TodayTodo, UUID } from "../../types/domain";
 import { isDocumentFocus } from "../../components/dialog/Dialog";
@@ -98,10 +97,9 @@ export function TodayList({
   // Rows carry transition names only while a completion is animating, so no
   // other transition (a theme change, say) captures them one by one.
   const [namedRows, setNamedRows] = useState(false);
-  const crisp = useWorkspacePreferences().resolvedTheme.startsWith("crisp");
   const { model } = state;
   const completeTodo = (todoId: UUID) => {
-    if (!crisp || !canRunViewTransition()) {
+    if (!canRunViewTransition()) {
       onCompleteTodo(todoId);
       return;
     }
@@ -366,7 +364,7 @@ export function TodayList({
                   key={todo.id}
                   data-completing={completingId === todo.id || undefined}
                   style={
-                    crisp && namedRows
+                    namedRows
                       ? ({
                           viewTransitionName: `today-${todo.id}`,
                           viewTransitionClass: "today-row",

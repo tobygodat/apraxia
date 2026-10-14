@@ -162,13 +162,12 @@ export function CloudAppShell({
   const appearanceLinkRef = useRef<HTMLAnchorElement>(null);
   const signOutButtonRef = useRef<HTMLButtonElement>(null);
   const email = identity.email?.trim() || null;
-  const { preferences, resolvedTheme, setSidebarCollapsed } = useWorkspacePreferences();
+  const { preferences, setSidebarCollapsed } = useWorkspacePreferences();
   const collapsed = preferences.sidebarCollapsed;
-  const crisp = resolvedTheme.startsWith("crisp");
   const navRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const tapMark = useOneThingTaps();
-  usePageArrival(mainRef, crisp && children === undefined);
+  usePageArrival(mainRef, children === undefined);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -278,7 +277,7 @@ export function CloudAppShell({
         ) : null}
 
         <nav id={navId} ref={navRef} className="cloud-shell__nav" aria-label="Primary navigation">
-          {crisp ? <NavPill navRef={navRef} /> : null}
+          <NavPill navRef={navRef} />
           {PRIMARY_DESTINATIONS.filter(
             (destination) =>
               !availableDestinations || availableDestinations.includes(destination.to),

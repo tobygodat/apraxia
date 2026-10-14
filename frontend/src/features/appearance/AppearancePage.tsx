@@ -20,10 +20,7 @@ interface ChoiceCopy {
   readonly description: string;
 }
 
-/**
- * What each choice is called and what it does. The names are interface words,
- * so Paper lowercases them; Crisp and classic print them as written.
- */
+/** What each choice is called and what it does. */
 const THEME_COPY: Record<WorkspaceThemeChoice, ChoiceCopy> = {
   crisp: {
     name: "Crisp",
@@ -32,18 +29,6 @@ const THEME_COPY: Record<WorkspaceThemeChoice, ChoiceCopy> = {
   "crisp-light": {
     name: "Crisp light",
     description: "The same page in daylight.",
-  },
-  classic: {
-    name: "Classic",
-    description: "Charcoal surfaces and Georgia headings, the workspace before Crisp.",
-  },
-  paper: {
-    name: "Paper",
-    description: "Warm dark paper, Literata throughout, rules instead of boxes.",
-  },
-  "paper-light": {
-    name: "Paper light",
-    description: "The same page on light paper.",
   },
   device: {
     name: "Match device",
@@ -186,7 +171,7 @@ export function AppearancePage() {
         title="Calendar events"
         choices={CALENDAR_EVENT_STYLES}
         copy={CALENDAR_EVENT_COPY}
-        note="How Crisp and Paper fill an event on the week. Classic keeps its own colours."
+        note="How an event is filled on the week."
         value={preferences.calendarEvents}
         onChange={setCalendarEvents}
       />

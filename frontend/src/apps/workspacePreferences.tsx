@@ -14,32 +14,23 @@ import {
  * follow the browser, not the account; a per-account service can replace the
  * store later without touching the consumers.
  *
- * The theme preset applies to the whole workspace, not to one page. `crisp`
- * and `crisp-light` are the default look, built over classic's structure with
- * the tokens in `crisp.css`; `classic` is the charcoal workspace it replaced;
- * `paper` and `paper-light` are the two themes of the Toby Godat foundations,
- * whose tokens live in `paper.css`. `device` is not another look: it is Crisp,
- * following the device between the dark page and the light one, so
- * `data-theme` only ever carries a real preset.
+ * The theme preset applies to the whole workspace, not to one page. Crisp is
+ * the only look: `crisp` is its dark page and `crisp-light` its light one,
+ * with tokens in `crisp.css`. `device` is not another look: it follows the
+ * device between the two, so `data-theme` only ever carries a real preset.
+ * A stored preset this build no longer offers (`classic`, `paper`,
+ * `paper-light`) reads back as the default.
  */
 
-const WORKSPACE_THEME_PRESETS = [
-  "crisp",
-  "crisp-light",
-  "classic",
-  "paper",
-  "paper-light",
-] as const;
+const WORKSPACE_THEME_PRESETS = ["crisp", "crisp-light"] as const;
 export type WorkspaceThemePreset = (typeof WORKSPACE_THEME_PRESETS)[number];
 
 export const WORKSPACE_THEME_CHOICES = [...WORKSPACE_THEME_PRESETS, "device"] as const;
 export type WorkspaceThemeChoice = (typeof WORKSPACE_THEME_CHOICES)[number];
 
 /**
- * How Crisp and Paper fill a calendar event. `raised` is the neutral surface
- * every event shares; `tinted` washes each one with its calendar's colour.
- * Classic fills events with the calendar's colour outright, so the choice does
- * not reach it.
+ * How Crisp fills a calendar event. `raised` is the neutral surface every
+ * event shares; `tinted` washes each one with its calendar's colour.
  */
 export const CALENDAR_EVENT_STYLES = ["raised", "tinted"] as const;
 export type CalendarEventStyle = (typeof CALENDAR_EVENT_STYLES)[number];
@@ -212,9 +203,7 @@ export function WorkspacePreferencesProvider({
   const resolvedTheme = resolveWorkspaceTheme(preferences.theme, deviceIsLight);
 
   // The preset rides on the document root so any surface can style against
-  // `[data-theme]` without prop drilling. `paper.css` answers to the two Paper
-  // values and `crisp.css` to the two Crisp ones; classic is the absence of
-  // either, which is why it needs no rules of its own.
+  // `[data-theme]` without prop drilling; `crisp.css` answers to both values.
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", resolvedTheme);

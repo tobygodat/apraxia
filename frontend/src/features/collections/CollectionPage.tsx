@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { DeleteUndoToken, Idea, Project, Todo } from "../../types/domain";
 import { useColdLoad } from "../../apps/coldLoad";
 import { useWorkspace } from "../../apps/workspaceStore";
-import { useWorkspacePreferences } from "../../apps/workspacePreferences";
 import { peekRead } from "../../apps/navigationCache";
 import { TodoComposerDialog, TodoEditDialog } from "../todos/TodoFormDialog";
 import { WorkspaceIcon } from "../../components/WorkspaceIcon";
@@ -48,10 +47,6 @@ const reducedMotion = () =>
 export function CollectionPage(props: Props) {
   const { kind, service, todoService, recordId, onOpenProject, onBack } = props;
   const { projects, classes, revision: refreshKey, invalidate: onChanged } = useWorkspace();
-  const { resolvedTheme } = useWorkspacePreferences();
-  // Paper draws several of this page's controls as words rather than icons,
-  // and states its filter as a row of words, so the markup forks on the preset.
-  const paper = resolvedTheme.startsWith("paper");
   const isDetail = kind === "project" && Boolean(recordId);
   const [seed] = useState(() => {
     const peekedProjectRaw = isDetail ? peekRead(service, "getProject", recordId!) : undefined;
@@ -248,7 +243,7 @@ export function CollectionPage(props: Props) {
     }
   }
   async function settleAndComplete(task: Todo) {
-    if (task.completed || paper || reducedMotion()) {
+    if (task.completed || reducedMotion()) {
       await complete(task);
       return;
     }
@@ -327,14 +322,7 @@ export function CollectionPage(props: Props) {
               }
             : {})}
         >
-          {/* Paper sets the row's action word beside its name, so the two need
-              a box between them; classic keeps the children it always had. */}
-          {paper ? <span className="collection-open__body">{body}</span> : body}
-          {paper && (
-            <span className="paper-action paper-action--quiet collection-open__word">
-              {k === "project" ? "open" : "edit"}
-            </span>
-          )}
+          {body}
         </button>
         <button
           className="collection-delete paper-action paper-action--danger"
@@ -343,7 +331,7 @@ export function CollectionPage(props: Props) {
           aria-label={`Delete ${titleOf(k, r)}`}
           onClick={() => void remove(k, r.id)}
         >
-          {paper ? "delete" : <WorkspaceIcon name="trash" />}
+          <WorkspaceIcon name="trash" />
         </button>
       </li>
     );
@@ -389,7 +377,7 @@ export function CollectionPage(props: Props) {
           aria-label={`Edit ${task.text}`}
           onClick={() => setEditingTask(task)}
         >
-          {paper ? "edit" : <WorkspaceIcon name="edit" />}
+          <WorkspaceIcon name="edit" />
         </button>
         <button
           className="collection-delete paper-action paper-action--danger"
@@ -398,7 +386,7 @@ export function CollectionPage(props: Props) {
           aria-label={`Delete ${task.text}`}
           onClick={() => void remove("todo", task.id)}
         >
-          {paper ? "delete" : <WorkspaceIcon name="trash" />}
+          <WorkspaceIcon name="trash" />
         </button>
       </div>
     );
@@ -573,57 +561,25 @@ export function CollectionPage(props: Props) {
         </>
       ) : (
         <>
-          {kind === "project" &&
-            (paper ? (
-              <div className="collection-filter">
-                <span className="collection-filter__label" id="collection-status-filter-label">
-                  Status
-                </span>
-                <div
-                  className="collection-filter__words"
-                  role="group"
-                  aria-labelledby="collection-status-filter-label"
-                >
-                  {PROJECT_FILTERS.map(([value, label]) => {
-                    const current = statusFilter === value;
-                    return (
-                      <button
-                        key={value || "current"}
-                        type="button"
-                        className={`collection-filter__word paper-nav__item${
-                          current ? " paper-nav__item--current" : ""
-                        }`}
-                        aria-pressed={current}
-                        onClick={() => {
-                          setLimit(50);
-                          setStatusFilter(value as ProjectStatusFilter | "");
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="collection-filter">
-                <label htmlFor="collection-status-filter">Status</label>
-                <select
-                  id="collection-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setLimit(50);
-                    setStatusFilter(e.target.value as ProjectStatusFilter | "");
-                  }}
-                >
-                  {PROJECT_FILTERS.map(([value, label]) => (
-                    <option key={value || "current"} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+          {kind === "project" && (
+            <div className="collection-filter">
+              <label htmlFor="collection-status-filter">Status</label>
+              <select
+                id="collection-status-filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setLimit(50);
+                  setStatusFilter(e.target.value as ProjectStatusFilter | "");
+                }}
+              >
+                {PROJECT_FILTERS.map(([value, label]) => (
+                  <option key={value || "current"} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {kind === "idea" ? (
             <div className="collection-idea-groups">
               {ideaGroups.map((group, index) => {

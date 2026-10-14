@@ -59,8 +59,8 @@ hosted migrations are forward-only.
   specificity, not on import order. Stylesheet order follows the module graph
   and changes whenever an import moves (a header margin once depended on
   `HomeHeader` being imported before the shell).
-- Visual decisions, palette, typography, and the theme sheets — `paper.css`
-  and the per-page sheets scoped with `[data-theme^="paper"]` — are documented
+- Visual decisions, palette, typography, and the theme sheets — `crisp.css`
+  and the per-page sheets scoped with `[data-theme^="crisp"]` — are documented
   in [DESIGN.md](../DESIGN.md). Reuse the existing tokens rather than adding new
   literals; a literal is invisible to the next theme.
 

@@ -3,7 +3,7 @@
 // command and one image instead of a navigate-and-screenshot loop.
 //
 //   npm run qa:capture -- --route=/todos
-//   npm run qa:capture -- --route=/settings --scenarios=personal,dense,empty --theme=paper
+//   npm run qa:capture -- --route=/settings --scenarios=personal,dense,empty --theme=crisp-light
 //
 // Needs the dev server (`npm run dev:web`). Desktop is the owner's real window,
 // 1218x1133 at device pixel ratio 1.44; phone is 375x812. The report lists
