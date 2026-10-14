@@ -1,19 +1,13 @@
 import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { GOOGLE_OAUTH_TTL_MS, type GoogleOAuthCallback } from "../../server/google/oauthPolicy";
 import {
-  CALENDAR_OAUTH_TTL_MS,
   CALENDAR_SCOPES,
   CalendarOAuthPolicyError,
-  assertCalendarMutationRequest,
-  createCalendarOAuthAttempt,
-  createCalendarOAuthConsumeCommand,
-  getCalendarOAuthRedirectUri,
-  parseCalendarOAuthCallback,
-  validateGrantedCalendarScopes,
-  type CalendarOAuthCallback,
+  calendarOAuthPolicy,
 } from "../../server/calendar/oauthPolicy";
 
-type Session = Parameters<typeof createCalendarOAuthAttempt>[0];
+type Session = Parameters<typeof calendarOAuthPolicy.createAttempt>[0];
 const APP_URL = "https://app.example.test";
 const REDIRECT_URI = `${APP_URL}/api/calendar/callback`;
 const USER_ID = "abcdef12-3456-4789-8abc-def123456789";
@@ -90,7 +84,7 @@ describe("Calendar OAuth redirect origin", () => {
     ["http://127.0.0.1:3000", "http://127.0.0.1:3000/api/calendar/callback"],
     ["http://[::1]:3000", "http://[::1]:3000/api/calendar/callback"],
   ])("builds the callback from the canonical configured origin: %s", (appUrl, expected) => {
-    expect(getCalendarOAuthRedirectUri(appUrl)).toBe(expected);
+    expect(calendarOAuthPolicy.redirectUri(appUrl)).toBe(expected);
   });
 
   it.each([
@@ -107,7 +101,7 @@ describe("Calendar OAuth redirect origin", () => {
     `${APP_URL}/?token=${SECRET}`,
     `${APP_URL}/#${SECRET}`,
   ])("rejects non-origin or insecure application configuration: %j", (appUrl) => {
-    expectPolicyError(() => getCalendarOAuthRedirectUri(appUrl));
+    expectPolicyError(() => calendarOAuthPolicy.redirectUri(appUrl));
   });
 });
 
@@ -118,13 +112,17 @@ describe("Calendar mutation request CSRF policy", () => {
     { "Content-Type": "application/json; charset=utf-8" },
     { "Content-Type": "Application/JSON; charset=UTF-8" },
   ])("accepts an exact-origin JSON POST with supported headers: %j", (headers) => {
-    expect(() => assertCalendarMutationRequest(request({ headers }), APP_URL)).not.toThrow();
+    expect(() =>
+      calendarOAuthPolicy.assertMutationRequest(request({ headers }), APP_URL),
+    ).not.toThrow();
   });
 
   it.each(["GET", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])(
     "rejects %s even from the same origin",
     (method) => {
-      expectPolicyError(() => assertCalendarMutationRequest(request({ method }), APP_URL));
+      expectPolicyError(() =>
+        calendarOAuthPolicy.assertMutationRequest(request({ method }), APP_URL),
+      );
     },
   );
 
@@ -145,7 +143,9 @@ describe("Calendar mutation request CSRF policy", () => {
     { "Content-Type": "multipart/form-data" },
     { "Content-Type": "application/jsonp" },
   ])("rejects a noncanonical Origin, unsafe fetch-site, or non-JSON body: %j", (headers) => {
-    expectPolicyError(() => assertCalendarMutationRequest(request({ headers }), APP_URL));
+    expectPolicyError(() =>
+      calendarOAuthPolicy.assertMutationRequest(request({ headers }), APP_URL),
+    );
   });
 
   it("does not let Host or forwarded headers authorize a foreign request URL", () => {
@@ -158,7 +158,7 @@ describe("Calendar mutation request CSRF policy", () => {
         "X-Forwarded-Origin": APP_URL,
       },
     });
-    expectPolicyError(() => assertCalendarMutationRequest(forged, APP_URL));
+    expectPolicyError(() => calendarOAuthPolicy.assertMutationRequest(forged, APP_URL));
   });
 
   it("ignores untrusted routing headers when the actual URL and Origin are correct", () => {
@@ -170,7 +170,7 @@ describe("Calendar mutation request CSRF policy", () => {
         "X-Forwarded-Origin": "https://evil.example.test",
       },
     });
-    expect(() => assertCalendarMutationRequest(valid, APP_URL)).not.toThrow();
+    expect(() => calendarOAuthPolicy.assertMutationRequest(valid, APP_URL)).not.toThrow();
   });
 
   it("uses the configured port and protocol instead of accepting a same-host mismatch", () => {
@@ -178,14 +178,14 @@ describe("Calendar mutation request CSRF policy", () => {
       "https://app.example.test:8443/api/calendar/connect",
       "http://app.example.test/api/calendar/connect",
     ]) {
-      expectPolicyError(() => assertCalendarMutationRequest(request({ url }), APP_URL));
+      expectPolicyError(() => calendarOAuthPolicy.assertMutationRequest(request({ url }), APP_URL));
     }
   });
 });
 
 describe("Calendar OAuth attempt creation", () => {
   it("requests event access and read-only calendar metadata with explicit offline consent", () => {
-    const result = createCalendarOAuthAttempt(SESSION, CONFIG, NOW);
+    const result = calendarOAuthPolicy.createAttempt(SESSION, CONFIG, NOW);
     const url = new URL(result.authorizationUrl);
     expect(`${url.origin}${url.pathname}`).toBe("https://accounts.google.com/o/oauth2/v2/auth");
     expect(url.hash).toBe("");
@@ -216,7 +216,7 @@ describe("Calendar OAuth attempt creation", () => {
   it("creates independent canonical 32-byte states and persists only their SHA-256 hashes", () => {
     const states = new Set<string>();
     for (let index = 0; index < 32; index += 1) {
-      const result = createCalendarOAuthAttempt(SESSION, CONFIG, NOW);
+      const result = calendarOAuthPolicy.createAttempt(SESSION, CONFIG, NOW);
       const state = new URL(result.authorizationUrl).searchParams.get("state")!;
       expect(state).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(Buffer.from(state, "base64url")).toHaveLength(32);
@@ -238,15 +238,15 @@ describe("Calendar OAuth attempt creation", () => {
       user_id: OTHER_USER_ID,
       accessToken: SECRET,
     } as unknown as Session;
-    const result = createCalendarOAuthAttempt(session, CONFIG, NOW);
-    expect(CALENDAR_OAUTH_TTL_MS).toBe(600_000);
+    const result = calendarOAuthPolicy.createAttempt(session, CONFIG, NOW);
+    expect(GOOGLE_OAUTH_TTL_MS).toBe(600_000);
     expect(result.transaction).toMatchObject({
       userId: USER_ID,
       redirectUri: REDIRECT_URI,
       expiresAt: "2026-09-07T09:40:00.123Z",
     });
     expect(new Date(result.transaction.expiresAt).getTime() - NOW.getTime()).toBe(
-      CALENDAR_OAUTH_TTL_MS,
+      GOOGLE_OAUTH_TTL_MS,
     );
     expect(NOW.toISOString()).toBe("2026-09-07T09:30:00.123Z");
     expect(JSON.stringify(result)).not.toContain(SECRET);
@@ -256,7 +256,7 @@ describe("Calendar OAuth attempt creation", () => {
   it("uses the current clock when no explicit time is supplied", () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
-    expect(createCalendarOAuthAttempt(SESSION, CONFIG).transaction.expiresAt).toBe(
+    expect(calendarOAuthPolicy.createAttempt(SESSION, CONFIG).transaction.expiresAt).toBe(
       "2026-09-07T09:40:00.123Z",
     );
   });
@@ -264,7 +264,7 @@ describe("Calendar OAuth attempt creation", () => {
   it("URL-encodes configuration without allowing extra authorization parameters", () => {
     const clientId =
       "client&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://evil.example.test";
-    const result = createCalendarOAuthAttempt(SESSION, { ...CONFIG, clientId }, NOW);
+    const result = calendarOAuthPolicy.createAttempt(SESSION, { ...CONFIG, clientId }, NOW);
     const url = new URL(result.authorizationUrl);
     expect(url.searchParams.get("client_id")).toBe(clientId);
     expect(url.searchParams.getAll("scope")).toEqual([REQUIRED_SCOPES.join(" ")]);
@@ -279,12 +279,12 @@ describe("Calendar OAuth attempt creation", () => {
     null,
     "2026-09-07T09:30:00Z",
   ])("rejects invalid clock values or an expiration beyond supported years: %s", (now) => {
-    expectPolicyError(() => createCalendarOAuthAttempt(SESSION, CONFIG, now as Date));
+    expectPolicyError(() => calendarOAuthPolicy.createAttempt(SESSION, CONFIG, now as Date));
   });
 
   it("accepts the last supported year when the complete TTL still fits", () => {
     const now = new Date("9999-12-31T23:49:59.999Z");
-    expect(createCalendarOAuthAttempt(SESSION, CONFIG, now).transaction.expiresAt).toBe(
+    expect(calendarOAuthPolicy.createAttempt(SESSION, CONFIG, now).transaction.expiresAt).toBe(
       "9999-12-31T23:59:59.999Z",
     );
   });
@@ -297,14 +297,18 @@ describe("Calendar OAuth attempt creation", () => {
     { userId: SECRET },
     { userId: "00000000-0000-0000-0000-000000000000" },
   ])("rejects missing or malformed verified-session IDs: %j", (session) => {
-    expectPolicyError(() => createCalendarOAuthAttempt(session as Session, CONFIG, NOW));
+    expectPolicyError(() => calendarOAuthPolicy.createAttempt(session as Session, CONFIG, NOW));
   });
 
   it.each(["", " ", `client\n${SECRET}`, "x".repeat(1025), null])(
     "rejects malformed client IDs: %s",
     (clientId) => {
       expectPolicyError(() =>
-        createCalendarOAuthAttempt(SESSION, { ...CONFIG, clientId: clientId as string }, NOW),
+        calendarOAuthPolicy.createAttempt(
+          SESSION,
+          { ...CONFIG, clientId: clientId as string },
+          NOW,
+        ),
       );
     },
   );
@@ -312,7 +316,7 @@ describe("Calendar OAuth attempt creation", () => {
 
 describe("Calendar OAuth callback parsing", () => {
   it("returns only the code and validated state from an exact callback", () => {
-    const result = parseCalendarOAuthCallback(
+    const result = calendarOAuthPolicy.parseCallback(
       callback({
         state: STATE,
         code: CODE,
@@ -328,7 +332,7 @@ describe("Calendar OAuth callback parsing", () => {
   });
 
   it("sanitizes a denied callback without retaining provider diagnostics or identity extras", () => {
-    const result = parseCalendarOAuthCallback(
+    const result = calendarOAuthPolicy.parseCallback(
       callback({
         state: STATE,
         error: "access_denied",
@@ -356,13 +360,13 @@ describe("Calendar OAuth callback parsing", () => {
     "https://app.example.test.evil.test/api/calendar/callback",
     `${APP_URL}//api/calendar/callback`,
   ])("rejects a non-exact callback base rather than trusting URL normalization: %s", (base) => {
-    expectPolicyError(() => parseCalendarOAuthCallback(callback(undefined, base), APP_URL));
+    expectPolicyError(() => calendarOAuthPolicy.parseCallback(callback(undefined, base), APP_URL));
   });
 
   it.each(["#", `#${SECRET}`, "\n", " ", "\\"])(
     "rejects appended fragment, whitespace, or backslash %j",
     (suffix) => {
-      expectPolicyError(() => parseCalendarOAuthCallback(callback() + suffix, APP_URL));
+      expectPolicyError(() => calendarOAuthPolicy.parseCallback(callback() + suffix, APP_URL));
     },
   );
 
@@ -378,7 +382,9 @@ describe("Calendar OAuth callback parsing", () => {
     `${"A".repeat(42)}é`,
     SECRET,
   ])("rejects missing entropy width or noncanonical base64url state: %s", (state) => {
-    expectPolicyError(() => parseCalendarOAuthCallback(callback({ state, code: CODE }), APP_URL));
+    expectPolicyError(() =>
+      calendarOAuthPolicy.parseCallback(callback({ state, code: CODE }), APP_URL),
+    );
   });
 
   it.each([
@@ -390,14 +396,14 @@ describe("Calendar OAuth callback parsing", () => {
     `state=${STATE}&code=${CODE}&code=${CODE}`,
     `state=${STATE}&error=access_denied&error=access_denied`,
   ])("requires one state and exactly one code-or-error value: %s", (query) => {
-    expectPolicyError(() => parseCalendarOAuthCallback(`${REDIRECT_URI}?${query}`, APP_URL));
+    expectPolicyError(() => calendarOAuthPolicy.parseCallback(`${REDIRECT_URI}?${query}`, APP_URL));
   });
 
   it.each(["", " ", "a b", "a\tb", "a\nb", "a\u0000b", "a\u007fb", "é", "x".repeat(4097)])(
     "rejects a non-graphic or oversized authorization code",
     (code) => {
       expectPolicyError(() =>
-        parseCalendarOAuthCallback(callback({ state: STATE, code }), APP_URL),
+        calendarOAuthPolicy.parseCallback(callback({ state: STATE, code }), APP_URL),
       );
     },
   );
@@ -405,7 +411,7 @@ describe("Calendar OAuth callback parsing", () => {
   it.each(["!", "x".repeat(4096), "code+#/%?&=~"])(
     "retains valid graphic codes after query decoding",
     (code) => {
-      expect(parseCalendarOAuthCallback(callback({ state: STATE, code }), APP_URL)).toEqual({
+      expect(calendarOAuthPolicy.parseCallback(callback({ state: STATE, code }), APP_URL)).toEqual({
         status: "code",
         state: STATE,
         code,
@@ -417,21 +423,21 @@ describe("Calendar OAuth callback parsing", () => {
     "rejects malformed error values without echoing them",
     (error) => {
       expectPolicyError(() =>
-        parseCalendarOAuthCallback(callback({ state: STATE, error }), APP_URL),
+        calendarOAuthPolicy.parseCallback(callback({ state: STATE, error }), APP_URL),
       );
     },
   );
 
   it("checks the exact callback against the selected development or production origin", () => {
     const localApp = "http://localhost:3000";
-    const localCallback = callback(undefined, getCalendarOAuthRedirectUri(localApp));
-    expect(parseCalendarOAuthCallback(localCallback, localApp)).toEqual({
+    const localCallback = callback(undefined, calendarOAuthPolicy.redirectUri(localApp));
+    expect(calendarOAuthPolicy.parseCallback(localCallback, localApp)).toEqual({
       status: "code",
       state: STATE,
       code: CODE,
     });
-    expectPolicyError(() => parseCalendarOAuthCallback(localCallback, APP_URL));
-    expectPolicyError(() => parseCalendarOAuthCallback(callback(), localApp));
+    expectPolicyError(() => calendarOAuthPolicy.parseCallback(localCallback, APP_URL));
+    expectPolicyError(() => calendarOAuthPolicy.parseCallback(callback(), localApp));
   });
 });
 
@@ -441,15 +447,22 @@ describe("Calendar OAuth consume-command projection", () => {
     (status) => {
       const parsed =
         status === "code"
-          ? parseCalendarOAuthCallback(callback(), APP_URL)
-          : parseCalendarOAuthCallback(callback({ state: STATE, error: "access_denied" }), APP_URL);
+          ? calendarOAuthPolicy.parseCallback(callback(), APP_URL)
+          : calendarOAuthPolicy.parseCallback(
+              callback({ state: STATE, error: "access_denied" }),
+              APP_URL,
+            );
       const withSpoofedOwnership = {
         ...parsed,
         userId: OTHER_USER_ID,
         user_id: OTHER_USER_ID,
         redirectUri: "https://evil.example.test",
       };
-      const command = createCalendarOAuthConsumeCommand(withSpoofedOwnership, SESSION, APP_URL);
+      const command = calendarOAuthPolicy.createConsumeCommand(
+        withSpoofedOwnership,
+        SESSION,
+        APP_URL,
+      );
       expect(command).toEqual({
         stateHash: hash(STATE),
         userId: USER_ID,
@@ -462,12 +475,12 @@ describe("Calendar OAuth consume-command projection", () => {
   );
 
   it("binds identical state to the currently verified session instead of claims in a callback", () => {
-    const parsed = parseCalendarOAuthCallback(
+    const parsed = calendarOAuthPolicy.parseCallback(
       callback({ state: STATE, code: CODE, user_id: USER_ID }),
       APP_URL,
     );
     const otherSession = { userId: OTHER_USER_ID } as Session;
-    expect(createCalendarOAuthConsumeCommand(parsed, otherSession, APP_URL)).toEqual({
+    expect(calendarOAuthPolicy.createConsumeCommand(parsed, otherSession, APP_URL)).toEqual({
       stateHash: hash(STATE),
       userId: OTHER_USER_ID,
       redirectUri: REDIRECT_URI,
@@ -475,9 +488,9 @@ describe("Calendar OAuth consume-command projection", () => {
   });
 
   it("builds only a command; repeated construction does not pretend to consume or validate stored expiry", () => {
-    const parsed = parseCalendarOAuthCallback(callback(), APP_URL);
-    const first = createCalendarOAuthConsumeCommand(parsed, SESSION, APP_URL);
-    expect(createCalendarOAuthConsumeCommand(parsed, SESSION, APP_URL)).toEqual(first);
+    const parsed = calendarOAuthPolicy.parseCallback(callback(), APP_URL);
+    const first = calendarOAuthPolicy.createConsumeCommand(parsed, SESSION, APP_URL);
+    expect(calendarOAuthPolicy.createConsumeCommand(parsed, SESSION, APP_URL)).toEqual(first);
     expect(Object.keys(first).sort()).toEqual(["stateHash", "userId", "redirectUri"].sort());
   });
 
@@ -490,17 +503,21 @@ describe("Calendar OAuth consume-command projection", () => {
     { status: "denied", state: "A".repeat(42) + "B" },
   ])("revalidates callback essentials before creating a consume command: %j", (parsed) => {
     expectPolicyError(() =>
-      createCalendarOAuthConsumeCommand(parsed as CalendarOAuthCallback, SESSION, APP_URL),
+      calendarOAuthPolicy.createConsumeCommand(parsed as GoogleOAuthCallback, SESSION, APP_URL),
     );
   });
 
   it("rejects a malformed session ID or unsafe configured redirect at consumption", () => {
-    const parsed = parseCalendarOAuthCallback(callback(), APP_URL);
+    const parsed = calendarOAuthPolicy.parseCallback(callback(), APP_URL);
     expectPolicyError(() =>
-      createCalendarOAuthConsumeCommand(parsed, { userId: SECRET } as Session, APP_URL),
+      calendarOAuthPolicy.createConsumeCommand(parsed, { userId: SECRET } as Session, APP_URL),
     );
     expectPolicyError(() =>
-      createCalendarOAuthConsumeCommand(parsed, SESSION, `https://${SECRET}@evil.example.test`),
+      calendarOAuthPolicy.createConsumeCommand(
+        parsed,
+        SESSION,
+        `https://${SECRET}@evil.example.test`,
+      ),
     );
   });
 });
@@ -511,7 +528,7 @@ describe("Calendar granted-scope validation", () => {
     [...REQUIRED_SCOPES].reverse().join(" "),
     ` \t${REQUIRED_SCOPES[0]}\n${REQUIRED_SCOPES[1]} ${REQUIRED_SCOPES[2]}  `,
   ])("accepts only the exact three required scopes with whitespace delimiters", (value) => {
-    expect(validateGrantedCalendarScopes(value)).toEqual(REQUIRED_SCOPES);
+    expect(calendarOAuthPolicy.validateGrantedScopes(value)).toEqual(REQUIRED_SCOPES);
   });
 
   it.each([
@@ -539,12 +556,12 @@ describe("Calendar granted-scope validation", () => {
     REQUIRED_SCOPES.join(" ").toUpperCase(),
     `${REQUIRED_SCOPES[0]} ${REQUIRED_SCOPES[1]}/${SECRET}`,
   ])("rejects missing, duplicate, identity, broad, write, or non-string grants: %j", (value) => {
-    expectPolicyError(() => validateGrantedCalendarScopes(value));
+    expectPolicyError(() => calendarOAuthPolicy.validateGrantedScopes(value));
   });
 
   it("returns fresh projections instead of exposing the shared scope constant", () => {
-    const first = validateGrantedCalendarScopes(REQUIRED_SCOPES.join(" "));
-    const second = validateGrantedCalendarScopes(REQUIRED_SCOPES.join(" "));
+    const first = calendarOAuthPolicy.validateGrantedScopes(REQUIRED_SCOPES.join(" "));
+    const second = calendarOAuthPolicy.validateGrantedScopes(REQUIRED_SCOPES.join(" "));
     expect(first).not.toBe(second);
     expect(first).not.toBe(CALENDAR_SCOPES);
     expect(first).toEqual(second);

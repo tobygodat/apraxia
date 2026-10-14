@@ -7,12 +7,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { verifySupabaseSession } from "../../server/auth/verifySession";
-import {
-  createCalendarOAuthAttempt,
-  createCalendarOAuthConsumeCommand,
-  parseCalendarOAuthCallback,
-  type PendingCalendarOAuthTransaction,
-} from "../../server/calendar/oauthPolicy";
+import { calendarOAuthPolicy } from "../../server/calendar/oauthPolicy";
+import type { PendingGoogleOAuthTransaction } from "../../server/google/oauthPolicy";
 
 const A = "77777777-7777-4777-8777-777777777771";
 const B = "77777777-7777-4777-8777-777777777772";
@@ -58,8 +54,8 @@ afterAll(async () => {
 });
 
 function pending(
-  overrides: Partial<PendingCalendarOAuthTransaction> = {},
-): PendingCalendarOAuthTransaction {
+  overrides: Partial<PendingGoogleOAuthTransaction> = {},
+): PendingGoogleOAuthTransaction {
   return {
     userId: A,
     stateHash: createHash("sha256").update(randomUUID()).digest("hex"),
@@ -69,7 +65,7 @@ function pending(
   };
 }
 
-async function begin(transaction: PendingCalendarOAuthTransaction) {
+async function begin(transaction: PendingGoogleOAuthTransaction) {
   const result = await db.query<{ receipt: { id: string; expires_at: string } }>(
     "select public.begin_calendar_oauth_transaction($1::uuid,$2::text,$3::text,$4::timestamptz) as receipt",
     [transaction.userId, transaction.stateHash, transaction.redirectUri, transaction.expiresAt],
@@ -78,7 +74,7 @@ async function begin(transaction: PendingCalendarOAuthTransaction) {
 }
 
 async function consume(
-  command: Pick<PendingCalendarOAuthTransaction, "userId" | "stateHash" | "redirectUri">,
+  command: Pick<PendingGoogleOAuthTransaction, "userId" | "stateHash" | "redirectUri">,
 ) {
   const result = await db.query<{ receipt: { id: string; consumed_at: string } }>(
     "select public.consume_calendar_oauth_transaction($1::uuid,$2::text,$3::text) as receipt",
@@ -101,7 +97,7 @@ async function verifyFakeSession(userId: string) {
 
 describe("private OAuth SQL lifecycle with server policy", () => {
   it("uses independently verified identity and stores only a state hash before consuming once", async () => {
-    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), {
+    const attempt = calendarOAuthPolicy.createAttempt(await verifyFakeSession(A), {
       appUrl: APP,
       clientId: "fictional-client",
     });
@@ -120,11 +116,15 @@ describe("private OAuth SQL lifecycle with server policy", () => {
     });
     expect(JSON.stringify(rows.rows)).not.toContain(rawState);
 
-    const callback = parseCalendarOAuthCallback(
+    const callback = calendarOAuthPolicy.parseCallback(
       `${REDIRECT}?state=${rawState}&code=fake-code&user_id=${B}`,
       APP,
     );
-    const command = createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(A), APP);
+    const command = calendarOAuthPolicy.createConsumeCommand(
+      callback,
+      await verifyFakeSession(A),
+      APP,
+    );
     const consumed = await consume(command);
     expect(Object.keys(consumed).sort()).toEqual(["consumed_at", "id"]);
     expect(consumed.id).toBe(receipt.id);
@@ -133,36 +133,42 @@ describe("private OAuth SQL lifecycle with server policy", () => {
   });
 
   it("rejects a switched account without burning the original owner's attempt", async () => {
-    const attempt = createCalendarOAuthAttempt(await verifyFakeSession(A), {
+    const attempt = calendarOAuthPolicy.createAttempt(await verifyFakeSession(A), {
       appUrl: APP,
       clientId: "fictional-client",
     });
     const receipt = await begin(attempt.transaction);
     const state = new URL(attempt.authorizationUrl).searchParams.get("state")!;
-    const callback = parseCalendarOAuthCallback(`${REDIRECT}?state=${state}&code=fake-code`, APP);
+    const callback = calendarOAuthPolicy.parseCallback(
+      `${REDIRECT}?state=${state}&code=fake-code`,
+      APP,
+    );
     await expect(
-      consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(B), APP)),
+      consume(calendarOAuthPolicy.createConsumeCommand(callback, await verifyFakeSession(B), APP)),
     ).rejects.toMatchObject(SAFE_ERROR);
     expect(
-      (await consume(createCalendarOAuthConsumeCommand(callback, await verifyFakeSession(A), APP)))
-        .id,
+      (
+        await consume(
+          calendarOAuthPolicy.createConsumeCommand(callback, await verifyFakeSession(A), APP),
+        )
+      ).id,
     ).toBe(receipt.id);
   });
 
   it("consumes a verified denial too, without retaining the provider error", async () => {
     const session = await verifyFakeSession(A);
-    const attempt = createCalendarOAuthAttempt(session, {
+    const attempt = calendarOAuthPolicy.createAttempt(session, {
       appUrl: APP,
       clientId: "fictional-client",
     });
     await begin(attempt.transaction);
     const state = new URL(attempt.authorizationUrl).searchParams.get("state")!;
-    const callback = parseCalendarOAuthCallback(
+    const callback = calendarOAuthPolicy.parseCallback(
       `${REDIRECT}?state=${state}&error=access_denied&error_description=private-detail`,
       APP,
     );
     expect(callback).toEqual({ status: "denied", state });
-    const command = createCalendarOAuthConsumeCommand(callback, session, APP);
+    const command = calendarOAuthPolicy.createConsumeCommand(callback, session, APP);
     await consume(command);
     await expect(consume(command)).rejects.toMatchObject(SAFE_ERROR);
   });
@@ -361,7 +367,10 @@ describe("database-clock expiry and exact one-time matching", () => {
     "http://[::1]:3000",
     "https://[2001:db8::1]:8443",
   ])("preserves policy-supported development and HTTPS origins: %s", async (appUrl) => {
-    const attempt = createCalendarOAuthAttempt({ userId: A }, { appUrl, clientId: "fake-client" });
+    const attempt = calendarOAuthPolicy.createAttempt(
+      { userId: A },
+      { appUrl, clientId: "fake-client" },
+    );
     const receipt = await begin(attempt.transaction);
     expect((await consume(attempt.transaction)).id).toBe(receipt.id);
   });

@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { createCalendarHandler } from "../../server/calendar/calendarHandlers";
-import { createGoogleOAuthTransport } from "../../server/calendar/googleOAuthTransport";
-import { CALENDAR_SCOPES } from "../../server/calendar/oauthPolicy";
+import { calendarHttp } from "../../server/calendar/calendarHttp";
+import { CALENDAR_SCOPES, calendarOAuthPolicy } from "../../server/calendar/oauthPolicy";
+import { createGoogleOAuthTransport } from "../../server/google/oauthTransport";
 import { encryptRefreshToken, decryptRefreshToken } from "../../server/calendar/tokenEncryption";
 import { createCalendarStore } from "../../server/calendar/calendarStore";
 
+const calendarOAuth = { http: calendarHttp, policy: calendarOAuthPolicy };
 const userId = "11111111-1111-4111-8111-111111111111";
 const environment = {
   APP_URL: "https://app.example.test",
@@ -582,6 +584,7 @@ describe("Google OAuth transport", () => {
       Response.json({ access_token: "new-access", token_type: "Bearer" }),
     );
     const result = await createGoogleOAuthTransport(
+      calendarOAuth,
       config,
       new AbortController().signal,
       fetcher,
@@ -597,9 +600,12 @@ describe("Google OAuth transport", () => {
       ),
     );
     await expect(
-      createGoogleOAuthTransport(config, new AbortController().signal, fetcher).refresh(
-        "old-refresh",
-      ),
+      createGoogleOAuthTransport(
+        calendarOAuth,
+        config,
+        new AbortController().signal,
+        fetcher,
+      ).refresh("old-refresh"),
     ).rejects.toMatchObject({
       code: "reconnect_required",
       message: "Reconnect Google Calendar to continue.",
@@ -613,11 +619,12 @@ describe("Google OAuth transport", () => {
       }),
     );
     await expect(
-      createGoogleOAuthTransport(config, new AbortController().signal, fetcher).exchange(
-        "code",
-        "https://app.example.test/api/calendar/callback",
-        state,
-      ),
+      createGoogleOAuthTransport(
+        calendarOAuth,
+        config,
+        new AbortController().signal,
+        fetcher,
+      ).exchange("code", "https://app.example.test/api/calendar/callback", state),
     ).rejects.toThrow("Calendar authorization could not be verified");
   });
 });
