@@ -10,7 +10,7 @@ Set these **server-only** variables on the `apraxia` Worker:
 
 | Variable | Value |
 | --- | --- |
-| `APRAXIA_AGENT_TOKEN` | A dedicated random secret: 32 random bytes encoded as base64url (43 characters), or 64 random hexadecimal characters. Accepted characters are letters, digits, `_`, `-`; length 43–256. The current production value is stored under the pre-rename name `ORBITOS_AGENT_TOKEN`, which Vercel cannot rename; the server accepts either name. |
+| `APRAXIA_AGENT_TOKEN` | A dedicated random secret: 32 random bytes encoded as base64url (43 characters), or 64 random hexadecimal characters. Accepted characters are letters, digits, `_`, `-`; length 43–256. The Worker stores it under this name; the server also accepts the pre-rename name `ORBITOS_AGENT_TOKEN`. |
 | `APRAXIA_AGENT_USER_ID` | Your existing Supabase Auth user UUID. This fixes the account; requests cannot choose an owner. |
 | `APRAXIA_AGENT_SCOPES` | Comma-separated permissions. For the requested access: `workspace:read,workspace:write,calendar:read,calendar:write`. Omitted defaults to `workspace:read`. The retired `files:read` is still accepted so an older value keeps working, but it grants nothing. |
 
