@@ -267,19 +267,8 @@ button.link:hover {
   letter-spacing: 0.03em;
 }
 
-.auth-card__button--quiet {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-}
-
 .auth-card__button:hover:not(:disabled) {
   background: #fff;
-}
-
-.auth-card__button--quiet:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.42);
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .auth-card__button:focus-visible {

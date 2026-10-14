@@ -149,10 +149,6 @@
   white-space: nowrap;
 }
 
-.todos-board-card__due--past {
-  color: var(--todos-board-overdue);
-}
-
 .todos-board-card__metadata > * + * {
   position: relative;
 }

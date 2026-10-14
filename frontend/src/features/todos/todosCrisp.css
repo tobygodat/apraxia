@@ -529,8 +529,7 @@
 
 /* A task is a card lifted off the page: one hairline ring and a soft shadow,
    which deepen when the card is under the pointer. */
-[data-theme^="crisp"] .todos-board-card__late,
-[data-theme^="crisp"] .todos-board-card__due--past {
+[data-theme^="crisp"] .todos-board-card__late {
   color: var(--c-late);
   font-weight: 500;
 }

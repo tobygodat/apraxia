@@ -330,10 +330,6 @@
   text-transform: lowercase;
 }
 
-[data-theme^="paper"] .todos-board-card__due--past {
-  color: var(--warning);
-}
-
 /* No pill: a task's class or project is a word in the row's metadata. */
 [data-theme^="paper"] .todo-source-chip {
   padding: 0;
