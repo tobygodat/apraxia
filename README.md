@@ -2,7 +2,7 @@
 
 A private workspace for tasks, projects, ideas, classes, and interview preparation.
 Home pairs an editable Sunday-to-Saturday Google Calendar with Today. Built with
-React/Vite, Supabase Auth/Postgres/RLS, and Vercel Functions.
+React/Vite, Supabase Auth/Postgres/RLS, and a Cloudflare Worker.
 
 Tasks aggregates ordinary tasks, project tasks, class assignments, and Career
 preparation into Inbox and date columns, filtered by source. Career preparation

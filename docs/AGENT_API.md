@@ -1,12 +1,12 @@
 # Personal agent API
 
-Muse can use ordinary HTTPS and curl against the existing Vercel app. The API
+Muse can use ordinary HTTPS and curl against the existing app at `https://apraxia.dev`. The API
 reads and writes the same Supabase records as the dashboard. Google Calendar
 remains authoritative for events; event writes use the existing Google connection.
 
 ## Configure
 
-Set these **server-only** Vercel environment variables for the existing app:
+Set these **server-only** variables on the `apraxia` Worker:
 
 | Variable | Value |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Cloud development
 
-Use the root Node workspace: React/Vite, Vercel Functions, and Supabase.
+Use the root Node workspace: React/Vite, a Cloudflare Worker, and Supabase.
 Routine frontend development needs Node.js 22 (`.nvmrc`). GitHub Actions runs
 database checks in a disposable Supabase instance on its own runner. Local Docker
 is optional for full-stack debugging; the deployed app never depends on it.
@@ -41,7 +41,7 @@ repeats the same two checks in `frontend/src/config/browserEnv.ts`. CI needs
 none of these: its database job runs against a disposable instance and the
 workflow holds no secrets.
 
-| Variable | Local dev | Vercel | Browser-safe | Validation |
+| Variable | Local dev | Worker | Browser-safe | Validation |
 | --- | --- | --- | --- | --- |
 | `VITE_APRAXIA_RUNTIME` | set by `npm run dev:web` | optional | yes | `cloud` or `legacy`; anything else throws (`frontend/src/config/runtime.ts`). Defaults to `cloud`. |
 | `VITE_SUPABASE_URL` | required | required | yes | HTTPS origin, or a loopback HTTP origin. Must equal `SUPABASE_URL`. |
@@ -229,9 +229,8 @@ reads component contents, so it fetches everything.
 
 The workflow needs no repository secrets, production credentials, or separate
 hosted Supabase project. The CLI version comes from the lockfile. CI performs no
-deployment or hosted migration. Vercel's build runs `npm run build && npm run
-check:bundle` only, because CI already gates on the full `verify`; this workflow
-alone does not make Vercel wait for the database job.
+deployment or hosted migration. A release deploys from a local checkout, not from
+CI; see [Cloudflare Worker](#cloudflare-worker).
 
 When a migration changes the schema, `npm run verify:db` generates the updated
 `frontend/src/types/database.ts` locally. Review and commit it with the change.
